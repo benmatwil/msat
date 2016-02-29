@@ -1,6 +1,7 @@
 module params
 
 !basic parameters/constants
+double precision, parameter :: pi=4.d0*atan(1.d0)
 double precision, parameter :: dtor=pi/180.d0
 
 !data file containing the magnetic field data

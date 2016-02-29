@@ -1,4 +1,5 @@
 program writedata
+use params
 
 implicit none
 integer :: i,j,k
@@ -7,7 +8,6 @@ double precision, allocatable, dimension(:,:,:) :: bx, by, bz
 double precision, allocatable, dimension(:) :: x, y, z    !coordinates of grid
 
 !xyz grid parameters
-double precision, parameter :: pi=4.d0*atan(1.d0)
 integer, parameter :: nnx=206, nny=705, nnz=1409 !size of grid
 double precision, parameter :: xxmin=1, xxmax=2.5  !xrange
 double precision, parameter :: yymin=0, yymax=2*pi  !yrange
