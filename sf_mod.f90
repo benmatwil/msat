@@ -940,6 +940,7 @@ double precision, dimension(3,nring) :: rings
 double precision :: r(3), dots(nring),dist(nring)
 integer :: i
 double precision :: dot1,sep1
+
 spine=normalise(spine)
 
 do i=1,nring
@@ -1000,7 +1001,7 @@ do i=1,nring
     r= r + drvec*sign*normalise(trilinear(r,bgrid))
     icounter=icounter+1
     if (icounter .gt. 10000) then
-     ! print*,'tracer got stuck'
+      !print*,'tracer got stuck'
       !stop
       exit
     endif
