@@ -94,10 +94,7 @@ print*,'Unknown',ucount
 print*,'Warning',sum(warnings)
 print*,pcount+ncount+ucount,nnulls
 
-
-
 end program
-
 
 
 
@@ -119,9 +116,6 @@ integer :: sign, spiral, warning
 
 double precision, dimension(3) :: spine, fan!, major, minor
 
-
-
-
 !set up theta and phi
 dphi=360.d0/dble(nphi)
 dtheta=180./dble(ntheta-1)
@@ -137,7 +131,6 @@ enddo
 phis=phis*dtor
 thetas=thetas*dtor
 
-
 print*,'Null at:',rnull
 print*,'B=', trilinear(rnull,bgrid)
 
@@ -148,8 +141,6 @@ print*,'B=', trilinear(rnull,bgrid)
 ! thetarot=0.
 ! phirot=0.
 
-
-
 !create sphere
 flux=0
 crossflux=0
@@ -157,7 +148,7 @@ do j=1,ntheta
   do i=1,nphi
     r = sphere2cart(rsphere,thetas(j),phis(i))
     
-   ! r=rotate(r,thetarot,phirot)
+    ! r=rotate(r,thetarot,phirot)
     
     b=trilinear(r+rnull,bgrid)
     
@@ -168,7 +159,6 @@ do j=1,ntheta
     
     flux=flux+abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
     crossflux=crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j))
-    
   enddo
 enddo
 
@@ -278,25 +268,25 @@ else
   spiral=1
   
   if ((mx .gt. spiraltol) .and. (abs(mn) .lt. spiraltol)) then
-   ! print*, 'Negative Spiral'
+    ! print*, 'Negative Spiral'
     sign=-1
     spine=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
     
     if ((nmax .eq. 2) .and. (nmin .eq. 2) .and. (nsaddle .eq. 2)) then
-       maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
-       minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
+      maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
+      minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     else if ((nmax .eq. 2) .and. (nmin .gt. 2)) then
-       call getminmax(nmin,minima,minvec,maxvec)
+      call getminmax(nmin,minima,minvec,maxvec)
     else if ((nmax .ge. 4) .and. (nmin .eq. 2)) then
-       call getminmax(nmax, maxima,minvec,maxvec)
-        if( abs(dot(spine,maxvec)) .lt. abs(dot(spine,minvec))) minvec=maxvec
-        maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
+      call getminmax(nmax, maxima,minvec,maxvec)
+      if (abs(dot(spine,maxvec)) .lt. abs(dot(spine,minvec))) minvec=maxvec
+      maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
     else if ( (nmax .eq. 2) .and. (nmin .eq. 1) .and. (nsaddle .eq. 1)) then
-        maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
-        minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
+      maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
+      minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     else if ( (nmax .eq. 2) .and. (nmin .eq. 2) ) then
-        maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
-        minvec=normalise(cross(spine,maxvec))
+      maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
+      minvec=normalise(cross(spine,maxvec))
     else
       print*, 'weird null!'
       sign=0
@@ -307,19 +297,19 @@ else
     spine=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
     
     if ((nmax .eq. 2) .and. (nmin .eq. 2) .and. (nsaddle .eq. 2)) then
-       maxvec=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
-       minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
+      maxvec=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
+      minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     else if ((nmax .eq. 2) .and. (nmin .gt. 2)) then
-       call getminmax(nmin,minima,minvec,maxvec)
-       maxvec=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
+      call getminmax(nmin,minima,minvec,maxvec)
+      maxvec=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
     else if ((nmin .ge. 4) .and. (nmax .eq. 2)) then
-       call getminmax(nmax, maxima,minvec,maxvec)
+      call getminmax(nmax, maxima,minvec,maxvec)
     else if ( (nmax .eq. 1) .and. (nmin .eq. 2) .and. (nsaddle .eq. 1)) then
-        maxvec=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
-        minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
+      maxvec=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
+      minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     else if ( (nmax .eq. 2) .and. (nmin .eq. 2) ) then
-        maxvec=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
-        minvec=normalise(cross(spine,maxvec))
+      maxvec=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
+      minvec=normalise(cross(spine,maxvec))
     else
       print*, 'weird null!'
       sign=0
@@ -333,7 +323,7 @@ else
   
  ! stop
   
-endif  
+endif 
 
 !if major and minor axes are almost parallel, redefine minor axis as spine x major
 !print*,'CROSS',modulus(cross(maxvec,minvec))
