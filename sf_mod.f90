@@ -593,7 +593,6 @@ enddo
 !print*, 'max=',mx, imax,maxvec
 !print*, 'min=',mn, imin,minvec
 
-
 angle=acos(dot(minvec,maxvec))/dtor
 
 if (mn/mx .gt. 0.90) then !if minima and maxima are both similar
@@ -651,149 +650,136 @@ minor=rotate(minor,thetarot,phirot)
 
 if (sign .ne. 0) then
 
-        !first try with the null's expected sign
+  !first try with the null's expected sign
+  call get_ring(major, minor,nring,rings)
+
+  ! open (unit=10,file='output/ring1.dat',form='unformatted')
+  ! write(10) nring
+  ! write(10) rings(1,:),rings(2,:),rings(3,:)
+  ! write(10) spine(1),-1*spine(1),spine(2),-1*spine(2),spine(3),-1*spine(3)
+  ! write(10) major(1),-1*major(1),major(2),-1*major(2),major(3),-1*major(3)
+  ! write(10) minor(1),-1*minor(1),minor(2),-1*minor(2),minor(3),-1*minor(3)
+  ! close(10)
+
+  !integrate out along fan (hopefully)
+  call integrate_rings(nring,rings,sign)
+  !open(unit=90,file='output/trace1.dat',form='unformatted')
+  !write(90) nring
+  !write(90) rings(1,:),rings(2,:),rings(3,:)
+
+  fans1 = rings
+
+  !integrate back along spine (hopefully) 
+  call get_ring(major, minor,nring,rings)
+  call integrate_rings(nring,rings,-1*sign)
+  ! write(90) nring
+  ! write(90) rings(1,:),rings(2,:),rings(3,:)
+  ! close(90)
+  
+  spines1=rings 
+  !
+  !see if traced spine is where it should be
+  call check_null(nring,rings,spine,dot1,sep1)
 
 
-        call get_ring(major, minor,nring,rings)
+  !now try with sign and spine/major axis switched
 
+  call get_ring(spine, minor,nring,rings)
 
-       ! open (unit=10,file='output/ring1.dat',form='unformatted')
-       ! write(10) nring
-       ! write(10) rings(1,:),rings(2,:),rings(3,:)
-       ! write(10) spine(1),-1*spine(1),spine(2),-1*spine(2),spine(3),-1*spine(3)
-       ! write(10) major(1),-1*major(1),major(2),-1*major(2),major(3),-1*major(3)
-       ! write(10) minor(1),-1*minor(1),minor(2),-1*minor(2),minor(3),-1*minor(3)
-       ! close(10)
+  !open (unit=10,file='output/ring2.dat',form='unformatted')
+  !write(10) nring
+  !write(10) rings(1,:),rings(2,:),rings(3,:)
+  !write(10) major(1),-1*major(1),major(2),-1*major(2),major(3),-1*major(3)
+  !write(10) spine(1),-1*spine(1),spine(2),-1*spine(2),spine(3),-1*spine(3)
+  !write(10) minor(1),-1*minor(1),minor(2),-1*minor(2),minor(3),-1*minor(3)
+  !close(10)
 
-        !integrate out along fan (hopefully)
-        call integrate_rings(nring,rings,sign)
-        !open(unit=90,file='output/trace1.dat',form='unformatted')
-        !write(90) nring
-        !write(90) rings(1,:),rings(2,:),rings(3,:)
+  !integrate along fan
+  call integrate_rings(nring,rings,-1*sign)
+  !open(unit=90,file='output/trace2.dat',form='unformatted')
+  !write(90) nring
+  !write(90) rings(1,:),rings(2,:),rings(3,:)
+  
+  fans2 = rings
+  
+  !integrate along spine
+  call get_ring(spine, minor,nring,rings)
+  call integrate_rings(nring,rings,sign)
+  !write(90) nring
+  !write(90) rings(1,:),rings(2,:),rings(3,:)
+  !close(90)
+  
+  spines2=rings
+  
+  !see if traced spine is where it should be
+  call check_null(nring,rings,major,dot2,sep2)
+  
+  !Now see if we need to switch the null's sign
+  
+  !print*,'Deciding null properties...'
+  if ( (dot1 .gt. dot2) .and. (sep1 .lt. sep2) ) then
+    !yay got it correct
+    spine=spine
 
-        fans1 = rings
+    !check to see if right axes but wrong sign
+    call fansrings(fans1,spines1,sign,major,spine)
 
+  else if ((dot2 .gt. dot1) .and. (sep2 .lt. sep1)) then
+    print*,'Swapping sign'
+    !boo got it wrong, need to swap sign
+    sign=sign*(-1)
+    spiral=1 !if we got it wrong the null was probably spiral
+      
+    dumvec=spine
+    !swap spine and fan
+    spine=major
+    major=dumvec
+      
+    call fansrings(fans2,spines2,sign,major,spine)
+  else
+  !weird null - possibly 2d?
+    print*,'Cannot characterise null - possibly 2D null'
+    sign=0
+    spiral=0
+    spine=0
+    minor=0
+    major=0
+  endif
 
-        !integrate back along spine (hopefully) 
-        call get_ring(major, minor,nring,rings)
-        call integrate_rings(nring,rings,-1*sign)
-       ! write(90) nring
-       ! write(90) rings(1,:),rings(2,:),rings(3,:)
-       ! close(90)
-        
-        spines1=rings 
-        !
-        !see if traced spine is where it should be
-        call check_null(nring,rings,spine,dot1,sep1)
-        
-       
+  if (sign .ne. 0) then 
+  !refine fan vector (fan is not 100% correct if the null is an inclined spiral)
+  
+  !trace along fan
+  call get_ring(major, minor,nring,rings)
+  call integrate_rings(nring,rings,sign)
 
+  !new fan vector is cross product between traced fan vectors 
+  v1=rings(:,1)
+  fanold = 0.
+  do i=2,nring
+    v2=rings(:,i)
+    fannew=cross(v1,v2)
+    if (modulus(fannew) .gt. modulus(fanold)) then
+      fanold=fannew
+    endif
+  enddo
 
-        !now try with sign and spine/major axis switched
-
-        call get_ring(spine, minor,nring,rings)
-
-
-        !open (unit=10,file='output/ring2.dat',form='unformatted')
-        !write(10) nring
-        !write(10) rings(1,:),rings(2,:),rings(3,:)
-        !write(10) major(1),-1*major(1),major(2),-1*major(2),major(3),-1*major(3)
-        !write(10) spine(1),-1*spine(1),spine(2),-1*spine(2),spine(3),-1*spine(3)
-        !write(10) minor(1),-1*minor(1),minor(2),-1*minor(2),minor(3),-1*minor(3)
-        !close(10)
-
-        !integrate along fan
-        call integrate_rings(nring,rings,-1*sign)
-        !open(unit=90,file='output/trace2.dat',form='unformatted')
-        !write(90) nring
-        !write(90) rings(1,:),rings(2,:),rings(3,:)
-        
-        fans2 = rings
-        
-        !integrate along spine
-        call get_ring(spine, minor,nring,rings)
-        call integrate_rings(nring,rings,sign)
-        !write(90) nring
-        !write(90) rings(1,:),rings(2,:),rings(3,:)
-        !close(90)
-        
-        spines2=rings
-        
-        !see if traced spine is where it should be
-        call check_null(nring,rings,major,dot2,sep2)
-        
-        
-        !Now see if we need to switch the null's sign
-        
-        !print*,'Deciding null properties...'
-        if ( (dot1 .gt. dot2) .and. (sep1 .lt. sep2)) then
-           !yay got it correct
-           spine=spine
-    
-            !check to see if right axes but wrong sign
-             call fansrings(fans1,spines1,sign,major,spine)
-
-        else if ((dot2 .gt. dot1) .and. (sep2 .lt. sep1)) then
-            print*,'Swapping sign'
-            !boo got it wrong, need to swap sign
-            sign=sign*(-1)
-            spiral=1 !if we got it wrong the null was probably spiral
-            
-            dumvec=spine
-            !swap spine and fan
-            spine=major
-            major=dumvec
-            
-            call fansrings(fans2,spines2,sign,major,spine)
-        else
-        !weird null - possibly 2d?
-            print*,'Cannot characterise null - possibly 2D null'
-            sign=0
-            spiral=0
-            spine=0
-            minor=0
-            major=0
-        endif
-
-        if (sign .ne. 0) then 
-        !refine fan vector (fan is not 100% correct if the null is an inclined spiral)
-        
-        !trace along fan
-        call get_ring(major, minor,nring,rings)
-        call integrate_rings(nring,rings,sign)
-
-        !new fan vector is cross product between traced fan vectors 
-        v1=rings(:,1)
-        fanold = 0.
-        do i=2,nring
-          v2=rings(:,i)
-          fannew=cross(v1,v2)
-          if (modulus(fannew) .gt. modulus(fanold)) then
-            fanold=fannew
-          endif
-        enddo
-
-        !print*,'oldfan=',cross(major,minor)
-        !print*,'newfan=',normalise(fanold)
-        
-        !minor=normalise(cross(major,fanold))
-        !print*,'nnwfan=',normalise(cross(minor,major))
-        major=normalise(v1)
-        
-        minor=normalise(cross(v1,fanold))
-        
-        
-        endif
-        !stop
+  !print*,'oldfan=',cross(major,minor)
+  !print*,'newfan=',normalise(fanold)
+  
+  !minor=normalise(cross(major,fanold))
+  !print*,'nnwfan=',normalise(cross(minor,major))
+  major=normalise(v1)
+  
+  minor=normalise(cross(v1,fanold))
+  
+  endif
 else
      fan=0
      spine=0
      major=0
      minor=0
-endif
-
-
-        
+endif    
         
 end subroutine
 
