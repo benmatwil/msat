@@ -766,11 +766,11 @@ if (sign .ne. 0) then
         v1=rings(:,1)
         fanold = 0.
         do i=2,nring
-        v2=rings(:,i)
-        fannew=cross(v1,v2)
-        if (modulus(fannew) .gt. modulus(fanold)) then
-        fanold=fannew
-        endif
+          v2=rings(:,i)
+          fannew=cross(v1,v2)
+          if (modulus(fannew) .gt. modulus(fanold)) then
+            fanold=fannew
+          endif
         enddo
 
         !print*,'oldfan=',cross(major,minor)

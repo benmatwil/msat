@@ -249,20 +249,20 @@ if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs hav
     minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     
   else if ( (nmax .eq. 2) .and. (nmin .eq. 1) .and. (nsaddle .eq. 1)) then
-      sign=-1
-      spiral=0
-        spine=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
-        maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
-        minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
+    sign=-1
+    spiral=0
+      spine=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
+      maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
+      minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
   else if ( (nmax .eq. 1) .and. (nmin .eq. 2) .and. (nsaddle .eq. 1)) then
-      sign=1
-      spiral=0
-        spine=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
-        maxvec=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
-        minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
+    sign=1
+    spiral=0
+      spine=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
+      maxvec=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
+      minvec=sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
   else if (nmax .eq. 2 .and. nmin .eq. 2) then
-      sign=1
-      spiral=0
+    sign=1
+    spiral=0
       spine=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
       maxvec=sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
       minvec=normalise(cross(spine,maxvec))
@@ -352,8 +352,8 @@ fan=normalise(cross(minvec,maxvec))
 
 
 if (sign .eq. 0) then
-fan = (/0.d0,0.d0,1.d0/)
-spine=(/0.d0,0.d0,1.d0/)
+  fan = (/0.d0,0.d0,1.d0/)
+  spine=(/0.d0,0.d0,1.d0/)
 endif
 print*, ''
 print*,'Sign=',sign
