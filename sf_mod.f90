@@ -797,7 +797,7 @@ endif
         
 end subroutine
 
-
+!********************************************************************************
 
 subroutine fansrings(fans,spines,sign,major,spine)
 implicit none
@@ -900,7 +900,7 @@ endif
 end subroutine
 
 
-
+!********************************************************************************
 
 function mean(x)
 implicit none
@@ -914,7 +914,7 @@ n=size(x)
 mean=sum(x)/dble(n)
 end function
 
-
+!********************************************************************************
 
 function stddev(x)
 implicit none
@@ -929,7 +929,7 @@ stddev= sum(x*x)/dble(n) - sum(x)*sum(x)/dble(n)/dble(n)
 stddev=sqrt(stddev)
 end function
 
-
+!********************************************************************************
 
 subroutine check_null(nring,rings,spine,dot1,sep1)
 implicit none
@@ -969,7 +969,7 @@ sep1=maxval(dist)
 end subroutine
 
 
-
+!********************************************************************************
 
 
 subroutine integrate_rings(nring,rings,sign)
@@ -1011,6 +1011,7 @@ enddo
 
 end subroutine
 
+!********************************************************************************
 
 !get ring from major and minor axis vectors
 subroutine get_ring(major,minor,nring,rings)
