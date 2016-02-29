@@ -1,0 +1,15 @@
+retall
+
+datafile='data/newmag.dat'
+
+.r visualise/read_separators
+.r visualise/trilinear_3D 
+.r visualise/tracefield_3D
+.r visualise/mk_model_mag_sep
+.r visualise/read_separators
+.r visualise/get_nulls
+
+
+;o=mk_model_mag_sep(datafile,/box,/nulls,/separators,/sepsurf,/spines)
+o=mk_model_mag_sep(datafile,/box,/nulls,/separators,/fanlines,/spines)
+xobjview,o 
