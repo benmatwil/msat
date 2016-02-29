@@ -216,7 +216,7 @@ spiral=0
 !try to determine sign of nulls and vectors
 
 if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs have maxima/minima at ~1
- !probably a non-spiral null
+  !probably a non-spiral null
   
   if ((nmax .eq. 2) .and. (nmin .gt. 2)) then
     !print*, 'Negative non-spiral null'
@@ -234,7 +234,7 @@ if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs hav
     sign=1
     spiral=0
     
-     spine=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
+    spine=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
     
     call getminmax(nmax,maxima,minvec,maxvec)
 
