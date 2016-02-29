@@ -728,7 +728,8 @@ if (sign .ne. 0) then
     print*,'Swapping sign'
     !boo got it wrong, need to swap sign
     sign=sign*(-1)
-    !spiral=1 !if we got it wrong the null was probably spiral
+    spiral=1 !if we got it wrong the null was probably spiral
+    print*, "Maybe a spiral?"
       
     dumvec=spine
     !swap spine and fan
