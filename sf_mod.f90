@@ -40,7 +40,7 @@ contains
 
 function trilinear(r,b)
     implicit none
-    !find the value of a function, b, at (x,y,z) using the 8 vertices
+    !find the value of a function, b, at r=x,y,z) using the 8 vertices
     real*8 :: b(:,:,:,:)
     real*8 :: r(3)
     real*8 :: cube(2,2,2)
