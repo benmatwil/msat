@@ -1,6 +1,8 @@
 data
-output*
+output
 pngs
+output.txt
+output1.txt
 *.pdf
 *.mod
 nf

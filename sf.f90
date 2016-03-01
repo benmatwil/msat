@@ -335,9 +335,9 @@ print*,''
 print*,"Determining null's properties..."
 
 !test the estimated properties and adjust them if required. Run this twice to be sure
-call test_null(spine,maxvec,minvec,sign,spiral)  
-call test_null(spine,maxvec,minvec,sign,spiral)  
-!call test_null(spine,maxvec,minvec,sign,spiral)  
+call test_null(spine,maxvec,minvec,sign,spiral)
+call test_null(spine,maxvec,minvec,sign,spiral)
+!call test_null(spine,maxvec,minvec,sign,spiral)
 fan=normalise(cross(minvec,maxvec))
 
 

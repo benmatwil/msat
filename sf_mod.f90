@@ -832,7 +832,6 @@ enddo
  do i=1,3
    fbar(i)=mean(fans2(i,:))
 !   fsigma(i)=stddev(fans2(i,:))
-!   
    sbar(i)=mean(spines2(i,:))
 !   ssigma(i)=stddev(spines2(i,:))
  enddo
@@ -961,7 +960,7 @@ end subroutine
 
 subroutine integrate_rings(nring,rings,sign)
 implicit none
-!integrate rings ourtwards (sign=sign of null) or inwards (sign= -1* sign of null)
+!integrate rings outwards (sign=sign of null) or inwards (sign= -1* sign of null)
 integer :: nring, sign
 double precision, dimension(:,:) :: rings
 double precision :: r(3)
