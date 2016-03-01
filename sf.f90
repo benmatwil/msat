@@ -25,7 +25,7 @@ read(10) nnulls
 allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),spirals(nnulls),warnings(nnulls))
 
 do i=1,nnulls
- read (10) rnulls(:,i)
+  read (10) rnulls(:,i)
 enddo
 
 close(10)
