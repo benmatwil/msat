@@ -32,7 +32,7 @@ close(10)
 !read in bgrid
 open(unit=10,file=filename,access='stream')
 read(10) nx, ny, nz
-allocate(bgrid(nx,ny,nz,3),x(nx), y(ny), z(nz))
+allocate(bgrid(nx,ny,nz,3), x(nx), y(ny), z(nz))
 read(10) bgrid
 read(10) x, y, z
 close(10)
@@ -41,16 +41,13 @@ dx=(x(nx)-x(1))/nx
 dy=(y(ny)-y(1))/ny
 dz=(z(nz)-z(1))/nz
 
+print*, nnulls,' nulls'
 
 
-print*,nnulls,' nulls'
-
-
-!now loop over each null and characterise
-
-do i=1,nnulls
-  print*,'Evaluating null',i,' of',nnulls
-  rnull=rnulls(:,i)
+!now loop over each null and characterise using get_properties
+do i = 1, nnulls
+  print*, 'Evaluating null', i,' of', nnulls
+  rnull = rnulls(:,i)
   
   call get_properties(sign,spine,fan,spiral,warning)
   
@@ -64,37 +61,36 @@ enddo
 
 
 !now write data to nulls.dat
-
 open(unit=10,file='output/nulls.dat',form='unformatted')
 write(10) nnulls
 write(10) signs
 write(10) rnulls,spines,fans
 close(10)
 
-print*,''
-print*,'Summary:'
-print*,'number, sign, spiral,warning'
+print*, ''
+print*, 'Summary:'
+print*, 'number, sign, spiral, warning'
 
-pcount=0
-ucount=0
-ncount=0
-do i=1,nnulls
-print*, i, signs(i),spirals(i), warnings(i)
+pcount = 0
+ucount = 0
+ncount = 0
+do i = 1, nnulls
+print*, i, signs(i), spirals(i), warnings(i)
 if (signs(i) .eq. 1) pcount=pcount+1
 if (signs(i) .eq. -1) ncount=ncount+1
 if (signs(i) .eq. 0) ucount=ucount+1
 enddo
 
-print*,'Total number of nulls:',nnulls
-print*,'Positive',pcount
-print*,'Negative',ncount
-print*,'Unknown',ucount
-print*,'Warning',sum(warnings)
-print*,pcount+ncount+ucount,nnulls
+print*, 'Total number of nulls:', nnulls
+print*, 'Positive', pcount
+print*, 'Negative', ncount
+print*, 'Unknown', ucount
+print*, 'Warning', sum(warnings)
+print*, pcount+ncount+ucount, nnulls
 
 end program
 
-
+!********************************************************************************
 
 !characterise each null
 subroutine get_properties(sign,spine,fan,spiral,warning)
@@ -114,9 +110,9 @@ integer :: sign, spiral, warning
 
 double precision, dimension(3) :: spine, fan!, major, minor
 
-!set up theta and phi
-dphi=360.d0/dble(nphi)
-dtheta=180./dble(ntheta-1)
+!set up theta and phi for sphere around null
+dphi = 360.d0/dble(nphi)
+dtheta = 180./dble(ntheta-1)
 
 do i=1,nphi
   phis(i) = (i-1)*dphi
@@ -126,11 +122,11 @@ do j=1,ntheta
   thetas(j) = (j-1)*dtheta
 enddo
 
-phis=phis*dtor
-thetas=thetas*dtor
+phis = phis*dtor
+thetas = thetas*dtor
 
-print*,'Null at:',rnull
-print*,'B=', trilinear(rnull,bgrid)
+print*, 'Null at:', rnull
+print*, 'B=', trilinear(rnull, bgrid)
 
 ! rotate null by arbitrary angles
 ! thetarot=45.*dtor
@@ -148,15 +144,17 @@ do j=1,ntheta
     
     ! r=rotate(r,thetarot,phirot)
     
-    b=trilinear(r+rnull,bgrid)
+    b = trilinear(r+rnull, bgrid)
     
-    bmap(i,j) = dot(b,r)/modulus(b)/modulus(r)
-    btotal(i,j) = dot(b,r)/modulus(r)
-    bcross(i,j) = modulus(cross(b,r))/modulus(b)/modulus(r)
-    modb(i,j)=modulus(b)
+    ! calculate different grids
+    modb(i,j) = modulus(b) ! size of b on the sphere
+    btotal(i,j) = dot(b,r)/modulus(r) ! b in the radial direction on the sphere's surface
+    bmap(i,j) = btotal(i,j)/modb(i,j) ! angle between b and r
+    bcross(i,j) = modulus(cross(b,r))/modb(i,j)/modulus(r) ! vector orthogonal to b and r
     
-    flux=flux+abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
-    crossflux=crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j))
+    !calculate integrals of flux and normal bcross vector on sphere
+    flux = flux + abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
+    crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
   enddo
 enddo
 
@@ -170,12 +168,9 @@ enddo
 !write(10) bmap, btotal,bcross,modb
 !close(10)
 
-
+! Min and max locations and values of bmap - where r and b are most aligned
 mnloc=minloc(bmap)
 mxloc=maxloc(bmap)
-
-!print*, mxloc
-!print*, mnloc
 
 mn=minval(bmap)
 mx=maxval(bmap)
