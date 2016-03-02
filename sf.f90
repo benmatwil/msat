@@ -162,42 +162,20 @@ enddo
 !print*,'CROSS',crossflux
 !print*,'RATIO',flux/crossflux
 
-
-!open (unit=10,file='output/bmap.dat',form='unformatted')
-!write(10) nphi, ntheta
-!write(10) bmap, btotal,bcross,modb
-!close(10)
-
 ! Min and max locations and values of bmap - where r and b are most aligned
-mnloc=minloc(bmap)
-mxloc=maxloc(bmap)
+mnloc = minloc(bmap)
+mxloc = maxloc(bmap)
 
-mn=minval(bmap)
-mx=maxval(bmap)
+mn = minval(bmap)
+mx = maxval(bmap)
 
 !get maxima, minima and saddle points
 call get_maxima(bmap, maxima,minima,saddle, nmax,nmin,nsaddle)
-
-
-!open(unit=10,file='output/critical.dat',form='unformatted')
-!write(10) nmax
-!write(10) maxima(1,:), maxima(2,:)!
-
-!write(10) nmin
-!write(10) minima(1,:), minima(2,:)
-
-!write(10) nsaddle
-!write(10) saddle(1,:), saddle(2,:)
-
-!close(10)
-
-
 
 sign=0
 spiral=0
 
 !try to determine sign of nulls and vectors
-
 if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs have maxima/minima at ~1
   !probably a non-spiral null
   
