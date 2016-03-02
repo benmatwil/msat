@@ -243,13 +243,11 @@ if (allocated(maxima)) then
   deallocate(maxima, minima, saddle)
 endif
 
-
 allocate(maxima(2,0),minima(2,0),saddle(2,0))
 
 nmax=0
 nmin=0
 nsaddle=0
-
 
 do j=1,ntheta !loop over theta
   
@@ -268,12 +266,12 @@ do j=1,ntheta !loop over theta
     endif
 
     !subtract (i,j)th value from square
-    square=square-square(2,2)
+    square = square - square(2,2)
     
-    do jj=1,3
-      do ii=1,3
+    do jj = 1, 3
+      do ii = 1, 3
         if (square(ii,jj) .gt. 0) then
-          square(ii,jj) =1
+          square(ii,jj) = 1
         else if (square(ii,jj) .lt. 0) then
           square(ii,jj) = -1
         else
@@ -286,13 +284,13 @@ do j=1,ntheta !loop over theta
     
     !if all surrounding points in square are greater than centre point then centre point is a minimum
     if (sum(square) .gt. 7.5) then
-      nmin=nmin+1
+      nmin = nmin+1
       call add_element(minima,(/i,j/),nmin)
     endif
     
     !centre point is a maximum
     if (sum(square) .lt. -7.5) then
-      nmax=nmax+1
+      nmax = nmax+1
       call add_element(maxima,(/i,j/),nmax)
     endif
   
@@ -309,7 +307,7 @@ do j=1,ntheta !loop over theta
 
   enddo
   else if (j .eq. 1) then !if at the north pole - 'square' needs to be redefined slightly
-    i=1
+    i = 1
     square(2,2) = map(i,j)
     
     square(1,1) = map(nint(0.*dble(nphi)/8.)+1,j+1)
@@ -322,12 +320,12 @@ do j=1,ntheta !loop over theta
     square(1,2) = map(nint(7.*dble(nphi)/8.)+1,j+1)
     
     
-    square=square-square(2,2)
+    square = square - square(2,2)
         
-    do jj=1,3
-      do ii=1,3
+    do jj = 1, 3
+      do ii = 1, 3
         if (square(ii,jj) .gt. 0) then
-          square(ii,jj) =1
+          square(ii,jj) = 1
         else if (square(ii,jj) .lt. 0) then
           square(ii,jj) = -1
         else
@@ -339,12 +337,12 @@ do j=1,ntheta !loop over theta
     square(2,2) = 0
     
     if (sum(square) .gt. 7.5) then
-      nmin=nmin+1
+      nmin = nmin+1
       call add_element(minima,(/i,j/),nmin)
     endif
     
     if (sum(square) .lt. -7.5) then
-      nmax=nmax+1
+      nmax = nmax+1
       call add_element(maxima,(/i,j/),nmax)
     endif
       
@@ -360,14 +358,14 @@ do j=1,ntheta !loop over theta
     !stop
       
     if ( (sum(horiz)*sum(vert) .eq. -4) .or. (sum(diagup) * sum(diagdown) .eq. -4)) then
-      nsaddle=nsaddle+1
+      nsaddle = nsaddle+1
       call add_element(saddle,(/i,j/),nsaddle)
       !print*, 'saddle',i,j
     endif
 
   else !at south pole
    
-    i=1
+    i = 1
     square(2,2) = map(i,j)
     
     square(1,1) = map(nint(0.*dble(nphi)/8.)+1,j-1)
@@ -379,12 +377,12 @@ do j=1,ntheta !loop over theta
     square(1,3) = map(nint(6.*dble(nphi)/8.)+1,j-1)
     square(1,2) = map(nint(7.*dble(nphi)/8.)+1,j-1)
 
-    square=square-square(2,2)
+    square = square - square(2,2)
         
-    do jj=1,3
-        do ii=1,3
+    do jj = 1, 3
+        do ii = 1, 3
         if (square(ii,jj) .gt. 0) then
-          square(ii,jj) =1
+          square(ii,jj) = 1
         else if (square(ii,jj) .lt. 0) then
           square(ii,jj) = -1
         else
@@ -396,12 +394,12 @@ do j=1,ntheta !loop over theta
     square(2,2) = 0
     
     if (sum(square) .gt. 7.5) then
-      nmin=nmin+1
+      nmin = nmin + 1
       call add_element(minima,(/i,j/),nmin)
     endif
     
     if (sum(square) .lt. -7.5) then
-      nmax=nmax+1
+      nmax = nmax + 1
       call add_element(maxima,(/i,j/),nmax)
     endif    
 
@@ -413,7 +411,7 @@ do j=1,ntheta !loop over theta
     diagdown(:) = (/nint(square(3,1)),nint(square(1,3))/)
 
     if ( (sum(horiz)*sum(vert) .eq. -4) .or. (sum(diagup) * sum(diagdown) .eq. -4)) then
-      nsaddle=nsaddle+1
+      nsaddle = nsaddle + 1
       call add_element(saddle,(/i,j/),nsaddle)
       !print*, 'saddle',i,j
     endif
@@ -425,9 +423,9 @@ call remove_duplicates(nsaddle,saddle)
 call remove_duplicates(nmax,maxima)
 call remove_duplicates(nmin,minima)
 
-print*,nmax,' Maxima'
-print*,nmin,' Minima'
-print*,nsaddle,' Saddle points'
+print*, nmax, ' Maxima'
+print*, nmin, ' Minima'
+print*, nsaddle, ' Saddle points'
 
 end subroutine
 
