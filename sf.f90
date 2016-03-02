@@ -172,8 +172,8 @@ mx = maxval(bmap)
 !get maxima, minima and saddle points
 call get_maxima(bmap, maxima,minima,saddle, nmax,nmin,nsaddle)
 
-sign=0
-spiral=0
+sign = 0
+spiral = 0
 
 !try to determine sign of nulls and vectors
 if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs have maxima/minima at ~1

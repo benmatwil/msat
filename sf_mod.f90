@@ -16,8 +16,8 @@ double precision, allocatable :: bgrid(:,:,:,:)
 !double precision, parameter :: rsphere=0.01d0
 !double precision, parameter :: rtraceto=0.1d0
 
-integer, parameter :: nphi=360
-integer, parameter :: ntheta=nphi/2
+integer, parameter :: nphi = 360
+integer, parameter :: ntheta = nphi/2
 
 double precision :: bmap(nphi,ntheta)
 double precision :: btotal(nphi,ntheta)
@@ -27,66 +27,59 @@ double precision :: thetas(ntheta), phis(nphi)
 
 double precision, dimension(3) :: rnull
 
-!double precision, parameter :: pi=4.d0*atan(1.d0)
-
-!double precision, parameter :: dtor=pi/180.d0
-
 double precision :: thetarot, phirot
 
 integer, allocatable :: maxima(:,:), minima(:,:), saddle(:,:)
+
 contains
 
 !********************************************************************************
 
 function trilinear(r,b)
-    implicit none
-    !find the value of a function, b, at r=x,y,z) using the 8 vertices
-    real*8 :: b(:,:,:,:)
-    real*8 :: r(3)
-    real*8 :: cube(2,2,2)
-    real*8 :: x, y, z
-    real*8 :: xp, yp, zp
-    real*8 :: f11, f12, f21, f22
-    real*8 :: f1, f2
-    real*8 :: trilinear(3)
-    integer :: nx, ny, nz
-    integer :: dims
-    integer :: nxpoints,nypoints,nzpoints
-    
-    nxpoints=size(b,1)
-    nypoints=size(b,2)
-    nzpoints=size(b,3)
+  implicit none
+  !find the value of a function, b, at r=(x,y,z) using the 8 vertices
+  real*8 :: b(:,:,:,:)
+  real*8 :: r(3)
+  real*8 :: cube(2,2,2)
+  real*8 :: x, y, z
+  real*8 :: xp, yp, zp
+  real*8 :: f11, f12, f21, f22
+  real*8 :: f1, f2
+  real*8 :: trilinear(3)
+  integer :: nx, ny, nz
+  integer :: dims
+  integer :: nxpoints,nypoints,nzpoints
+  
+  nxpoints=size(b,1)
+  nypoints=size(b,2)
+  nzpoints=size(b,3)
 
-    xp=r(1)
-    yp=r(2)
-    zp=r(3)
+  xp=r(1)
+  yp=r(2)
+  zp=r(3)
 
-    nx=floor(xp)
-    ny=floor(yp)
-    nz=floor(zp)
-    
-    
-    
-    x=xp-nx
-    y=yp-ny
-    z=zp-nz
-    
-    do dims=1,3
-        cube=b(nx:nx+1,ny:ny+1,nz:nz+1,dims)
+  nx=floor(xp)
+  ny=floor(yp)
+  nz=floor(zp)
+  
+  x=xp-nx
+  y=yp-ny
+  z=zp-nz
+  
+  do dims=1,3
+    cube=b(nx:nx+1,ny:ny+1,nz:nz+1,dims)
 
-        f11=(1-x)*cube(1,1,1) + x*cube(2,1,1)
-        f12=(1-x)*cube(1,1,2) + x*cube(2,1,2)
-        f21=(1-x)*cube(1,2,1) + x*cube(2,2,1)
-        f22=(1-x)*cube(1,2,2) + x*cube(2,2,2)
+    f11=(1-x)*cube(1,1,1) + x*cube(2,1,1)
+    f12=(1-x)*cube(1,1,2) + x*cube(2,1,2)
+    f21=(1-x)*cube(1,2,1) + x*cube(2,2,1)
+    f22=(1-x)*cube(1,2,2) + x*cube(2,2,2)
 
-        f1=(1-y)*f11 + y*f21
-        f2=(1-y)*f12 + y*f22
+    f1=(1-y)*f11 + y*f21
+    f2=(1-y)*f12 + y*f22
 
-        trilinear(dims) = (1-z)*f1 + z*f2
-    enddo
+    trilinear(dims) = (1-z)*f1 + z*f2
+  enddo
 end
-
-
 
 !********************************************************************************
 
@@ -102,7 +95,7 @@ end function
 !********************************************************************************
 
 function cross(a,b)
-implicit none
+  implicit none
 
   real*8, dimension(3) :: cross,a,b
   
@@ -114,93 +107,76 @@ end function
 !********************************************************************************
 
 function modulus(a)
-implicit none
+  implicit none
 
-real*8 :: a(3)
-real*8 modulus
+  real*8 :: a(3)
+  real*8 modulus
 
-modulus=sqrt(dot(a,a))
+  modulus=sqrt(dot(a,a))
 
 end
 
 !********************************************************************************
 
 function normalise(a)
-implicit none
+  implicit none
 
-real*8 :: normalise(3), a(3)
+  real*8 :: normalise(3), a(3)
 
-normalise=a/modulus(a)
+  normalise=a/modulus(a)
 end
 
 !********************************************************************************
 
 !take spherical coordinates and convert to Cartesian
 function sphere2cart(r,theta,phi)
-implicit none
+  implicit none
 
-double precision :: theta, phi, r
-double precision :: sphere2cart(3)
+  double precision :: theta, phi, r
+  double precision :: sphere2cart(3)
 
-sphere2cart(1) = r*sin(theta)*cos(phi)
-sphere2cart(2) = r*sin(theta)*sin(phi)
-sphere2cart(3) = r*cos(theta)
+  sphere2cart(1) = r*sin(theta)*cos(phi)
+  sphere2cart(2) = r*sin(theta)*sin(phi)
+  sphere2cart(3) = r*cos(theta)
 end function
-
 
 !********************************************************************************
 
-
 function rotate(r,theta,phi)
-implicit none
+  implicit none
 
-    real*8 :: r(3)
-    real*8 :: theta, phi
-    real*8 :: rotate(3)
-    real*8 :: roty(3,3), rotz(3,3), rot(3,3)
+  real*8 :: r(3)
+  real*8 :: theta, phi
+  real*8 :: rotate(3)
+  real*8 :: roty(3,3), rotz(3,3), rot(3,3)
 
-    !print *, 'rotate'
-    !print*,'r in', r
-    !print*, theta/dtor,phi/dtor
-    roty(1,1)=cos(-theta)
-    roty(1,2)=0
-    roty(1,3)=-sin(-theta)
-    ! 
-    roty(2,1)=0
-    roty(2,2)=1
-    roty(2,3)=0
-    ! 
-    roty(3,1)=sin(-theta)
-    roty(3,2)=0
-    roty(3,3)=cos(-theta)
+  roty(1,1)=cos(-theta)
+  roty(1,2)=0
+  roty(1,3)=-sin(-theta)
+  ! 
+  roty(2,1)=0
+  roty(2,2)=1
+  roty(2,3)=0
+  ! 
+  roty(3,1)=sin(-theta)
+  roty(3,2)=0
+  roty(3,3)=cos(-theta)
 
-    rotz(1,1)=cos(-phi)
-    rotz(1,2)=sin(-phi)
-    rotz(1,3)=0
+  rotz(1,1)=cos(-phi)
+  rotz(1,2)=sin(-phi)
+  rotz(1,3)=0
 
-    rotz(2,1)=-sin(-phi)
-    rotz(2,2)=cos(-phi)
-    rotz(2,3)=0
+  rotz(2,1)=-sin(-phi)
+  rotz(2,2)=cos(-phi)
+  rotz(2,3)=0
 
-    rotz(3,1)=0
-    rotz(3,2)=0
-    rotz(3,3)=1
+  rotz(3,1)=0
+  rotz(3,2)=0
+  rotz(3,3)=1
 
-    !r=matmul(roty,r)
-    !print*,r
-
-    !r=matmul(rotz,r)
-    !print*,r
-
-    rot=matmul(roty,rotz)
-    rotate=matmul(rot,r)
-    r=rotate
-    !print*,'r out', r
-    !print*, 'theta, phi out', acos(r(3))/dtor,atan(r(2),r(1))/dtor!+180
-    !rotate=r
-
-    !print*,roty
-    !print*, rotz
+  rot=matmul(roty,rotz)
+  rotate=matmul(rot,r)
+  r=rotate
 
 end
 
@@ -208,19 +184,19 @@ end
 
 !calculate angular separation between to vectors (in spherical)
 function angularsep(th1,phi1,th2,phi2)
-implicit none
+  implicit none
 
-double precision :: th1, th2, phi1, phi2
-double precision :: angularsep
-double precision :: r1(3), r2(3)
+  double precision :: th1, th2, phi1, phi2
+  double precision :: angularsep
+  double precision :: r1(3), r2(3)
 
-!produce cartesian vectors (of length 1 for convenience)
-r1=sphere2cart(1.d0,th1,phi1)
-r2=sphere2cart(1.d0,th2,phi2)
+  !produce cartesian vectors (of length 1 for convenience)
+  r1=sphere2cart(1.d0,th1,phi1)
+  r2=sphere2cart(1.d0,th2,phi2)
 
-! theta = acos(r1 \odot r2)
-angularsep = dot(r1,r2)
-angularsep=acos(angularsep)
+  ! theta = acos(r1 \odot r2)
+  angularsep = dot(r1,r2)
+  angularsep=acos(angularsep)
 
 end
 
@@ -349,8 +325,6 @@ do j = 1, ntheta !loop over theta
       nmax = nmax+1
       call add_element(maxima,(/i,j/),nmax)
     endif
-      
-      
 
 !check for saddle points
       
@@ -437,72 +411,72 @@ end subroutine
 !********************************************************************************
 
 subroutine add_element(x,val,pos)
-implicit none
+  implicit none
 
-    integer, allocatable, dimension(:,:) :: x
-    integer :: val(:)
-    integer, allocatable, dimension(:,:) :: dummy
-    integer :: pos
-    integer :: nx, ny
+  integer, allocatable, dimension(:,:) :: x
+  integer :: val(:)
+  integer, allocatable, dimension(:,:) :: dummy
+  integer :: pos
+  integer :: nx, ny
 
-    nx=size(x,1)
-    ny=size(x,2)
+  nx=size(x,1)
+  ny=size(x,2)
 
 
-    allocate(dummy(nx,ny))
+  allocate(dummy(nx,ny))
 
-    dummy=x
+  dummy=x
 
-    deallocate(x)
-    allocate(x(nx,ny+1))
+  deallocate(x)
+  allocate(x(nx,ny+1))
 
-    if (pos .eq. 1) then
-      x(:,1)=val
-      x(:,2:ny+1)=dummy
-    else if (pos .eq. ny+1 .or. pos .lt. 1) then
-      x(:,1:ny)=dummy
-      x(:,ny+1)=val
-    else
-      x(:,1:pos-1) = dummy(:,1:pos-1)
-      x(:,pos)=val
-      x(:,pos+1:ny+1)=dummy(:,pos:ny)
-    endif
+  if (pos .eq. 1) then
+    x(:,1)=val
+    x(:,2:ny+1)=dummy
+  else if (pos .eq. ny+1 .or. pos .lt. 1) then
+    x(:,1:ny)=dummy
+    x(:,ny+1)=val
+  else
+    x(:,1:pos-1) = dummy(:,1:pos-1)
+    x(:,pos)=val
+    x(:,pos+1:ny+1)=dummy(:,pos:ny)
+  endif
 
-    deallocate(dummy)
+  deallocate(dummy)
 
 end
 
 !********************************************************************************
 
 subroutine remove_element(x,pos)
-implicit none
+  implicit none
 
-    integer, allocatable, dimension(:,:) :: x
-    integer, allocatable, dimension(:,:) :: dummy
-    integer :: pos
-    integer :: nx, ny
+  integer, allocatable, dimension(:,:) :: x
+  integer, allocatable, dimension(:,:) :: dummy
+  integer :: pos
+  integer :: nx, ny
 
-    nx=size(x,1)
-    ny=size(x,2)
+  nx=size(x,1)
+  ny=size(x,2)
 
 
-    allocate(dummy(nx,ny))
+  allocate(dummy(nx,ny))
 
-    dummy=x
+  dummy=x
 
-    deallocate(x)
-    allocate(x(nx,ny-1))
-    
-    if (pos .eq. 1) then
-      x(:,1:ny-1)=dummy(:,2:ny)
-    else if (pos .eq. ny) then
-      x(:,1:ny-1)=dummy(:,1:ny-1)
-    else
-      x(:,1:pos-1)=dummy(:,1:pos-1)
-      x(:,pos:ny-1)=dummy(:,pos+1:ny)
-    endif
-   
-    deallocate(dummy)
+  deallocate(x)
+  allocate(x(nx,ny-1))
+  
+  if (pos .eq. 1) then
+    x(:,1:ny-1)=dummy(:,2:ny)
+  else if (pos .eq. ny) then
+    x(:,1:ny-1)=dummy(:,1:ny-1)
+  else
+    x(:,1:pos-1)=dummy(:,1:pos-1)
+    x(:,pos:ny-1)=dummy(:,pos+1:ny)
+  endif
+  
+  deallocate(dummy)
 
 end
 
@@ -574,54 +548,50 @@ double precision :: mindist
 
 
 !find minima and maxima
-mn=maxval(modb)
-mx=minval(modb)
+mn = maxval(modb)
+mx = minval(modb)
 !print*, maxval(modb), minval(modb)
-do i=1,n
+do i = 1, n
   b = modb(vec(1,i),vec(2,i))
   if (b .gt. mx) then
     mx = b
-    imax=i
-    maxvec=sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
+    imax = i
+    maxvec = sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
   endif
   
   if (b .lt. mn) then
-    mn=b
-    imin=i
-    minvec=sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
+    mn = b
+    imin = i
+    minvec = sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
   endif
 enddo
 
 !print*, 'max=',mx, imax,maxvec
 !print*, 'min=',mn, imin,minvec
 
-angle=acos(dot(minvec,maxvec))/dtor
+angle = acos(dot(minvec,maxvec))/dtor
 
 if (mn/mx .gt. 0.90) then !if minima and maxima are both similar
- ! print*, 'Proper Null'
+  !print*, 'Proper Null'
     
-    !try to find points separated by around 90 degrees (to improve accuracy of fan vector)
-    
-    mindist=90.d0
-    do i=1,n
-      dumvec=sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
-      angle=acos(dot(dumvec,maxvec))/dtor
-      if (abs(90-angle) .lt. mindist) then
-        minvec=dumvec
-        mindist=abs(90.-angle)
-      endif
-    enddo
+  !try to find points separated by around 90 degrees (to improve accuracy of fan vector)
+  mindist = 90.d0
+  do i = 1, n
+    dumvec = sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
+    angle = acos(dot(dumvec,maxvec))/dtor
+    if (abs(90-angle) .lt. mindist) then
+      minvec = dumvec
+      mindist = abs(90.-angle)
+    endif
+  enddo
    
 else
- ! print*, 'improper null'
+  !print*, 'improper null'
 endif
 
 end
 
 !********************************************************************************
-
-
-
 
 subroutine test_null(spine,major,minor,sign,spiral)
 !Test the assumptions of the null's sign and fan/spine
@@ -631,7 +601,7 @@ implicit none
 
 double precision, dimension(3) :: spine, major, minor, fan, dumvec
 integer :: sign, spiral
-integer, parameter :: nring=1000
+integer, parameter :: nring = 1000
 double precision :: dot1,dot2,sep1,sep2
 double precision, dimension(3) :: v1,v2,fanold,fannew
 integer :: i
@@ -643,17 +613,10 @@ spine=rotate(spine,thetarot,phirot)
 major=rotate(major,thetarot,phirot)
 minor=rotate(minor,thetarot,phirot)
 
-!print*, 'sign=',sign
-!print*, 'spiral=',spiral
-!print*,'spine=',spine
-!print*,'major=',major
-!print*,'minor=',minor
-
-
 if (sign .ne. 0) then
 
   !first try with the null's expected sign
-  call get_ring(major, minor,nring,rings)
+  call get_ring(major,minor,nring,rings)
 
   ! open (unit=10,file='output/ring1.dat',form='unformatted')
   ! write(10) nring
@@ -672,7 +635,7 @@ if (sign .ne. 0) then
   fans1 = rings
 
   !integrate back along spine (hopefully) 
-  call get_ring(major, minor,nring,rings)
+  call get_ring(major,minor,nring,rings)
   call integrate_rings(nring,rings,-1*sign)
   ! write(90) nring
   ! write(90) rings(1,:),rings(2,:),rings(3,:)
@@ -842,7 +805,6 @@ enddo
 
 allocate(distmatrix(n,n))
 
-
 !find maximum distance between spine vectors
 distmatrix=0.d0
 do j=1,n
@@ -854,7 +816,6 @@ enddo
 !print*, 'spinesdist=',maxval(distmatrix)
 spinedist=maxval(distmatrix)
 
-
 !maximum distance between fan vectors
 distmatrix=0.d0
 do j=1,n
@@ -864,7 +825,6 @@ do j=1,n
 enddo
 !print*, 'fansdist=',maxval(distmatrix)
 fandist=maxval(distmatrix)
-
 
 if (fandist/spinedist .lt. 2.) then
   print*,'WARNING: FAN IS VERY POINT-LIKE'
@@ -882,11 +842,7 @@ if (fandist .lt. spinedist) then
   
 endif
 
-
-!stop
-
 end subroutine
-
 
 !********************************************************************************
 
@@ -961,41 +917,41 @@ end subroutine
 
 
 subroutine integrate_rings(nring,rings,sign)
-implicit none
-!integrate rings outwards (sign=sign of null) or inwards (sign= -1* sign of null)
-integer :: nring, sign
-double precision, dimension(:,:) :: rings
-double precision :: r(3)
-integer :: i
-double precision, parameter :: dr=rsphere*0.01
-integer :: icounter
-double precision :: drvec(3)
-double precision :: drreal
-!calculate dr in terms of minimum 'real' distance
+  implicit none
+  !integrate rings outwards (sign=sign of null) or inwards (sign= -1* sign of null)
+  integer :: nring, sign
+  double precision, dimension(:,:) :: rings
+  double precision :: r(3)
+  integer :: i
+  double precision, parameter :: dr = rsphere*0.01
+  integer :: icounter
+  double precision :: drvec(3)
+  double precision :: drreal
+  !calculate dr in terms of minimum 'real' distance
 
-drreal=minval((/dx,dy,dz/))*dr
+  drreal = minval((/dx,dy,dz/))*dr
 
-! drvec=(/(1./dx),(1./dy),(1./dz)/)
-! drvec=normalise(drvec)
-! drvec=drvec*dr
+  ! drvec=(/(1./dx),(1./dy),(1./dz)/)
+  ! drvec=normalise(drvec)
+  ! drvec=drvec*dr
 
-drvec=drreal*(/ 1./dx , 1./dy , 1./dz/)
+  drvec = drreal*(/ 1./dx , 1./dy , 1./dz/)
 
-do i=1,nring
-  ! print*,i,nring,sign
-  r=rings(:,i)+rnull
-  icounter =0
-  do while (modulus(r-rnull) .lt. rtraceto)
-    r= r + drvec*sign*normalise(trilinear(r,bgrid))
-    icounter=icounter+1
-    if (icounter .gt. 10000) then
-      !print*,'tracer got stuck'
-      !stop
-      exit
-    endif
+  do i = 1, nring
+    ! print*,i,nring,sign
+    r = rings(:,i) + rnull
+    icounter  = 0
+    do while (modulus(r-rnull) .lt. rtraceto)
+      r = r + drvec*sign*normalise(trilinear(r,bgrid))
+      icounter = icounter+1
+      if (icounter .gt. 10000) then
+        !print*,'tracer got stuck'
+        !stop
+        exit
+      endif
+    enddo
+    rings(:,i) = r-rnull
   enddo
-  rings(:,i) = r-rnull
-enddo
 
 end subroutine
 
@@ -1003,55 +959,51 @@ end subroutine
 
 !get ring from major and minor axis vectors
 subroutine get_ring(major,minor,nring,rings)
-    implicit none
-    double precision :: major(3), minor(3)
-    double precision, dimension(3) :: u, v, w
-    integer :: nring
-    double precision :: rings(3,nring)
-    
-    !integer :: nlines
-    double precision :: dt, t
-    !double precision :: r(3)
-    double precision, parameter :: sep=rsphere
-    
-    integer :: i
+  implicit none
+  double precision :: major(3), minor(3)
+  double precision, dimension(3) :: u, v, w
+  integer :: nring
+  double precision :: rings(3,nring)
+  
+  !integer :: nlines
+  double precision :: dt, t
+  !double precision :: r(3)
+  double precision, parameter :: sep=rsphere
+  
+  integer :: i
 
 
-    !nlines=size(xs)
+  !nlines=size(xs)
 
-    dt=2.*pi/dble(nring)
-    u=major
-    v=minor
-    ! u=major axis , v = minor axis
-    ! w = unitvec((u x v) x u) - vector in plane of ring perpendicular to u
-    w=cross(u,v)
-    w=cross(w,u)
-    w=normalise(w)
+  dt = 2.*pi/dble(nring)
+  u = major
+  v = minor
+  ! u = major axis , v = minor axis
+  ! w = unitvec((u x v) x u) - vector in plane of ring perpendicular to u
+  w = cross(u,v)
+  w = cross(w,u)
+  w = normalise(w)
+  
+  !r(t) = u sin(t) + w cos(t) - parameteric description of ring
+  
+  !generate nlines start points in ring around equator
+  do i = 1, nring
     
-    !r(t) = u sin(t) + w cos(t) - parameteric description of ring
+    t = (i-1)*dt
     
-    !generate nlines start points in ring around equator
-    do i=1,nring
-      
-      t = (i-1)*dt
-      
-      rings(:,i) = u*cos(t)+w*sin(t)
-      
-    enddo
+    rings(:,i) = u*cos(t)+w*sin(t)
+    
+  enddo
+  
+  rings = rings*sep
 
-    
-    rings=rings*sep
-    
-
-    !print*,''
-    !print*,'point number, dot product, distance from null'
-    !do i=1,nlines
-    !  print*,i,r(1)*xs(i)+r(2)*ys(i)+r(3)*zs(i),sqrt(xs(i)**2+ys(i)**2+zs(i)**2)
-    !enddo
+  !print*,''
+  !print*,'point number, dot product, distance from null'
+  !do i=1,nlines
+  !  print*,i,r(1)*xs(i)+r(2)*ys(i)+r(3)*zs(i),sqrt(xs(i)**2+ys(i)**2+zs(i)**2)
+  !enddo
 
 
 end subroutine
-
-
 
 end module

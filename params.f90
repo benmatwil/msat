@@ -17,7 +17,6 @@ double precision, parameter :: rtraceto=0.1d0 !the radius the field line tracer 
 
 
 !ssfind parameters
-
 double precision, parameter :: maxdist1=0.15 !maximum distance between points in a ring
 integer, parameter :: ringsmax=1200 !maximum # of rings
 integer, parameter :: pointsmax=30000 !maximum number of points in ring
@@ -26,8 +25,6 @@ double precision, parameter :: nulldist=0.6 !maximum distance a ring point can b
 double precision,parameter :: tol=1.d-5 !tolerance of rkf45 scheme
 double precision,parameter :: stepmin=0.0003 !minimum step length
 double precision,parameter :: stepstart=0.2 !default step length
-
-
 
 ! coordinate type
 integer, parameter :: coord_type=2
