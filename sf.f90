@@ -17,7 +17,6 @@ double precision, dimension(3) :: spine,fan!,rnull
 integer :: i
 
 !Read in 'null.dat'
-
 open (unit=10,file='output/null.dat',form='unformatted')
 
 read(10) nnulls
@@ -25,7 +24,7 @@ read(10) nnulls
 allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),spirals(nnulls),warnings(nnulls))
 
 do i=1,nnulls
- read (10) rnulls(:,i)
+  read (10) rnulls(:,i)
 enddo
 
 close(10)
