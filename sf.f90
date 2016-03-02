@@ -30,7 +30,6 @@ enddo
 close(10)
 
 !read in bgrid
-
 open(unit=10,file=filename,access='stream')
 read(10) nx, ny, nz
 allocate(bgrid(nx,ny,nz,3),x(nx), y(ny), z(nz))
