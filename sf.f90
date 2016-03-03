@@ -299,7 +299,7 @@ endif
 !if major and minor axes are almost parallel, redefine minor axis as spine x major
 !print*,'CROSS',modulus(cross(maxvec,minvec))
 if (modulus(cross(maxvec,minvec)) .lt. 0.1) then
-  minvec  =cross(spine,maxvec)
+  minvec = cross(spine,maxvec)
 endif
 
 print*, ''

@@ -681,7 +681,7 @@ if (sign .ne. 0) then
   !Now see if we need to switch the null's sign
   
   !print*,'Deciding null properties...'
-  if ( (dot1 .gt. dot2) .and. (sep1 .lt. sep2) ) then
+  if ((dot1 .gt. dot2) .and. (sep1 .lt. sep2)) then
     !yay got it correct
     spine = spine
 
@@ -792,12 +792,12 @@ do i = 2, n
 enddo
 
 !get mean coordinate of fans and spines
- do i = 1,3
-   fbar(i) = mean(fans2(i,:))
+do i = 1, 3
+  fbar(i) = mean(fans2(i,:))
 !   fsigma(i)=stddev(fans2(i,:))
-   sbar(i) = mean(spines2(i,:))
+  sbar(i) = mean(spines2(i,:))
 !   ssigma(i)=stddev(spines2(i,:))
- enddo
+enddo
 ! 
 ! print*,modulus(ssigma), modulus(fsigma)
 
