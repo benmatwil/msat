@@ -641,15 +641,14 @@ if (sign .ne. 0) then
   ! write(90) rings(1,:),rings(2,:),rings(3,:)
   ! close(90)
   
-  spines1=rings 
+  spines1 = rings 
   !
   !see if traced spine is where it should be
   call check_null(nring,rings,spine,dot1,sep1)
 
-
   !now try with sign and spine/major axis switched
 
-  call get_ring(spine, minor,nring,rings)
+  call get_ring(spine,minor,nring,rings)
 
   !open (unit=10,file='output/ring2.dat',form='unformatted')
   !write(10) nring
@@ -668,13 +667,13 @@ if (sign .ne. 0) then
   fans2 = rings
   
   !integrate along spine
-  call get_ring(spine, minor,nring,rings)
+  call get_ring(spine,minor,nring,rings)
   call integrate_rings(nring,rings,sign)
   !write(90) nring
   !write(90) rings(1,:),rings(2,:),rings(3,:)
   !close(90)
   
-  spines2=rings
+  spines2 = rings
   
   !see if traced spine is where it should be
   call check_null(nring,rings,major,dot2,sep2)
@@ -684,7 +683,7 @@ if (sign .ne. 0) then
   !print*,'Deciding null properties...'
   if ( (dot1 .gt. dot2) .and. (sep1 .lt. sep2) ) then
     !yay got it correct
-    spine=spine
+    spine = spine
 
     !check to see if right axes but wrong sign
     call fansrings(fans1,spines1,sign,major,spine)
@@ -692,41 +691,41 @@ if (sign .ne. 0) then
   else if ((dot2 .gt. dot1) .and. (sep2 .lt. sep1)) then
     print*,'Swapping sign'
     !boo got it wrong, need to swap sign
-    sign=sign*(-1)
-    spiral=1 !if we got it wrong the null was probably spiral
+    sign = sign*(-1)
+    spiral = 1 !if we got it wrong the null was probably spiral
     print*, "Maybe a spiral?"
       
-    dumvec=spine
+    dumvec = spine
     !swap spine and fan
-    spine=major
-    major=dumvec
+    spine = major
+    major = dumvec
       
     call fansrings(fans2,spines2,sign,major,spine)
   else
   !weird null - possibly 2d?
     print*,'Cannot characterise null - possibly 2D null'
-    sign=0
-    spiral=0
-    spine=0
-    minor=0
-    major=0
+    sign = 0
+    spiral = 0
+    spine = 0
+    minor = 0
+    major = 0
   endif
 
   if (sign .ne. 0) then 
   !refine fan vector (fan is not 100% correct if the null is an inclined spiral)
   
   !trace along fan
-  call get_ring(major, minor,nring,rings)
+  call get_ring(major,minor,nring,rings)
   call integrate_rings(nring,rings,sign)
 
   !new fan vector is cross product between traced fan vectors 
-  v1=rings(:,1)
+  v1 = rings(:,1)
   fanold = 0.
-  do i=2,nring
-    v2=rings(:,i)
-    fannew=cross(v1,v2)
+  do i = 2, nring
+    v2 = rings(:,i)
+    fannew = cross(v1,v2)
     if (modulus(fannew) .gt. modulus(fanold)) then
-      fanold=fannew
+      fanold = fannew
     endif
   enddo
 
@@ -735,16 +734,16 @@ if (sign .ne. 0) then
   
   !minor=normalise(cross(major,fanold))
   !print*,'nnwfan=',normalise(cross(minor,major))
-  major=normalise(v1)
+  major = normalise(v1)
   
-  minor=normalise(cross(v1,fanold))
+  minor = normalise(cross(v1,fanold))
   
   endif
 else
-     fan=0
-     spine=0
-     major=0
-     minor=0
+     fan = 0
+     spine = 0
+     major = 0
+     minor = 0
 endif    
         
 end subroutine
@@ -755,10 +754,10 @@ subroutine fansrings(fans,spines,sign,major,spine)
 implicit none
 
 !determines whether the traced fans/spines make a point (if so, probably the spine)
-double precision, dimension (:,:) :: fans,spines
+double precision, dimension (:,:) :: fans, spines
 double precision, dimension(3) :: major, spine
 integer :: sign
-integer :: n,i,j
+integer :: n, i, j
 double precision, allocatable, dimension(:,:) :: fans2, spines2
 double precision, dimension(3) :: f1, f2, s1, s2
 double precision, dimension(3) :: fbar, sbar
@@ -766,7 +765,7 @@ double precision, allocatable, dimension(:,:) :: distmatrix
 
 double precision :: spinedist, fandist
 
-n=size(fans,2)
+n = size(fans,2)
 !print*, 'N=',n
 
 allocate(fans2(3,n),spines2(3,n))
@@ -881,19 +880,19 @@ implicit none
 integer :: nring
 double precision, dimension(3) :: spine
 double precision, dimension(3,nring) :: rings
-double precision :: r(3), dots(nring),dist(nring)
+double precision :: r(3), dots(nring), dist(nring)
 integer :: i
-double precision :: dot1,sep1
+double precision :: dot1, sep1
 
-spine=normalise(spine)
+spine = normalise(spine)
 
-do i=1,nring
-  r=rings(:,i)
-  r=normalise(r)
+do i = 1, nring
+  r = rings(:,i)
+  r = normalise(r)
   
-  dots(i)=(dot(r,spine))
+  dots(i) = (dot(r,spine))
   if (dots(i) .gt. 0) then
-    dist(i)= modulus(r-spine)
+    dist(i) = modulus(r-spine)
   else
     dist(i) = modulus(r+spine)
   endif
