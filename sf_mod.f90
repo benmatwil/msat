@@ -689,11 +689,10 @@ if (sign .ne. 0) then
     call fansrings(fans1,spines1,sign,major,spine)
 
   else if ((dot2 .gt. dot1) .and. (sep2 .lt. sep1)) then
-    print*,'Swapping sign'
+    print*, 'Swapping sign'
     !boo got it wrong, need to swap sign
     sign = sign*(-1)
     spiral = 1 !if we got it wrong the null was probably spiral
-    print*, "Maybe a spiral?"
       
     dumvec = spine
     !swap spine and fan
@@ -703,7 +702,7 @@ if (sign .ne. 0) then
     call fansrings(fans2,spines2,sign,major,spine)
   else
   !weird null - possibly 2d?
-    print*,'Cannot characterise null - possibly 2D null'
+    print*, 'Cannot characterise null - possibly 2D null'
     sign = 0
     spiral = 0
     spine = 0
@@ -768,35 +767,35 @@ double precision :: spinedist, fandist
 n = size(fans,2)
 !print*, 'N=',n
 
-allocate(fans2(3,n),spines2(3,n))
+allocate(fans2(3,n), spines2(3,n))
 
-fans2=fans
-spines2=spines
+fans2 = fans
+spines2 = spines
 
-f1=fans2(:,1)
-s1=spines2(:,1)
+f1 = fans2(:,1)
+s1 = spines2(:,1)
 
 !flip spines and fans so they are all in one hemisphere
-do i=2,n
-  f2=fans2(:,i)
+do i = 2, n
+  f2 = fans2(:,i)
   
   if (dot(f1,f2) .lt. 0) then
-    f2=f2*(-1.d0)
-    fans2(:,i)=f2
+    f2 = f2*(-1.d0)
+    fans2(:,i) = f2
   endif
   
-  s2=spines2(:,i)
+  s2 = spines2(:,i)
   if (dot(s1,s2) .lt. 0) then
-    s2=s2*(-1.d0)
-    spines2(:,i)=s2
+    s2 = s2*(-1.d0)
+    spines2(:,i) = s2
   endif
 enddo
 
 !get mean coordinate of fans and spines
- do i=1,3
-   fbar(i)=mean(fans2(i,:))
+ do i = 1,3
+   fbar(i) = mean(fans2(i,:))
 !   fsigma(i)=stddev(fans2(i,:))
-   sbar(i)=mean(spines2(i,:))
+   sbar(i) = mean(spines2(i,:))
 !   ssigma(i)=stddev(spines2(i,:))
  enddo
 ! 
@@ -805,39 +804,39 @@ enddo
 allocate(distmatrix(n,n))
 
 !find maximum distance between spine vectors
-distmatrix=0.d0
-do j=1,n
+distmatrix = 0.d0
+do j = 1, n
 !print*, j
-  do i=j+1,n
+  do i = j+1, n
     distmatrix(i,j) = modulus(spines2(:,i)-spines2(:,j))
   enddo
 enddo
 !print*, 'spinesdist=',maxval(distmatrix)
-spinedist=maxval(distmatrix)
+spinedist = maxval(distmatrix)
 
 !maximum distance between fan vectors
-distmatrix=0.d0
-do j=1,n
-  do i=j+1,n
+distmatrix = 0.d0
+do j = 1, n
+  do i = j+1, n
     distmatrix(i,j) = modulus(fans2(:,i)-fans2(:,j))
   enddo
 enddo
 !print*, 'fansdist=',maxval(distmatrix)
-fandist=maxval(distmatrix)
+fandist = maxval(distmatrix)
 
 if (fandist/spinedist .lt. 2.) then
-  print*,'WARNING: FAN IS VERY POINT-LIKE'
-  print*,'NULL IS EITHER VERY IMPROPER OR 2-DIMENSIONAL'
+  print*, 'WARNING: FAN IS VERY POINT-LIKE'
+  print*, 'NULL IS EITHER VERY IMPROPER OR 2-DIMENSIONAL'
 endif
 
 !if 'fan' seems more point-like than 'spine' then swap them
 if (fandist .lt. spinedist) then
   print*,"Fan looks more like a spine. Changing null's sign"
   
-  sign=sign*(-1)
+  sign = sign*(-1)
   
-  spine=fbar
-  major=sbar
+  spine = fbar
+  major = sbar
   
 endif
 
