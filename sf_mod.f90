@@ -711,31 +711,31 @@ if (sign .ne. 0) then
   endif
 
   if (sign .ne. 0) then 
-  !refine fan vector (fan is not 100% correct if the null is an inclined spiral)
-  
-  !trace along fan
-  call get_ring(major,minor,nring,rings)
-  call integrate_rings(nring,rings,sign)
+    !refine fan vector (fan is not 100% correct if the null is an inclined spiral)
+    
+    !trace along fan
+    call get_ring(major,minor,nring,rings)
+    call integrate_rings(nring,rings,sign)
 
-  !new fan vector is cross product between traced fan vectors 
-  v1 = rings(:,1)
-  fanold = 0.
-  do i = 2, nring
-    v2 = rings(:,i)
-    fannew = cross(v1,v2)
-    if (modulus(fannew) .gt. modulus(fanold)) then
-      fanold = fannew
-    endif
-  enddo
+    !new fan vector is cross product between traced fan vectors 
+    v1 = rings(:,1)
+    fanold = 0.
+    do i = 2, nring
+      v2 = rings(:,i)
+      fannew = cross(v1,v2)
+      if (modulus(fannew) .gt. modulus(fanold)) then
+        fanold = fannew
+      endif
+    enddo
 
-  !print*,'oldfan=',cross(major,minor)
-  !print*,'newfan=',normalise(fanold)
-  
-  !minor=normalise(cross(major,fanold))
-  !print*,'nnwfan=',normalise(cross(minor,major))
-  major = normalise(v1)
-  
-  minor = normalise(cross(v1,fanold))
+    !print*,'oldfan=',cross(major,minor)
+    !print*,'newfan=',normalise(fanold)
+    
+    !minor=normalise(cross(major,fanold))
+    !print*,'nnwfan=',normalise(cross(minor,major))
+    major = normalise(v1)
+    
+    minor = normalise(cross(v1,fanold))
   
   endif
 else
