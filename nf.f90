@@ -9,7 +9,7 @@ character (len=40) :: dblfmt= "(a,'(',f9.5,',',f9.5,',',f9.5,')',a)"
 
 double precision, allocatable, dimension(:) :: xs, ys, zs !x,y and z coordinates of confirmed nulls
 double precision, allocatable, dimension(:) :: xp,yp,zp
-
+ 
 double precision, dimension(:,:,:), allocatable :: bx, by, bz
 
 integer, dimension(:,:,:), allocatable :: candidates !array containing coords of candidate cells (1 if candidate, 0 if not)

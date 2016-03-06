@@ -212,6 +212,7 @@ integer :: nmax, nmin,nsaddle
 double precision :: square(3,3)
 integer :: horiz(2), vert(2), diagup(2), diagdown(2)
 integer :: i,j,ii,jj
+integer :: nsmaller, nbigger
 
 
 !deallocate arrays if allocated
@@ -241,6 +242,20 @@ do j = 1, ntheta !loop over theta
       square(:,:) = map(i-1:i+1,j-1:j+1)
     endif
 
+    nbigger = count(square > square(2,2))
+    nsmaller = count(square < square(2,2))
+    
+    if (nbigger == 0) then
+      nmax = nmax + 1
+      call add_element(maxima,(/i,j/),nmax)
+    endif
+    
+    if (nsmaller == 0) then
+      nmin = nmin + 1
+      call add_element(minima,(/i,j/),nmin)
+    endif
+    
+    if (i == -1) then
     !subtract (i,j)th value from square to check whether surrounding values are bigger or smaller
     square = square - square(2,2)
     
@@ -271,6 +286,7 @@ do j = 1, ntheta !loop over theta
       call add_element(maxima,(/i,j/),nmax)
     endif
     
+    endif
     ! if sum(square) is 7 then one point is equal to the centre and have a special max which could happen?
   
     !check for saddle points
