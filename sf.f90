@@ -12,7 +12,7 @@ integer :: nnulls
 integer :: pcount, ncount, ucount
 
 integer :: sign, spiral, warning
-double precision, dimension(3) :: spine,fan!,rnull
+double precision, dimension(3) :: spine,fan
 
 integer :: i
 
@@ -97,7 +97,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
 use sfmod
 
 implicit none
-integer :: i, j
+integer :: i, j, k, count
 double precision :: r(3), b(3)
 double precision :: dphi, dtheta
 double precision :: mn, mx
@@ -108,7 +108,7 @@ double precision :: minvec(3), maxvec(3)
 double precision :: flux, crossflux
 integer :: sign, spiral, warning
 
-double precision, dimension(3) :: spine, fan!, major, minor
+double precision, dimension(3) :: spine, fan, btest!, major, minor
 
 !set up theta and phi for sphere around null
 dphi = 360.d0/dble(nphi)
@@ -138,6 +138,7 @@ print*, 'B=', trilinear(rnull, bgrid)
 !create sphere
 flux = 0
 crossflux = 0
+count = 0
 do j = 1, ntheta
   do i = 1, nphi
     r = sphere2cart(rsphere,thetas(j),phis(i))
@@ -155,6 +156,12 @@ do j = 1, ntheta
     !calculate integrals of flux and normal bcross vector on sphere
     flux = flux + abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
     crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
+    
+    !do k = 1, 100
+    !  r = b*r/modulus(b)
+    !  b = trilinear(r+rnull, bgrid)
+    !enddo
+    
   enddo
 enddo
 
