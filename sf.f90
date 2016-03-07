@@ -169,6 +169,11 @@ mxloc = maxloc(bmap)
 mn = minval(bmap)
 mx = maxval(bmap)
 
+print*,mn
+print*,mx
+print*,btotal(mnloc(1),mnloc(2))
+print*,btotal(mxloc(1),mxloc(2))
+stop
 !get maxima, minima and saddle points
 call get_maxima(bmap, maxima,minima,saddle, nmax,nmin,nsaddle)
 
