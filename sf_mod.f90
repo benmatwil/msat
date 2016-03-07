@@ -537,13 +537,9 @@ do while (n .gt. 1)
 
 enddo 
 
-!stop
-
 end
 
-
 !********************************************************************************
-
 
 !gets the minimum and maximum value of |B| (and the vectors corresponding to their positions). This *should* give the minor and major axes of the fan.
 subroutine getminmax(n,vec,minvec,maxvec)
