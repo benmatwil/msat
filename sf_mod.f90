@@ -543,58 +543,57 @@ end
 
 !gets the minimum and maximum value of |B| (and the vectors corresponding to their positions). This *should* give the minor and major axes of the fan.
 subroutine getminmax(n,vec,minvec,maxvec)
-implicit none
+  implicit none
 
-integer, dimension(:,:) :: vec
-integer :: n
-double precision, dimension(3) :: minvec,maxvec,dumvec
-double precision :: mn, mx
-integer :: i, imax, imin
-double precision :: b, angle
-double precision :: mindist
+  integer, dimension(:,:) :: vec
+  integer :: n
+  double precision, dimension(3) :: minvec,maxvec,dumvec
+  double precision :: mn, mx
+  integer :: i, imax, imin
+  double precision :: b, angle
+  double precision :: mindist
 
-
-!find minima and maxima
-mn = maxval(modb)
-mx = minval(modb)
-!print*, maxval(modb), minval(modb)
-do i = 1, n
-  b = modb(vec(1,i),vec(2,i))
-  if (b .gt. mx) then
-    mx = b
-    imax = i
-    maxvec = sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
-  endif
-  
-  if (b .lt. mn) then
-    mn = b
-    imin = i
-    minvec = sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
-  endif
-enddo
-
-!print*, 'max=',mx, imax,maxvec
-!print*, 'min=',mn, imin,minvec
-
-angle = acos(dot(minvec,maxvec))/dtor
-
-if (mn/mx .gt. 0.90) then !if minima and maxima are both similar
-  !print*, 'Proper Null'
-    
-  !try to find points separated by around 90 degrees (to improve accuracy of fan vector)
-  mindist = 90.d0
+  !find minima and maxima
+  mn = maxval(modb)
+  mx = minval(modb)
+  !print*, maxval(modb), minval(modb)
   do i = 1, n
-    dumvec = sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
-    angle = acos(dot(dumvec,maxvec))/dtor
-    if (abs(90-angle) .lt. mindist) then
-      minvec = dumvec
-      mindist = abs(90.-angle)
+    b = modb(vec(1,i),vec(2,i))
+    if (b .gt. mx) then
+      mx = b
+      imax = i
+      maxvec = sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
+    endif
+    
+    if (b .lt. mn) then
+      mn = b
+      imin = i
+      minvec = sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
     endif
   enddo
-   
-else
-  !print*, 'improper null'
-endif
+
+  !print*, 'max=',mx, imax,maxvec
+  !print*, 'min=',mn, imin,minvec
+
+  angle = acos(dot(minvec,maxvec))/dtor
+
+  if (mn/mx .gt. 0.90) then !if minima and maxima are both similar
+    !print*, 'Proper Null'
+      
+    !try to find points separated by around 90 degrees (to improve accuracy of fan vector)
+    mindist = 90.d0
+    do i = 1, n
+      dumvec = sphere2cart(1.d0,thetas(vec(2,i)),phis(vec(1,i)))
+      angle = acos(dot(dumvec,maxvec))/dtor
+      if (abs(90-angle) .lt. mindist) then
+        minvec = dumvec
+        mindist = abs(90.-angle)
+      endif
+    enddo
+    
+  else
+    !print*, 'improper null'
+  endif
 
 end
 

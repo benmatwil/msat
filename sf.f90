@@ -210,8 +210,6 @@ if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs hav
     
     call getminmax(nmin,minima,minvec,maxvec)
     
-    !fan=cross(minvec,maxvec)
-    
   else if ((nmin .eq. 2) .and. (nmax .gt. 2)) then
     !print*, 'Positive non-spiral null'
     sign = 1
