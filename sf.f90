@@ -98,7 +98,7 @@ use sfmod
 
 implicit none
 integer :: i, j, k, count
-double precision :: r(3), b(3)
+double precision :: r(3), b(3), r1(3), b1(3)
 double precision :: dphi, dtheta
 double precision :: mn, mx
 integer :: mxloc(2), mnloc(2)
@@ -157,11 +157,19 @@ do j = 1, ntheta
     flux = flux + abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
     crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
     
-    !do k = 1, 100
+    !count = 0
+    !do while (abs(dot(b,r)/modulus(b)/modulus(r) - dot(b1,r1)/modulus(b1)/modulus(r1)) > 1d-8)
+    !  r1 = r
+    !  b1 = b
     !  r = b*r/modulus(b)
     !  b = trilinear(r+rnull, bgrid)
+    !  count = count + 1
     !enddo
-    
+    !print*,dot(b,r)/modulus(b)/modulus(r)
+    !print*,b/modulus(b)
+    !print*,r/modulus(r)
+    !print*, count
+    !print*,"-------------------------------------------"
   enddo
 enddo
 
@@ -176,10 +184,12 @@ mxloc = maxloc(bmap)
 mn = minval(bmap)
 mx = maxval(bmap)
 
-print*,mn
-print*,mx
-print*,btotal(mnloc(1),mnloc(2))
-print*,btotal(mxloc(1),mxloc(2))
+!print*, sphere2cart(rsphere,thetas(mnloc(2)),phis(mnloc(1)))
+!print*, sphere2cart(rsphere,thetas(mxloc(2)),phis(mxloc(1)))
+!print*,mn
+!print*,mx
+!print*,btotal(mnloc(1),mnloc(2))
+!print*,btotal(mxloc(1),mxloc(2))
 stop
 !get maxima, minima and saddle points
 call get_maxima(bmap, maxima,minima,saddle, nmax,nmin,nsaddle)
