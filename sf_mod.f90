@@ -150,33 +150,33 @@ function rotate(r,theta,phi)
   real*8 :: rotate(3)
   real*8 :: roty(3,3), rotz(3,3), rot(3,3)
 
-  roty(1,1)=cos(-theta)
-  roty(1,2)=0
-  roty(1,3)=-sin(-theta)
+  roty(1,1) = cos(-theta)
+  roty(1,2) = 0
+  roty(1,3) = -sin(-theta)
   ! 
-  roty(2,1)=0
-  roty(2,2)=1
-  roty(2,3)=0
+  roty(2,1) = 0
+  roty(2,2) = 1
+  roty(2,3) = 0
   ! 
-  roty(3,1)=sin(-theta)
-  roty(3,2)=0
-  roty(3,3)=cos(-theta)
+  roty(3,1) = sin(-theta)
+  roty(3,2) = 0
+  roty(3,3) = cos(-theta)
 
-  rotz(1,1)=cos(-phi)
-  rotz(1,2)=sin(-phi)
-  rotz(1,3)=0
+  rotz(1,1) = cos(-phi)
+  rotz(1,2) = sin(-phi)
+  rotz(1,3) = 0
 
-  rotz(2,1)=-sin(-phi)
-  rotz(2,2)=cos(-phi)
-  rotz(2,3)=0
+  rotz(2,1) = -sin(-phi)
+  rotz(2,2) = cos(-phi)
+  rotz(2,3) = 0
 
-  rotz(3,1)=0
-  rotz(3,2)=0
-  rotz(3,3)=1
+  rotz(3,1) = 0
+  rotz(3,2) = 0
+  rotz(3,3) = 1
 
-  rot=matmul(roty,rotz)
-  rotate=matmul(rot,r)
-  r=rotate
+  rot = matmul(roty,rotz)
+  rotate = matmul(rot,r)
+  r = rotate
 
 end
 
@@ -221,9 +221,9 @@ endif
 
 allocate(maxima(2,0),minima(2,0),saddle(2,0))
 
-nmax=0
-nmin=0
-nsaddle=0
+nmax = 0
+nmin = 0
+nsaddle = 0
 
 do j = 1, ntheta !loop over theta
   
