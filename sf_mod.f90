@@ -554,6 +554,7 @@ subroutine getminmax(n,vec,minvec,maxvec)
   double precision :: mindist
 
   !find minima and maxima
+  modb = abs(btotal)
   mn = maxval(modb)
   mx = minval(modb)
   !print*, maxval(modb), minval(modb)

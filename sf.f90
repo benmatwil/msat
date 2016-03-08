@@ -43,9 +43,8 @@ dz = (z(nz)-z(1))/nz
 
 print*, nnulls,' nulls'
 
-
 !now loop over each null and characterise using get_properties
-do i = 1, nnulls
+do i = 17, nnulls
   print*, 'Evaluating null', i,' of', nnulls
   rnull = rnulls(:,i)
   
@@ -57,8 +56,6 @@ do i = 1, nnulls
   spirals(i) = spiral
   warnings(i) = warning
 enddo
-
-
 
 !now write data to nulls.dat
 open(unit=10,file='output/nulls.dat',form='unformatted')
@@ -108,7 +105,8 @@ double precision :: minvec(3), maxvec(3)
 double precision :: flux, crossflux
 integer :: sign, spiral, warning
 
-double precision, dimension(3) :: spine, fan, btest!, major, minor
+double precision, dimension(3) :: spine, fan!, major, minor
+double precision, dimension(:,:), allocatable :: rspine
 
 !set up theta and phi for sphere around null
 dphi = 360.d0/dble(nphi)
@@ -135,10 +133,11 @@ print*, 'B=', trilinear(rnull, bgrid)
 ! thetarot=0.
 ! phirot=0.
 
+allocate(rspine(3,nphi*ntheta))
+
 !create sphere
 flux = 0
 crossflux = 0
-count = 0
 do j = 1, ntheta
   do i = 1, nphi
     r = sphere2cart(rsphere,thetas(j),phis(i))
@@ -154,24 +153,44 @@ do j = 1, ntheta
     bcross(i,j) = modulus(cross(b,r))/modb(i,j)/modulus(r) ! vector orthogonal to b and r
     
     !calculate integrals of flux and normal bcross vector on sphere
-    flux = flux + abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
-    crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
+    !flux = flux + abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
+    !crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
     
-    !count = 0
-    !do while (abs(dot(b,r)/modulus(b)/modulus(r) - dot(b1,r1)/modulus(b1)/modulus(r1)) > 1d-8)
-    !  r1 = r
-    !  b1 = b
-    !  r = b*r/modulus(b)
-    !  b = trilinear(r+rnull, bgrid)
-    !  count = count + 1
-    !enddo
+    count = 0
+    if (count==0) then
+      r1 = [1,0,0]
+      b1 = [0,0,1]
+      !print*,i,j
+      !print*, abs(dot(b,r)/modulus(b)/modulus(r) - dot(b1,r1)/modulus(b1)/modulus(r1))
+      do while (abs(abs(dot(b,r)/modulus(b)/modulus(r)) - abs(dot(b1,r1)/modulus(b1)/modulus(r1))) > 1d-8 .and. count /= 100001)
+        r1 = r
+        b1 = b
+        r = b*r/modulus(b)!/modulus(r)
+        b = trilinear(r+rnull, bgrid)
+        !print*, b,r,modulus(b),modulus(r)
+        !print*,dot(b,r)/modulus(b)/modulus(r),dot(b1,r1)/modulus(b1)/modulus(r1)
+        !print*, abs(dot(b,r)/modulus(b)/modulus(r) - dot(b1,r1)/modulus(b1)/modulus(r1))
+        !print*,'-------------------------'
+        if (count == 100000) then
+          print*, "excedded count"
+          stop
+        endif
+        count = count + 1
+        !print*,count
+      enddo
+    rspine(:,i+(j-1)*nphi) = r(:)/modulus(r)
     !print*,dot(b,r)/modulus(b)/modulus(r)
     !print*,b/modulus(b)
-    !print*,r/modulus(r)
+    !print*,i + (j-1)*nphi,r/modulus(r)
     !print*, count
     !print*,"-------------------------------------------"
+    endif
   enddo
 enddo
+print*,rspine
+!do i = 1, nphi*ntheta
+!  if (modulus(abs(rspine(:,1))-abs(rspine(:,i))) > 1d-6) print*, "different"
+!enddo
 
 !print*, 'FLUX=',flux
 !print*,'CROSS',crossflux
@@ -190,7 +209,7 @@ mx = maxval(bmap)
 !print*,mx
 !print*,btotal(mnloc(1),mnloc(2))
 !print*,btotal(mxloc(1),mxloc(2))
-stop
+
 !get maxima, minima and saddle points
 call get_maxima(bmap, maxima,minima,saddle, nmax,nmin,nsaddle)
 
