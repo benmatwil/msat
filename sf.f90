@@ -44,7 +44,7 @@ dz = (z(nz)-z(1))/nz
 print*, nnulls,' nulls'
 
 !now loop over each null and characterise using get_properties
-do i = 17, nnulls
+do i = 1000, 1005!nnulls
   print*, 'Evaluating null', i,' of', nnulls
   rnull = rnulls(:,i)
   
@@ -94,7 +94,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
 use sfmod
 
 implicit none
-integer :: i, j, k, count
+integer :: i, j, k, count, maxcount
 double precision :: r(3), b(3), r1(3), b1(3)
 double precision :: dphi, dtheta
 double precision :: mn, mx
@@ -138,6 +138,7 @@ allocate(rspine(3,nphi*ntheta))
 !create sphere
 flux = 0
 crossflux = 0
+rspine = 0
 do j = 1, ntheta
   do i = 1, nphi
     r = sphere2cart(rsphere,thetas(j),phis(i))
@@ -156,13 +157,14 @@ do j = 1, ntheta
     !flux = flux + abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
     !crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
     
+    maxcount = 100000
     count = 0
     if (count==0) then
       r1 = [1,0,0]
       b1 = [0,0,1]
       !print*,i,j
       !print*, abs(dot(b,r)/modulus(b)/modulus(r) - dot(b1,r1)/modulus(b1)/modulus(r1))
-      do while (abs(abs(dot(b,r)/modulus(b)/modulus(r)) - abs(dot(b1,r1)/modulus(b1)/modulus(r1))) > 1d-8 .and. count /= 100001)
+      do while (abs(abs(dot(b,r)/modulus(b)/modulus(r)) - abs(dot(b1,r1)/modulus(b1)/modulus(r1))) > 1d-8 .and. count /= maxcount)
         r1 = r
         b1 = b
         r = b*r/modulus(b)!/modulus(r)
@@ -171,14 +173,15 @@ do j = 1, ntheta
         !print*,dot(b,r)/modulus(b)/modulus(r),dot(b1,r1)/modulus(b1)/modulus(r1)
         !print*, abs(dot(b,r)/modulus(b)/modulus(r) - dot(b1,r1)/modulus(b1)/modulus(r1))
         !print*,'-------------------------'
-        if (count == 100000) then
-          print*, "excedded count"
-          stop
-        endif
+        !if (count == 100000) then
+        !  print*, "excedded count"
+        !  stop
+        !endif
         count = count + 1
         !print*,count
       enddo
-    rspine(:,i+(j-1)*nphi) = r(:)/modulus(r)
+      !print*, count
+    if (count /= maxcount) rspine(:,i+(j-1)*nphi) = r(:)/modulus(r)
     !print*,dot(b,r)/modulus(b)/modulus(r)
     !print*,b/modulus(b)
     !print*,i + (j-1)*nphi,r/modulus(r)
@@ -187,7 +190,7 @@ do j = 1, ntheta
     endif
   enddo
 enddo
-print*,rspine
+!print*,rspine
 !do i = 1, nphi*ntheta
 !  if (modulus(abs(rspine(:,1))-abs(rspine(:,i))) > 1d-6) print*, "different"
 !enddo
