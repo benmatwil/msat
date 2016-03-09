@@ -106,7 +106,7 @@ double precision :: flux, crossflux
 integer :: sign, spiral, warning
 
 double precision, dimension(3) :: spine, fan!, major, minor
-double precision, dimension(:,:), allocatable :: rspine
+double precision, dimension(:,:), allocatable :: rconverge
 
 !set up theta and phi for sphere around null
 dphi = 360.d0/dble(nphi)
@@ -133,12 +133,12 @@ print*, 'B=', trilinear(rnull, bgrid)
 ! thetarot=0.
 ! phirot=0.
 
-allocate(rspine(3,nphi*ntheta))
+allocate(rconverge(3,nphi*ntheta))
 
 !create sphere
 flux = 0
 crossflux = 0
-rspine = 0
+rconverge = 0
 do j = 1, ntheta
   do i = 1, nphi
     r = sphere2cart(rsphere,thetas(j),phis(i))
@@ -181,7 +181,7 @@ do j = 1, ntheta
         !print*,count
       enddo
       !print*, count
-    if (count /= maxcount) rspine(:,i+(j-1)*nphi) = r(:)/modulus(r)
+    if (count /= maxcount) rconverge(:,i+(j-1)*nphi) = r(:)/modulus(r)
     !print*,dot(b,r)/modulus(b)/modulus(r)
     !print*,b/modulus(b)
     !print*,i + (j-1)*nphi,r/modulus(r)
@@ -190,9 +190,9 @@ do j = 1, ntheta
     endif
   enddo
 enddo
-!print*,rspine
+!print*,rconverge
 !do i = 1, nphi*ntheta
-!  if (modulus(abs(rspine(:,1))-abs(rspine(:,i))) > 1d-6) print*, "different"
+!  if (modulus(abs(rconverge(:,1))-abs(rconverge(:,i))) > 1d-6) print*, "different"
 !enddo
 
 !print*, 'FLUX=',flux
