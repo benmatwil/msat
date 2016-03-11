@@ -746,10 +746,10 @@ if (sign .ne. 0) then
   
   endif
 else
-     fan = 0
-     spine = 0
-     major = 0
-     minor = 0
+  fan = 0
+  spine = 0
+  major = 0
+  minor = 0
 endif    
         
 end subroutine
@@ -993,11 +993,8 @@ subroutine get_ring(major,minor,nring,rings)
   
   !generate nlines start points in ring around equator
   do i = 1, nring
-    
     t = (i-1)*dt
-    
     rings(:,i) = u*cos(t)+w*sin(t)
-    
   enddo
   
   rings = rings*sep
