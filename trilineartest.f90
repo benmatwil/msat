@@ -34,4 +34,17 @@ use sfmod
   
   print*,trilinear([100d0,1d0,1d0],field)
   
+  print*,'---------------------------------------------------------------'
+  
+  r = [50,65,70]
+  do i = 0, 1
+    !do j = 0, 1
+      do k = 0, 1
+        print*, trilinear([r(1)+i,r(2)+j,r(3)+k],field)
+      enddo
+    !enddo
+  enddo
+  
+  print*, trilinear([r(1)+0.2,r(2),r(3)+0.3],field)
+  
 end program
