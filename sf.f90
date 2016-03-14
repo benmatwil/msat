@@ -44,7 +44,7 @@ dz = (z(nz)-z(1))/nz
 print*, nnulls,' nulls'
 
 !now loop over each null and characterise using get_properties
-do i = 1000, 1005!nnulls
+do i = 1, nnulls
   print*, 'Evaluating null', i,' of', nnulls
   rnull = rnulls(:,i)
   
@@ -158,7 +158,7 @@ do j = 1, ntheta
     !crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
     
     maxcount = 100000
-    count = 0
+    count = 1
     if (count==0) then
       r1 = [1,0,0]
       b1 = [0,0,1]
