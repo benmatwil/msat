@@ -253,37 +253,36 @@ do j = 1, ntheta !loop over theta
         call add_element(minima,(/i,j/),nmin)
       endif
       
-      if (i == -1) then
-      !subtract (i,j)th value from square to check whether surrounding values are bigger or smaller
-      square = square - square(2,2)
-      
-      ! assign 1 to values bigger, -1 to values smaller and 0 to values equal to centre
-      do jj = 1, 3
-        do ii = 1, 3
-          if (square(ii,jj) .gt. 0) then
-            square(ii,jj) = 1
-          else if (square(ii,jj) .lt. 0) then
-            square(ii,jj) = -1
-          else
-            square(ii,jj) = 0
-          endif
+      if (i == -1) then !old code
+        !subtract (i,j)th value from square to check whether surrounding values are bigger or smaller
+        square = square - square(2,2)
+        
+        ! assign 1 to values bigger, -1 to values smaller and 0 to values equal to centre
+        do jj = 1, 3
+          do ii = 1, 3
+            if (square(ii,jj) .gt. 0) then
+              square(ii,jj) = 1
+            else if (square(ii,jj) .lt. 0) then
+              square(ii,jj) = -1
+            else
+              square(ii,jj) = 0
+            endif
+          enddo
         enddo
-      enddo
-      
-      square(2,2) = 0
-      
-      !if all surrounding points in square are greater than centre point then centre point is a minimum
-      if (sum(square) .gt. 7.5) then
-        nmin = nmin + 1
-        call add_element(minima,(/i,j/),nmin)
-      endif
-      
-      !centre point is a maximum
-      if (sum(square) .lt. -7.5) then
-        nmax = nmax + 1
-        call add_element(maxima,(/i,j/),nmax)
-      endif
-      
+        
+        square(2,2) = 0
+        
+        !if all surrounding points in square are greater than centre point then centre point is a minimum
+        if (sum(square) .gt. 7.5) then
+          nmin = nmin + 1
+          call add_element(minima,(/i,j/),nmin)
+        endif
+        
+        !centre point is a maximum
+        if (sum(square) .lt. -7.5) then
+          nmax = nmax + 1
+          call add_element(maxima,(/i,j/),nmax)
+        endif
       endif
       ! if sum(square) is 7 then one point is equal to the centre and have a special max which could happen?
     
@@ -291,8 +290,7 @@ do j = 1, ntheta !loop over theta
       horiz(:) = (/nint(square(1,2)),nint(square(3,2))/)
       vert(:) = (/nint(square(2,1)),nint(square(2,3))/)
       diagup(:) = (/nint(square(1,1)),nint(square(3,3))/)
-      diagdown(:) = (/nint(square(3,1)),nint(square(1,3))/)
-      
+      diagdown(:) = (/nint(square(3,1) ),nint(square(1,3))/)
       
       if ((sum(horiz)*sum(vert) .eq. -4) .or. (sum(diagup) * sum(diagdown) .eq. -4)) then
         nsaddle = nsaddle + 1
