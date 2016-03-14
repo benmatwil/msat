@@ -225,6 +225,7 @@ if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs hav
   
   if ((nmax .eq. 2) .and. (nmin .gt. 2)) then
     !print*, 'Negative non-spiral null'
+    print*,"Using option 1"
     sign = -1
     spiral = 0
     
@@ -234,6 +235,7 @@ if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs hav
     
   else if ((nmin .eq. 2) .and. (nmax .gt. 2)) then
     !print*, 'Positive non-spiral null'
+    print*,"Using option 2"
     sign = 1
     spiral = 0
     
@@ -242,6 +244,7 @@ if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs hav
     call getminmax(nmax,maxima,minvec,maxvec)
 
   else if ((nmin .eq. 2) .and. (nmax .eq. 2) .and. (nsaddle .eq. 2)) then
+    print*,"Using option 3"
     sign = 1 !pick a ramdom sign (we will test whether this sign is correct later on, and swap it if necessary)
     spiral = 1
     !print*,'Spiral null - indeterminate sign'
@@ -252,55 +255,65 @@ if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs hav
     minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     
   else if ( (nmax .eq. 2) .and. (nmin .eq. 1) .and. (nsaddle .eq. 1)) then
+    print*,"Using option 4"
     sign = -1
     spiral = 0
       spine = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
       maxvec = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
       minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
   else if ( (nmax .eq. 1) .and. (nmin .eq. 2) .and. (nsaddle .eq. 1)) then
+    print*,"Using option 5"
     sign = 1
     spiral = 0
       spine = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
       maxvec = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
       minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
   else if (nmax .eq. 2 .and. nmin .eq. 2) then
+    print*,"Using option 6"
     sign = 1
     spiral = 0
       spine = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
       maxvec = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
       minvec = normalise(cross(spine,maxvec))
   else
+    print*,"Using option 7"
     sign = 0
     spiral = 0
     print*, "Odd null - can't characterise"
     !stop
   endif
-  
 else
   !print*, 'Spiral null'
   spiral = 1
   
   if ((mx .gt. spiraltol) .and. (abs(mn) .lt. spiraltol)) then
     ! print*, 'Negative Spiral'
+    print*,"Using option 8"
     sign = -1
     spine = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
     
     if ((nmax .eq. 2) .and. (nmin .eq. 2) .and. (nsaddle .eq. 2)) then
+      print*,"Using option 9"
       maxvec = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
       minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     else if ((nmax .eq. 2) .and. (nmin .gt. 2)) then
+      print*,"Using option 10"
       call getminmax(nmin,minima,minvec,maxvec)
     else if ((nmax .ge. 4) .and. (nmin .eq. 2)) then
+      print*,"Using option 11"
       call getminmax(nmax, maxima,minvec,maxvec)
       if (abs(dot(spine,maxvec)) .lt. abs(dot(spine,minvec))) minvec=maxvec
       maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
     else if ( (nmax .eq. 2) .and. (nmin .eq. 1) .and. (nsaddle .eq. 1)) then
+      print*,"Using option 12"
       maxvec = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
       minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     else if ( (nmax .eq. 2) .and. (nmin .eq. 2) ) then
+      print*,"Using option 13"
       maxvec = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
       minvec = normalise(cross(spine,maxvec))
     else
+      print*,"Using option 14"
       print*, 'weird null!'
       sign = 0
     endif
@@ -310,25 +323,32 @@ else
     spine = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
     
     if ((nmax .eq. 2) .and. (nmin .eq. 2) .and. (nsaddle .eq. 2)) then
+      print*,"Using option 15"
       maxvec = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
       minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     else if ((nmax .eq. 2) .and. (nmin .gt. 2)) then
+      print*,"Using option 16"
       call getminmax(nmin,minima,minvec,maxvec)
       maxvec = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
     else if ((nmin .ge. 4) .and. (nmax .eq. 2)) then
+      print*,"Using option 17"
       call getminmax(nmax,maxima,minvec,maxvec)
     else if ( (nmax .eq. 1) .and. (nmin .eq. 2) .and. (nsaddle .eq. 1)) then
+      print*,"Using option 18"
       maxvec = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
       minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     else if ( (nmax .eq. 2) .and. (nmin .eq. 2) ) then
+      print*,"Using option 19"
       maxvec = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
       minvec = normalise(cross(spine,maxvec))
     else
+      print*,"Using option 20"
       print*, 'weird null!'
       sign = 0
     endif
     
   else
+    print*,"Using option 21"
     sign = 0
     spiral = 1
     print*, 'strange null'
