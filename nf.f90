@@ -87,7 +87,6 @@ nx1=nx-1 !number of cells (not vertices)
 ny1=ny-1
 nz1=nz-1
 
-
 allocate(candidates(nx1,ny1,nz1)) ! integer array where candidate cells are flagged
 
 nnulls=0
@@ -193,9 +192,7 @@ do k=1,nz1
        cby=by(i:i+1,j:j+1,k:k+1)
        cbz=bz(i:i+1,j:j+1,k:k+1)
 
-
        call normalize(cbx,cby,cbz)
-
 
        x=0.
        y=0.
@@ -265,12 +262,6 @@ do k=1,nz1
        trilinear_cell(x,y,z,cby)**2+trilinear_cell(x,y,z,cbz)**2)
 
        endif
-
-
-
-
-
-
 
        endif
     enddo
