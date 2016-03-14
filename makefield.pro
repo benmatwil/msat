@@ -1,7 +1,7 @@
 function makefield, rs=rs,ps=ps
 
   nr = 200L
-  np = 180L
+  np = 360L
   nt = 360L
   field = dblarr(nr,nt,np,3)
   
@@ -44,9 +44,10 @@ function makefield, rs=rs,ps=ps
     endfor ;3d
   endfor
   
-  openw, lun, "field.dat", /get_lun
+  openw, lun, "data/testfield.dat", /get_lun
     writeu, lun, nr, nt, np
     writeu, lun, field[*,*,*,0], field[*,*,*,1], field[*,*,*,2]
+    writeu, lun, rs, ts, ps
   close, lun
 
   return, field
