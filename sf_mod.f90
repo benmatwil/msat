@@ -211,7 +211,7 @@ integer, allocatable :: maxima(:,:), minima(:,:),saddle(:,:)
 integer :: nmax, nmin, nsaddle
 double precision :: square(3,3)
 integer :: horiz(2), vert(2), diagup(2), diagdown(2), isqu(3,3)
-integer :: i, j, ii, jj
+integer :: i, j, k, ii, jj
 
 
 !deallocate arrays if allocated
@@ -228,7 +228,6 @@ nsaddle = 0
 do j = 1, ntheta !loop over theta
   if (j .gt. 1 .and. j .lt. ntheta) then !if not at poles
     do i = 1, nphi !loop over phi
-    
       !make 3x3 'square' of points neighbouring the point (i,j)
       if (i .eq. 1) then
         square(2:3,:) = map(1:2,j-1:j+1)
@@ -253,12 +252,11 @@ do j = 1, ntheta !loop over theta
         call add_element(maxima,(/i,j/),nmax)
       endif
       
-      ! do we want to deal with close maxima/minima
-      
       if (count(isqu == -1) == 0) then
         nmin = nmin + 1
         call add_element(minima,(/i,j/),nmin)
       endif
+      ! do we want to deal with close maxima/minima
       
       !check for saddle points
       horiz(:) = (/isqu(1,2),isqu(3,2)/)
@@ -302,115 +300,50 @@ do j = 1, ntheta !loop over theta
           call add_element(maxima,(/i,j/),nmax)
         endif
       endif
-      ! if sum(square) is 7 then one point is equal to the centre and have a special max which could happen?
-
     enddo
-  else if (j .eq. 1) then !if at the north pole - 'square' needs to be redefined slightly
+  else if (j == 1 .or. j == ntheta) then !if at the north pole - 'square' needs to be redefined slightly
     i = 1
+    if (j .eq. 1) k = j + 1
+    if (j .eq. ntheta) k = j - 1
+    
     square(2,2) = map(i,j)
     
-    square(1,1) = map(nint(0.*dble(nphi)/8.)+1,j+1)
-    square(2,1) = map(nint(1.*dble(nphi)/8.)+1,j+1)
-    square(3,1) = map(nint(2.*dble(nphi)/8.)+1,j+1)
-    square(3,2) = map(nint(3.*dble(nphi)/8.)+1,j+1)
-    square(3,3) = map(nint(4.*dble(nphi)/8.)+1,j+1)
-    square(2,3) = map(nint(5.*dble(nphi)/8.)+1,j+1)
-    square(1,3) = map(nint(6.*dble(nphi)/8.)+1,j+1)
-    square(1,2) = map(nint(7.*dble(nphi)/8.)+1,j+1)
+    square(1,1) = map(nint(0.*dble(nphi)/8.)+1,k)
+    square(2,1) = map(nint(1.*dble(nphi)/8.)+1,k)
+    square(3,1) = map(nint(2.*dble(nphi)/8.)+1,k)
+    square(3,2) = map(nint(3.*dble(nphi)/8.)+1,k)
+    square(3,3) = map(nint(4.*dble(nphi)/8.)+1,k)
+    square(2,3) = map(nint(5.*dble(nphi)/8.)+1,k)
+    square(1,3) = map(nint(6.*dble(nphi)/8.)+1,k)
+    square(1,2) = map(nint(7.*dble(nphi)/8.)+1,k)
     
+    where (square < square(2,2))
+      isqu = -1
+    elsewhere (square > square(2,2))
+      isqu = 1
+    elsewhere (square == square(2,2))
+      isqu = 0
+    endwhere
     
-    square = square - square(2,2)
-        
-    do jj = 1, 3
-      do ii = 1, 3
-        if (square(ii,jj) .gt. 0) then
-          square(ii,jj) = 1
-        else if (square(ii,jj) .lt. 0) then
-          square(ii,jj) = -1
-        else
-          square(ii,jj) = 0
-        endif
-      enddo
-    enddo
-    
-    square(2,2) = 0
-    
-    if (sum(square) .gt. 7.5) then
-      nmin = nmin+1
-      call add_element(minima,(/i,j/),nmin)
-    endif
-    
-    if (sum(square) .lt. -7.5) then
-      nmax = nmax+1
+    if (count(isqu == 1) == 0) then
+      nmax = nmax + 1
       call add_element(maxima,(/i,j/),nmax)
     endif
-
-!check for saddle points
-      
-    horiz(:) = (/nint(square(1,2)),nint(square(3,2))/)
-    vert(:) = (/nint(square(2,1)),nint(square(2,3))/)
-    diagup(:) = (/nint(square(1,1)),nint(square(3,3))/)
-    diagdown(:) = (/nint(square(3,1)),nint(square(1,3))/)
-    !print*,horiz,vert
-    !stop
-      
-    if ((sum(horiz)*sum(vert) .eq. -4) .or. (sum(diagup) * sum(diagdown) .eq. -4)) then
-      nsaddle = nsaddle+1
-      call add_element(saddle,(/i,j/),nsaddle)
-      !print*, 'saddle',i,j
-    endif
-
-  else !at south pole
-   
-    i = 1
-    square(2,2) = map(i,j)
     
-    square(1,1) = map(nint(0.*dble(nphi)/8.)+1,j-1)
-    square(2,1) = map(nint(1.*dble(nphi)/8.)+1,j-1)
-    square(3,1) = map(nint(2.*dble(nphi)/8.)+1,j-1)
-    square(3,2) = map(nint(3.*dble(nphi)/8.)+1,j-1)
-    square(3,3) = map(nint(4.*dble(nphi)/8.)+1,j-1)
-    square(2,3) = map(nint(5.*dble(nphi)/8.)+1,j-1)
-    square(1,3) = map(nint(6.*dble(nphi)/8.)+1,j-1)
-    square(1,2) = map(nint(7.*dble(nphi)/8.)+1,j-1)
-
-    square = square - square(2,2)
-        
-    do jj = 1, 3
-      do ii = 1, 3
-        if (square(ii,jj) .gt. 0) then
-          square(ii,jj) = 1
-        else if (square(ii,jj) .lt. 0) then
-          square(ii,jj) = -1
-        else
-          square(ii,jj) = 0
-        endif
-      enddo
-    enddo
-    
-    square(2,2) = 0
-    
-    if (sum(square) .gt. 7.5) then
+    if (count(isqu == -1) == 0) then
       nmin = nmin + 1
       call add_element(minima,(/i,j/),nmin)
     endif
+
+    !check for saddle points  
+    horiz(:) = (/isqu(1,2),isqu(3,2)/)
+    vert(:) = (/isqu(2,1),isqu(2,3)/)
+    diagup(:) = (/isqu(1,1),isqu(3,3)/)
+    diagdown(:) = (/isqu(3,1),isqu(1,3)/)
     
-    if (sum(square) .lt. -7.5) then
-      nmax = nmax + 1
-      call add_element(maxima,(/i,j/),nmax)
-    endif    
-
-    !check for saddle points
-        
-    horiz(:) = (/nint(square(1,2)),nint(square(3,2))/)
-    vert(:) = (/nint(square(2,1)),nint(square(2,3))/)
-    diagup(:) = (/nint(square(1,1)),nint(square(3,3))/)
-    diagdown(:) = (/nint(square(3,1)),nint(square(1,3))/)
-
     if ((sum(horiz)*sum(vert) .eq. -4) .or. (sum(diagup) * sum(diagdown) .eq. -4)) then
       nsaddle = nsaddle + 1
       call add_element(saddle,(/i,j/),nsaddle)
-      !print*, 'saddle',i,j
     endif
   endif
 enddo
