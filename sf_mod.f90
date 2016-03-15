@@ -226,7 +226,7 @@ nmin = 0
 nsaddle = 0
 
 do j = 1, ntheta !loop over theta
-  if (j .gt. 1 .and. j .lt. ntheta) then !if not at poles
+  if (j > 1 .and. j < ntheta) then !if not at poles
     do i = 1, nphi !loop over phi
       !make 3x3 'square' of points neighbouring the point (i,j)
       if (i .eq. 1) then
@@ -264,7 +264,7 @@ do j = 1, ntheta !loop over theta
       diagup(:) = (/isqu(1,1),isqu(3,3)/)
       diagdown(:) = (/isqu(3,1),isqu(1,3)/)
       
-      if ((sum(horiz)*sum(vert) .eq. -4) .or. (sum(diagup) * sum(diagdown) .eq. -4)) then
+      if ((sum(horiz)*sum(vert) == -4) .or. (sum(diagup) * sum(diagdown) == -4)) then
         nsaddle = nsaddle + 1
         call add_element(saddle,(/i,j/),nsaddle)
       endif
@@ -303,8 +303,8 @@ do j = 1, ntheta !loop over theta
     enddo
   else if (j == 1 .or. j == ntheta) then !if at the north pole - 'square' needs to be redefined slightly
     i = 1
-    if (j .eq. 1) k = j + 1
-    if (j .eq. ntheta) k = j - 1
+    if (j == 1) k = j + 1
+    if (j == ntheta) k = j - 1
     
     square(2,2) = map(i,j)
     
@@ -341,7 +341,7 @@ do j = 1, ntheta !loop over theta
     diagup(:) = (/isqu(1,1),isqu(3,3)/)
     diagdown(:) = (/isqu(3,1),isqu(1,3)/)
     
-    if ((sum(horiz)*sum(vert) .eq. -4) .or. (sum(diagup) * sum(diagdown) .eq. -4)) then
+    if ((sum(horiz)*sum(vert) == -4) .or. (sum(diagup) * sum(diagdown) == -4)) then
       nsaddle = nsaddle + 1
       call add_element(saddle,(/i,j/),nsaddle)
     endif
@@ -372,7 +372,6 @@ subroutine add_element(x,val,pos)
 
   nx=size(x,1)
   ny=size(x,2)
-
 
   allocate(dummy(nx,ny))
 
