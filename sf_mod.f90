@@ -208,10 +208,10 @@ implicit none
 
 double precision :: map(:,:)
 integer, allocatable :: maxima(:,:), minima(:,:),saddle(:,:)
-integer :: nmax, nmin,nsaddle
+integer :: nmax, nmin, nsaddle
 double precision :: square(3,3)
-integer :: horiz(2), vert(2), diagup(2), diagdown(2)
-integer :: i,j,ii,jj
+integer :: horiz(2), vert(2), diagup(2), diagdown(2), isqu(3,3)
+integer :: i, j, ii, jj
 
 
 !deallocate arrays if allocated
@@ -226,7 +226,6 @@ nmin = 0
 nsaddle = 0
 
 do j = 1, ntheta !loop over theta
-  
   if (j .gt. 1 .and. j .lt. ntheta) then !if not at poles
     do i = 1, nphi !loop over phi
     
@@ -241,16 +240,35 @@ do j = 1, ntheta !loop over theta
         square(:,:) = map(i-1:i+1,j-1:j+1)
       endif
       
-      if (count(square > square(2,2)) == 0) then
+      where (square < square(2,2))
+        isqu = -1
+      elsewhere (square > square(2,2))
+        isqu = 1
+      elsewhere (square == square(2,2))
+        isqu = 0
+      endwhere
+      
+      if (count(isqu == 1) == 0) then
         nmax = nmax + 1
         call add_element(maxima,(/i,j/),nmax)
       endif
       
       ! do we want to deal with close maxima/minima
       
-      if (count(square < square(2,2)) == 0) then
+      if (count(isqu == -1) == 0) then
         nmin = nmin + 1
         call add_element(minima,(/i,j/),nmin)
+      endif
+      
+      !check for saddle points
+      horiz(:) = (/isqu(1,2),isqu(3,2)/)
+      vert(:) = (/isqu(2,1),isqu(2,3)/)
+      diagup(:) = (/isqu(1,1),isqu(3,3)/)
+      diagdown(:) = (/isqu(3,1),isqu(1,3)/)
+      
+      if ((sum(horiz)*sum(vert) .eq. -4) .or. (sum(diagup) * sum(diagdown) .eq. -4)) then
+        nsaddle = nsaddle + 1
+        call add_element(saddle,(/i,j/),nsaddle)
       endif
       
       if (i == -1) then !old code
@@ -285,17 +303,6 @@ do j = 1, ntheta !loop over theta
         endif
       endif
       ! if sum(square) is 7 then one point is equal to the centre and have a special max which could happen?
-    
-      !check for saddle points
-      horiz(:) = (/nint(square(1,2)),nint(square(3,2))/)
-      vert(:) = (/nint(square(2,1)),nint(square(2,3))/)
-      diagup(:) = (/nint(square(1,1)),nint(square(3,3))/)
-      diagdown(:) = (/nint(square(3,1) ),nint(square(1,3))/)
-      
-      if ((sum(horiz)*sum(vert) .eq. -4) .or. (sum(diagup) * sum(diagdown) .eq. -4)) then
-        nsaddle = nsaddle + 1
-        call add_element(saddle,(/i,j/),nsaddle)
-      endif
 
     enddo
   else if (j .eq. 1) then !if at the north pole - 'square' needs to be redefined slightly
@@ -552,7 +559,7 @@ subroutine getminmax(n,vec,minvec,maxvec)
   double precision :: mindist
 
   !find minima and maxima
-  modb = abs(btotal)
+  modb = btotal!abs(btotal) !get rid of modb in the end
   mn = maxval(modb)
   mx = minval(modb)
   !print*, maxval(modb), minval(modb)

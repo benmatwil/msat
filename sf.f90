@@ -254,14 +254,14 @@ if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs hav
     maxvec = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
     minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     
-  else if ( (nmax .eq. 2) .and. (nmin .eq. 1) .and. (nsaddle .eq. 1)) then
+  else if ((nmax .eq. 2) .and. (nmin .eq. 1) .and. (nsaddle .eq. 1)) then
     print*,"Using option 4"
     sign = -1
     spiral = 0
       spine = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
       maxvec = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
       minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
-  else if ( (nmax .eq. 1) .and. (nmin .eq. 2) .and. (nsaddle .eq. 1)) then
+  else if ((nmax .eq. 1) .and. (nmin .eq. 2) .and. (nsaddle .eq. 1)) then
     print*,"Using option 5"
     sign = 1
     spiral = 0
