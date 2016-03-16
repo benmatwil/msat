@@ -165,7 +165,7 @@ do j = 1, ntheta
       rold = [0,0,0]
       fact = k*1d-2*rsphere
       !open(unit=10,file='possring.dat', access='stream')
-      do while (modulus(rnew-rold) > 1d-10 .and. count /= maxcount)
+      do while (modulus(rnew-rold) > 1d-12 .and. count /= maxcount)
         rold = rnew
         rnew = rnew + fact*bnew/modulus(bnew)
         rnew = rsphere*rnew/modulus(rnew)
@@ -186,28 +186,29 @@ enddo
 
 n = size(rconverge1,2)
 i = 1
-done = 0
-do while (done /= 1)
-  i = modulo(i + 1, n)
-  j = i + 1
+do while (i < n-1)
+  j = 1
   do while (j < n)
-    print*, i, j, n
-    print*, rconverge1(:,j)
-    if (modulus(rconverge1(:,i)-rconverge1(:,j)) < 1d-4 .or. modulus(rconverge1(:,i)+rconverge1(:,j)) < 1d-4) then
-      allocate(dum(3,size(rconverge1,2)))
-      dum = rconverge1
-      deallocate(rconverge1)
-      allocate(rconverge1(3,size(dum,2)-1))
-      rconverge1(:,1:j-1) = dum(:,:j-1)
-      rconverge1(:,j:size(dum,2)-1) = dum(:,j+1:size(dum,2))
-      deallocate(dum)
-      n = size(rconverge1,2)
+    if (j /= i) then 
+      !print*, i, j, n
+      !print*, rconverge1(:,j) < 1d-4
+      if (modulus(rconverge1(:,i)-rconverge1(:,j)) < 1d-3 .or. modulus(rconverge1(:,i)+rconverge1(:,j)) < 1d-3) then
+        allocate(dum(3,n))
+        n = n-1
+        dum = rconverge1
+        deallocate(rconverge1)
+        allocate(rconverge1(3,n))
+        rconverge1(:,1:j-1) = dum(:,1:j-1)
+        rconverge1(:,j:n) = dum(:,j+1:n+1)
+        deallocate(dum)
+      else
+        print*, i, j, n, modulus(rconverge1(:,i)-rconverge1(:,j)), modulus(rconverge1(:,i)+rconverge1(:,j))
+      endif
     endif
     j = j + 1
   enddo
+  i = i + 1
 enddo
-
-print*, rconverge1
 
 n = size(rconverge1,2)
 do i = 1, n
