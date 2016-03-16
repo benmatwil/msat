@@ -94,8 +94,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
 use sfmod
 
 implicit none
-integer :: i, j, k, count, maxcount
-double precision :: r(3), b(3), r1(3), b1(3)
+integer :: i, j, k, count, maxcount, n
+double precision :: r(3), b(3), rold(3), rnew(3), bnew(3), fact
 double precision :: dphi, dtheta
 double precision :: mn, mx
 integer :: mxloc(2), mnloc(2)
@@ -106,7 +106,7 @@ double precision :: flux, crossflux
 integer :: sign, spiral, warning
 
 double precision, dimension(3) :: spine, fan!, major, minor
-double precision, dimension(:,:), allocatable :: rconverge
+double precision, dimension(:,:), allocatable :: rconverge1, rconverge2, dum
 
 !set up theta and phi for sphere around null
 dphi = 360.d0/dble(nphi)
@@ -133,12 +133,11 @@ print*, 'B=', trilinear(rnull, bgrid)
 ! thetarot=0.
 ! phirot=0.
 
-allocate(rconverge(3,nphi*ntheta))
+allocate(rconverge1(3,nphi*ntheta), rconverge2(3,nphi*ntheta))
 
 !create sphere
 flux = 0
 crossflux = 0
-rconverge = 0
 do j = 1, ntheta
   do i = 1, nphi
     r = sphere2cart(rsphere,thetas(j),phis(i))
@@ -149,51 +148,78 @@ do j = 1, ntheta
     
     ! calculate different grids
     modb(i,j) = modulus(b) ! size of b on the sphere
-    btotal(i,j) = dot(b,r)/modulus(r) ! b in the radial direction on the sphere's surface
+    btotal(i,j) = dot(b,r)/rsphere !=modulus(r) ! b in the radial direction on the sphere's surface
     bmap(i,j) = btotal(i,j)/modb(i,j) ! angle between b and r
-    bcross(i,j) = modulus(cross(b,r))/modb(i,j)/modulus(r) ! vector orthogonal to b and r
+    bcross(i,j) = modulus(cross(b,r))/modb(i,j)/rsphere !=modulus(r) ! vector orthogonal to b and r
     
     !calculate integrals of flux and normal bcross vector on sphere
     !flux = flux + abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
     !crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
     
-    maxcount = 100000
-    count = 1
-    if (count==0) then
-      r1 = [1,0,0]
-      b1 = [0,0,1]
-      !print*,i,j
-      !print*, abs(dot(b,r)/modulus(b)/modulus(r) - dot(b1,r1)/modulus(b1)/modulus(r1))
-      do while (abs(abs(dot(b,r)/modulus(b)/modulus(r)) - abs(dot(b1,r1)/modulus(b1)/modulus(r1))) > 1d-8 .and. count /= maxcount)
-        r1 = r
-        b1 = b
-        r = b*r/modulus(b)!/modulus(r)
-        b = trilinear(r+rnull, bgrid)
-        !print*, b,r,modulus(b),modulus(r)
-        !print*,dot(b,r)/modulus(b)/modulus(r),dot(b1,r1)/modulus(b1)/modulus(r1)
-        !print*, abs(dot(b,r)/modulus(b)/modulus(r) - dot(b1,r1)/modulus(b1)/modulus(r1))
-        !print*,'-------------------------'
-        !if (count == 100000) then
-        !  print*, "excedded count"
-        !  stop
-        !endif
+    maxcount = 10000
+    do k = -1, 1, 2
+      !print*, i+(j-1)*nphi
+      count = 0
+      rnew = r
+      bnew = b
+      rold = [0,0,0]
+      fact = k*1d-2*rsphere
+      !open(unit=10,file='possring.dat', access='stream')
+      do while (modulus(rnew-rold) > 1d-10 .and. count /= maxcount)
+        rold = rnew
+        rnew = rnew + fact*bnew/modulus(bnew)
+        rnew = rsphere*rnew/modulus(rnew)
+        bnew = trilinear(rnew+rnull, bgrid)
         count = count + 1
-        !print*,count
+        !if (modulo(count, 1000) == 0) print*, rnew/modulus(rnew)
+        !write(10) rnew/modulus(rnew)
       enddo
+      !close(10)
       !print*, count
-    if (count /= maxcount) rconverge(:,i+(j-1)*nphi) = r(:)/modulus(r)
-    !print*,dot(b,r)/modulus(b)/modulus(r)
-    !print*,b/modulus(b)
-    !print*,i + (j-1)*nphi,r/modulus(r)
-    !print*, count
-    !print*,"-------------------------------------------"
-    endif
+      !if (count /= maxcount) print*, rnew/modulus(rnew)
+      !if (count /= maxcount) rconverge(:,i+(j-1)*nphi) = rnew(:)/modulus(rnew)
+      if (k == -1) rconverge1(:,i+(j-1)*nphi) = rnew(:)/modulus(rnew)
+      if (k == 1) rconverge2(:,i+(j-1)*nphi) = rnew(:)/modulus(rnew)
+    enddo
   enddo
 enddo
-!print*,rconverge
-!do i = 1, nphi*ntheta
-!  if (modulus(abs(rconverge(:,1))-abs(rconverge(:,i))) > 1d-6) print*, "different"
-!enddo
+
+n = size(rconverge1,2)
+i = 1
+done = 0
+do while (done /= 1)
+  i = modulo(i + 1, n)
+  j = i + 1
+  do while (j < n)
+    print*, i, j, n
+    print*, rconverge1(:,j)
+    if (modulus(rconverge1(:,i)-rconverge1(:,j)) < 1d-4 .or. modulus(rconverge1(:,i)+rconverge1(:,j)) < 1d-4) then
+      allocate(dum(3,size(rconverge1,2)))
+      dum = rconverge1
+      deallocate(rconverge1)
+      allocate(rconverge1(3,size(dum,2)-1))
+      rconverge1(:,1:j-1) = dum(:,:j-1)
+      rconverge1(:,j:size(dum,2)-1) = dum(:,j+1:size(dum,2))
+      deallocate(dum)
+      n = size(rconverge1,2)
+    endif
+    j = j + 1
+  enddo
+enddo
+
+print*, rconverge1
+
+n = size(rconverge1,2)
+do i = 1, n
+  do j = i+1, n
+    print*, j, n
+    print*, modulus(rconverge1(:,i)-rconverge1(:,j))
+    print*, modulus(rconverge1(:,i)+rconverge1(:,j))
+  enddo
+enddo
+
+print*, rconverge1
+stop
 
 !print*, 'FLUX=',flux
 !print*,'CROSS',crossflux

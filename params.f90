@@ -12,7 +12,7 @@ module params
   integer, parameter :: sig_figs = 6 !the number of significant figures of accuracy required for the null
 
   !spinefinder parameters
-  double precision, parameter :: rsphere = 0.01d0 !radius of sphere which the dot products are calculated on
+  double precision, parameter :: rsphere = 0.005d0 !radius of sphere which the dot products are calculated on
   double precision, parameter :: rtraceto = 0.1d0 !the radius the field line tracer traces lines to (should be larger than rsphere)
 
 

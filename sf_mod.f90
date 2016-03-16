@@ -110,7 +110,7 @@ function modulus(a)
   implicit none
 
   real*8 :: a(3)
-  real*8 modulus
+  real*8 :: modulus
 
   modulus=sqrt(dot(a,a))
 
@@ -153,11 +153,11 @@ function rotate(r,theta,phi)
   roty(1,1) = cos(-theta)
   roty(1,2) = 0
   roty(1,3) = -sin(-theta)
-  ! 
+
   roty(2,1) = 0
   roty(2,2) = 1
   roty(2,3) = 0
-  ! 
+
   roty(3,1) = sin(-theta)
   roty(3,2) = 0
   roty(3,3) = cos(-theta)
@@ -301,7 +301,7 @@ do j = 1, ntheta !loop over theta
         endif
       endif
     enddo
-  else if (j == 1 .or. j == ntheta) then !if at the north pole - 'square' needs to be redefined slightly
+  else if (j == 1 .or. j == ntheta) then !if at the north pole or south pole - 'square' needs to be redefined slightly
     i = 1
     if (j == 1) k = j + 1
     if (j == ntheta) k = j - 1
