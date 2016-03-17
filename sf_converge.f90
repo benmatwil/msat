@@ -1,5 +1,6 @@
 !spine finder with convergence method
 program sf_converge
+
 use params
 use sfmod_converge
 
@@ -91,7 +92,7 @@ end program
 
 !characterise each null
 subroutine get_properties(sign,spine,fan,spiral,warning)
-use sfmod
+use sfmod_converge
 
 implicit none
 integer :: i, j, k, count, maxcount, n
