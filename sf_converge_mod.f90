@@ -189,8 +189,8 @@ end
 function perpindex(vec, vecarray)
   implicit none
   
-  double precision :: vec(3), mindot, dotprod
-  double precision, allocatable :: vecarray(:,:)
+  double precision :: mindot, dotprod
+  double precision, allocatable :: vecarray(:,:), vec(:)
   integer :: i, perpindex
 
   mindot = 1
