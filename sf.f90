@@ -357,8 +357,6 @@ call test_null(spine,maxvec,minvec,sign,spiral)
 !call test_null(spine,maxvec,minvec,sign,spiral)
 fan = normalise(cross(minvec,maxvec))
 
-
-
 if (sign .eq. 0) then
   fan = (/0.d0,0.d0,1.d0/)
   spine = (/0.d0,0.d0,1.d0/)

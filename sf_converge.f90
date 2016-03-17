@@ -149,7 +149,7 @@ do j = 1, ntheta
       rnewbw = rnewbw - fact*normalise(bnewbw)
       rnewbw = rsphere*normalise(rnewbw)
       bnewbw = trilinear(rnewbw+rnull, bgrid)
-      
+      ! want the fan vectors to interate longer as they don't converge as quick
       count = count + 1
     enddo
     n = i+(j-1)*nphi
