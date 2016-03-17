@@ -13,8 +13,7 @@ integer, parameter :: nphi = 360
 integer, parameter :: ntheta = nphi/2
 
 double precision, dimension(3) :: rnull
-
-double precision :: thetarot, phirot
+double precision :: thetas(ntheta), phis(nphi)
 
 integer, allocatable :: maxima(:,:), minima(:,:), saddle(:,:)
 
