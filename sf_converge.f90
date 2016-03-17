@@ -100,7 +100,7 @@ integer, allocatable :: fwflag(:)
 double precision :: dphi, dtheta
 integer :: sign, spiral, warning
 
-double precision, dimension(3) :: spine, fan
+double precision, dimension(3) :: spine, fan, maxvec, minvec
 double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rconverge
 
 !set up theta and phi for sphere around null
@@ -142,12 +142,12 @@ do j = 1, ntheta
       roldfw = rnewfw
       rnewfw = rnewfw + fact*normalise(bnewfw)
       rnewfw = rsphere*normalise(rnewfw)
-      bnewfw = trilinear(rnewfw+rnull, bgridfw)
+      bnewfw = trilinear(rnewfw+rnull, bgrid)
       
       roldbw = rnewbw
       rnewbw = rnewbw - fact*normalise(bnewbw)
       rnewbw = rsphere*normalise(rnewbw)
-      bnewbw = trilinear(rnewbw+rnull, bgridbw)
+      bnewbw = trilinear(rnewbw+rnull, bgrid)
       
       count = count + 1
     enddo
@@ -175,7 +175,7 @@ i = 1
 do while (i < n-1)
   j = i+1
   do while (j < n)
-    if (modulus(rconverge(:,i)-rconverge(:,j)) < 1d-3 .or. modulus(rconverge1(:,i)+rconverge1(:,j)) < 1d-3) remove_element(rconverge,j)
+    if (modulus(rconverge(:,i)-rconverge(:,j)) < 1d-3 .or. modulus(rconverge(:,i)+rconverge(:,j)) < 1d-3) remove_element(rconverge,j)
     j = j + 1
   enddo
   i = i + 1
