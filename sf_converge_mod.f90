@@ -195,8 +195,8 @@ function mindotindex(vec, vecarray)
 
   mindot = 1
   ! perhaps put this in procedure
-  do i = 1, size(rconvergebw,2)
-    dotprod = abs(dot(maxvec,rconvergebw(:,i)))
+  do i = 1, size(vecarray,2)
+    dotprod = abs(dot(vec,vecarray(:,i)))
     if (dotprod < mindot) then
       mindot = dotprod
       minabsdotindex = i
