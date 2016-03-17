@@ -186,12 +186,12 @@ end
 
 !********************************************************************************
 
-function minabsdotindex(vec, vecarray)
+function perpindex(vec, vecarray)
   implicit none
   
   double precision :: vec(3), mindot, dotprod
   double precision, allocatable :: vecarray(:,:)
-  integer :: i, minabsdotindex
+  integer :: i, perpindex
 
   mindot = 1
   ! perhaps put this in procedure
@@ -199,7 +199,7 @@ function minabsdotindex(vec, vecarray)
     dotprod = abs(dot(vec,vecarray(:,i)))
     if (dotprod < mindot) then
       mindot = dotprod
-      minabsdotindex = i
+      perpindex = i
     endif
   enddo
   
