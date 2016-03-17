@@ -160,11 +160,8 @@ do j = 1, ntheta
     else
       fwflag(n) = 0
     endif
-    print*, i,j,count
   enddo
 enddo
-
-print*, "done"
 
 !if (count(fwflag == 0) == 0) print*, "all vectors didn't converge" !spine should be contained in backward vectors
 if (fwflag(n) == 0) then
@@ -181,6 +178,7 @@ do while (i < n-1)
   do while (j < n)
     if (modulus(rconv(:,i)-rconv(:,j)) < acc .or. modulus(rconv(:,i)+rconv(:,j)) < acc) call remove_element(rconv,j)
     j = j + 1
+    print*, i, j
   enddo
   i = i + 1
 enddo
