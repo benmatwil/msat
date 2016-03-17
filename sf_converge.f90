@@ -163,7 +163,9 @@ do j = 1, ntheta
   enddo
 enddo
 
-if (count(fwflag == 0) == 0) print*, "all vectors didn't converge" !spine should be contained in backward vectors
+if (count(fwflag == 0) == 0) then
+  print*, "all vectors didn't converge"
+endif !spine should be contained in backward vectors
 if (fwflag(n) == 0) then
   rconverge = rconvergefw
 else
