@@ -173,14 +173,14 @@ if (fwflag(n) == 0) then
   call remove_duplicates(rconvergefw, acc) ! what do we want to do if we are still left with two vectors  
   spine = rconvergefw(:,1) ! needs changing once we have guaranteed convergence
   maxvec = rconvergebw(:,1)
-  minvec = rconvergebw(:,mindotindex(maxvec,rconvergebw))
+  minvec = rconvergebw(:,perpindex(maxvec,rconvergebw))
   ! spine going out of null
   sign = -1
 else
   call remove_duplicates(rconvergebw, acc)
   spine = rconvergebw(:,1)
   maxvec = rconvergefw(:,1)
-  minvec = rconvergefw(:,mindotindex(maxvec,rconvergefw))
+  minvec = rconvergefw(:,perpindex(maxvec,rconvergefw))
   ! spine going into null
   sign = 1
 endif

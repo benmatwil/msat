@@ -186,12 +186,12 @@ end
 
 !********************************************************************************
 
-function mindotindex(vec, vecarray)
+function minabsdotindex(vec, vecarray)
   implicit none
   
   double precision :: vec(3), mindot, dotprod
   double precision, allocatable :: vecarray(:,:)
-  integer :: i, mindotprodindex
+  integer :: i, minabsdotindex
 
   mindot = 1
   ! perhaps put this in procedure
