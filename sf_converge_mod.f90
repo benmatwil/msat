@@ -9,7 +9,7 @@ double precision :: dx, dy, dz
 
 double precision, allocatable :: bgrid(:,:,:,:)
 
-integer, parameter :: nphi = 360
+integer, parameter :: nphi = 180
 integer, parameter :: ntheta = nphi/2
 
 double precision, dimension(3) :: rnull
@@ -155,6 +155,32 @@ subroutine remove_element(x,pos)
   endif
   
   deallocate(dummy)
+
+end
+
+!********************************************************************************
+
+subroutine remove_duplicates(vecarray, accur)
+  implicit none
+  
+  double precision, allocatable :: vecarray(:,:)
+  double precision :: accur
+  integer :: i, j, n
+  
+  n = size(vecarray,2)
+  i = 1
+  do while (i < n)
+    j = i+1
+    do while (j < n+1)
+      if (modulus(vecarray(:,i)-vecarray(:,j)) < accur .or. modulus(vecarray(:,i)+vecarray(:,j)) < accur) then
+        call remove_element(vecarray,j)
+        n = size(vecarray,2)
+      else
+        j = j + 1
+      endif
+    enddo
+    i = i + 1
+  enddo
 
 end
 
