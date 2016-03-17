@@ -431,7 +431,7 @@ subroutine remove_element(x,pos)
 end
 
 !********************************************************************************
-!removes pints if they are too close together (angular separation of <5 degrees)
+!removes points if they are too close together (angular separation of <5 degrees)
 subroutine remove_duplicates(n,vec) !n=number of vectors, vec = 2xn array containing vectors
 implicit none
 
