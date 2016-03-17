@@ -184,9 +184,11 @@ else
   ! spine going into null
   sign = 1
 endif
+
 print*, "final dot prod is"
 print*, "min/max                          ", "min/spine                         ", "max/spine            "
 print*, dot(minvec,maxvec), dot(minvec,spine), dot(maxvec,spine)
+
 sign = -sign
 spiral = 0
 
