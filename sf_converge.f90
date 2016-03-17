@@ -170,7 +170,7 @@ enddo
 !if (count(fwflag == 0) == 0) print*, "all vectors didn't converge" !spine should be contained in backward vectors
 acc = 1d-4
 if (fwflag(n) == 0) then
-  call remove_duplicates(rconvergefw, acc)
+  call remove_duplicates(rconvergefw, acc) ! what do we want to do if we are still left with two vectors
   !print*, rconvergefw, shape(rconvergebw)
   !open(unit=10,file="possring.dat",access='stream')
   !write(10) rconvergebw
