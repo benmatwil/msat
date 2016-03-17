@@ -172,10 +172,11 @@ endif
 
 n = size(rconv,2)
 i = 1
+acc = 1d-3
 do while (i < n-1)
   j = i+1
   do while (j < n)
-    if (modulus(rconv(:,i)-rconv(:,j)) < 1d-3 .or. modulus(rconv(:,i)+rconv(:,j)) < 1d-3) call remove_element(rconv,j)
+    if (modulus(rconv(:,i)-rconv(:,j)) < acc .or. modulus(rconv(:,i)+rconv(:,j)) < acc) call remove_element(rconv,j)
     j = j + 1
   enddo
   i = i + 1
