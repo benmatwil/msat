@@ -1,4 +1,4 @@
-!spine finder
+!spine finder with convergence method
 program sf
 use params
 use sfmod
@@ -157,29 +157,28 @@ do j = 1, ntheta
     !crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
     
     maxcount = 10000
-    do k = -1, 1, 2
-      !print*, i+(j-1)*nphi
-      count = 0
-      rnew = r
-      bnew = b
-      rold = [0,0,0]
-      fact = k*1d-2*rsphere
-      !open(unit=10,file='possring.dat', access='stream')
-      do while (modulus(rnew-rold) > 1d-12 .and. count /= maxcount)
-        rold = rnew
-        rnew = rnew + fact*bnew/modulus(bnew)
-        rnew = rsphere*rnew/modulus(rnew)
-        bnew = trilinear(rnew+rnull, bgrid)
-        count = count + 1
-        !if (modulo(count, 1000) == 0) print*, rnew/modulus(rnew)
-        !write(10) rnew/modulus(rnew)
-      enddo
-      !close(10)
-      !print*, count
-      !if (count /= maxcount) print*, rnew/modulus(rnew)
-      !if (count /= maxcount) rconverge(:,i+(j-1)*nphi) = rnew(:)/modulus(rnew)
-      if (k == -1) rconverge1(:,i+(j-1)*nphi) = rnew(:)/modulus(rnew)
-      if (k == 1) rconverge2(:,i+(j-1)*nphi) = rnew(:)/modulus(rnew)
+    count = 0
+    rnewfw = r
+    rnewbk = r
+    bnewfw = b
+    bnewbk = b
+    roldfw = [0,0,0]
+    roldbk = [0,0,0]
+    fact = 1d-2*rsphere
+    acc = 1d-12
+    do while (modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc)
+      
+      roldfw = rnewfw
+      rnewfw = rnewfw + fact*bnewfw/modulus(bnewfw)
+      rnewfw = rsphere*rnewfw/modulus(rnewfw)
+      bnewfw = trilinear(rnewfw+rnull, bgridfw)
+      
+      roldbw = rnewbw
+      rnewbw = rnewbw + fact*bnewbw/modulus(bnewbw)
+      rnewbw = rsphere*rnewbw/modulus(rnewbw)
+      bnewbw = trilinear(rnewbw+rnull, bgridbw)
+      
+      count = count + 1
     enddo
   enddo
 enddo
