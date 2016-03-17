@@ -184,6 +184,7 @@ enddo
 
 print*, rconv
 stop
+
 n = size(rconv,2)
 do i = 1, n
   do j = i+1, n
