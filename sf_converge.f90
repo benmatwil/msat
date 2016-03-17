@@ -101,7 +101,7 @@ double precision :: dphi, dtheta
 integer :: sign, spiral, warning
 
 double precision, dimension(3) :: spine, fan, maxvec, minvec
-double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rconverge
+double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rconv
 
 !set up theta and phi for sphere around null
 dphi = 360.d0/dble(nphi)
@@ -165,34 +165,34 @@ enddo
 
 !if (count(fwflag == 0) == 0) print*, "all vectors didn't converge" !spine should be contained in backward vectors
 if (fwflag(n) == 0) then
-  rconverge = rconvergefw
+  rconv = rconvergefw
 else
-  rconverge = rconvergebw
+  rconv = rconvergebw
 endif
 
-n = size(rconverge,2)
+n = size(rconv,2)
 i = 1
 do while (i < n-1)
   j = i+1
   do while (j < n)
-    if (modulus(rconverge(:,i)-rconverge(:,j)) < 1d-3 .or. modulus(rconverge(:,i)+rconverge(:,j)) < 1d-3) call remove_element(rconverge,j)
+    if (modulus(rconv(:,i)-rconv(:,j)) < 1d-3 .or. modulus(rconv(:,i)+rconv(:,j)) < 1d-3) call remove_element(rconv,j)
     j = j + 1
   enddo
   i = i + 1
 enddo
 
-print*, rconverge
+print*, rconv
 stop
-n = size(rconverge,2)
+n = size(rconv,2)
 do i = 1, n
   do j = i+1, n
     print*, j, n
-    print*, modulus(rconverge(:,i)-rconverge(:,j))
-    print*, modulus(rconverge(:,i)+rconverge(:,j))
+    print*, modulus(rconv(:,i)-rconv(:,j))
+    print*, modulus(rconv(:,i)+rconv(:,j))
   enddo
 enddo
 
-!print*, rconverge
+!print*, rconv
 
 print*, ''
 print*, "Determining null's properties..."
