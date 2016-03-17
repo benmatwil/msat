@@ -375,21 +375,21 @@ subroutine add_element(x,val,pos)
 
   allocate(dummy(nx,ny))
 
-  dummy=x
+  dummy = x
 
   deallocate(x)
   allocate(x(nx,ny+1))
 
   if (pos .eq. 1) then
-    x(:,1)=val
-    x(:,2:ny+1)=dummy
+    x(:,1) = val
+    x(:,2:ny+1) = dummy
   else if (pos .eq. ny+1 .or. pos .lt. 1) then
-    x(:,1:ny)=dummy
-    x(:,ny+1)=val
+    x(:,1:ny) = dummy
+    x(:,ny+1) = val
   else
     x(:,1:pos-1) = dummy(:,1:pos-1)
-    x(:,pos)=val
-    x(:,pos+1:ny+1)=dummy(:,pos:ny)
+    x(:,pos) = val
+    x(:,pos+1:ny+1) = dummy(:,pos:ny)
   endif
 
   deallocate(dummy)
