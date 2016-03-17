@@ -1,5 +1,5 @@
 !spine finder with convergence method
-program sf
+program sf_converge
 use params
 use sfmod
 
