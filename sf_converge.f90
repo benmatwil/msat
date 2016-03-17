@@ -170,45 +170,17 @@ enddo
 !if (count(fwflag == 0) == 0) print*, "all vectors didn't converge" !spine should be contained in backward vectors
 acc = 1d-4
 if (fwflag(n) == 0) then
-  call remove_duplicates(rconvergefw, acc) ! what do we want to do if we are still left with two vectors
-  !print*, rconvergefw, shape(rconvergebw)
-  !open(unit=10,file="possring.dat",access='stream')
-  !write(10) rconvergebw
-  !close(10)
-  
-  spine = rconvergefw(:,1)
+  call remove_duplicates(rconvergefw, acc) ! what do we want to do if we are still left with two vectors  
+  spine = rconvergefw(:,1) ! needs changing once we have guaranteed convergence
   maxvec = rconvergebw(:,1)
-  mindot = 1
-  ! perhaps put this in procedure
-  do i = 2, size(rconvergebw,2)
-    dotprod = abs(dot(maxvec,rconvergebw(:,i)))
-    if (dotprod < mindot) then
-      mindot = dotprod
-      imin = i
-    endif
-  enddo
-  minvec = rconvergebw(:,i)
+  minvec = rconvergebw(:,mindotindex(maxvec,rconvergebw))
   ! spine going out of null
   sign = -1
 else
   call remove_duplicates(rconvergebw, acc)
-  !print*, rconvergebw, shape(rconvergefw)
-  !open(unit=10,file="possring.dat",access='stream')
-  !write(10) rconvergefw
-  !close(10)
-  
   spine = rconvergebw(:,1)
   maxvec = rconvergefw(:,1)
-  mindot = 1
-  do i = 2, size(rconvergefw,2)
-    dotprod = abs(dot(maxvec,rconvergefw(:,i)))
-    if (dotprod < mindot) then
-      mindot = dotprod
-      imin = i
-    endif
-  enddo
-  minvec = rconvergefw(:,i)
-  
+  minvec = rconvergefw(:,mindotindex(maxvec,rconvergefw))
   ! spine going into null
   sign = 1
 endif
