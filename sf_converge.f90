@@ -1,7 +1,7 @@
 !spine finder with convergence method
 program sf_converge
 use params
-use sfmod
+use sfmod_converge
 
 implicit none
 
