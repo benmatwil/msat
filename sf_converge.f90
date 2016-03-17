@@ -56,6 +56,8 @@ do i = 1, nnulls
   fans(:,i) = fan
   spirals(i) = spiral
   warnings(i) = warning
+  
+  print*, '-------------------------------------------------------------------------'
 enddo
 
 !now write data to nulls.dat
@@ -95,10 +97,11 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
 use sfmod_converge
 
 implicit none
-integer :: i, j, k, count, maxcount, n
+integer :: i, j, k, count, n, imin
 double precision :: r(3), b(3), roldfw(3), rnewfw(3), bnewfw(3), roldbw(3), rnewbw(3), bnewbw(3), fact, acc
 integer, allocatable :: fwflag(:)
 double precision :: dphi, dtheta
+double precision :: mindot, dotprod
 integer :: sign, spiral, warning
 
 double precision, dimension(3) :: spine, fan, maxvec, minvec
@@ -126,7 +129,7 @@ allocate(rconvergefw(3,nphi*ntheta), rconvergebw(3,nphi*ntheta))
 allocate(fwflag(nphi*ntheta))
 
 fact = 1d-2*rsphere
-acc = 1d-10*rsphere
+acc = 1d-8*rsphere
 do j = 1, ntheta
   do i = 1, nphi
     count = 0
@@ -137,8 +140,8 @@ do j = 1, ntheta
     bnewfw = b
     bnewbw = b
     roldfw = [0,0,0]
-    roldbw = [0,0,0]
-    do while (modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc)
+    roldbw = [0,0,0] !while limit needs changing to make accurate
+    do while (count < 5000) !modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc .and. 
       
       roldfw = rnewfw
       rnewfw = rnewfw + fact*normalise(bnewfw)
@@ -152,6 +155,7 @@ do j = 1, ntheta
       
       count = count + 1
     enddo
+    !print*, count
     n = i+(j-1)*nphi
     rconvergefw(:,n) = normalise(rnewfw)
     rconvergebw(:,n) = normalise(rnewbw)
@@ -164,39 +168,55 @@ do j = 1, ntheta
 enddo
 
 !if (count(fwflag == 0) == 0) print*, "all vectors didn't converge" !spine should be contained in backward vectors
+acc = 1d-4
 if (fwflag(n) == 0) then
-  rconv = rconvergefw
+  call remove_duplicates(rconvergefw, acc)
+  !print*, rconvergefw, shape(rconvergebw)
+  !open(unit=10,file="possring.dat",access='stream')
+  !write(10) rconvergebw
+  !close(10)
+  
+  spine = rconvergefw(:,1)
+  maxvec = rconvergebw(:,1)
+  mindot = 1
+  ! perhaps put this in procedure
+  do i = 2, size(rconvergebw,2)
+    dotprod = abs(dot(maxvec,rconvergebw(:,i)))
+    if (dotprod < mindot) then
+      mindot = dotprod
+      imin = i
+    endif
+  enddo
+  minvec = rconvergebw(:,i)
+  ! spine going out of null
+  sign = -1
 else
-  rconv = rconvergebw
+  call remove_duplicates(rconvergebw, acc)
+  !print*, rconvergebw, shape(rconvergefw)
+  !open(unit=10,file="possring.dat",access='stream')
+  !write(10) rconvergefw
+  !close(10)
+  
+  spine = rconvergebw(:,1)
+  maxvec = rconvergefw(:,1)
+  mindot = 1
+  do i = 2, size(rconvergefw,2)
+    dotprod = abs(dot(maxvec,rconvergefw(:,i)))
+    if (dotprod < mindot) then
+      mindot = dotprod
+      imin = i
+    endif
+  enddo
+  minvec = rconvergefw(:,i)
+  
+  ! spine going into null
+  sign = 1
 endif
-
-n = size(rconv,2)
-i = 1
-acc = 1d-3
-do while (i < n-1)
-  j = i+1
-  do while (j < n)
-    if (modulus(rconv(:,i)-rconv(:,j)) < acc .or. modulus(rconv(:,i)+rconv(:,j)) < acc) call remove_element(rconv,j)
-    j = j + 1
-    n = size(rconv,2)
-    print*, i, j, n
-  enddo
-  i = i + 1
-enddo
-
-print*, rconv
-stop
-
-n = size(rconv,2)
-do i = 1, n
-  do j = i+1, n
-    print*, j, n
-    print*, modulus(rconv(:,i)-rconv(:,j))
-    print*, modulus(rconv(:,i)+rconv(:,j))
-  enddo
-enddo
-
-!print*, rconv
+print*, "final dot prod is"
+print*, "min/max                          ", "min/spine                         ", "max/spine            "
+print*, dot(minvec,maxvec), dot(minvec,spine), dot(maxvec,spine)
+sign = -sign
+spiral = 0
 
 print*, ''
 print*, "Determining null's properties..."
