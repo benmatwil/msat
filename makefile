@@ -1,4 +1,4 @@
-FC= gfortran
+FC = gfortran
 FFLAGS = -O3
 
 all: writedata nf sf ssf readin sf_converge
@@ -12,7 +12,7 @@ nf : params.f90 nf_mod.f90 nf.f90
 sf : params.f90 sf_mod.f90 sf.f90
 	$(FC) $(FFLAGS) params.f90 sf_mod.f90 sf.f90 -o sf
     
-sf : params.f90 sf_converge_mod.f90 sf_converge.f90
+sf_converge : params.f90 sf_converge_mod.f90 sf_converge.f90
 	$(FC) $(FFLAGS) params.f90 sf_converge_mod.f90 sf_converge.f90 -o sf_converge
 
 ssf : params.f90 common.f90 trace.f90 ring.f90 ssf.f90
