@@ -178,7 +178,8 @@ do while (i < n-1)
   do while (j < n)
     if (modulus(rconv(:,i)-rconv(:,j)) < acc .or. modulus(rconv(:,i)+rconv(:,j)) < acc) call remove_element(rconv,j)
     j = j + 1
-    print*, i, j
+    n = size(rconv,2)
+    print*, i, j, n
   enddo
   i = i + 1
 enddo
