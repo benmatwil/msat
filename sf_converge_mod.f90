@@ -186,6 +186,27 @@ end
 
 !********************************************************************************
 
+function mindotindex(vec, vecarray)
+  implicit none
+  
+  double precision :: vec(3), mindot, dotprod
+  double precision, allocatable :: vecarray(:,:)
+  integer :: i, mindotprodindex
+
+  mindot = 1
+  ! perhaps put this in procedure
+  do i = 1, size(rconvergebw,2)
+    dotprod = abs(dot(maxvec,rconvergebw(:,i)))
+    if (dotprod < mindot) then
+      mindot = dotprod
+      minabsdotindex = i
+    endif
+  enddo
+  
+end
+
+!********************************************************************************
+
 subroutine test_null(spine,major,minor,sign,spiral)
 !Test the assumptions of the null's sign and fan/spine
 !first, assuming the guess is right, integrate a ring of points outwards along the expected fan plane, and inwards along it. See if the fan behaves as it should. Then also swap the major axis of the fan and the spine vectors, and try this again. See which one behaves most like a fan
