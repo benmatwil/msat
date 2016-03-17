@@ -220,7 +220,9 @@ do i = 1, n
 enddo
 
 print*, rconverge1
-stop
+
+print*, "-----------------------------------------------------------"
+!stop
 
 !print*, 'FLUX=',flux
 !print*,'CROSS',crossflux
@@ -242,6 +244,18 @@ mx = maxval(bmap)
 
 !get maxima, minima and saddle points
 call get_maxima(bmap, maxima,minima,saddle, nmax,nmin,nsaddle)
+
+print*, "Global Max:", sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
+print*, "Global Min:", sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
+print*, "Local Max:"
+do i = 1, nmax
+  print*, sphere2cart(1.d0,thetas(maxima(2,i)),phis(maxima(1,i)))
+enddo
+print*, "Local Min:"
+do i = 1, nmax
+  print*, sphere2cart(1.d0,thetas(minima(2,i)),phis(minima(1,i)))
+enddo
+print*, "------------------------------------------------------------------"
 
 sign = 0
 spiral = 0
@@ -383,13 +397,20 @@ else
   
  ! stop
   
-endif 
+endif
 
 !if major and minor axes are almost parallel, redefine minor axis as spine x major
 !print*,'CROSS',modulus(cross(maxvec,minvec))
 if (modulus(cross(maxvec,minvec)) .lt. 0.1) then
   minvec = cross(spine,maxvec)
 endif
+
+print*, "Spine:", spine
+print*, "Maxvec:", maxvec
+print*, "Minvec:", minvec
+print*, "Fan:", normalise(cross(minvec,maxvec))
+
+print*, "-----------------------------------------------------------------------"
 
 print*, ''
 print*, "Determining null's properties..."
@@ -399,6 +420,7 @@ call test_null(spine,maxvec,minvec,sign,spiral)
 call test_null(spine,maxvec,minvec,sign,spiral)
 !call test_null(spine,maxvec,minvec,sign,spiral)
 fan = normalise(cross(minvec,maxvec))
+
 
 
 if (sign .eq. 0) then
@@ -411,7 +433,7 @@ print*, 'Spiral =', spiral
 print*, 'Spine = ', spine
 print*, 'Fan =   ', fan
 print*, 'Tilt =  ', abs(90-acos(dot(fan,spine))/dtor)
-
+stop
 warning = 0
 
 if (abs(90-acos(dot(fan,spine))/dtor) .lt. 10.) then
