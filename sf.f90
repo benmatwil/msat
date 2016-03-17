@@ -155,71 +155,8 @@ do j = 1, ntheta
     !calculate integrals of flux and normal bcross vector on sphere
     !flux = flux + abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
     !crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
-    
-    maxcount = 10000
-    do k = -1, 1, 2
-      !print*, i+(j-1)*nphi
-      count = 0
-      rnew = r
-      bnew = b
-      rold = [0,0,0]
-      fact = k*1d-2*rsphere
-      !open(unit=10,file='possring.dat', access='stream')
-      do while (modulus(rnew-rold) > 1d-12 .and. count /= maxcount)
-        rold = rnew
-        rnew = rnew + fact*bnew/modulus(bnew)
-        rnew = rsphere*rnew/modulus(rnew)
-        bnew = trilinear(rnew+rnull, bgrid)
-        count = count + 1
-        !if (modulo(count, 1000) == 0) print*, rnew/modulus(rnew)
-        !write(10) rnew/modulus(rnew)
-      enddo
-      !close(10)
-      !print*, count
-      !if (count /= maxcount) print*, rnew/modulus(rnew)
-      !if (count /= maxcount) rconverge(:,i+(j-1)*nphi) = rnew(:)/modulus(rnew)
-      if (k == -1) rconverge1(:,i+(j-1)*nphi) = rnew(:)/modulus(rnew)
-      if (k == 1) rconverge2(:,i+(j-1)*nphi) = rnew(:)/modulus(rnew)
-    enddo
   enddo
 enddo
-
-n = size(rconverge1,2)
-i = 1
-do while (i < n-1)
-  j = 1
-  do while (j < n)
-    if (j /= i) then 
-      !print*, i, j, n
-      !print*, rconverge1(:,j) < 1d-4
-      if (modulus(rconverge1(:,i)-rconverge1(:,j)) < 1d-3 .or. modulus(rconverge1(:,i)+rconverge1(:,j)) < 1d-3) then
-        allocate(dum(3,n))
-        n = n-1
-        dum = rconverge1
-        deallocate(rconverge1)
-        allocate(rconverge1(3,n))
-        rconverge1(:,1:j-1) = dum(:,1:j-1)
-        rconverge1(:,j:n) = dum(:,j+1:n+1)
-        deallocate(dum)
-      else
-        print*, i, j, n, modulus(rconverge1(:,i)-rconverge1(:,j)), modulus(rconverge1(:,i)+rconverge1(:,j))
-      endif
-    endif
-    j = j + 1
-  enddo
-  i = i + 1
-enddo
-
-n = size(rconverge1,2)
-do i = 1, n
-  do j = i+1, n
-    print*, j, n
-    print*, modulus(rconverge1(:,i)-rconverge1(:,j))
-    print*, modulus(rconverge1(:,i)+rconverge1(:,j))
-  enddo
-enddo
-
-print*, rconverge1
 
 print*, "-----------------------------------------------------------"
 !stop
