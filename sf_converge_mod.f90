@@ -177,12 +177,6 @@ double precision, dimension(3) :: v1,v2,fanold,fannew
 integer :: i
 double precision, dimension(3,nring) :: rings, fans1,spines1,fans2,spines2
 
-!print*,'testing null'
-
-spine=rotate(spine,thetarot,phirot)
-major=rotate(major,thetarot,phirot)
-minor=rotate(minor,thetarot,phirot)
-
 if (sign .ne. 0) then
 
   !first try with the null's expected sign
