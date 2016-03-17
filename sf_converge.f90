@@ -13,7 +13,7 @@ integer :: nnulls
 integer :: pcount, ncount, ucount
 
 integer :: sign, spiral, warning
-double precision, dimension(3) :: spine,fan
+double precision, dimension(3) :: spine, fan
 
 integer :: i
 
@@ -101,7 +101,6 @@ integer :: i, j, k, count, n, imin
 double precision :: r(3), b(3), roldfw(3), rnewfw(3), bnewfw(3), roldbw(3), rnewbw(3), bnewbw(3), fact, acc
 integer, allocatable :: fwflag(:)
 double precision :: dphi, dtheta
-double precision :: mindot, dotprod
 integer :: sign, spiral, warning
 
 double precision, dimension(3) :: spine, fan, maxvec, minvec
