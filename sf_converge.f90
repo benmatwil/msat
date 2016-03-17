@@ -177,9 +177,7 @@ i = 1
 do while (i < n-1)
   j = i+1
   do while (j < n)
-    if (modulus(rconverge(:,i)-rconverge(:,j)) < 1d-3 .or. modulus(rconverge(:,i)+rconverge(:,j)) < 1d-3) then
-      remove_element(rconverge,j)
-    endif
+    if (modulus(rconverge(:,i)-rconverge(:,j)) < 1d-3 .or. modulus(rconverge(:,i)+rconverge(:,j)) < 1d-3) call remove_element(rconverge,j)
     j = j + 1
   enddo
   i = i + 1
