@@ -136,24 +136,23 @@ subroutine remove_element(x,pos)
   integer :: pos
   integer :: nx, ny
 
-  nx=size(x,1)
-  ny=size(x,2)
-
+  nx = size(x,1)
+  ny = size(x,2)
 
   allocate(dummy(nx,ny))
 
-  dummy=x
+  dummy = x
 
   deallocate(x)
   allocate(x(nx,ny-1))
   
   if (pos .eq. 1) then
-    x(:,1:ny-1)=dummy(:,2:ny)
+    x(:,1:ny-1) = dummy(:,2:ny)
   else if (pos .eq. ny) then
-    x(:,1:ny-1)=dummy(:,1:ny-1)
+    x(:,1:ny-1) = dummy(:,1:ny-1)
   else
-    x(:,1:pos-1)=dummy(:,1:pos-1)
-    x(:,pos:ny-1)=dummy(:,pos+1:ny)
+    x(:,1:pos-1) = dummy(:,1:pos-1)
+    x(:,pos:ny-1) = dummy(:,pos+1:ny)
   endif
   
   deallocate(dummy)
