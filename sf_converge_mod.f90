@@ -132,8 +132,7 @@ end function
 subroutine remove_element(x,pos)
   implicit none
 
-  integer, allocatable, dimension(:,:) :: x
-  integer, allocatable, dimension(:,:) :: dummy
+  double precision, allocatable, dimension(:,:) :: x, dummy
   integer :: pos
   integer :: nx, ny
 
