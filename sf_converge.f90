@@ -187,12 +187,12 @@ n = size(rconverge,2)
 do i = 1, n
   do j = i+1, n
     print*, j, n
-    print*, modulus(rconverge1(:,i)-rconverge1(:,j))
-    print*, modulus(rconverge1(:,i)+rconverge1(:,j))
+    print*, modulus(rconverge(:,i)-rconverge(:,j))
+    print*, modulus(rconverge(:,i)+rconverge(:,j))
   enddo
 enddo
 
-print*, rconverge1
+!print*, rconverge
 
 print*, ''
 print*, "Determining null's properties..."
