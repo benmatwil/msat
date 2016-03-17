@@ -99,7 +99,6 @@ double precision :: r(3), b(3), rold(3), rnew(3), bnew(3), fact
 double precision :: dphi, dtheta
 double precision :: mn, mx
 integer :: mxloc(2), mnloc(2)
-!double precision :: sep
 integer :: nmax, nmin, nsaddle
 double precision :: minvec(3), maxvec(3)
 double precision :: flux, crossflux
