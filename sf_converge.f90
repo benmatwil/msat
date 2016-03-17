@@ -160,7 +160,7 @@ do j = 1, ntheta
     else
       fwflag(n) = 0
     endif
-    print*, count
+    print*, i,j,count
   enddo
 enddo
 
