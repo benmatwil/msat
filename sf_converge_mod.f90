@@ -194,12 +194,12 @@ function perpindex(vec, vecarray)
   integer :: i, perpindex
 
   mindot = 1
-  ! perhaps put this in procedure
   do i = 1, size(vecarray,2)
     dotprod = abs(dot(vec,vecarray(:,i)))
     if (dotprod < mindot) then
       mindot = dotprod
       perpindex = i
+      print*, mindot
     endif
   enddo
   
