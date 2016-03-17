@@ -154,7 +154,11 @@ do j = 1, ntheta
     n = i+(j-1)*nphi
     rconvergefw(:,n) = normalise(rnewfw)
     rconvergebw(:,n) = normalise(rnewbw)
-    if (modulus(rnewfw-roldfw) > acc) fwflag(n) = 1 else fwflag(n) = 0
+    if (modulus(rnewfw-roldfw) > acc) then
+      fwflag(n) = 1
+    else
+      fwflag(n) = 0
+    endif
     print*, count
   enddo
 enddo
