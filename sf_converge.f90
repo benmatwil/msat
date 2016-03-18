@@ -160,6 +160,7 @@ do j = 1, ntheta
     n = i+(j-1)*nphi
     rconvergefw(:,n) = normalise(rnewfw)
     rconvergebw(:,n) = normalise(rnewbw)
+    !print*, rnewbw, rnewfw
     if (modulus(rnewfw-roldfw) > acc) then
       fwflag(n) = 1
     else
@@ -185,14 +186,23 @@ endif
 deallocate(rconvergebw, rconvergefw)
 
 call remove_duplicates(rspine, 1d-4) ! what do we want to do if we are still left with two vectors
+call remove_duplicates(rfan, 1d-4)
 
+print*, size(rspine,2)
+print*, size(rfan,2)
+
+return
+
+open(unit=10, file="spinedata.dat", access="stream")
+write(10) size(rspine,2), rspine
+close(10)
 open(unit=10, file="fandata.dat", access="stream")
 write(10) size(rfan,2), rfan
 close(10)
 
 spine = rspine(:,1) !which should we pick if > 1
 maxvec = rfan(:,1) !pick this more intelligently?
-print*, maxvec
+print*, "Maxvec is:", maxvec
 
 mindot = 1
 do i = 2, size(rfan,2)
@@ -203,7 +213,7 @@ do i = 2, size(rfan,2)
   endif
 enddo
 minvec = rfan(:,imin)
-print*, i, size(rfan)
+print*, imin, size(rfan)
 print*, "Minvec is:", minvec
 
 print*, '-------------------------------------------------------------------------'
