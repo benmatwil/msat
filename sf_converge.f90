@@ -58,6 +58,7 @@ do i = 1, nnulls
   warnings(i) = warning
   
   print*, '-------------------------------------------------------------------------'
+  print*, '-------------------------------------------------------------------------'
 enddo
 
 !now write data to nulls.dat
@@ -105,7 +106,7 @@ double precision :: mindot, dotprod
 integer :: sign, spiral, warning
 
 double precision, dimension(3) :: spine, fan, maxvec, minvec
-double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rconv
+double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rspine, rfan
 
 !set up theta and phi for sphere around null
 dphi = 360.d0/dble(nphi)
@@ -168,46 +169,46 @@ do j = 1, ntheta
 enddo
 
 !if (count(fwflag == 0) == 0) print*, "all vectors didn't converge" !spine should be contained in backward vectors
-acc = 1d-4
-if (fwflag(n) == 0) then
-  call remove_duplicates(rconvergefw, acc) ! what do we want to do if we are still left with two vectors
-  
-  spine = rconvergefw(:,1)
-  maxvec = rconvergebw(:,1)
-  mindot = 1
-  ! perhaps put this in procedure
-  do i = 2, size(rconvergebw,2)
-    dotprod = abs(dot(maxvec,rconvergebw(:,i)))
-    if (dotprod < mindot) then
-      mindot = dotprod
-      imin = i
-    endif
-  enddo
-  minvec = rconvergebw(:,i)
+
+if (fwflag(n) == 0) then !want a better way of confirming which is fan and which is spine
   ! spine going out of null
+  rspine = rconvergefw
+  rfan = rconvergebw
   sign = -1
 else
-  call remove_duplicates(rconvergebw, acc)
-  
-  spine = rconvergebw(:,1)
-  maxvec = rconvergefw(:,1)
-  mindot = 1
-  do i = 2, size(rconvergefw,2)
-    dotprod = abs(dot(maxvec,rconvergefw(:,i)))
-    if (dotprod < mindot) then
-      mindot = dotprod
-      imin = i
-    endif
-  enddo
-  minvec = rconvergefw(:,i)
-  
   ! spine going into null
+  rspine = rconvergebw
+  rfan = rconvergefw
   sign = 1
 endif
 
+deallocate(rconvergebw, rconvergefw)
+
+call remove_duplicates(rspine, 1d-4) ! what do we want to do if we are still left with two vectors
+
+spine = rspine(:,1) !which should we pick if > 1
+maxvec = rfan(:,1) !pick this more intelligently?
+print*, maxvec
+! perhaps put this in procedure
+mindot = 1
+do i = 2, size(rfan,2)
+  dotprod = abs(dot(maxvec,rfan(:,i)))
+  if (dotprod < mindot) then
+    mindot = dotprod
+    imin = i
+  endif
+enddo
+minvec = rfan(:,i)
+print*, minvec
+stop
+print*, '-------------------------------------------------------------------------'
 print*, "final dot prod is"
-print*, "min/max                          ", "min/spine                         ", "max/spine            "
+print*, "        min/max           ", "      min/spine          ", "      max/spine       "
 print*, dot(minvec,maxvec), dot(minvec,spine), dot(maxvec,spine)
+print*, ''
+print*, 'Spine = ', spine
+print*, 'Fan =   ', cross(minvec,maxvec)
+print*, '-------------------------------------------------------------------------'
 
 sign = -sign
 spiral = 0
