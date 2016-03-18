@@ -186,10 +186,14 @@ deallocate(rconvergebw, rconvergefw)
 
 call remove_duplicates(rspine, 1d-4) ! what do we want to do if we are still left with two vectors
 
+open(unit=10, file="fandata.dat", access="stream")
+write(10) size(rfan,2), rfan
+close(10)
+
 spine = rspine(:,1) !which should we pick if > 1
 maxvec = rfan(:,1) !pick this more intelligently?
 print*, maxvec
-! perhaps put this in procedure
+
 mindot = 1
 do i = 2, size(rfan,2)
   dotprod = abs(dot(maxvec,rfan(:,i)))
@@ -198,9 +202,10 @@ do i = 2, size(rfan,2)
     imin = i
   endif
 enddo
-minvec = rfan(:,i)
-print*, minvec
-stop
+minvec = rfan(:,imin)
+print*, i, size(rfan)
+print*, "Minvec is:", minvec
+
 print*, '-------------------------------------------------------------------------'
 print*, "final dot prod is"
 print*, "        min/max           ", "      min/spine          ", "      max/spine       "
@@ -210,7 +215,7 @@ print*, 'Spine = ', spine
 print*, 'Fan =   ', cross(minvec,maxvec)
 print*, '-------------------------------------------------------------------------'
 
-sign = -sign
+sign = -sign !check which sign needs to be which
 spiral = 0
 
 print*, ''
