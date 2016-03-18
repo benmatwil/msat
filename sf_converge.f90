@@ -13,7 +13,7 @@ integer :: nnulls
 integer :: pcount, ncount, ucount
 
 integer :: sign, spiral, warning
-double precision, dimension(3) :: spine,fan
+double precision, dimension(3) :: spine, fan
 
 integer :: i
 
@@ -171,10 +171,6 @@ enddo
 acc = 1d-4
 if (fwflag(n) == 0) then
   call remove_duplicates(rconvergefw, acc) ! what do we want to do if we are still left with two vectors
-  !print*, rconvergefw, shape(rconvergebw)
-  !open(unit=10,file="possring.dat",access='stream')
-  !write(10) rconvergebw
-  !close(10)
   
   spine = rconvergefw(:,1)
   maxvec = rconvergebw(:,1)
@@ -192,10 +188,6 @@ if (fwflag(n) == 0) then
   sign = -1
 else
   call remove_duplicates(rconvergebw, acc)
-  !print*, rconvergebw, shape(rconvergefw)
-  !open(unit=10,file="possring.dat",access='stream')
-  !write(10) rconvergefw
-  !close(10)
   
   spine = rconvergebw(:,1)
   maxvec = rconvergefw(:,1)
@@ -212,9 +204,11 @@ else
   ! spine going into null
   sign = 1
 endif
+
 print*, "final dot prod is"
 print*, "min/max                          ", "min/spine                         ", "max/spine            "
 print*, dot(minvec,maxvec), dot(minvec,spine), dot(maxvec,spine)
+
 sign = -sign
 spiral = 0
 
