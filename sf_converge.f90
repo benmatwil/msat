@@ -76,10 +76,10 @@ pcount = 0
 ucount = 0
 ncount = 0
 do i = 1, nnulls
-print*, i, signs(i), spirals(i), warnings(i)
-if (signs(i) .eq. 1) pcount = pcount+1
-if (signs(i) .eq. -1) ncount = ncount+1
-if (signs(i) .eq. 0) ucount = ucount+1
+  print*, i, signs(i), spirals(i), warnings(i)
+  if (signs(i) .eq. 1) pcount = pcount+1
+  if (signs(i) .eq. -1) ncount = ncount+1
+  if (signs(i) .eq. 0) ucount = ucount+1
 enddo
 
 print*, 'Total number of nulls:', nnulls
