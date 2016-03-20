@@ -169,8 +169,10 @@ do j = 1, ntheta
   enddo
 enddo
 
+!next statement wasn't working so left commented
 !if (count(fwflag == 0) == 0) print*, "all vectors didn't converge" !spine should be contained in backward vectors
 
+!with current code, this may fail to pick the correct one
 if (fwflag(n) == 0) then !want a better way of confirming which is fan and which is spine
   ! spine going out of null
   rspine = rconvergefw
@@ -186,7 +188,7 @@ endif
 deallocate(rconvergebw, rconvergefw)
 
 call remove_duplicates(rspine, 1d-4) ! what do we want to do if we are still left with two vectors
-call remove_duplicates(rfan, 1d-4)
+call remove_duplicates(rfan, 1d-4) ! do we want to reduce rfan?
 
 print*, size(rspine,2)
 print*, size(rfan,2)
@@ -200,8 +202,8 @@ open(unit=10, file="fandata.dat", access="stream")
 write(10) size(rfan,2), rfan
 close(10)
 
-spine = rspine(:,1) !which should we pick if > 1
-maxvec = rfan(:,1) !pick this more intelligently?
+spine = rspine(:,1) !which should we pick if > 1 spine vector
+maxvec = rfan(:,1) !pick this more intelligently? theres a whole ring of them
 print*, "Maxvec is:", maxvec
 
 mindot = 1
