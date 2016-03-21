@@ -161,6 +161,7 @@ end
 !********************************************************************************
 
 subroutine remove_duplicates(vecarray, accur)
+  ! removes vectors with accur distance away from another vector to reduce to "unique" vectors
   implicit none
   
   double precision, allocatable :: vecarray(:,:)
@@ -170,9 +171,9 @@ subroutine remove_duplicates(vecarray, accur)
   n = size(vecarray,2)
   i = 1
   do while (i < n)
-    j = i+1
+    j = i + 1
     do while (j < n+1)
-      if (modulus(vecarray(:,i)-vecarray(:,j)) < accur .or. modulus(vecarray(:,i)+vecarray(:,j)) < accur) then
+      if (modulus(vecarray(:,i)-vecarray(:,j)) < accur) then
         call remove_element(vecarray,j)
         n = size(vecarray,2)
       else
