@@ -193,8 +193,10 @@ if (nfw == 2 .or. nbw == 2) then
     rspine = rconvergebw
     rfan = rconvergefw
     sign = 1
-
   endif
+else
+  
+endif
 
 deallocate(rconvergebw, rconvergefw)
 
