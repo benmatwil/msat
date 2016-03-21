@@ -57,8 +57,10 @@ do i = 1, nnulls
   spirals(i) = spiral
   warnings(i) = warning
   
+  print*, ''
   print*, '-------------------------------------------------------------------------'
   print*, '-------------------------------------------------------------------------'
+  print*, ''
 enddo
 
 !now write data to nulls.dat
@@ -125,6 +127,7 @@ thetas = thetas*dtor
 
 print*, 'Null at:', rnull
 print*, 'B=', trilinear(rnull, bgrid)
+print*, '--------------------------------------------------------------------------'
 
 allocate(rconvergefw(3,nphi*ntheta), rconvergebw(3,nphi*ntheta))
 allocate(fwflag(nphi*ntheta))
@@ -172,35 +175,38 @@ enddo
 !next statement wasn't working so left commented
 !if (count(fwflag == 0) == 0) print*, "all vectors didn't converge" !spine should be contained in backward vectors
 
+call remove_duplicates(rconvergefw, 1d-4) ! what do we want to do if we are still left with two vectors
+call remove_duplicates(rconvergebw, 1d-4) ! do we want to reduce rfan?
+
+nfw = size(rconvergefw,2)
+nbw = size(rconvergefw,2)
+
 !with current code, this may fail to pick the correct one
-if (fwflag(n) == 0) then !want a better way of confirming which is fan and which is spine
-  ! spine going out of null
-  rspine = rconvergefw
-  rfan = rconvergebw
-  sign = -1
-else
-  ! spine going into null
-  rspine = rconvergebw
-  rfan = rconvergefw
-  sign = 1
-endif
+if (nfw == 2 .or. nbw == 2) then
+  if (nfw == 2 .and. nbw > 2) then !want a better way of confirming which is fan and which is spine
+    ! spine going out of null
+    rspine = rconvergefw
+    rfan = rconvergebw
+    sign = -1
+  else if (nbw == 2 .and nfw > 2) then
+    ! spine going into null
+    rspine = rconvergebw
+    rfan = rconvergefw
+    sign = 1
+
+  endif
 
 deallocate(rconvergebw, rconvergefw)
 
-call remove_duplicates(rspine, 1d-4) ! what do we want to do if we are still left with two vectors
-call remove_duplicates(rfan, 1d-4) ! do we want to reduce rfan?
+print*, "Number of spines:", size(rspine,2)
+print*, "Number of fans:", size(rfan,2)
 
-print*, size(rspine,2)
-print*, size(rfan,2)
-
-return
-
-open(unit=10, file="spinedata.dat", access="stream")
-write(10) size(rspine,2), rspine
-close(10)
-open(unit=10, file="fandata.dat", access="stream")
-write(10) size(rfan,2), rfan
-close(10)
+!open(unit=10, file="spinedata.dat", access="stream")
+!write(10) size(rspine,2), rspine
+!close(10)
+!open(unit=10, file="fandata.dat", access="stream")
+!write(10) size(rfan,2), rfan
+!close(10)
 
 spine = rspine(:,1) !which should we pick if > 1 spine vector
 maxvec = rfan(:,1) !pick this more intelligently? theres a whole ring of them
@@ -215,7 +221,7 @@ do i = 2, size(rfan,2)
   endif
 enddo
 minvec = rfan(:,imin)
-print*, imin, size(rfan)
+print*, "Perp vec is at ", imin, "out of a total of ", size(rfan)
 print*, "Minvec is:", minvec
 
 print*, '-------------------------------------------------------------------------'
@@ -227,7 +233,7 @@ print*, 'Spine = ', spine
 print*, 'Fan =   ', cross(minvec,maxvec)
 print*, '-------------------------------------------------------------------------'
 
-sign = -sign !check which sign needs to be which
+!sign = -sign !check which sign needs to be which
 spiral = 0
 
 print*, ''
