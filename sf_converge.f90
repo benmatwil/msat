@@ -100,15 +100,17 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
 use sfmod_converge
 
 implicit none
-integer :: i, j, k, count, n, imin
-double precision :: r(3), b(3), roldfw(3), rnewfw(3), bnewfw(3), roldbw(3), rnewbw(3), bnewbw(3), fact, acc
-integer, allocatable :: fwflag(:)
+integer :: i, j, k, count, n, imin, nfw, nbw, nspine, nfan, maxcount
+double precision :: r(3), b(3)
+double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
+integer :: flag, testgordon, nfanchk
 double precision :: dphi, dtheta
+double precision :: fact, acc, spinecheck
 double precision :: mindot, dotprod
 integer :: sign, spiral, warning
 
 double precision, dimension(3) :: spine, fan, maxvec, minvec
-double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rspine, rfan
+double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rspine, rfan, rfanchk, dummy
 
 !set up theta and phi for sphere around null
 dphi = 360.d0/dble(nphi)
@@ -130,13 +132,15 @@ print*, 'B=', trilinear(rnull, bgrid)
 print*, '--------------------------------------------------------------------------'
 
 allocate(rconvergefw(3,nphi*ntheta), rconvergebw(3,nphi*ntheta))
-allocate(fwflag(nphi*ntheta))
+allocate(roldfw(3), rnewfw(3), bnewfw(3), roldbw(3), rnewbw(3), bnewbw(3))
 
 fact = 1d-2*rsphere
-acc = 1d-8*rsphere
+acc = 1d-10*rsphere
 do j = 1, ntheta
   do i = 1, nphi
     count = 0
+    maxcount = 10000
+    flag = 0
     r = sphere2cart(rsphere,thetas(j),phis(i))
     b = trilinear(r+rnull, bgrid)
     rnewfw = r
@@ -145,105 +149,143 @@ do j = 1, ntheta
     bnewbw = b
     roldfw = [0,0,0]
     roldbw = [0,0,0] !while limit needs changing to make accurate
-    do while (count < 5000) !modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc .and. 
-      
-      roldfw = rnewfw
-      rnewfw = rnewfw + fact*normalise(bnewfw)
-      rnewfw = rsphere*normalise(rnewfw)
-      bnewfw = trilinear(rnewfw+rnull, bgrid)
-      
-      roldbw = rnewbw
-      rnewbw = rnewbw - fact*normalise(bnewbw)
-      rnewbw = rsphere*normalise(rnewbw)
-      bnewbw = trilinear(rnewbw+rnull, bgrid)
-      ! want the fan vectors to interate longer as they don't converge as quick
+    do while (count < maxcount) ! .and. modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc .and. 
+      call it_conv(roldfw,rnewfw,bnewfw,fact,1)
+      call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
       count = count + 1
+      if (modulus(rnewfw-roldfw) < acc .or. modulus(rnewbw-roldbw) < acc) flag = 1
+      if (flag == 0) maxcount = 2*count
     enddo
     !print*, count
     n = i+(j-1)*nphi
     rconvergefw(:,n) = normalise(rnewfw)
     rconvergebw(:,n) = normalise(rnewbw)
-    !print*, rnewbw, rnewfw
-    if (modulus(rnewfw-roldfw) > acc) then
-      fwflag(n) = 1
-    else
-      fwflag(n) = 0
-    endif
   enddo
 enddo
 
-!next statement wasn't working so left commented
-!if (count(fwflag == 0) == 0) print*, "all vectors didn't converge" !spine should be contained in backward vectors
-
 call remove_duplicates(rconvergefw, 1d-4) ! what do we want to do if we are still left with two vectors
-call remove_duplicates(rconvergebw, 1d-4) ! do we want to reduce rfan?
+call remove_duplicates(rconvergebw, 1d-4) ! do we want to reduce rfan
 
 nfw = size(rconvergefw,2)
-nbw = size(rconvergefw,2)
+nbw = size(rconvergebw,2)
 
 !with current code, this may fail to pick the correct one
-if (nfw == 2 .or. nbw == 2) then
-  if (nfw == 2 .and. nbw > 2) then !want a better way of confirming which is fan and which is spine
-    ! spine going out of null
-    rspine = rconvergefw
-    rfan = rconvergebw
-    sign = -1
-  else if (nbw == 2 .and nfw > 2) then
-    ! spine going into null
-    rspine = rconvergebw
-    rfan = rconvergefw
-    sign = 1
-  endif
-else
-  
+if (nfw < nbw) then !want a better way of confirming which is fan and which is spine
+  ! spine going out of null
+  rspine = rconvergefw
+  rfan = rconvergebw
+  sign = -1
+else if (nfw > nbw) then
+  ! spine going into null
+  rspine = rconvergebw
+  rfan = rconvergefw
+  sign = 1
+else if (nfw == nbw) then
+  !need a way to check this
+  rspine = rconvergebw
+  rfan = rconvergefw
 endif
 
 deallocate(rconvergebw, rconvergefw)
 
-print*, "Number of spines:", size(rspine,2)
-print*, "Number of fans:", size(rfan,2)
+rfanchk = rfan
+call remove_duplicates(rfanchk,1d-1)
 
-!open(unit=10, file="spinedata.dat", access="stream")
-!write(10) size(rspine,2), rspine
-!close(10)
-!open(unit=10, file="fandata.dat", access="stream")
-!write(10) size(rfan,2), rfan
-!close(10)
+nfanchk = size(rfanchk,2)
+if (nfanchk == 2) then
+  deallocate(rfan)
+  rfan = rfanchk
+  deallocate(rfanchk)
+endif
+
+nspine = size(rspine,2)
+nfan = size(rfan,2)
+print*, "Number of spines:", nspine
+print*, "Number of fans:", nfan
+print*, "Number of points left in fan:", nfanchk
+
+if ((nfan > 2 .and. nfan < 10000) .or. nspine > 2) then
+  open(unit=10, file="spinedata.dat", access="stream")
+  write(10) size(rspine,2), rspine
+  close(10)
+  open(unit=10, file="fandata.dat", access="stream")
+  write(10) size(rfan,2), rfan
+  close(10)
+endif
 
 spine = rspine(:,1) !which should we pick if > 1 spine vector
 maxvec = rfan(:,1) !pick this more intelligently? theres a whole ring of them
+
+!what if nfan = 3/4?
+spinecheck = dot(trilinear(rsphere*spine+rnull,bgrid),spine)/rsphere
+if (nfan == 2 .and. abs(dot(trilinear(rsphere*maxvec+rnull,bgrid),maxvec)/rsphere) > abs(spinecheck)) then
+  dummy = rspine
+  deallocate(rspine)
+  rspine = rfan
+  deallocate(rfan)
+  rfan = dummy
+  
+  nspine = size(rspine,2)
+  nfan = size(rfan,2)
+  
+  spine = rspine(:,1)
+  maxvec = rfan(:,1)
+  
+  if (spinecheck > 0) then
+    sign = -1
+  else
+    sign = 1
+  endif 
+endif
+
 print*, "Maxvec is:", maxvec
 
-mindot = 1
-do i = 2, size(rfan,2)
-  dotprod = abs(dot(maxvec,rfan(:,i)))
-  if (dotprod < mindot) then
-    mindot = dotprod
-    imin = i
-  endif
-enddo
-minvec = rfan(:,imin)
-print*, "Perp vec is at ", imin, "out of a total of ", size(rfan)
+if (nfan == 2) then
+  minvec = cross(spine,maxvec)
+else
+  mindot = 1
+  do i = 2, size(rfan,2)
+    dotprod = abs(dot(maxvec,rfan(:,i)))
+    if (dotprod < mindot) then
+      mindot = dotprod
+      imin = i
+    endif
+  enddo
+  minvec = rfan(:,imin)
+  print*, "Perp vec is at ", imin, "out of a total of ", size(rfan)
+endif
+
 print*, "Minvec is:", minvec
+
+if (size(rfan,2) == 2) then
+  print*,'-------------------------------------------------------------------------'
+  print*,dot(trilinear(rsphere*spine+rnull,bgrid),spine)/rsphere
+  print*,dot(trilinear(rsphere*maxvec+rnull,bgrid),maxvec)/rsphere
+  print*,dot(trilinear(rsphere*minvec+rnull,bgrid),minvec)/rsphere
+endif
 
 print*, '-------------------------------------------------------------------------'
 print*, "final dot prod is"
 print*, "        min/max           ", "      min/spine          ", "      max/spine       "
 print*, dot(minvec,maxvec), dot(minvec,spine), dot(maxvec,spine)
 print*, ''
-print*, 'Spine = ', spine
-print*, 'Fan =   ', cross(minvec,maxvec)
+!print*, 'Spine = ', spine
+!print*, 'Fan =   ', cross(minvec,maxvec)
 print*, '-------------------------------------------------------------------------'
 
 !sign = -sign !check which sign needs to be which
 spiral = 0
 
-print*, ''
-print*, "Determining null's properties..."
+testgordon = 0
+if (testgordon == 1) then
+  print*, ''
+  print*, "Determining null's properties..."
 
-!test the estimated properties and adjust them if required. Run this twice to be sure
-call test_null(spine,maxvec,minvec,sign,spiral)
-call test_null(spine,maxvec,minvec,sign,spiral)
+  !test the estimated properties and adjust them if required. Run this twice to be sure
+  call test_null(spine,maxvec,minvec,sign,spiral)
+  call test_null(spine,maxvec,minvec,sign,spiral)
+endif
+
 fan = normalise(cross(minvec,maxvec))
 
 if (sign .eq. 0) then

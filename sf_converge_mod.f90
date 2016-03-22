@@ -9,7 +9,7 @@ double precision :: dx, dy, dz
 
 double precision, allocatable :: bgrid(:,:,:,:)
 
-integer, parameter :: nphi = 180
+integer, parameter :: nphi = 90
 integer, parameter :: ntheta = nphi/2
 
 double precision, dimension(3) :: rnull
@@ -183,6 +183,23 @@ subroutine remove_duplicates(vecarray, accur)
     i = i + 1
   enddo
 
+end
+
+!********************************************************************************
+
+subroutine it_conv(rold,rnew,bnew,fact,dir)
+  
+  implicit none
+  
+  double precision, allocatable, dimension(:) :: rold, rnew, bnew
+  double precision :: fact
+  integer :: dir
+  
+  rold = rnew
+  rnew = rnew + dir*fact*normalise(bnew)
+  rnew = rsphere*normalise(rnew)
+  bnew = trilinear(rnew+rnull, bgrid)
+  
 end
 
 !********************************************************************************
