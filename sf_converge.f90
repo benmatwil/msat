@@ -265,12 +265,12 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   endif
 
   print*, '-------------------------------------------------------------------------'
-  print*, "final dot prod is"
+  print*, "Final dot prod is"
   print*, "        min/max           ", "      min/spine          ", "      max/spine       "
   print*, dot(minvec,maxvec), dot(minvec,spine), dot(maxvec,spine)
   print*, ''
-  !print*, 'Spine = ', spine
-  !print*, 'Fan =   ', cross(minvec,maxvec)
+  !print*, 'Pre-gordon-spine = ', spine
+  !print*, 'Pre-gordon-fan =   ', cross(minvec,maxvec)
   print*, '-------------------------------------------------------------------------'
 
   !sign = -sign !check which sign needs to be which
