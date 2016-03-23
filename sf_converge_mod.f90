@@ -208,305 +208,305 @@ subroutine test_null(spine,major,minor,sign,spiral)
 !Test the assumptions of the null's sign and fan/spine
 !first, assuming the guess is right, integrate a ring of points outwards along the expected fan plane, and inwards along it. See if the fan behaves as it should. Then also swap the major axis of the fan and the spine vectors, and try this again. See which one behaves most like a fan
 
-implicit none
+  implicit none
 
-double precision, dimension(3) :: spine, major, minor, fan, dumvec
-integer :: sign, spiral
-integer, parameter :: nring = 1000
-double precision :: dot1,dot2,sep1,sep2
-double precision, dimension(3) :: v1,v2,fanold,fannew
-integer :: i
-double precision, dimension(3,nring) :: rings, fans1,spines1,fans2,spines2
+  double precision, dimension(3) :: spine, major, minor, fan, dumvec
+  integer :: sign, spiral
+  integer, parameter :: nring = 1000
+  double precision :: dot1,dot2,sep1,sep2
+  double precision, dimension(3) :: v1,v2,fanold,fannew
+  integer :: i
+  double precision, dimension(3,nring) :: rings, fans1,spines1,fans2,spines2
 
-if (sign .ne. 0) then
+  if (sign .ne. 0) then
 
-  !first try with the null's expected sign
-  call get_ring(major,minor,nring,rings)
-
-  ! open (unit=10,file='output/ring1.dat',form='unformatted')
-  ! write(10) nring
-  ! write(10) rings(1,:),rings(2,:),rings(3,:)
-  ! write(10) spine(1),-1*spine(1),spine(2),-1*spine(2),spine(3),-1*spine(3)
-  ! write(10) major(1),-1*major(1),major(2),-1*major(2),major(3),-1*major(3)
-  ! write(10) minor(1),-1*minor(1),minor(2),-1*minor(2),minor(3),-1*minor(3)
-  ! close(10)
-
-  !integrate out along fan (hopefully)
-  call integrate_rings(nring,rings,sign)
-  !open(unit=90,file='output/trace1.dat',form='unformatted')
-  !write(90) nring
-  !write(90) rings(1,:),rings(2,:),rings(3,:)
-
-  fans1 = rings
-
-  !integrate back along spine (hopefully) 
-  call get_ring(major,minor,nring,rings)
-  call integrate_rings(nring,rings,-1*sign)
-  ! write(90) nring
-  ! write(90) rings(1,:),rings(2,:),rings(3,:)
-  ! close(90)
-  
-  spines1 = rings 
-  !
-  !see if traced spine is where it should be
-  call check_null(nring,rings,spine,dot1,sep1)
-
-  !now try with sign and spine/major axis switched
-
-  call get_ring(spine,minor,nring,rings)
-
-  !open (unit=10,file='output/ring2.dat',form='unformatted')
-  !write(10) nring
-  !write(10) rings(1,:),rings(2,:),rings(3,:)
-  !write(10) major(1),-1*major(1),major(2),-1*major(2),major(3),-1*major(3)
-  !write(10) spine(1),-1*spine(1),spine(2),-1*spine(2),spine(3),-1*spine(3)
-  !write(10) minor(1),-1*minor(1),minor(2),-1*minor(2),minor(3),-1*minor(3)
-  !close(10)
-
-  !integrate along fan
-  call integrate_rings(nring,rings,-1*sign)
-  !open(unit=90,file='output/trace2.dat',form='unformatted')
-  !write(90) nring
-  !write(90) rings(1,:),rings(2,:),rings(3,:)
-  
-  fans2 = rings
-  
-  !integrate along spine
-  call get_ring(spine,minor,nring,rings)
-  call integrate_rings(nring,rings,sign)
-  !write(90) nring
-  !write(90) rings(1,:),rings(2,:),rings(3,:)
-  !close(90)
-  
-  spines2 = rings
-  
-  !see if traced spine is where it should be
-  call check_null(nring,rings,major,dot2,sep2)
-  
-  !Now see if we need to switch the null's sign
-  
-  !print*,'Deciding null properties...'
-  if ((dot1 .gt. dot2) .and. (sep1 .lt. sep2)) then
-    !yay got it correct
-    spine = spine
-
-    !check to see if right axes but wrong sign
-    call fansrings(fans1,spines1,sign,major,spine)
-
-  else if ((dot2 .gt. dot1) .and. (sep2 .lt. sep1)) then
-    print*, 'Swapping sign'
-    !boo got it wrong, need to swap sign
-    sign = sign*(-1)
-    spiral = 1 !if we got it wrong the null was probably spiral
-      
-    dumvec = spine
-    !swap spine and fan
-    spine = major
-    major = dumvec
-      
-    call fansrings(fans2,spines2,sign,major,spine)
-  else
-  !weird null - possibly 2d?
-    print*, 'Cannot characterise null - possibly 2D null'
-    sign = 0
-    spiral = 0
-    spine = 0
-    minor = 0
-    major = 0
-  endif
-
-  if (sign .ne. 0) then 
-    !refine fan vector (fan is not 100% correct if the null is an inclined spiral)
-    
-    !trace along fan
+    !first try with the null's expected sign
     call get_ring(major,minor,nring,rings)
+
+    ! open (unit=10,file='output/ring1.dat',form='unformatted')
+    ! write(10) nring
+    ! write(10) rings(1,:),rings(2,:),rings(3,:)
+    ! write(10) spine(1),-1*spine(1),spine(2),-1*spine(2),spine(3),-1*spine(3)
+    ! write(10) major(1),-1*major(1),major(2),-1*major(2),major(3),-1*major(3)
+    ! write(10) minor(1),-1*minor(1),minor(2),-1*minor(2),minor(3),-1*minor(3)
+    ! close(10)
+
+    !integrate out along fan (hopefully)
     call integrate_rings(nring,rings,sign)
+    !open(unit=90,file='output/trace1.dat',form='unformatted')
+    !write(90) nring
+    !write(90) rings(1,:),rings(2,:),rings(3,:)
 
-    !new fan vector is cross product between traced fan vectors 
-    v1 = rings(:,1)
-    fanold = 0.
-    do i = 2, nring
-      v2 = rings(:,i)
-      fannew = cross(v1,v2)
-      if (modulus(fannew) .gt. modulus(fanold)) then
-        fanold = fannew
-      endif
-    enddo
+    fans1 = rings
 
-    !print*,'oldfan=',cross(major,minor)
-    !print*,'newfan=',normalise(fanold)
+    !integrate back along spine (hopefully) 
+    call get_ring(major,minor,nring,rings)
+    call integrate_rings(nring,rings,-1*sign)
+    ! write(90) nring
+    ! write(90) rings(1,:),rings(2,:),rings(3,:)
+    ! close(90)
     
-    !minor=normalise(cross(major,fanold))
-    !print*,'nnwfan=',normalise(cross(minor,major))
-    major = normalise(v1)
+    spines1 = rings 
+    !
+    !see if traced spine is where it should be
+    call check_null(nring,rings,spine,dot1,sep1)
+
+    !now try with sign and spine/major axis switched
+
+    call get_ring(spine,minor,nring,rings)
+
+    !open (unit=10,file='output/ring2.dat',form='unformatted')
+    !write(10) nring
+    !write(10) rings(1,:),rings(2,:),rings(3,:)
+    !write(10) major(1),-1*major(1),major(2),-1*major(2),major(3),-1*major(3)
+    !write(10) spine(1),-1*spine(1),spine(2),-1*spine(2),spine(3),-1*spine(3)
+    !write(10) minor(1),-1*minor(1),minor(2),-1*minor(2),minor(3),-1*minor(3)
+    !close(10)
+
+    !integrate along fan
+    call integrate_rings(nring,rings,-1*sign)
+    !open(unit=90,file='output/trace2.dat',form='unformatted')
+    !write(90) nring
+    !write(90) rings(1,:),rings(2,:),rings(3,:)
     
-    minor = normalise(cross(v1,fanold))
-  
-  endif
-else
-  fan = 0
-  spine = 0
-  major = 0
-  minor = 0
-endif    
+    fans2 = rings
+    
+    !integrate along spine
+    call get_ring(spine,minor,nring,rings)
+    call integrate_rings(nring,rings,sign)
+    !write(90) nring
+    !write(90) rings(1,:),rings(2,:),rings(3,:)
+    !close(90)
+    
+    spines2 = rings
+    
+    !see if traced spine is where it should be
+    call check_null(nring,rings,major,dot2,sep2)
+    
+    !Now see if we need to switch the null's sign
+    
+    !print*,'Deciding null properties...'
+    if ((dot1 .gt. dot2) .and. (sep1 .lt. sep2)) then
+      !yay got it correct
+      spine = spine
+
+      !check to see if right axes but wrong sign
+      call fansrings(fans1,spines1,sign,major,spine)
+
+    else if ((dot2 .gt. dot1) .and. (sep2 .lt. sep1)) then
+      print*, 'Swapping sign'
+      !boo got it wrong, need to swap sign
+      sign = sign*(-1)
+      spiral = 1 !if we got it wrong the null was probably spiral
+        
+      dumvec = spine
+      !swap spine and fan
+      spine = major
+      major = dumvec
+        
+      call fansrings(fans2,spines2,sign,major,spine)
+    else
+    !weird null - possibly 2d?
+      print*, 'Cannot characterise null - possibly 2D null'
+      sign = 0
+      spiral = 0
+      spine = 0
+      minor = 0
+      major = 0
+    endif
+
+    if (sign .ne. 0) then 
+      !refine fan vector (fan is not 100% correct if the null is an inclined spiral)
+      
+      !trace along fan
+      call get_ring(major,minor,nring,rings)
+      call integrate_rings(nring,rings,sign)
+
+      !new fan vector is cross product between traced fan vectors 
+      v1 = rings(:,1)
+      fanold = 0.
+      do i = 2, nring
+        v2 = rings(:,i)
+        fannew = cross(v1,v2)
+        if (modulus(fannew) .gt. modulus(fanold)) then
+          fanold = fannew
+        endif
+      enddo
+
+      !print*,'oldfan=',cross(major,minor)
+      !print*,'newfan=',normalise(fanold)
+      
+      !minor=normalise(cross(major,fanold))
+      !print*,'nnwfan=',normalise(cross(minor,major))
+      major = normalise(v1)
+      
+      minor = normalise(cross(v1,fanold))
+    
+    endif
+  else
+    fan = 0
+    spine = 0
+    major = 0
+    minor = 0
+  endif    
         
 end subroutine
 
 !********************************************************************************
 
 subroutine fansrings(fans,spines,sign,major,spine)
-implicit none
+  implicit none
 
-!determines whether the traced fans/spines make a point (if so, probably the spine)
-double precision, dimension (:,:) :: fans, spines
-double precision, dimension(3) :: major, spine
-integer :: sign
-integer :: n, i, j
-double precision, allocatable, dimension(:,:) :: fans2, spines2
-double precision, dimension(3) :: f1, f2, s1, s2
-double precision, dimension(3) :: fbar, sbar
-double precision, allocatable, dimension(:,:) :: distmatrix
+  !determines whether the traced fans/spines make a point (if so, probably the spine)
+  double precision, dimension (:,:) :: fans, spines
+  double precision, dimension(3) :: major, spine
+  integer :: sign
+  integer :: n, i, j
+  double precision, allocatable, dimension(:,:) :: fans2, spines2
+  double precision, dimension(3) :: f1, f2, s1, s2
+  double precision, dimension(3) :: fbar, sbar
+  double precision, allocatable, dimension(:,:) :: distmatrix
 
-double precision :: spinedist, fandist
+  double precision :: spinedist, fandist
 
-n = size(fans,2)
-!print*, 'N=',n
+  n = size(fans,2)
+  !print*, 'N=',n
 
-allocate(fans2(3,n), spines2(3,n))
+  allocate(fans2(3,n), spines2(3,n))
 
-fans2 = fans
-spines2 = spines
+  fans2 = fans
+  spines2 = spines
 
-f1 = fans2(:,1)
-s1 = spines2(:,1)
+  f1 = fans2(:,1)
+  s1 = spines2(:,1)
 
-!flip spines and fans so they are all in one hemisphere
-do i = 2, n
-  f2 = fans2(:,i)
-  
-  if (dot(f1,f2) .lt. 0) then
-    f2 = f2*(-1.d0)
-    fans2(:,i) = f2
-  endif
-  
-  s2 = spines2(:,i)
-  if (dot(s1,s2) .lt. 0) then
-    s2 = s2*(-1.d0)
-    spines2(:,i) = s2
-  endif
-enddo
-
-!get mean coordinate of fans and spines
-do i = 1, 3
-  fbar(i) = mean(fans2(i,:))
-!   fsigma(i)=stddev(fans2(i,:))
-  sbar(i) = mean(spines2(i,:))
-!   ssigma(i)=stddev(spines2(i,:))
-enddo
-! 
-! print*,modulus(ssigma), modulus(fsigma)
-
-allocate(distmatrix(n,n))
-
-!find maximum distance between spine vectors
-distmatrix = 0.d0
-do j = 1, n
-!print*, j
-  do i = j+1, n
-    distmatrix(i,j) = modulus(spines2(:,i)-spines2(:,j))
+  !flip spines and fans so they are all in one hemisphere
+  do i = 2, n
+    f2 = fans2(:,i)
+    
+    if (dot(f1,f2) .lt. 0) then
+      f2 = f2*(-1.d0)
+      fans2(:,i) = f2
+    endif
+    
+    s2 = spines2(:,i)
+    if (dot(s1,s2) .lt. 0) then
+      s2 = s2*(-1.d0)
+      spines2(:,i) = s2
+    endif
   enddo
-enddo
-!print*, 'spinesdist=',maxval(distmatrix)
-spinedist = maxval(distmatrix)
 
-!maximum distance between fan vectors
-distmatrix = 0.d0
-do j = 1, n
-  do i = j+1, n
-    distmatrix(i,j) = modulus(fans2(:,i)-fans2(:,j))
+  !get mean coordinate of fans and spines
+  do i = 1, 3
+    fbar(i) = mean(fans2(i,:))
+  !   fsigma(i)=stddev(fans2(i,:))
+    sbar(i) = mean(spines2(i,:))
+  !   ssigma(i)=stddev(spines2(i,:))
   enddo
-enddo
-!print*, 'fansdist=',maxval(distmatrix)
-fandist = maxval(distmatrix)
+  ! 
+  ! print*,modulus(ssigma), modulus(fsigma)
 
-if (fandist/spinedist .lt. 2.) then
-  print*, 'WARNING: FAN IS VERY POINT-LIKE'
-  print*, 'NULL IS EITHER VERY IMPROPER OR 2-DIMENSIONAL'
-endif
+  allocate(distmatrix(n,n))
 
-!if 'fan' seems more point-like than 'spine' then swap them
-if (fandist .lt. spinedist) then
-  print*,"Fan looks more like a spine. Changing null's sign"
-  
-  sign = sign*(-1)
-  
-  spine = fbar
-  major = sbar
-  
-endif
+  !find maximum distance between spine vectors
+  distmatrix = 0.d0
+  do j = 1, n
+  !print*, j
+    do i = j+1, n
+      distmatrix(i,j) = modulus(spines2(:,i)-spines2(:,j))
+    enddo
+  enddo
+  !print*, 'spinesdist=',maxval(distmatrix)
+  spinedist = maxval(distmatrix)
+
+  !maximum distance between fan vectors
+  distmatrix = 0.d0
+  do j = 1, n
+    do i = j+1, n
+      distmatrix(i,j) = modulus(fans2(:,i)-fans2(:,j))
+    enddo
+  enddo
+  !print*, 'fansdist=',maxval(distmatrix)
+  fandist = maxval(distmatrix)
+
+  if (fandist/spinedist .lt. 2.) then
+    print*, 'WARNING: FAN IS VERY POINT-LIKE'
+    print*, 'NULL IS EITHER VERY IMPROPER OR 2-DIMENSIONAL'
+  endif
+
+  !if 'fan' seems more point-like than 'spine' then swap them
+  if (fandist .lt. spinedist) then
+    print*,"Fan looks more like a spine. Changing null's sign"
+    
+    sign = sign*(-1)
+    
+    spine = fbar
+    major = sbar
+    
+  endif
 
 end subroutine
 
 !********************************************************************************
 
 function mean(x)
-implicit none
+  implicit none
 
-double precision :: mean
-double precision :: x(:)
-integer :: n
+  double precision :: mean
+  double precision :: x(:)
+  integer :: n
 
-n=size(x)
+  n=size(x)
 
-mean=sum(x)/dble(n)
+  mean=sum(x)/dble(n)
 end function
 
 !********************************************************************************
 
 function stddev(x)
-implicit none
+  implicit none
 
-double precision :: stddev
-double precision :: x(:)
-integer :: n
+  double precision :: stddev
+  double precision :: x(:)
+  integer :: n
 
-n=size(x)
+  n=size(x)
 
-stddev= sum(x*x)/dble(n) - sum(x)*sum(x)/dble(n)/dble(n)
-stddev=sqrt(stddev)
+  stddev= sum(x*x)/dble(n) - sum(x)*sum(x)/dble(n)/dble(n)
+  stddev=sqrt(stddev)
 end function
 
 !********************************************************************************
 
 subroutine check_null(nring,rings,spine,dot1,sep1)
-implicit none
+  implicit none
 
-integer :: nring
-double precision, dimension(3) :: spine
-double precision, dimension(3,nring) :: rings
-double precision :: r(3), dots(nring), dist(nring)
-integer :: i
-double precision :: dot1, sep1
+  integer :: nring
+  double precision, dimension(3) :: spine
+  double precision, dimension(3,nring) :: rings
+  double precision :: r(3), dots(nring), dist(nring)
+  integer :: i
+  double precision :: dot1, sep1
 
-spine = normalise(spine)
+  spine = normalise(spine)
 
-do i = 1, nring
-  r = rings(:,i)
-  r = normalise(r)
-  
-  dots(i) = (dot(r,spine))
-  if (dots(i) .gt. 0) then
-    dist(i) = modulus(r-spine)
-  else
-    dist(i) = modulus(r+spine)
-  endif
-enddo
+  do i = 1, nring
+    r = rings(:,i)
+    r = normalise(r)
+    
+    dots(i) = (dot(r,spine))
+    if (dots(i) .gt. 0) then
+      dist(i) = modulus(r-spine)
+    else
+      dist(i) = modulus(r+spine)
+    endif
+  enddo
 
-dot1=sum(abs(dots))/nring
-sep1=sum(dist)/nring
+  dot1=sum(abs(dots))/nring
+  sep1=sum(dist)/nring
 
-dot1=minval(abs(dots))
-sep1=maxval(dist)
+  dot1=minval(abs(dots))
+  sep1=maxval(dist)
 
 end subroutine
 
@@ -595,8 +595,6 @@ subroutine get_ring(major,minor,nring,rings)
   !do i=1,nlines
   !  print*,i,r(1)*xs(i)+r(2)*ys(i)+r(3)*zs(i),sqrt(xs(i)**2+ys(i)**2+zs(i)**2)
   !enddo
-
-
 end subroutine
 
 end module
