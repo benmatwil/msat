@@ -291,6 +291,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   if (sign .eq. 0) then
     fan = (/0.d0,0.d0,1.d0/)
     spine = (/0.d0,0.d0,1.d0/)
+    print*, "Warning, wasn't able to find null properties"
   endif
   print*, ''
   print*, 'Sign =  ', sign
