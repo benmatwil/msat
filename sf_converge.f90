@@ -136,6 +136,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
 
   fact = 1d-2*rsphere
   acc = 1d-10*rsphere
+  ! loop over each point to find converged point
   do j = 1, ntheta
     do i = 1, nphi
       count = 0
@@ -148,49 +149,52 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       bnewfw = b
       bnewbw = b
       roldfw = [0,0,0]
-      roldbw = [0,0,0] !while limit needs changing to make accurate
-      do while (count < maxcount) ! .and. modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc .and. 
+      roldbw = [0,0,0]
+      do while (count < maxcount) ! do enough times for spine to converge then double it
         call it_conv(roldfw,rnewfw,bnewfw,fact,1)
         call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
         count = count + 1
         if (modulus(rnewfw-roldfw) < acc .or. modulus(rnewbw-roldbw) < acc) flag = 1
         if (flag == 0) maxcount = 2*count
       enddo
-      !print*, count
       n = i+(j-1)*nphi
       rconvergefw(:,n) = normalise(rnewfw)
       rconvergebw(:,n) = normalise(rnewbw)
     enddo
   enddo
 
+  ! remove duplicate vectors which are a distance 1d-4 apart
+  ! spine should be left with 2 vectors
+  ! fan left with either 2 (minvec eigenvalue too small) or a circle of points
   call remove_duplicates(rconvergefw, 1d-4) ! what do we want to do if we are still left with two vectors
-  call remove_duplicates(rconvergebw, 1d-4) ! do we want to reduce rfan
+  call remove_duplicates(rconvergebw, 1d-4)
 
   nfw = size(rconvergefw,2)
   nbw = size(rconvergebw,2)
 
   !with current code, this may fail to pick the correct one
-  if (nfw < nbw) then !want a better way of confirming which is fan and which is spine
+  if (nfw < nbw) then ! if nfw is smaller then its the spine
     ! spine going out of null
     rspine = rconvergefw
     rfan = rconvergebw
     sign = -1
-  else if (nfw > nbw) then
+  else if (nfw > nbw) then ! if nbw is smaller then its the spine
     ! spine going into null
     rspine = rconvergebw
     rfan = rconvergefw
     sign = 1
-  else if (nfw == nbw) then
-    !need a way to check this
+  else if (nfw == nbw) then ! both are equal (hopefully 2=2) so just pick one and check later
     rspine = rconvergebw
     rfan = rconvergefw
   endif
-
+  
+  ! We have picked rspine and rfan so can get rid of rconverges
   deallocate(rconvergebw, rconvergefw)
-
+  
+  ! Check whether current fan actually will still converge to only 2 points
   rfanchk = rfan
   call remove_duplicates(rfanchk,1d-1)
-
+  ! If so, rfan is now those two points
   nfanchk = size(rfanchk,2)
   if (nfanchk == 2) then
     deallocate(rfan)
@@ -198,12 +202,14 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     deallocate(rfanchk)
   endif
 
+  
   nspine = size(rspine,2)
   nfan = size(rfan,2)
   print*, "Number of spines:", nspine
   print*, "Number of fans:", nfan
   print*, "Number of points left in fan:", nfanchk
 
+  ! Save data if there is a problematic null for inspection
   if ((nfan > 2 .and. nfan < 10000) .or. nspine > 2) then
     open(unit=10, file="spinedata.dat", access="stream")
     write(10) size(rspine,2), rspine
@@ -213,12 +219,11 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     close(10)
   endif
 
-  spine = rspine(:,1) !which should we pick if > 1 spine vector
-  maxvec = rfan(:,1) !pick this more intelligently? theres a whole ring of them
-
-  !what if nfan = 3/4?
-  spinecheck = dot(trilinear(rsphere*spine+rnull,bgrid),spine)/rsphere
-  if (nfan == 2 .and. abs(dot(trilinear(rsphere*maxvec+rnull,bgrid),maxvec)/rsphere) > abs(spinecheck)) then
+  ! what if nfan = 3/4?
+  ! Now check if our earlier guess when (nfw = nbw) was correct
+  ! Switch based on the eigenvalues of the two vectors and determine sign
+  spinecheck = dot(trilinear(rsphere*rspine(:,1)+rnull,bgrid),rspine(:,1))/rsphere
+  if (nfan == 2 .and. abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1))/rsphere) > abs(spinecheck)) then
     dummy = rspine
     deallocate(rspine)
     rspine = rfan
@@ -237,9 +242,15 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       sign = 1
     endif 
   endif
+  
+  ! Pick spine and maxvec to be first vectors in the list, should these be picked more intelligently
+  spine = rspine(:,1)
+  maxvec = rfan(:,1)
 
   print*, "Maxvec is:", maxvec
-
+  
+  ! if we only have 2 fan vecs then find min by crossing with spine since potential
+  ! otherwise find most perpendicular vector to the max in our list of fan vecs
   if (nfan == 2) then
     minvec = cross(spine,maxvec)
   else
@@ -257,7 +268,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
 
   print*, "Minvec is:", minvec
 
-  if (size(rfan,2) == 2) then
+  if (size(rfan,2) == 2) then ! print out eigenvalues
     print*,'-------------------------------------------------------------------------'
     print*,dot(trilinear(rsphere*spine+rnull,bgrid),spine)/rsphere
     print*,dot(trilinear(rsphere*maxvec+rnull,bgrid),maxvec)/rsphere
@@ -274,7 +285,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   print*, '-------------------------------------------------------------------------'
 
   !sign = -sign !check which sign needs to be which
-  spiral = 0
+  spiral = 0 ! potential so non-spiral
 
   testgordon = 0
   if (testgordon == 1) then
@@ -286,7 +297,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     call test_null(spine,maxvec,minvec,sign,spiral)
   endif
 
-  fan = normalise(cross(minvec,maxvec))
+  fan = normalise(cross(minvec,maxvec)) ! fan vector is perp to fan plane
 
   if (sign .eq. 0) then
     fan = (/0.d0,0.d0,1.d0/)
