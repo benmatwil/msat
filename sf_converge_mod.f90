@@ -157,34 +157,78 @@ module sfmod_converge
     deallocate(dummy)
 
   end
+  
+  !********************************************************************************
+  
+  subroutine add_element(x,val)
+    implicit none
+
+    integer, allocatable, dimension(:,:) :: x
+    integer :: val
+    integer, allocatable, dimension(:,:) :: dummy
+    integer :: nx, ny
+
+    nx = size(x,1)
+    ny = size(x,2)
+
+    allocate(dummy(nx,ny))
+
+    dummy = x
+
+    deallocate(x)
+    allocate(x(nx,ny+1))
+
+    x(:,1:ny) = dummy
+    x(:,ny+1) = val
+
+    deallocate(dummy)
+
+  end
 
   !********************************************************************************
 
-  subroutine remove_duplicates(vecarray, accur)
+  subroutine remove_duplicates(vecarray, accur, nclose)
     ! removes vectors with accur distance away from another vector to reduce to "unique" vectors
     implicit none
     
     double precision, allocatable :: vecarray(:,:)
     double precision :: accur
-    integer :: i, j, n
+    integer, allocatable, optional :: nclose(:,:)
+    integer, allocatable :: dummy(:,:)
+    integer :: i, j, n, nclosei, ny
     
     n = size(vecarray,2)
     i = 1
+    
+    if (present(nclose)) allocate(nclose(1,1))
+    
     do while (i < n)
       j = i + 1
+      nclosei = 0
       do while (j < n+1)
         if (modulus(vecarray(:,i)-vecarray(:,j)) < accur) then
           call remove_element(vecarray,j)
           n = size(vecarray,2)
+          nclosei = nclosei + 1
         else
           j = j + 1
         endif
       enddo
       i = i + 1
+      if (present(nclose)) call add_element(nclose,nclosei)
     enddo
+    print*, 'done'
+    
+    if (present(nclose)) then
+      ny = size(nclose,2)
+      dummy = nclose
+      deallocate(nclose)
+      nclose = dummy(:,2:ny)
+      deallocate(dummy)
+    endif
 
-  end
-
+    end
+  
   !********************************************************************************
 
   subroutine it_conv(rold,rnew,bnew,fact,dir)

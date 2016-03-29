@@ -45,7 +45,7 @@ program sf_converge
   print*, nnulls,' nulls'
 
   !now loop over each null and characterise using get_properties
-  do i = 1, nnulls
+  do i = 83,83!1, nnulls
     print*, 'Evaluating null', i,' of', nnulls
     rnull = rnulls(:,i)
     
@@ -62,7 +62,7 @@ program sf_converge
     print*, '-------------------------------------------------------------------------'
     print*, ''
   enddo
-
+stop
   !now write data to nulls.dat
   open(unit=10,file='output/nulls.dat',form='unformatted')
   write(10) nnulls
@@ -108,6 +108,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   double precision :: fact, acc, spinecheck
   double precision :: mindot, dotprod
   integer :: sign, spiral, warning
+  integer, allocatable, dimension(:,:) :: fwclose, bwclose, fanclose
 
   double precision, dimension(3) :: spine, fan, maxvec, minvec
   double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rspine, rfan, rfanchk, dummy
@@ -166,22 +167,28 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   ! remove duplicate vectors which are a distance 1d-4 apart
   ! spine should be left with 2 vectors
   ! fan left with either 2 (minvec eigenvalue too small) or a circle of points
-  call remove_duplicates(rconvergefw, 1d-4) ! what do we want to do if we are still left with two vectors
-  call remove_duplicates(rconvergebw, 1d-4)
+  call remove_duplicates(rconvergefw, 1d-3, fwclose) ! what do we want to do if we are still left with two vectors
+  call remove_duplicates(rconvergebw, 1d-3, bwclose)
 
   nfw = size(rconvergefw,2)
   nbw = size(rconvergebw,2)
+  
+  print*, fwclose
+  print*, bwclose
+
 
   !with current code, this may fail to pick the correct one
   if (nfw < nbw) then ! if nfw is smaller then its the spine
     ! spine going out of null
     rspine = rconvergefw
     rfan = rconvergebw
+    fanclose = bwclose
     sign = -1
   else if (nfw > nbw) then ! if nbw is smaller then its the spine
     ! spine going into null
     rspine = rconvergebw
     rfan = rconvergefw
+    fanclose = fwclose
     sign = 1
   else if (nfw == nbw) then ! both are equal (hopefully 2=2) so just pick one and check later
     rspine = rconvergebw
@@ -189,7 +196,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   endif
   
   ! We have picked rspine and rfan so can get rid of rconverges
-  deallocate(rconvergebw, rconvergefw)
+  deallocate(rconvergebw, rconvergefw, bwclose, fwclose)
   
   ! Check whether current fan actually will still converge to only 2 points
   rfanchk = rfan
@@ -201,24 +208,24 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     rfan = rfanchk
     deallocate(rfanchk)
   endif
-
   
   nspine = size(rspine,2)
   nfan = size(rfan,2)
   print*, "Number of spines:", nspine
   print*, "Number of fans:", nfan
   print*, "Number of points left in fan:", nfanchk
+  print*, maxloc(fanclose,2)
 
   ! Save data if there is a problematic null for inspection
-  if ((nfan > 2 .and. nfan < 10000) .or. nspine > 2) then
+  !if ((nfan > 2 .and. nfan < 10000) .or. nspine > 2) then
     open(unit=10, file="spinedata.dat", access="stream")
     write(10) size(rspine,2), rspine
     close(10)
     open(unit=10, file="fandata.dat", access="stream")
-    write(10) size(rfan,2), rfan
+    write(10) size(rfan,2), rfan, maxloc(fanclose,2)
     close(10)
-  endif
-
+  !endif
+  stop
   ! what if nfan = 3/4?
   ! Now check if our earlier guess when (nfw = nbw) was correct
   ! Switch based on the eigenvalues of the two vectors and determine sign
@@ -279,7 +286,6 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   print*, "Final dot prod is"
   print*, "        min/max           ", "      min/spine          ", "      max/spine       "
   print*, dot(minvec,maxvec), dot(minvec,spine), dot(maxvec,spine)
-  print*, ''
   !print*, 'Pre-gordon-spine = ', spine
   !print*, 'Pre-gordon-fan =   ', cross(minvec,maxvec)
   print*, '-------------------------------------------------------------------------'
