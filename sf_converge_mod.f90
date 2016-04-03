@@ -217,7 +217,6 @@ module sfmod_converge
       i = i + 1
       if (present(nclose)) call add_element(nclose,nclosei)
     enddo
-    print*, 'done'
     
     if (present(nclose)) then
       ny = size(nclose,2)

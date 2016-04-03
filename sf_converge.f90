@@ -176,15 +176,13 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   print*, fwclose
   print*, bwclose
 
-
-  !with current code, this may fail to pick the correct one
-  if (nfw < nbw) then ! if nfw is smaller then its the spine
+  if (nfw < nbw) then ! if nfw is smaller then it's the spine
     ! spine going out of null
     rspine = rconvergefw
     rfan = rconvergebw
     fanclose = bwclose
     sign = -1
-  else if (nfw > nbw) then ! if nbw is smaller then its the spine
+  else if (nfw > nbw) then ! if nbw is smaller then it's the spine
     ! spine going into null
     rspine = rconvergebw
     rfan = rconvergefw
