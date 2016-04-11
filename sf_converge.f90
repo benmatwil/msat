@@ -45,7 +45,7 @@ program sf_converge
   print*, nnulls,' nulls'
 
   !now loop over each null and characterise using get_properties
-  do i = 83,83!1, nnulls
+  do i = 1, nnulls
     print*, 'Evaluating null', i,' of', nnulls
     rnull = rnulls(:,i)
     
@@ -100,15 +100,15 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   use sfmod_converge
 
   implicit none
-  integer :: i, j, k, count, n, imin, nfw, nbw, nspine, nfan, maxcount
+  integer :: i, j, k, count, n, imin, nfw, nbw, nspine, nfan, nfanchk, maxcount
   double precision :: r(3), b(3)
   double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
-  integer :: flag, testgordon, nfanchk
+  integer :: flag, testgordon
   double precision :: dphi, dtheta
   double precision :: fact, acc, spinecheck
   double precision :: mindot, dotprod
   integer :: sign, spiral, warning
-  integer, allocatable, dimension(:,:) :: fwclose, bwclose, fanclose, densepos
+  integer, allocatable, dimension(:,:) :: densepos
 
   double precision, dimension(3) :: spine, fan, maxvec, minvec
   double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rspine, rfan, rfanchk, dummy, crossfan
@@ -167,26 +167,21 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   ! remove duplicate vectors which are a distance 1d-4 apart
   ! spine should be left with 2 vectors
   ! fan left with either 2 (minvec eigenvalue too small) or a circle of points
-  call remove_duplicates(rconvergefw, 1d-3, fwclose) ! what do we want to do if we are still left with two vectors
-  call remove_duplicates(rconvergebw, 1d-3, bwclose)
+  call remove_duplicates(rconvergefw, 1d-3) ! what do we want to do if we are still left with two vectors
+  call remove_duplicates(rconvergebw, 1d-3)
 
   nfw = size(rconvergefw,2)
   nbw = size(rconvergebw,2)
-  
-  print*, fwclose
-  print*, bwclose
 
   if (nfw < nbw) then ! if nfw is smaller then it's the spine
     ! spine going out of null
     rspine = rconvergefw
     rfan = rconvergebw
-    fanclose = bwclose
     sign = -1
   else if (nfw > nbw) then ! if nbw is smaller then it's the spine
     ! spine going into null
     rspine = rconvergebw
     rfan = rconvergefw
-    fanclose = fwclose
     sign = 1
   else if (nfw == nbw) then ! both are equal (hopefully 2=2) so just pick one and check later
     rspine = rconvergebw
@@ -199,7 +194,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       deallocate(rspine)
       rspine = rfan
       deallocate(rfan)
-      rfan = dummy      
+      rfan = dummy
+      deallocate(dummy)  
       if (spinecheck > 0) then
         sign = -1
       else
@@ -209,16 +205,17 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   endif
   
   ! We have picked rspine and rfan so can get rid of rconverges
-  deallocate(rconvergebw, rconvergefw, bwclose, fwclose)
+  deallocate(rconvergebw, rconvergefw)
   
   spine = rspine(:,1)
   
-  if (size(nfan,2) /= 2) then
+  if (size(rfan,2) /= 2) then
     ! Check whether current fan actually will still converge to only 2 points
     rfanchk = rfan
     call remove_duplicates(rfanchk, 1d-1)
     nfanchk = size(rfanchk,2)
     if (nfanchk <= 6) then ! If so, rfan is now those two points
+      print*, "Narrowed down to two fan points"
       deallocate(rfan)
       rfan = rfanchk
       deallocate(rfanchk)
@@ -226,18 +223,15 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       maxvec = rfan(:,1)
       minvec = normalise(cross(spine,maxvec))
     else ! have a ring/ball
-      allocate(crossfan(3,size(rfanchk,2)-1))
-      do i = 2, size(rfanchk,2)
+      allocate(crossfan(3,nfanchk-1))
+      do i = 2, nfanchk
         crossfan(:,i-1) = normalise(cross(rfanchk(:,1),rfanchk(:,i)))
       enddo
-      remove_duplicates(crossfan,1d-2)
+      call remove_duplicates(crossfan,1d-1)
+      print*, "Size of crossfan", size(crossfan,2)
       if (size(crossfan,2) == 2) then ! we have a ring, pick two vectors, preferably most perpendicular
-        if ! have an equally spaced ring
-          maxvec = rfan(:,1)
-        else ! have a ring with a dense area
-          call remove_duplicates(rfan, 1d-2, densepos) ! look for maxvec in the densest area
-          maxvec = rfan(:,maxval(densepos))
-        endif
+        print*, "We have a ring"
+        maxvec = rfan(:,1)
         mindot = 1
         do i = 2, size(rfan,2)
           dotprod = abs(dot(maxvec,rfan(:,i)))
@@ -249,11 +243,19 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         minvec = rfan(:,imin)
         print*, "Perp vec is at ", imin, "out of a total of ", size(rfan)
       else ! we have a ball, need to find densest area
+        print*, "We have a ball"
         call remove_duplicates(rfan, 1d-2, densepos) ! look for maxvec in the densest area
-        maxvec = rfan(:,maxval(densepos))
+        print*, size(densepos)
+        print*, size(rfan)
+        print*, maxloc(densepos,2)
+        maxvec = rfan(:,maxval(maxloc(densepos,2)))
         minvec = normalise(cross(spine,maxvec))
       endif
     endif
+  else
+    print*, "Only have two fan points"
+    maxvec = rfan(:,1)
+    minvec = normalise(cross(spine,maxvec))
   endif
   
   nspine = size(rspine,2)
@@ -261,29 +263,27 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   print*, "Number of spines:", nspine
   print*, "Number of fans:", nfan
   print*, "Number of points left in fan:", nfanchk
-  print*, maxloc(fanclose,2)
 
   ! Save data if there is a problematic null for inspection
   !if ((nfan > 2 .and. nfan < 10000) .or. nspine > 2) then
-    open(unit=10, file="spinedata.dat", access="stream")
-    write(10) size(rspine,2), rspine
-    close(10)
-    open(unit=10, file="fandata.dat", access="stream")
-    write(10) size(rfan,2), rfan, maxloc(fanclose,2)
-    close(10)
+    !open(unit=10, file="spinedata.dat", access="stream")
+    !write(10) size(rspine,2), rspine
+    !close(10)
+    !open(unit=10, file="fandata.dat", access="stream")
+    !write(10) size(rfan,2), rfan, maxval(maxloc(densepos,2))
+    !close(10)
   !endif
-  stop
-  ! what if nfan = 3/4?
+  !stop
 
   print*, "Maxvec is:", maxvec
   print*, "Minvec is:", minvec
 
-  if (size(rfan,2) == 2) then ! print out eigenvalues
-    print*,'-------------------------------------------------------------------------'
-    print*,dot(trilinear(rsphere*spine+rnull,bgrid),spine)/rsphere
-    print*,dot(trilinear(rsphere*maxvec+rnull,bgrid),maxvec)/rsphere
-    print*,dot(trilinear(rsphere*minvec+rnull,bgrid),minvec)/rsphere
-  endif
+  !if (size(rfan,2) == 2) then ! print out eigenvalues
+  !  print*,'-------------------------------------------------------------------------'
+  !  print*,dot(trilinear(rsphere*spine+rnull,bgrid),spine)/rsphere
+  !  print*,dot(trilinear(rsphere*maxvec+rnull,bgrid),maxvec)/rsphere
+  !  print*,dot(trilinear(rsphere*minvec+rnull,bgrid),minvec)/rsphere
+  !endif
 
   print*, '-------------------------------------------------------------------------'
   print*, "Final dot prod is"
