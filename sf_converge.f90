@@ -62,7 +62,7 @@ program sf_converge
     print*, '-------------------------------------------------------------------------'
     print*, ''
   enddo
-stop
+  stop
   !now write data to nulls.dat
   open(unit=10,file='output/nulls.dat',form='unformatted')
   write(10) nnulls
@@ -108,10 +108,10 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   double precision :: fact, acc, spinecheck
   double precision :: mindot, dotprod
   integer :: sign, spiral, warning
-  integer, allocatable, dimension(:,:) :: fwclose, bwclose, fanclose
+  integer, allocatable, dimension(:,:) :: fwclose, bwclose, fanclose, densepos
 
   double precision, dimension(3) :: spine, fan, maxvec, minvec
-  double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rspine, rfan, rfanchk, dummy
+  double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rspine, rfan, rfanchk, dummy, crossfan
 
   !set up theta and phi for sphere around null
   dphi = 360.d0/dble(nphi)
@@ -191,20 +191,69 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   else if (nfw == nbw) then ! both are equal (hopefully 2=2) so just pick one and check later
     rspine = rconvergebw
     rfan = rconvergefw
+    
+    ! check whether this guess is correct, otherwise switch
+    spinecheck = dot(trilinear(rsphere*rspine(:,1)+rnull,bgrid),rspine(:,1))
+    if (abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1))) > abs(spinecheck)) then
+      dummy = rspine
+      deallocate(rspine)
+      rspine = rfan
+      deallocate(rfan)
+      rfan = dummy      
+      if (spinecheck > 0) then
+        sign = -1
+      else
+        sign = 1
+      endif 
+    endif
   endif
   
   ! We have picked rspine and rfan so can get rid of rconverges
   deallocate(rconvergebw, rconvergefw, bwclose, fwclose)
   
-  ! Check whether current fan actually will still converge to only 2 points
-  rfanchk = rfan
-  call remove_duplicates(rfanchk,1d-1)
-  ! If so, rfan is now those two points
-  nfanchk = size(rfanchk,2)
-  if (nfanchk == 2) then
-    deallocate(rfan)
-    rfan = rfanchk
-    deallocate(rfanchk)
+  spine = rspine(:,1)
+  
+  if (size(nfan,2) /= 2) then
+    ! Check whether current fan actually will still converge to only 2 points
+    rfanchk = rfan
+    call remove_duplicates(rfanchk, 1d-1)
+    nfanchk = size(rfanchk,2)
+    if (nfanchk <= 6) then ! If so, rfan is now those two points
+      deallocate(rfan)
+      rfan = rfanchk
+      deallocate(rfanchk)
+      
+      maxvec = rfan(:,1)
+      minvec = normalise(cross(spine,maxvec))
+    else ! have a ring/ball
+      allocate(crossfan(3,size(rfanchk,2)-1))
+      do i = 2, size(rfanchk,2)
+        crossfan(:,i-1) = normalise(cross(rfanchk(:,1),rfanchk(:,i)))
+      enddo
+      remove_duplicates(crossfan,1d-2)
+      if (size(crossfan,2) == 2) then ! we have a ring, pick two vectors, preferably most perpendicular
+        if ! have an equally spaced ring
+          maxvec = rfan(:,1)
+        else ! have a ring with a dense area
+          call remove_duplicates(rfan, 1d-2, densepos) ! look for maxvec in the densest area
+          maxvec = rfan(:,maxval(densepos))
+        endif
+        mindot = 1
+        do i = 2, size(rfan,2)
+          dotprod = abs(dot(maxvec,rfan(:,i)))
+          if (dotprod < mindot) then
+            mindot = dotprod
+            imin = i
+          endif
+        enddo
+        minvec = rfan(:,imin)
+        print*, "Perp vec is at ", imin, "out of a total of ", size(rfan)
+      else ! we have a ball, need to find densest area
+        call remove_duplicates(rfan, 1d-2, densepos) ! look for maxvec in the densest area
+        maxvec = rfan(:,maxval(densepos))
+        minvec = normalise(cross(spine,maxvec))
+      endif
+    endif
   endif
   
   nspine = size(rspine,2)
@@ -225,52 +274,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   !endif
   stop
   ! what if nfan = 3/4?
-  ! Now check if our earlier guess when (nfw = nbw) was correct
-  ! Switch based on the eigenvalues of the two vectors and determine sign
-  spinecheck = dot(trilinear(rsphere*rspine(:,1)+rnull,bgrid),rspine(:,1))/rsphere
-  if (nfan == 2 .and. abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1))/rsphere) > abs(spinecheck)) then
-    dummy = rspine
-    deallocate(rspine)
-    rspine = rfan
-    deallocate(rfan)
-    rfan = dummy
-    
-    nspine = size(rspine,2)
-    nfan = size(rfan,2)
-    
-    spine = rspine(:,1)
-    maxvec = rfan(:,1)
-    
-    if (spinecheck > 0) then
-      sign = -1
-    else
-      sign = 1
-    endif 
-  endif
-  
-  ! Pick spine and maxvec to be first vectors in the list, should these be picked more intelligently
-  spine = rspine(:,1)
-  maxvec = rfan(:,1)
 
   print*, "Maxvec is:", maxvec
-  
-  ! if we only have 2 fan vecs then find min by crossing with spine since potential
-  ! otherwise find most perpendicular vector to the max in our list of fan vecs
-  if (nfan == 2) then
-    minvec = cross(spine,maxvec)
-  else
-    mindot = 1
-    do i = 2, size(rfan,2)
-      dotprod = abs(dot(maxvec,rfan(:,i)))
-      if (dotprod < mindot) then
-        mindot = dotprod
-        imin = i
-      endif
-    enddo
-    minvec = rfan(:,imin)
-    print*, "Perp vec is at ", imin, "out of a total of ", size(rfan)
-  endif
-
   print*, "Minvec is:", minvec
 
   if (size(rfan,2) == 2) then ! print out eigenvalues
