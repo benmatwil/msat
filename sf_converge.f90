@@ -245,9 +245,6 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       else ! we have a ball, need to find densest area
         print*, "We have a ball"
         call remove_duplicates(rfan, 1d-2, densepos) ! look for maxvec in the densest area
-        print*, size(densepos)
-        print*, size(rfan)
-        print*, maxloc(densepos,2)
         maxvec = rfan(:,maxval(maxloc(densepos,2)))
         minvec = normalise(cross(spine,maxvec))
       endif
