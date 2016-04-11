@@ -1,5 +1,3 @@
-$make
-$sf_converge
 n=0l
 nfan = 0l
 
