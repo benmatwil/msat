@@ -155,7 +155,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         call it_conv(roldfw,rnewfw,bnewfw,fact,1)
         call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
         count = count + 1
-        if (modulus(rnewfw-roldfw) < acc .or. modulus(rnewbw-roldbw) < acc) flag = 1
+        if (modulus(rnewfw-roldfw) < acc .or. modulus(rnewbw-roldbw) < acc) flag = 1 !improve this flagging?
         if (flag == 0) maxcount = 2*count
       enddo
       n = i+(j-1)*nphi
