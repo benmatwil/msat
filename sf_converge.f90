@@ -100,9 +100,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   use sfmod_converge
 
   implicit none
-  integer :: i, j, k, count, n, imin, nfw, nbw, nspine, nfan, nfanchk, maxcount
+  integer :: i, j, count, n, imin, nfw, nbw, nspine, nfan, nfanchk, maxcount
   double precision :: r(3), b(3)
-  double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
   integer :: flag, testgordon, savedata
   double precision :: dphi, dtheta
   double precision :: fact, acc, spinecheck
@@ -111,17 +110,19 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   integer, allocatable, dimension(:,:) :: densepos
 
   double precision, dimension(3) :: spine, fan, maxvec, minvec
+  
   double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rspine, rfan, rfanchk, dummy, crossfan
+  double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
 
   !set up theta and phi for sphere around null
   dphi = 360.d0/dble(nphi)
-  dtheta = 180./dble(ntheta-1)
+  dtheta = 180.d0/dble(ntheta-1)
 
-  do i = 1,nphi
+  do i = 1, nphi
     phis(i) = (i-1)*dphi
   enddo
 
-  do j = 1,ntheta
+  do j = 1, ntheta
     thetas(j) = (j-1)*dtheta
   enddo
 
