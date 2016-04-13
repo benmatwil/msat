@@ -45,7 +45,7 @@ program sf_converge
   print*, nnulls,' nulls'
 
   !now loop over each null and characterise using get_properties
-  do i = 1, nnulls
+  do i = 1410,1415!1, nnulls
     print*, 'Evaluating null', i,' of', nnulls
     rnull = rnulls(:,i)
     
@@ -103,7 +103,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   integer :: i, j, k, count, n, imin, nfw, nbw, nspine, nfan, nfanchk, maxcount
   double precision :: r(3), b(3)
   double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
-  integer :: flag, testgordon
+  integer :: flag, testgordon, savedata
   double precision :: dphi, dtheta
   double precision :: fact, acc, spinecheck
   double precision :: mindot, dotprod
@@ -155,8 +155,10 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         call it_conv(roldfw,rnewfw,bnewfw,fact,1)
         call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
         count = count + 1
-        if (modulus(rnewfw-roldfw) < acc .or. modulus(rnewbw-roldbw) < acc) flag = 1 !improve this flagging?
-        if (flag == 0) maxcount = 2*count
+        if (flag == 0 .and. (modulus(rnewfw-roldfw) < acc .or. modulus(rnewbw-roldbw) < acc)) then
+          flag = 1
+          maxcount = 2*count
+        endif
       enddo
       n = i+(j-1)*nphi
       rconvergefw(:,n) = normalise(rnewfw)
@@ -262,14 +264,15 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   print*, "Number of points left in fan:", nfanchk
 
   ! Save data if there is a problematic null for inspection
-  !if ((nfan > 2 .and. nfan < 10000) .or. nspine > 2) then
-    !open(unit=10, file="spinedata.dat", access="stream")
-    !write(10) size(rspine,2), rspine
-    !close(10)
-    !open(unit=10, file="fandata.dat", access="stream")
-    !write(10) size(rfan,2), rfan, maxval(maxloc(densepos,2))
-    !close(10)
-  !endif
+  savedata = 1
+  if (savedata == 1) then
+    open(unit=10, file="spinedata.dat", access="stream")
+    write(10) size(rspine,2), rspine, spine
+    close(10)
+    open(unit=10, file="fandata.dat", access="stream")
+    write(10) size(rfan,2), rfan, maxvec, minvec
+    close(10)
+  endif
   !stop
 
   print*, "Maxvec is:", maxvec
@@ -321,6 +324,6 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   if (abs(90-acos(dot(fan,spine))/dtor) .lt. 10.) then
     print*, 'WARNING: SPINE AND FAN STRONGLY INCLINED'
     warning = 1
-  endif 
+  endif
 
 end subroutine
