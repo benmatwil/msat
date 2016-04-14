@@ -83,7 +83,7 @@ module sfmod_converge
   function cross(a,b)
     implicit none
 
-    real*8, dimension(3) :: cross,a,b
+    real*8, dimension(3) :: cross, a, b
     
     cross(1) = a(2)*b(3) - a(3)*b(2)
     cross(2) = a(3)*b(1) - a(1)*b(3)
@@ -98,7 +98,7 @@ module sfmod_converge
     real*8 :: a(3)
     real*8 :: modulus
 
-    modulus=sqrt(dot(a,a))
+    modulus = sqrt(dot(a,a))
 
   end
 
