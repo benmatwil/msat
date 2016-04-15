@@ -45,7 +45,7 @@ program sf_converge
   print*, nnulls,' nulls'
 
   !now loop over each null and characterise using get_properties
-  do i = 125,125!1, nnulls
+  do i = 1, nnulls
     print*, 'Evaluating null', i,' of', nnulls
     rnull = rnulls(:,i)
     
@@ -62,7 +62,7 @@ program sf_converge
     print*, '-------------------------------------------------------------------------'
     print*, ''
   enddo
-  stop
+  !stop
   !now write data to nulls.dat
   open(unit=10,file='output/nulls.dat',form='unformatted')
   write(10) nnulls
@@ -320,7 +320,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   print*, "Number of points left in fan:", nfanchk
 
   ! Save data if there is a problematic null for inspection
-  savedata = 1
+  savedata = 0
   if (savedata == 1) then
     open(unit=10, file="spinedata.dat", access="stream")
     write(10) size(rspine,2), rspine, spine
