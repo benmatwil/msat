@@ -45,7 +45,7 @@ program sf_converge
   print*, nnulls,' nulls'
 
   !now loop over each null and characterise using get_properties
-  do i = 255,255!1, nnulls
+  do i = 125,125!1, nnulls
     print*, 'Evaluating null', i,' of', nnulls
     rnull = rnulls(:,i)
     
@@ -275,7 +275,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       if (allocated(densepos)) deallocate(densepos)
       call remove_duplicates(rfan, 1d-2, densepos) ! look for maxvec in the densest area
       maxvec = rfan(:,maxval(maxloc(densepos,2)))
-      if (size(crossfan,2) <= 6) then ! we have a ring, pick two vectors, preferably most perpendicular
+      if (size(crossfan,2) <= 4) then ! we have a ring, pick two vectors, preferably most perpendicular
         print*, "We have a ring"
         mindot = 1
         do i = 1, size(rfan,2)
@@ -294,7 +294,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         rfanred = rfan
         do while (i <= size(rfanred,2))
           dotprod = abs(dot(maxvec,rfanred(:,i)))
-          if (dotprod > 0.05) then
+          if (dotprod > 2d-1) then
             call remove_element(rfanred, i)
           else
             i = i+1
