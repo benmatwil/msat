@@ -244,7 +244,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   ! We have picked rspine and rfan so can get rid of rconverges
   deallocate(rconvergebw, rconvergefw)
   
-  if (size(rfan,2) /= 2) then
+  if (size(rfan,2) /= 2) then 
     ! Check whether current fan actually will still converge to only 2 points
     rfanchk = rfan
     call remove_duplicates(rfanchk, 1d-1, densepos)
@@ -257,6 +257,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       maxvec = rfan(:,maxval(maxloc(densepos)))
       minvec = normalise(cross(spine,maxvec))
     else ! have a ring/ball
+      ! find the cross product of one vector with every otherwise
+      ! well converged ring if all cross products are all the same point
       allocate(crossfan(3,nfanchk-1))
       do i = 2, nfanchk
         crossfan(:,i-1) = cross(rfanchk(:,1),rfanchk(:,i))
@@ -275,7 +277,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       if (allocated(densepos)) deallocate(densepos)
       call remove_duplicates(rfan, 1d-2, densepos) ! look for maxvec in the densest area
       maxvec = rfan(:,maxval(maxloc(densepos,2)))
-      if (size(crossfan,2) <= 4) then ! we have a ring, pick two vectors, preferably most perpendicular
+      if (size(crossfan,2) <= 4) then ! we have a ring, pick minvec to be vector most perpendicular
         print*, "We have a ring"
         mindot = 1
         do i = 1, size(rfan,2)
@@ -287,7 +289,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         enddo
         minvec = rfan(:,imin)
         print*, "Perp vec is at ", imin, "out of a total of ", size(rfan)
-      else ! we have a ball, need to find densest area
+      else ! we have a ball, find vectors approximately perpendicular and pick one in the densest area
         print*, "We have a ball"
         minvec = normalise(cross(spine,maxvec))
         i = 1
