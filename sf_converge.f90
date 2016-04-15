@@ -181,7 +181,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   nfw = size(rconvergefw,2)
   nbw = size(rconvergebw,2)
 
-  if (nfw == 2 .or. nbw == 2) then
+  if (nfw == 2 .or. nbw == 2) then ! if one of the reductions only had two vectors, can guarantee one is spine
     if (nfw < nbw) then ! if nfw is smaller then it's the spine
       ! spine going out of null
       rspine = rconvergefw
@@ -213,7 +213,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       endif
     endif
     spine = rspine(:,1)
-  else
+  else ! if no reduction is two, use that the spine should be the densest accumulation of points
     call remove_duplicates(rconvergefw1, 1d-1, denseposfw)
     call remove_duplicates(rconvergebw1, 1d-1, denseposbw)
     nfw = maxval(denseposfw)
@@ -229,7 +229,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       rfan = rconvergebw
       rspine = rconvergefw
       sign = -1
-    else
+    else !not sure how to to decide in this case, haven't found a case like this yet...
       print*, "Uh oh, can't decide!"
         open(unit=10, file="spinedata.dat", access="stream")
         write(10) size(rconvergefw,2), rconvergefw
