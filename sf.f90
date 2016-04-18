@@ -43,7 +43,6 @@ dz = (z(nz)-z(1))/nz
 
 print*, nnulls,' nulls'
 
-
 !now loop over each null and characterise using get_properties
 do i = 1, nnulls
   print*, 'Evaluating null', i,' of', nnulls
@@ -57,8 +56,6 @@ do i = 1, nnulls
   spirals(i) = spiral
   warnings(i) = warning
 enddo
-
-
 
 !now write data to nulls.dat
 open(unit=10,file='output/nulls.dat',form='unformatted')
@@ -153,8 +150,8 @@ do j = 1, ntheta
     bcross(i,j) = modulus(cross(b,r))/modb(i,j)/modulus(r) ! vector orthogonal to b and r
     
     !calculate integrals of flux and normal bcross vector on sphere
-    flux = flux + abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
-    crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
+    !flux = flux + abs(btotal(i,j))*dphi*dtheta*sin(thetas(j))
+    !crossflux = crossflux + abs(bcross(i,j))*modb(i,j)*dphi*dtheta*sin(thetas(j)) ! should crossflux be a vector or scalar?
   enddo
 enddo
 
@@ -209,13 +206,13 @@ if (abs(mn) .gt. spiraltol .and. abs(mx) .gt. spiraltol) then !if both signs hav
     maxvec = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
     minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
     
-  else if ( (nmax .eq. 2) .and. (nmin .eq. 1) .and. (nsaddle .eq. 1)) then
+  else if ((nmax .eq. 2) .and. (nmin .eq. 1) .and. (nsaddle .eq. 1)) then
     sign = -1
     spiral = 0
       spine = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
       maxvec = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
       minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
-  else if ( (nmax .eq. 1) .and. (nmin .eq. 2) .and. (nsaddle .eq. 1)) then
+  else if ((nmax .eq. 1) .and. (nmin .eq. 2) .and. (nsaddle .eq. 1)) then
     sign = 1
     spiral = 0
       spine = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
@@ -252,10 +249,10 @@ else
       call getminmax(nmax, maxima,minvec,maxvec)
       if (abs(dot(spine,maxvec)) .lt. abs(dot(spine,minvec))) minvec=maxvec
       maxvec=sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
-    else if ( (nmax .eq. 2) .and. (nmin .eq. 1) .and. (nsaddle .eq. 1)) then
+    else if ((nmax .eq. 2) .and. (nmin .eq. 1) .and. (nsaddle .eq. 1)) then
       maxvec = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
       minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
-    else if ( (nmax .eq. 2) .and. (nmin .eq. 2) ) then
+    else if ((nmax .eq. 2) .and. (nmin .eq. 2) ) then
       maxvec = sphere2cart(1.d0,thetas(mnloc(2)),phis(mnloc(1)))
       minvec = normalise(cross(spine,maxvec))
     else
@@ -275,10 +272,10 @@ else
       maxvec = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
     else if ((nmin .ge. 4) .and. (nmax .eq. 2)) then
       call getminmax(nmax,maxima,minvec,maxvec)
-    else if ( (nmax .eq. 1) .and. (nmin .eq. 2) .and. (nsaddle .eq. 1)) then
+    else if ((nmax .eq. 1) .and. (nmin .eq. 2) .and. (nsaddle .eq. 1)) then
       maxvec = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
       minvec = sphere2cart(1.d0,thetas(saddle(2,1)),phis(saddle(1,1)))
-    else if ( (nmax .eq. 2) .and. (nmin .eq. 2) ) then
+    else if ((nmax .eq. 2) .and. (nmin .eq. 2)) then
       maxvec = sphere2cart(1.d0,thetas(mxloc(2)),phis(mxloc(1)))
       minvec = normalise(cross(spine,maxvec))
     else
@@ -310,7 +307,6 @@ call test_null(spine,maxvec,minvec,sign,spiral)
 call test_null(spine,maxvec,minvec,sign,spiral)
 !call test_null(spine,maxvec,minvec,sign,spiral)
 fan = normalise(cross(minvec,maxvec))
-
 
 if (sign .eq. 0) then
   fan = (/0.d0,0.d0,1.d0/)
