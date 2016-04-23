@@ -1,5 +1,9 @@
-function getnullsgordon
-  openr,null,'../../../crgordon/analysis/SPHR3/output/null.dat',/f77_unformatted, /get_lun
+function getnullsgordon, gordon=gordon, me=me
+  nullfile = '../../../crgordon/analysis/SPHR3/output/'
+  if keyword_set(gordon) then nullfile = nullfile + 'nulls.dat'
+  if keyword_set(me) then nullfile = nullfile + 'nullnew.dat'
+  nullfile = "output/"
+  openr,null,nullfile+"null.dat",/f77_unformatted, /get_lun;'../../../crgordon/analysis/SPHR3/output/null.dat'
   nnulls=0l
   readu,null,nnulls
   ;print,nnulls
@@ -21,7 +25,7 @@ function getnullsgordon
   close,null
   free_lun,null
   
-  openr,null,'../../../crgordon/analysis/SPHR3/output/nulls.dat',/f77_unformatted,/get_lun
+  openr,null,nullfile+"nullnew.dat",/f77_unformatted,/get_lun;nullfile
   nnulls=0l
   readu,null,nnulls
 
@@ -39,7 +43,8 @@ function getnullsgordon
   nulls=replicate({nulldata},nnulls)
 
   for i = 0, nnulls-1 do begin
-    nulls[i].pos = [realpos[0,i],realpos[2,i],!dpi/2-realpos[1,i]]
+    ;nulls[i].pos = [realpos[0,i],realpos[2,i],!dpi/2-realpos[1,i]]
+    nulls[i].pos = [pos[0,i],pos[1,i],pos[2,i]]
     nulls[i].spine = spine[*,i]
     nulls[i].type = signs[i]
   endfor
