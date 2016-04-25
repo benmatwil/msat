@@ -44,8 +44,8 @@ program sf_converge
 
   print*, nnulls,' nulls'
 
-  !now loop over each null and characterise using get_properties
-  do i = 3,3!1, nnulls
+  !now loop over each null and characterise
+  do i = 1787,1787!1, nnulls
     print*, 'Evaluating null', i,' of', nnulls
     rnull = rnulls(:,i)
     
