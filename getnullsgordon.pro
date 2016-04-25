@@ -10,8 +10,6 @@ function getnullsgordon, gordon=gordon, me=me
 
   realpos = dblarr(3,nnulls)
   pos = realpos
-  ;readu,null,realpos
-  ;stop
   rp = dblarr(3)
   for i = 1, nnulls do begin
     readu,null,rp
@@ -39,12 +37,12 @@ function getnullsgordon, gordon=gordon, me=me
   close,null
   free_lun,null
 
-  nulls={nulldata,pos:dblarr(3),spine:dblarr(3),type:long(0)}
+  nulls={nulldata,pos:dblarr(3),gridpos:dblarr(3),spine:dblarr(3),type:long(0)}
   nulls=replicate({nulldata},nnulls)
 
   for i = 0, nnulls-1 do begin
-    ;nulls[i].pos = [realpos[0,i],realpos[2,i],!dpi/2-realpos[1,i]]
-    nulls[i].pos = [pos[0,i],pos[1,i],pos[2,i]]
+    nulls[i].pos = [realpos[0,i],realpos[2,i],!dpi/2-realpos[1,i]]
+    nulls[i].gridpos = [pos[0,i],pos[1,i],pos[2,i]]
     nulls[i].spine = spine[*,i]
     nulls[i].type = signs[i]
   endfor
