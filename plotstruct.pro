@@ -11,25 +11,21 @@ readu,10,bgrid,x,y,z
 close,10
 
 nulls = getnullsgordon(/me)
-n = 3
-r = nulls[n-1].pos
+n = 3 ; null number to be looked at
+r = nulls[n-1].gridpos-1 ; -1 translation from fortran to idl grid spacing
 
 
 ;r = [2.915757d,534.719921d,1093.833099d] ; null 1787
 ;r = [1.00023d,266.802554d,863.767486d] ; null 1443
 ;r = [2.920712d,471.302378d,1.423052d] ; null 1
 
-r = r-1
-
-x = [floor(r[0]),ceil(r[0])]
-y = [floor(r[1]),ceil(r[1])]
-z = [floor(r[2]),ceil(r[2])]
-print, x, y, z
-
-bgrid = bgrid[x,y,z,*]
+;x = [floor(r[0]),ceil(r[0])]
+;y = [floor(r[1]),ceil(r[1])]
+;z = [floor(r[2]),ceil(r[2])]
+;bgrid = bgrid[x,y,z,*]
 
 boxedge = dblarr(2,3)
-rsphere = 1d-3
+rsphere = 1d-3 ; rsphere from sf_converge/params.f90
 boxedge[0,0] = r[0] - rsphere
 boxedge[0,1] = r[1] - rsphere
 boxedge[0,2] = r[2] - rsphere
