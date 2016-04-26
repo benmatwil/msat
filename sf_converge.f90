@@ -8,7 +8,9 @@ program sf_converge
 
   double precision, allocatable :: rnulls(:,:), spines(:,:), fans(:,:)
   integer, allocatable :: signs(:), spirals(:), warnings(:)
-  integer :: nnulls
+  
+  integer :: nnulls, nullstart, nullend
+  character(len=12) :: arg
 
   integer :: pcount, ncount, ucount
 
@@ -16,6 +18,18 @@ program sf_converge
   double precision, dimension(3) :: spine, fan
 
   integer :: i
+  
+  do i = 1, command_argument_count()
+    call get_command_argument(i,arg)
+    if (arg(1:2) == 'n=') then
+      arg = arg(3:)
+      read(arg,*) nullstart
+      nullend = nullstart
+    else
+      nullstart = 1
+      nullend = nnulls
+    endif
+  enddo
 
   !Read in 'null.dat'
   open (unit=10,file='output/null.dat',form='unformatted')
@@ -45,7 +59,7 @@ program sf_converge
   print*, nnulls,' nulls'
 
   !now loop over each null and characterise
-  do i = 1787,1787!1, nnulls
+  do i = nullstart, nullend!1, nnulls
     print*, 'Evaluating null', i,' of', nnulls
     rnull = rnulls(:,i)
     
