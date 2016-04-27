@@ -1,3 +1,17 @@
+function convert, gridcoord, x, y, z, check=check
+
+    r = gridcoord[0]
+    t = gridcoord[1]
+    p = gridcoord[2]
+    
+    r = x[floor(r)] + (r-floor(r))(x[ceil(r)]-x[floor(r)])
+    t = y[floor(t)] + (t-floor(t))(y[ceil(t)]-y[floor(t)])
+    p = z[floor(p)] + (p-floor(p))(z[ceil(p)]-z[floor(p)])
+    if keyword_set(check) then print, r,t,p
+    return, [r*cos(p)*sin(t), r*sin(p)*sin(t), r*cos(t)]
+
+end
+
 pro plotstruct, n, converge=converge
   
   openr,10,'data/newmag.dat'
@@ -32,17 +46,12 @@ pro plotstruct, n, converge=converge
 
   boxedge = dblarr(2,3)
   rsphere = 1d-3 ; rsphere from sf_converge/params.f90
-  boxedge[0,0] = npos[0] - rsphere
-  boxedge[0,1] = npos[1] - rsphere
-  boxedge[0,2] = npos[2] - rsphere
-  boxedge[1,0] = npos[0] + rsphere
-  boxedge[1,1] = npos[1] + rsphere
-  boxedge[1,2] = npos[2] + rsphere
+  for i = 0, 2 do boxedge[*,i] = [npos[j] - rsphere, npos[j] + rsphere]
 
   startpts = []
 
   if 1 eq 1 then begin ; null 1
-    rad = 1d-6
+    rad = rsphere/2d1
     nt = 6
     np = 6
     theta = !dpi*((dindgen(nt)+0.5)/nt)
@@ -163,18 +172,4 @@ pro plotstruct, n, converge=converge
   plt.xtitle = "x"
   plt.ytitle = "y"
   plt.ztitle = "z"
-end
-
-function convert, gridcoord, x, y, z, check=check
-
-    r = gridcoord[0]
-    t = gridcoord[1]
-    p = gridcoord[2]
-    
-    r = x[floor(r)] + (r-floor(r))(x[ceil(r)]-x[floor(r)])
-    t = y[floor(t)] + (t-floor(t))(y[ceil(t)]-y[floor(t)])
-    p = z[floor(p)] + (p-floor(p))(z[ceil(p)]-z[floor(p)])
-    if keyword_set(check) then print, r,t,p
-    return, [r*cos(p)*sin(t), r*sin(p)*sin(t), r*cos(t)]
-
 end
