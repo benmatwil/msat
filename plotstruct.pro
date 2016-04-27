@@ -31,7 +31,7 @@ pro plotstruct, n, converge=converge
   ;bgrid = bgrid[x,y,z,*]
 
   boxedge = dblarr(2,3)
-  rsphere = 1d-5 ; rsphere from sf_converge/params.f90
+  rsphere = 1d-3 ; rsphere from sf_converge/params.f90
   boxedge[0,0] = npos[0] - rsphere
   boxedge[0,1] = npos[1] - rsphere
   boxedge[0,2] = npos[2] - rsphere
@@ -163,4 +163,18 @@ pro plotstruct, n, converge=converge
   plt.xtitle = "x"
   plt.ytitle = "y"
   plt.ztitle = "z"
+end
+
+function convert, gridcoord, x, y, z, check=check
+
+    r = gridcoord[0]
+    t = gridcoord[1]
+    p = gridcoord[2]
+    
+    r = x[floor(r)] + (r-floor(r))(x[ceil(r)]-x[floor(r)])
+    t = y[floor(t)] + (t-floor(t))(y[ceil(t)]-y[floor(t)])
+    p = z[floor(p)] + (p-floor(p))(z[ceil(p)]-z[floor(p)])
+    if keyword_set(check) then print, r,t,p
+    return, [r*cos(p)*sin(t), r*sin(p)*sin(t), r*cos(t)]
+
 end
