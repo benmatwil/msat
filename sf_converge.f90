@@ -175,7 +175,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         if (flag == 0) then
           if (modulus(rnewfw-roldfw) < acc .or. modulus(rnewbw-roldbw) < acc) then
             flag = 1
-            maxcount = 2*count
+            maxcount = 2*count ! does this factor need changing?
           endif
         endif
       enddo
@@ -210,7 +210,6 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     else if (nfw == nbw) then ! both are equal (hopefully 2=2) so just pick one and check later
       rspine = rconvergebw
       rfan = rconvergefw
-      
       ! check whether this guess is correct, otherwise switch
       spinecheck = dot(trilinear(rsphere*rspine(:,1)+rnull,bgrid),rspine(:,1))
       if (abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1))) > abs(spinecheck)) then
@@ -219,12 +218,12 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         rspine = rfan
         deallocate(rfan)
         rfan = dummy
-        deallocate(dummy)  
-        if (spinecheck > 0) then
-          sign = -1
-        else
-          sign = 1
-        endif 
+        deallocate(dummy)
+      endif
+      if (spinecheck > 0) then
+        sign = -1
+      else
+        sign = 1
       endif
     endif
     spine = rspine(:,1)
@@ -253,11 +252,11 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         write(10) size(rconvergebw,2), rconvergebw
         close(10)
     endif
-    deallocate(rconvergefw1, rconvergebw1, denseposfw, denseposbw)
+    deallocate(denseposfw, denseposbw)
   endif
 
   ! We have picked rspine and rfan so can get rid of rconverges
-  deallocate(rconvergebw, rconvergefw)
+  deallocate(rconvergebw, rconvergefw, rconvergefw1, rconvergebw1)
   
   if (size(rfan,2) /= 2) then 
     ! Check whether current fan actually will still converge to only 2 points
