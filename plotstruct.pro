@@ -1,4 +1,4 @@
-function convert, gridcoord, x, y, z, check=check, rsphere=rsphere
+function convert, gridcoord, x, y, z, check=check
 
   r = gridcoord[0]
   t = gridcoord[1]
@@ -12,7 +12,7 @@ function convert, gridcoord, x, y, z, check=check, rsphere=rsphere
 
 end
 
-pro plotstruct, n, converge=converge, fan=fan, ball=ball
+pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
   
   openr,10,'data/newmag.dat'
   nx = 0l
@@ -65,12 +65,10 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball
         minvec = minvec*rsphere
         maxvec = maxvec + npos
         minvec = minvec + npos
-        print, maxvec
-        maxvec = convert(maxvec,x,y,z,/check)
+        maxvec = convert(maxvec,x,y,z)
         minvec = convert(minvec,x,y,z)
         p = plot3d([maxvec[0]],[maxvec[1]],[maxvec[2]],'cyan',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
         p = plot3d([minvec[0]],[minvec[1]],[minvec[2]],'g',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
-        print, minvec, maxvec
         if 0 eq 1 then begin
           readu, 10, n & crossfan = dblarr(3,n) & readu, 10, crossfan & help, crossfan
           p = plot3d(reform(crossfan[0,*]),reform(crossfan[1,*]),reform(crossfan[2,*]),'orange',lines=' ',sym='x',/overplot, sym_thick=3, sym_size=2)
@@ -95,7 +93,6 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball
         spine = spine*rsphere
         spine = spine + npos
         spine = convert(spine,x,y,z)
-        print, spine
         p = plot3d([spine[0]],[spine[1]],[spine[2]],'blue',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
       endif
       close,10
