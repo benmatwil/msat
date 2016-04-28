@@ -210,6 +210,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     else if (nfw == nbw) then ! both are equal (hopefully 2=2) so just pick one and check later
       rspine = rconvergebw
       rfan = rconvergefw
+      sign = 1
       ! check whether this guess is correct, otherwise switch
       spinecheck = dot(trilinear(rsphere*rspine(:,1)+rnull,bgrid),rspine(:,1))
       if (abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1))) > abs(spinecheck)) then
@@ -219,11 +220,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         deallocate(rfan)
         rfan = dummy
         deallocate(dummy)
-      endif
-      if (spinecheck > 0) then
         sign = -1
-      else
-        sign = 1
       endif
     endif
     spine = rspine(:,1)
