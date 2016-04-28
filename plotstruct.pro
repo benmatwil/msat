@@ -1,18 +1,18 @@
-function convert, gridcoord, x, y, z, check=check
+function convert, gridcoord, x, y, z, check=check, rsphere=rsphere
 
-    r = gridcoord[0]
-    t = gridcoord[1]
-    p = gridcoord[2]
-    
-    r = x[floor(r)] + (r-floor(r))(x[ceil(r)]-x[floor(r)])
-    t = y[floor(t)] + (t-floor(t))(y[ceil(t)]-y[floor(t)])
-    p = z[floor(p)] + (p-floor(p))(z[ceil(p)]-z[floor(p)])
-    if keyword_set(check) then print, r,t,p
-    return, [r*cos(p)*sin(t), r*sin(p)*sin(t), r*cos(t)]
+  r = gridcoord[0]
+  t = gridcoord[1]
+  p = gridcoord[2]
+  
+  r = x[floor(r)] + (r-floor(r))(x[ceil(r)]-x[floor(r)])
+  t = y[floor(t)] + (t-floor(t))(y[ceil(t)]-y[floor(t)])
+  p = z[floor(p)] + (p-floor(p))(z[ceil(p)]-z[floor(p)])
+  if keyword_set(check) then print, r,t,p
+  return, [r*cos(p)*sin(t), r*sin(p)*sin(t), r*cos(t)]
 
 end
 
-pro plotstruct, n, converge=converge
+pro plotstruct, n, converge=converge, fan=fan, ball=ball
   
   openr,10,'data/newmag.dat'
   nx = 0l
@@ -33,80 +33,11 @@ pro plotstruct, n, converge=converge
 
   nulls = getnullsgordon(/me)
   npos = nulls[n-1].gridpos-1 ; -1 translation from fortran to idl grid spacing
-;print, npos
 
-  ;r = [2.915757d,534.719921d,1093.833099d] ; null 1787
-  ;r = [1.00023d,266.802554d,863.767486d] ; null 1443
-  ;r = [2.920712d,471.302378d,1.423052d] ; null 1
-
-  ;x = [floor(r[0]),ceil(r[0])]
-  ;y = [floor(r[1]),ceil(r[1])]
-  ;z = [floor(r[2]),ceil(r[2])]
-  ;bgrid = bgrid[x,y,z,*]
-
-  boxedge = dblarr(2,3)
-  rsphere = 1d-3 ; rsphere from sf_converge/params.f90
-  for i = 0, 2 do boxedge[*,i] = [npos[j] - rsphere, npos[j] + rsphere]
-
-  startpts = []
-
-  if 1 eq 1 then begin ; null 1
-    rad = rsphere/2d1
-    nt = 6
-    np = 6
-    theta = !dpi*((dindgen(nt)+0.5)/nt)
-    phi = 2*!dpi*((dindgen(np)+0.5)/np)
-    ;print, theta
-    ;print, phi
-    for i = 0, nt-1 do begin
-      for j = 0, np-1 do begin
-        xp = rad*cos(phi[j])*sin(theta[i])
-        yp = rad*sin(phi[j])*sin(theta[i])
-        zp = rad*cos(theta[i])
-        
-        startpts = [[startpts],[xp,yp,zp]]
-      endfor
-    endfor
-  endif
-
-  if 0 eq 1 then begin ; null 1787
-    np = 20
-    rad = 2d-4
-    theta = !dpi/2-0.1
-    phi = 2*!dpi*(dindgen(np)/(np-1))
-    for j = 0, np-1 do begin
-      xp = rad*cos(phi[j])*sin(theta)
-      yp = rad*sin(phi[j])*sin(theta)
-      zp = rad*cos(theta)
-      
-      startpts = [[startpts],[xp,yp,zp]]
-    endfor
-  endif
-
-  for i = 0, 2 do startpts[i,*] = startpts[i,*] + npos[i]
+  xyznpos = convert(npos,x,y,z)
+  plt = plot3d([xyznpos[0]],[xyznpos[1]],[xyznpos[2]],'red',lines=' ',sym='x', sym_thick=3, sym_size=1.5)
   
-  for j = 0, n_elements(startpts)/3-1 do begin
-
-    h = 1d-5
-    line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway)
-
-    line = transpose(line)
-    for i = 0, n_elements(line)/3-1 do begin
-      line[i,*] = convert(line[i,*],x,y,z)
-    endfor
-    
-    plt = plot3d(line[*,0],line[*,1],line[*,2],/overplot,/aspect_ratio,/perspective)
-    
-    line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, -h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway)
-    line = transpose(line)
-    for i = 0, n_elements(line)/3-1 do begin
-      line[i,*] = convert(line[i,*],x,y,z)
-    endfor
-
-    plt = plot3d(line[*,0],line[*,1],line[*,2],'cyan',/overplot,/aspect_ratio)
-    
-  endfor
-
+  if not keyword_set(rsphere) then rsphere = 1d-3 ; rsphere from sf_converge/params.f90
 
   if keyword_set(converge) then begin
     n=0l
@@ -123,11 +54,13 @@ pro plotstruct, n, converge=converge
       if name eq 'fandata.dat' then begin
         r = transpose(r)
         r = r * rsphere
-        for i = 0,2 do r[*,i] = r[*,i] + npos[i]
+        for i = 0, 2 do r[*,i] = r[*,i] + npos[i]
         for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
         p = plot3d(r[*,0],r[*,1],r[*,2],lines=' ',sym='x', aspect_ratio=1,/overplot)
         
         readu,10,maxvec,minvec
+        max1 = maxvec
+        min1 = minvec
         maxvec = maxvec*rsphere
         minvec = minvec*rsphere
         maxvec = maxvec + npos
@@ -168,6 +101,50 @@ pro plotstruct, n, converge=converge
       close,10
     endforeach
   endif
+  
+  boxedge = dblarr(2,3)
+  for i = 0, 2 do boxedge[*,i] = [npos[i] - rsphere, npos[i] + rsphere]
+  
+  startpts = []
+  if keyword_set(fan) then begin
+    rad = 0.6*rsphere
+    np = 20
+    phi = 2*!dpi*((dindgen(np)+0.5)/np)
+    for i = 0, np-1 do begin
+      startpts = [[startpts],[max1*cos(phi[i])+min1*sin(phi[i])]]
+    endfor
+    startpts = startpts*rad
+  endif
+  if keyword_set(ball) then begin
+    rad = rsphere/2d1
+    nt = 6
+    np = 6
+    theta = !dpi*((dindgen(nt)+0.5)/nt)
+    phi = 2*!dpi*((dindgen(np)+0.5)/np)
+    for i = 0, nt-1 do begin
+      for j = 0, np-1 do begin
+        xp = rad*cos(phi[j])*sin(theta[i])
+        yp = rad*sin(phi[j])*sin(theta[i])
+        zp = rad*cos(theta[i])
+        startpts = [[startpts],[xp,yp,zp]]
+      endfor
+    endfor
+  endif
+
+  for i = 0, 2 do startpts[i,*] = startpts[i,*] + npos[i]
+  
+  for j = 0, n_elements(startpts)/3-1 do begin
+    h = 1d-5
+    line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway)
+    line = transpose(line)
+    for i = 0, n_elements(line)/3-1 do line[i,*] = convert(line[i,*],x,y,z)
+    plt = plot3d(line[*,0],line[*,1],line[*,2],'red',/overplot,/aspect_ratio,/perspective)
+    
+    line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, -h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway)
+    line = transpose(line)
+    for i = 0, n_elements(line)/3-1 do line[i,*] = convert(line[i,*],x,y,z)
+    plt = plot3d(line[*,0],line[*,1],line[*,2],'orange',/overplot,/aspect_ratio)
+  endfor
   
   plt.xtitle = "x"
   plt.ytitle = "y"
