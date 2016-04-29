@@ -175,7 +175,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         if (flag == 0) then
           if (modulus(rnewfw-roldfw) < acc .or. modulus(rnewbw-roldbw) < acc) then
             flag = 1
-            maxcount = 2*count ! does this factor need changing?
+            maxcount = 1*count ! does this factor need changing?
           endif
         endif
       enddo
@@ -190,8 +190,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   ! fan left with either 2 (minvec eigenvalue too small) or a circle of points
   rconvergefw1 = rconvergefw
   rconvergebw1 = rconvergebw
-  call remove_duplicates(rconvergefw, 5d-3)
-  call remove_duplicates(rconvergebw, 5d-3)
+  call remove_duplicates(rconvergefw, 1d-4)
+  call remove_duplicates(rconvergebw, 1d-4)
 
   nfw = size(rconvergefw,2)
   nbw = size(rconvergebw,2)
@@ -207,12 +207,14 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       rspine = rconvergebw
       rfan = rconvergefw
       sign = 1
-    else if (nfw == nbw) then ! both are equal (hopefully 2=2) so just pick one and check later
+    else if (nfw == nbw) then ! both are equal (i.e. 2=2) so just pick one and check eigenvalues
       rspine = rconvergebw
       rfan = rconvergefw
       sign = 1
       ! check whether this guess is correct, otherwise switch
       spinecheck = dot(trilinear(rsphere*rspine(:,1)+rnull,bgrid),rspine(:,1))
+      print*, spinecheck
+      print*, abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1)))
       if (abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1))) > abs(spinecheck)) then
         dummy = rspine
         deallocate(rspine)
@@ -225,8 +227,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     endif
     spine = rspine(:,1)
   else ! if no reduction is two, use that the spine should be the densest accumulation of points
-    call remove_duplicates(rconvergefw1, 1d-1, denseposfw)
-    call remove_duplicates(rconvergebw1, 1d-1, denseposbw)
+    call remove_duplicates(rconvergefw1, 5d-2, denseposfw)
+    call remove_duplicates(rconvergebw1, 5d-2, denseposbw)
     nfw = maxval(denseposfw)
     nbw = maxval(denseposbw)
     print*, nfw, nbw
@@ -255,11 +257,15 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   ! We have picked rspine and rfan so can get rid of rconverges
   deallocate(rconvergebw, rconvergefw, rconvergefw1, rconvergebw1)
   
+  print*, "Number of spines:", size(rspine,2)
+  print*, "Number of fans:", size(rfan,2)
+  
   if (size(rfan,2) /= 2) then 
     ! Check whether current fan actually will still converge to only 2 points
     rfanchk = rfan
     call remove_duplicates(rfanchk, 1d-1, densepos)
     nfanchk = size(rfanchk,2)
+    print*, "Number of points left in fan:", nfanchk
     if (nfanchk <= 6) then ! If so, rfan is now those two points
       print*, "Narrowed down to two fan points"
       deallocate(rfan)
@@ -299,7 +305,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
           endif
         enddo
         minvec = rfan(:,imin)
-        print*, "Perp vec is at ", imin, "out of a total of ", size(rfan)
+        print*, "Perp vec is at ", imin, "out of a total of ", size(rfan,2)
       else ! we have a ball, find vectors approximately perpendicular and pick one in the densest area
         print*, "We have a ball"
         minvec = normalise(cross(spine,maxvec))
@@ -323,12 +329,6 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     maxvec = rfan(:,1)
     minvec = normalise(cross(spine,maxvec))
   endif
-
-  nspine = size(rspine,2)
-  nfan = size(rfan,2)
-  print*, "Number of spines:", nspine
-  print*, "Number of fans:", nfan
-  print*, "Number of points left in fan:", nfanchk
 
   ! Save data if there is a problematic null for inspection
   savedata = 1
