@@ -35,20 +35,21 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
   npos = nulls[n-1].gridpos-1 ; -1 translation from fortran to idl grid spacing
 
   xyznpos = convert(npos,x,y,z)
-  plt = plot3d([xyznpos[0]],[xyznpos[1]],[xyznpos[2]],'red',lines=' ',sym='x', sym_thick=3, sym_size=1.5)
+  plt = plot3d([xyznpos[0]],[xyznpos[1]],[xyznpos[2]],'red',lines=' ',sym='x', sym_thick=3, sym_size=1.5, dim=[1200,900])
+  plt.scale,1.5,1.5,1.5
   
   if not keyword_set(rsphere) then rsphere = 1d-3 ; rsphere from sf_converge/params.f90
 
   if keyword_set(converge) then begin
-    n=0l
+    ny=0l
     spine = dblarr(3)
     maxvec = spine
     minvec = spine
 
     foreach name, ['fandata.dat', 'spinedata.dat'] do begin
       openr,10,name
-      readu,10,n
-      r = dblarr(3,n)
+      readu,10,ny
+      r = dblarr(3,ny)
       readu,10,r
       help,r
       if name eq 'fandata.dat' then begin
@@ -112,8 +113,9 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
     endfor
     startpts = startpts*rad
   endif
+  
   if keyword_set(ball) then begin
-    rad = rsphere/2d1
+    rad = 5*rsphere/2d1
     nt = 6
     np = 6
     theta = !dpi*((dindgen(nt)+0.5)/nt)
@@ -131,7 +133,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
   for i = 0, 2 do startpts[i,*] = startpts[i,*] + npos[i]
   
   for j = 0, n_elements(startpts)/3-1 do begin
-    h = 1d-5
+    h = rsphere*5d-2
     line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway)
     line = transpose(line)
     for i = 0, n_elements(line)/3-1 do line[i,*] = convert(line[i,*],x,y,z)
