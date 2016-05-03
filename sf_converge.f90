@@ -18,18 +18,6 @@ program sf_converge
   double precision, dimension(3) :: spine, fan
 
   integer :: i
-  
-  do i = 1, command_argument_count()
-    call get_command_argument(i,arg)
-    if (arg(1:2) == 'n=') then
-      arg = arg(3:)
-      read(arg,*) nullstart
-      nullend = nullstart
-    else
-      nullstart = 1
-      nullend = nnulls
-    endif
-  enddo
 
   !Read in 'null.dat'
   open (unit=10,file='output/null.dat',form='unformatted')
@@ -57,6 +45,20 @@ program sf_converge
   dz = (z(nz)-z(1))/nz
 
   print*, nnulls,' nulls'
+  
+  if (command_argument_count() > 0) then 
+    do i = 1, command_argument_count()
+      call get_command_argument(i,arg)
+      if (arg(1:2) == 'n=') then
+        arg = arg(3:)
+        read(arg,*) nullstart
+        nullend = nullstart
+      endif
+    enddo
+  else
+    nullstart = 1
+    nullend = nnulls
+  endif
 
   !now loop over each null and characterise
   do i = nullstart, nullend!1, nnulls
@@ -76,7 +78,7 @@ program sf_converge
     print*, '-------------------------------------------------------------------------'
     print*, ''
   enddo
-  stop
+  if (nullend - nullstart /= nnulls - 1) stop
   
   !now write data to nulls.dat
   open(unit=10,file='output/nullsben.dat',form='unformatted')
@@ -127,8 +129,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   double precision, dimension(3) :: spine, fan, maxvec, minvec
   
   double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rconvergefw1, rconvergebw1
-  double precision, dimension(:,:), allocatable :: rspine, rfan, rfanchk, rfanred, dummy, crossfan, rfancross
-  double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
+  double precision, dimension(:,:), allocatable :: rspine, rfan, rfanchk, rfanred, dummy, crossfan, distarr
+  double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw, distchk
 
   !set up theta and phi for sphere around null
   dphi = 360.d0/dble(nphi)
@@ -144,6 +146,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
 
   phis = phis*dtor
   thetas = thetas*dtor
+  
+  spiral = 0
 
   print*, 'Null at:', rnull
   print*, 'B=', trilinear(rnull, bgrid)
@@ -168,16 +172,16 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       bnewbw = b
       roldfw = [0,0,0]
       roldbw = [0,0,0]
-      do while (count < maxcount) ! do enough times for spine to converge then double it
+      do while (modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc .and. count < maxcount) ! do enough times for spine to converge then double it
         call it_conv(roldfw,rnewfw,bnewfw,fact,1)
         call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
         count = count + 1
-        if (flag == 0) then
-          if (modulus(rnewfw-roldfw) < acc .or. modulus(rnewbw-roldbw) < acc) then
-            flag = 1
-            maxcount = 1*count ! does this factor need changing?
-          endif
-        endif
+        !if (flag == 0) then
+        !  if (modulus(rnewfw-roldfw) < acc .or. modulus(rnewbw-roldbw) < acc) then
+        !    flag = 1
+        !    maxcount = 1*count ! does this factor need changing?
+        !  endif
+        !endif
       enddo
       n = i+(j-1)*nphi
       rconvergefw(:,n) = normalise(rnewfw)
@@ -213,8 +217,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       sign = 1
       ! check whether this guess is correct, otherwise switch
       spinecheck = dot(trilinear(rsphere*rspine(:,1)+rnull,bgrid),rspine(:,1))
-      print*, spinecheck
-      print*, abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1)))
+      print*, "Eigenvalue at spine", spinecheck
+      print*, "Eigenvalue at fan", abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1)))
       if (abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1))) > abs(spinecheck)) then
         dummy = rspine
         deallocate(rspine)
@@ -252,6 +256,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         close(10)
     endif
     deallocate(denseposfw, denseposbw)
+    if (size(rspine,2) > 500) sign = 0
   endif
 
   ! We have picked rspine and rfan so can get rid of rconverges
@@ -289,12 +294,12 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
           i = i+1
         endif
       enddo
-      call remove_duplicates(crossfan,1d-1)
+      call remove_duplicates(crossfan,2d-1)
       print*, "Size of crossfan", size(crossfan,2)
       if (allocated(densepos)) deallocate(densepos)
       call remove_duplicates(rfan, 1d-2, densepos) ! look for maxvec in the densest area
       maxvec = rfan(:,maxval(maxloc(densepos,2)))
-      if (size(crossfan,2) <= 4) then ! we have a ring, pick minvec to be vector most perpendicular
+      if (size(crossfan,2) <= 6) then ! we have a ring, pick minvec to be vector most perpendicular
         print*, "We have a ring"
         mindot = 1
         do i = 1, size(rfan,2)
@@ -306,9 +311,18 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         enddo
         minvec = rfan(:,imin)
         print*, "Perp vec is at ", imin, "out of a total of ", size(rfan,2)
+        ! Now check for a full ring for spiralling
+        nfan = size(rfan,2)
+        allocate(distarr(nfan,nfan))
+        do i = 1, nfan
+          do j = 1, nfan
+            distarr(i,j) = modulus(rfan(:,i)-rfan(:,j))
+          enddo
+        enddo
+        if (maxval(minval(distarr,2,distarr > 0)) < 1d-1) spiral = 1
+        deallocate(distarr)
       else ! we have a ball, find vectors approximately perpendicular and pick one in the densest area
         print*, "We have a ball"
-        minvec = normalise(cross(spine,maxvec))
         i = 1
         rfanred = rfan
         do while (i <= size(rfanred,2))
@@ -331,7 +345,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   endif
 
   ! Save data if there is a problematic null for inspection
-  savedata = 1
+  savedata = 0
   if (savedata == 1) then
     open(unit=10, file="spinedata.dat", access="stream")
     write(10) size(rspine,2), rspine, spine
@@ -356,15 +370,11 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
 
   fan = normalise(cross(minvec,maxvec)) ! fan vector is perp to fan plane
 
-  if (sign .eq. 0) then
-    fan = (/0.d0,0.d0,1.d0/)
-    spine = (/0.d0,0.d0,1.d0/)
-    print*, "Warning, wasn't able to find null properties"
-  endif
-  print*, ''
+  if (sign .eq. 0) print*, "Warning, sign = 0 and null likely a source or a sink"
   print*, 'Sign =  ', sign
   print*, 'Spiral =', spiral
   print*, 'Spine = ', spine
+  print*, 'nspine = ', size(rspine,2)
   print*, 'Fan =   ', fan
   print*, 'Tilt =  ', abs(90-acos(dot(fan,spine))/dtor)
 
