@@ -345,7 +345,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   endif
 
   ! Save data if there is a problematic null for inspection
-  savedata = 0
+  savedata = 1
   if (savedata == 1) then
     open(unit=10, file="spinedata.dat", access="stream")
     write(10) size(rspine,2), rspine, spine

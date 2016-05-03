@@ -34,7 +34,8 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
   nulls = getnullsgordon(/me)
   npos = nulls[n-1].gridpos-1 ; -1 translation from fortran to idl grid spacing
 
-  xyznpos = convert(npos,x,y,z)
+  ;xyznpos = convert(npos,x,y,z)
+  xyznpos = npos
   plt = plot3d([xyznpos[0]],[xyznpos[1]],[xyznpos[2]],'red',lines=' ',sym='x', sym_thick=3, sym_size=1.5, dim=[1200,900])
   plt.scale,1.5,1.5,1.5
   
@@ -56,7 +57,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
         r = transpose(r)
         r = r * rsphere
         for i = 0, 2 do r[*,i] = r[*,i] + npos[i]
-        for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
+        ;for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
         p = plot3d(r[*,0],r[*,1],r[*,2],lines=' ',sym='x', aspect_ratio=1,/overplot)
         
         readu,10,maxvec,minvec
@@ -66,8 +67,8 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
         minvec = minvec*rsphere
         maxvec = maxvec + npos
         minvec = minvec + npos
-        maxvec = convert(maxvec,x,y,z)
-        minvec = convert(minvec,x,y,z)
+        ;maxvec = convert(maxvec,x,y,z)
+        ;minvec = convert(minvec,x,y,z)
         p = plot3d([maxvec[0]],[maxvec[1]],[maxvec[2]],'cyan',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
         p = plot3d([minvec[0]],[minvec[1]],[minvec[2]],'g',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
         if 1 eq 0 then begin
@@ -77,7 +78,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
             crossfan = transpose(crossfan)
             crossfan = crossfan * rsphere
             for i = 0, 2 do crossfan[*,i] = crossfan[*,i] + npos[i]
-            for i = 0, n_elements(crossfan)/3-1 do crossfan[i,*] = convert(crossfan[i,*],x,y,z)
+            ;for i = 0, n_elements(crossfan)/3-1 do crossfan[i,*] = convert(crossfan[i,*],x,y,z)
             p = plot3d(reform(crossfan[0,*]),reform(crossfan[1,*]),reform(crossfan[2,*]),'orange',lines=' ',sym='x',/overplot, sym_thick=3, sym_size=2)
             cross = dblarr(3,n_elements(r)-1)
             ;for i = 1, n_elements(r)/3-1 do begin
@@ -93,13 +94,13 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
         r = transpose(r)
         r = r * rsphere
         for i = 0,2 do r[*,i] = r[*,i] + npos[i]
-        for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
+        ;for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
         p = plot3d(r[*,0],r[*,1],r[*,2],'r',lines=' ',sym='x',/overplot,/aspect_ratio)
         
         readu, 10, spine
         spine = spine*rsphere
         spine = spine + npos
-        spine = convert(spine,x,y,z)
+        ;spine = convert(spine,x,y,z)
         p = plot3d([spine[0]],[spine[1]],[spine[2]],'blue',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
       endif
       close,10
@@ -143,12 +144,12 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
       h = rsphere*2d-2
       line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway)
       line = transpose(line)
-      for i = 0, n_elements(line)/3-1 do line[i,*] = convert(line[i,*],x,y,z)
+      ;for i = 0, n_elements(line)/3-1 do line[i,*] = convert(line[i,*],x,y,z)
       plt = plot3d(line[*,0],line[*,1],line[*,2],'red',/overplot,/aspect_ratio,/perspective)
       
       line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, -h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway)
       line = transpose(line)
-      for i = 0, n_elements(line)/3-1 do line[i,*] = convert(line[i,*],x,y,z)
+      ;for i = 0, n_elements(line)/3-1 do line[i,*] = convert(line[i,*],x,y,z)
       plt = plot3d(line[*,0],line[*,1],line[*,2],'orange',/overplot,/aspect_ratio)
     endfor
   endif
@@ -165,7 +166,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
     pts = transpose(pts)
     pts = pts * rsphere
     for i = 0, 2 do pts[*,i] = pts[*,i] + npos[i]
-    for i = 0, n_elements(pts)/3-1 do pts[i,*] = convert(pts[i,*],x,y,z)
+    ;for i = 0, n_elements(pts)/3-1 do pts[i,*] = convert(pts[i,*],x,y,z)
     plt = plot3d(pts[*,0],pts[*,1],pts[*,2],linest=' ',sym='x',/overplot,sym_thick=2, sym_size=2,/aspect_ratio)
   endif
   
