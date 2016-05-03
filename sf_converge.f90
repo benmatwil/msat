@@ -269,7 +269,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   
   ! now determine the fan
   if (size(rfan,2) /= 2) then 
-    ! Check whether current fan actually will still converge to only 2 points
+    ! Check whether fan actually converges to only 2 points at lower accuracy
     rfanchk = rfan
     call remove_duplicates(rfanchk, 1d-1, densepos)
     nfanchk = size(rfanchk,2)
