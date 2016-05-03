@@ -127,7 +127,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   double precision, dimension(3) :: spine, fan, maxvec, minvec
   
   double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rconvergefw1, rconvergebw1
-  double precision, dimension(:,:), allocatable :: rspine, rfan, rfanchk, rfanred, dummy, crossfan
+  double precision, dimension(:,:), allocatable :: rspine, rfan, rfanchk, rfanred, dummy, crossfan, rfancross
   double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
 
   !set up theta and phi for sphere around null
@@ -346,33 +346,13 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   print*, "Maxvec is:", maxvec
   print*, "Minvec is:", minvec
 
-  !if (size(rfan,2) == 2) then ! print out eigenvalues
-  !  print*,'-------------------------------------------------------------------------'
-  !  print*,dot(trilinear(rsphere*spine+rnull,bgrid),spine)/rsphere
-  !  print*,dot(trilinear(rsphere*maxvec+rnull,bgrid),maxvec)/rsphere
-  !  print*,dot(trilinear(rsphere*minvec+rnull,bgrid),minvec)/rsphere
-  !endif
-
   print*, '-------------------------------------------------------------------------'
   print*, "Final dot prod is"
   print*, "        min/max           ", "      min/spine          ", "      max/spine       "
   print*, dot(minvec,maxvec), dot(minvec,spine), dot(maxvec,spine)
-  !print*, 'Pre-gordon-spine = ', spine
-  !print*, 'Pre-gordon-fan =   ', cross(minvec,maxvec)
   print*, '-------------------------------------------------------------------------'
 
   !sign = -sign !check which sign needs to be which
-  spiral = 0 ! potential so non-spiral
-
-  testgordon = 0
-  if (testgordon == 1) then
-    print*, ''
-    print*, "Determining null's properties..."
-
-    !test the estimated properties and adjust them if required. Run this twice to be sure
-    call test_null(spine,maxvec,minvec,sign,spiral)
-    call test_null(spine,maxvec,minvec,sign,spiral)
-  endif
 
   fan = normalise(cross(minvec,maxvec)) ! fan vector is perp to fan plane
 
