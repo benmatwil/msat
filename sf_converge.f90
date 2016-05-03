@@ -191,7 +191,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
 
   ! remove duplicate vectors which are a distance 1d-4 apart
   ! spine should be left with 2 vectors
-  ! fan left with either 2 (minvec eigenvalue too small) or a circle of points
+  ! fan left with either 2 vectors (minvec eigenvalue too small), a circle of points or just a mess
   rconvergefw1 = rconvergefw
   rconvergebw1 = rconvergebw
   call remove_duplicates(rconvergefw, 1d-4)
@@ -200,7 +200,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   nfw = size(rconvergefw,2)
   nbw = size(rconvergebw,2)
 
-  if (nfw == 2 .or. nbw == 2) then ! if one of the reductions only had two vectors, can guarantee one is spine
+  ! first determine the spine and which is which
+  if (nfw == 2 .or. nbw == 2) then ! if one of the reductions only has two vectors, can guarantee one is spine
     if (nfw < nbw) then ! if nfw is smaller then it's the spine
       ! spine going out of null
       rspine = rconvergefw
@@ -231,6 +232,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     endif
     spine = rspine(:,1)
   else ! if no reduction is two, use that the spine should be the densest accumulation of points
+    ! also likely we have a source or a sink so div(B) is non-zero
     call remove_duplicates(rconvergefw1, 5d-2, denseposfw)
     call remove_duplicates(rconvergebw1, 5d-2, denseposbw)
     nfw = maxval(denseposfw)
@@ -246,7 +248,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       rfan = rconvergebw
       rspine = rconvergefw
       sign = -1
-    else !not sure how to to decide in this case, haven't found a case like this yet...
+    else ! not sure how to to decide in this case, haven't found a case like this yet...
       print*, "Uh oh, can't decide!"
         open(unit=10, file="spinedata.dat", access="stream")
         write(10) size(rconvergefw,2), rconvergefw
@@ -256,7 +258,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         close(10)
     endif
     deallocate(denseposfw, denseposbw)
-    if (size(rspine,2) > 10) sign = 0
+    if (size(rspine,2) > 10) sign = 0 !this could be >2, check
   endif
 
   ! We have picked rspine and rfan so can get rid of rconverges
@@ -265,6 +267,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   print*, "Number of spines:", size(rspine,2)
   print*, "Number of fans:", size(rfan,2)
   
+  ! now determine the fan
   if (size(rfan,2) /= 2) then 
     ! Check whether current fan actually will still converge to only 2 points
     rfanchk = rfan
@@ -374,7 +377,6 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   print*, 'Sign =  ', sign
   print*, 'Spiral =', spiral
   print*, 'Spine = ', spine
-  print*, 'nspine = ', size(rspine,2)
   print*, 'Fan =   ', fan
   print*, 'Tilt =  ', abs(90-acos(dot(fan,spine))/dtor)
 
