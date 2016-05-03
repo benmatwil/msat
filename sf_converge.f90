@@ -235,7 +235,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     call remove_duplicates(rconvergebw1, 5d-2, denseposbw)
     nfw = maxval(denseposfw)
     nbw = maxval(denseposbw)
-    print*, nfw, nbw
+    print*, "Density of densest points", nfw, nbw
     if (nfw < nbw) then
       spine = rconvergebw1(:,maxval(maxloc(denseposbw)))
       rfan = rconvergefw
@@ -256,7 +256,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         close(10)
     endif
     deallocate(denseposfw, denseposbw)
-    if (size(rspine,2) > 500) sign = 0
+    if (size(rspine,2) > 10) sign = 0
   endif
 
   ! We have picked rspine and rfan so can get rid of rconverges
