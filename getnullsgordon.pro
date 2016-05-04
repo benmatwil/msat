@@ -24,26 +24,28 @@ function getnullsgordon, gordon=gordon, me=me
   free_lun,null
   
   openr,null,nullfile+"nullsben.dat",/f77_unformatted,/get_lun;nullfile
-  nnulls=0l
+  nnulls = 0l
   readu,null,nnulls
 
-  signs=lonarr(nnulls)
-  r=dblarr(3,nnulls)
-  spine=dblarr(3,nnulls)
+  signs = lonarr(nnulls)
+  r = dblarr(3,nnulls)
+  spine = dblarr(3,nnulls)
+  fan = spine
   readu,null,signs
-  readu,null,r,spine
+  readu,null,r,spine,fan
   signs = -1*signs
 
   close,null
   free_lun,null
 
-  nulls={nulldata,pos:dblarr(3),gridpos:dblarr(3),spine:dblarr(3),type:long(0)}
-  nulls=replicate({nulldata},nnulls)
+  nulls = {nulldata,pos:dblarr(3),gridpos:dblarr(3),spine:dblarr(3),fan:dblarr(3),type:long(0)}
+  nulls = replicate({nulldata},nnulls)
 
   for i = 0, nnulls-1 do begin
     nulls[i].pos = [realpos[0,i],realpos[2,i],!dpi/2-realpos[1,i]]
     nulls[i].gridpos = [pos[0,i],pos[1,i],pos[2,i]]
     nulls[i].spine = spine[*,i]
+    nulls[i].fan = fan[*,i]
     nulls[i].type = signs[i]
   endfor
   
