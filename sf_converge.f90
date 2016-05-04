@@ -172,7 +172,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       bnewbw = b
       roldfw = [0,0,0]
       roldbw = [0,0,0]
-      do while (modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc .and. count < maxcount) ! do enough times for spine to converge then double it
+      do while (modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc .and. count < maxcount) ! do enough times for spine to converge
         call it_conv(roldfw,rnewfw,bnewfw,fact,1)
         call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
         count = count + 1
@@ -216,7 +216,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       rspine = rconvergebw
       rfan = rconvergefw
       sign = 1
-      ! check whether this guess is correct, otherwise switch
+      ! check whether this guess is correct using eigenvalues, otherwise switch
       spinecheck = dot(trilinear(rsphere*rspine(:,1)+rnull,bgrid),rspine(:,1))
       print*, "Eigenvalue at spine", spinecheck
       print*, "Eigenvalue at fan", abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1)))
@@ -258,7 +258,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         close(10)
     endif
     deallocate(denseposfw, denseposbw)
-    if (size(rspine,2) > 10) sign = 0 !this could be >2, check
+    sign = 0 ! check to make sure it isn't flagging any proper nulls
   endif
 
   ! We have picked rspine and rfan so can get rid of rconverges
@@ -281,7 +281,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       deallocate(rfanchk)
       maxvec = rfan(:,maxval(maxloc(densepos)))
       minvec = normalise(cross(spine,maxvec))
-    else ! have a ring/ball
+    else ! have a ring/ball (mess of points)
       ! find the cross product of one vector with every otherwise
       ! well converged ring if all cross products are all the same point
       allocate(crossfan(3,nfanchk-1))
@@ -302,8 +302,9 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       if (allocated(densepos)) deallocate(densepos)
       call remove_duplicates(rfan, 1d-2, densepos) ! look for maxvec in the densest area
       maxvec = rfan(:,maxval(maxloc(densepos,2)))
-      if (size(crossfan,2) <= 6) then ! we have a ring, pick minvec to be vector most perpendicular
+      if (size(crossfan,2) <= 8) then ! we have a ring, pick minvec to be vector most perpendicular
         print*, "We have a ring"
+        ! find the most perpendicular vector to maxvec
         mindot = 1
         do i = 1, size(rfan,2)
           dotprod = abs(dot(maxvec,rfan(:,i)))
@@ -326,6 +327,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         deallocate(distarr)
       else ! we have a ball, find vectors approximately perpendicular and pick one in the densest area
         print*, "We have a ball"
+        ! find most set of almost perpendicular vectors and then pick densest packed one
         i = 1
         rfanred = rfan
         do while (i <= size(rfanred,2))
@@ -348,7 +350,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   endif
 
   ! Save data if there is a problematic null for inspection
-  savedata = 1
+  savedata = 0
   if (savedata == 1) then
     open(unit=10, file="spinedata.dat", access="stream")
     write(10) size(rspine,2), rspine, spine
