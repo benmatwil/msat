@@ -227,22 +227,32 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       rspine = rconvergebw
       rfan = rconvergefw
       sign = 1
-    else if (nfw == nbw) then ! both are equal (i.e. 2=2) so just pick one and check eigenvalues
-      rspine = rconvergebw
-      rfan = rconvergefw
-      sign = 1
-      ! check whether this guess is correct using eigenvalues, otherwise switch
-      spinecheck = dot(trilinear(rsphere*rspine(:,1)+rnull,bgrid),rspine(:,1))
-      print*, "Eigenvalue at spine", spinecheck
-      print*, "Eigenvalue at fan", abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1)))
-      if (abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1))) > abs(spinecheck)) then
-        dummy = rspine
-        deallocate(rspine)
-        rspine = rfan
-        deallocate(rfan)
-        rfan = dummy
-        deallocate(dummy)
+    else if (nfw == nbw) then ! both are equal (i.e. 2=2) so check which converged first and then use eigenvalues as last resort
+      if (flagfw < flagbw) then ! backwards converged points stopped first
+        rspine = rconvergebw
+        rfan = rconvergefw
+        sign = 1
+      else if (flagfw > flagbw) then ! forwards converged points stopped first
+        rspine = rconvergefw
+        rfan = rconvergebw
         sign = -1
+      else ! still don't know, check the eigenvalues as a last resort - not ideal but rare
+        rspine = rconvergebw
+        rfan = rconvergefw
+        sign = 1
+        ! check whether this guess is correct using eigenvalues, otherwise switch
+        spinecheck = dot(trilinear(rsphere*rspine(:,1)+rnull,bgrid),rspine(:,1))
+        print*, "Eigenvalue at spine", spinecheck
+        print*, "Eigenvalue at fan", abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1)))
+        if (abs(dot(trilinear(rsphere*rfan(:,1)+rnull,bgrid),rfan(:,1))) > abs(spinecheck)) then
+          dummy = rspine
+          deallocate(rspine)
+          rspine = rfan
+          deallocate(rfan)
+          rfan = dummy
+          deallocate(dummy)
+          sign = -1
+        endif
       endif
     endif
     spine = rspine(:,1)
@@ -389,8 +399,6 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   !sign = -sign !check which sign needs to be which
 
   fan = normalise(cross(minvec,maxvec)) ! fan vector is perp to fan plane
-  
-  if (signguess == sign) print*, 'Yay! Guessed sign correctly!'
 
   if (sign .eq. 0) print*, "Warning, sign = 0 and null likely a source or a sink"
   print*, 'Sign =  ', sign
