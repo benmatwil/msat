@@ -119,11 +119,11 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   implicit none
   integer :: i, j, count, n, imin, nfw, nbw, nspine, nfan, nfanchk, maxcount
   double precision :: r(3), b(3)
-  integer :: flag, testgordon, savedata
+  integer :: flag, testgordon, savedata, flagfw, flagbw
   double precision :: dphi, dtheta
   double precision :: fact, acc, spinecheck
   double precision :: mindot, dotprod
-  integer :: sign, spiral, warning
+  integer :: sign, spiral, warning, signguess
   integer, allocatable, dimension(:,:) :: densepos, denseposfw, denseposbw
 
   double precision, dimension(3) :: spine, fan, maxvec, minvec
@@ -156,13 +156,16 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   allocate(rconvergefw(3,nphi*ntheta), rconvergebw(3,nphi*ntheta))
   allocate(roldfw(3), rnewfw(3), bnewfw(3), roldbw(3), rnewbw(3), bnewbw(3))
 
+  ! Working on a sphere of size rsphere
   fact = 1d-2*rsphere
   acc = 1d-10*rsphere
+  flagfw = 0
+  flagbw = 0
   ! loop over each point to find converged point
   do j = 1, ntheta
     do i = 1, nphi
       count = 0
-      maxcount = 10000
+      maxcount = 40000
       flag = 0
       r = sphere2cart(rsphere,thetas(j),phis(i))
       b = trilinear(r+rnull, bgrid)
@@ -183,12 +186,24 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         !  endif
         !endif
       enddo
+      if (modulus(rnewfw-roldfw) < acc) flagfw = flagfw + 1
+      if (modulus(rnewbw-roldbw) < acc) flagbw = flagbw + 1
       n = i+(j-1)*nphi
       rconvergefw(:,n) = normalise(rnewfw)
       rconvergebw(:,n) = normalise(rnewbw)
     enddo
   enddo
-
+  
+  print*, 'forward stopped', flagfw, 'backward stopped', flagbw
+  if (flagfw < flagbw) then
+    signguess = 1
+  else if (flagfw > flagbw) then
+    signguess = -1
+  else
+    signguess = 0
+  endif
+  
+  ! Now working on a unit sphere of points
   ! remove duplicate vectors which are a distance 1d-4 apart
   ! spine should be left with 2 vectors
   ! fan left with either 2 vectors (minvec eigenvalue too small), a circle of points or just a mess
@@ -242,12 +257,12 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       spine = rconvergebw1(:,maxval(maxloc(denseposbw)))
       rfan = rconvergefw
       rspine = rconvergebw
-      sign = 1
+      !sign = 1
     else if (nbw < nfw) then
       spine = rconvergefw1(:,maxval(maxloc(denseposfw)))
       rfan = rconvergebw
       rspine = rconvergefw
-      sign = -1
+      !sign = -1
     else ! not sure how to to decide in this case, haven't found a case like this yet...
       print*, "Uh oh, can't decide!"
         open(unit=10, file="spinedata.dat", access="stream")
@@ -374,6 +389,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   !sign = -sign !check which sign needs to be which
 
   fan = normalise(cross(minvec,maxvec)) ! fan vector is perp to fan plane
+  
+  if (signguess == sign) print*, 'Yay! Guessed sign correctly!'
 
   if (sign .eq. 0) print*, "Warning, sign = 0 and null likely a source or a sink"
   print*, 'Sign =  ', sign
