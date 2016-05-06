@@ -92,10 +92,10 @@ program ssfind
 	!read in null data
 
 	open (unit=10,file='output/nulls.dat',form='unformatted')
-	read (10) nnulls
-	allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
-	read(10) signs
-	read(10) rnulls,spines,fans
+		read (10) nnulls
+		allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
+		read(10) signs
+		read(10) rnulls,spines,fans
 	close(10)
 
 	allocate(nsepss(nnulls))
