@@ -45,8 +45,8 @@ function getnullsgordon, gordon=gordon, me=me
   nulls = replicate({nulldata},nnulls)
 
   for i = 0, nnulls-1 do begin
-    nulls[i].pos = [realpos[0,i],realpos[2,i],!dpi/2-realpos[1,i]] ;this is a translation into andrew's "spherical" coordinates
-    nulls[i].gridpos = [pos[0,i],pos[1,i],pos[2,i]]
+    nulls[i].pos = realpos[*,i] ;this is a translation into andrew's "spherical" coordinates
+    nulls[i].gridpos = pos[*,i]
     nulls[i].spine = spine[*,i]
     nulls[i].fan = fan[*,i]
     nulls[i].type = signs[i]
