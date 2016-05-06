@@ -165,7 +165,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
   do j = 1, ntheta
     do i = 1, nphi
       count = 0
-      maxcount = 40000
+      maxcount = 5000
       flag = 0
       r = sphere2cart(rsphere,thetas(j),phis(i))
       b = trilinear(r+rnull, bgrid)
