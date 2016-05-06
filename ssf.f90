@@ -1,116 +1,107 @@
 !code to find the separatrix surface and separators of null points
 
 program ssfind
-use omp_lib
-use params
-use common
-use trace
-use ring
 
-implicit none
+	use omp_lib
+	use params
+	use common
+	use trace
+	use ring
 
-!integer :: ierror
+	implicit none
 
-character (len=8), parameter :: fmt='(I3.3)'
-character (len=5) :: fname
+	!integer :: ierror
 
-integer :: nringss
+	character (len=8), parameter :: fmt='(I3.3)'
+	character (len=5) :: fname
 
-integer*8 :: tstart,tstop,count_rate
-!b field readin variables
-double precision, allocatable, dimension(:,:,:) :: bx, by, bz
-integer :: nx, ny, nz
+	integer :: nringss
 
-!position vector of null (and saved backup)
-double precision :: r(3)
-double precision :: a(3)
-double precision :: h
+	integer*8 :: tstart,tstop,count_rate
+	!b field readin variables
+	double precision, allocatable, dimension(:,:,:) :: bx, by, bz
+	integer :: nx, ny, nz
 
-integer :: i,j
+	!position vector of null (and saved backup)
+	double precision :: r(3)
+	double precision :: a(3)
+	double precision :: h
 
-!null parameters
-integer :: sign
-double precision, dimension(3) :: fan, spine
-double precision :: theta, phi
+	integer :: i,j
 
-double precision, allocatable, dimension(:) :: nsepss
+	!null parameters
+	integer :: sign
+	double precision, dimension(3) :: fan, spine
+	double precision :: theta, phi
 
-double precision, allocatable, dimension(:) :: xs, ys, zs
+	double precision, allocatable, dimension(:) :: nsepss
 
-!number of lines
-integer :: nlines
-integer :: nnull
+	double precision, allocatable, dimension(:) :: xs, ys, zs
 
-!integer :: nnulls
-!double precision, allocatable, dimension(:,:) :: rnulls
+	!number of lines
+	integer :: nlines
+	integer :: nnull
 
-!integer :: ringnum,index,nullnum
-integer :: nrings,npoints
-integer :: nperring(ringsmax)
-double precision :: circumference(ringsmax)
+	!integer :: nnulls
+	!double precision, allocatable, dimension(:,:) :: rnulls
 
-logical :: exitcondition
+	!integer :: ringnum,index,nullnum
+	integer :: nrings,npoints
+	integer :: nperring(ringsmax)
+	double precision :: circumference(ringsmax)
 
+	logical :: exitcondition
 
+	CALL OMP_SET_NUM_THREADS(4) !have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
 
-CALL OMP_SET_NUM_THREADS(4) !have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
+	!read in data
+	!open (unit=10,file='output/2null-edge.dat',form='unformatted')
+	open (unit=10,file=filename,access='stream')
 
-!read in data
-!open (unit=10,file='output/2null-edge.dat',form='unformatted')
-open (unit=10,file=filename,access='stream')
+		read(10),nx,ny,nz !number of vertices
 
-    read(10),nx,ny,nz !number of vertices
+		allocate(bgrid(nx,ny,nz,3))
+		!allocate(bx(nx,ny,nz),by(nx,ny,nz),bz(nx,ny,nz))
+		allocate(x(nx), y(ny), z(nz))
+		read(10),bgrid(:,:,:,1)
+		read(10),bgrid(:,:,:,2)
+		read(10),bgrid(:,:,:,3)
 
-     allocate(bgrid(nx,ny,nz,3))
-   ! allocate(bx(nx,ny,nz),by(nx,ny,nz),bz(nx,ny,nz))
-    allocate(x(nx), y(ny), z(nz))
-    read(10),bgrid(:,:,:,1)
-    read(10),bgrid(:,:,:,2)
-    read(10),bgrid(:,:,:,3)
+		print*,nx,ny,nz
 
-    print*,nx,ny,nz
+		read(10) x, y, z
 
-    read(10) x, y, z
+		xmin=1.
+		xmax=nx
+		ymin=1.
+		ymax=ny
+		zmin=1.
+		zmax=nz
 
+		dx=(x(nx)-x(1))/nx
+		dy=(y(ny)-y(1))/ny
+		dz=(z(nz)-z(1))/nz
 
-    xmin=1.
-    xmax=nx
-    ymin=1.
-    ymax=ny
-    zmin=1.
-    zmax=nz
+	! deallocate(bx,by,bz)
+	close(10)
 
-    dx=(x(nx)-x(1))/nx
-    dy=(y(ny)-y(1))/ny
-    dz=(z(nz)-z(1))/nz
+	print*, 'Data read in'
 
-   ! deallocate(bx,by,bz)
-close(10)
+	call SYSTEM_CLOCK(tstart,count_rate) !to time how long it takes
 
-print*, 'Data read in'
+	!read in null data
 
+	open (unit=10,file='output/nulls.dat',form='unformatted')
+	read (10) nnulls
+	allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
+	read(10) signs
+	read(10) rnulls,spines,fans
+	close(10)
 
+	allocate(nsepss(nnulls))
 
-call SYSTEM_CLOCK(tstart,count_rate) !to time how long it takes
-
-
-
-
-
-!read in null data
-
-open (unit=10,file='output/nulls.dat',form='unformatted')
-read (10) nnulls
-allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
-read(10) signs
-read(10) rnulls,spines,fans
-close(10)
-
-
-allocate(nsepss(nnulls))
-
-!signs=-1*signs
-do nnull=1,nnulls !loop over all nulls
+	!signs=-1*signs
+	do nnull=1,nnulls !loop over all nulls
 		print*,''
 		print*,'Null number',nnull,'of',nnulls
 		
@@ -118,7 +109,6 @@ do nnull=1,nnulls !loop over all nulls
 			print*, 'Sign of null zero, going onto next null'
 			cycle
 		endif
-
 
 		r=rnulls(:,nnull)
 		spine=spines(:,nnull)
@@ -131,9 +121,6 @@ do nnull=1,nnulls !loop over all nulls
 		!print*, r
 		!print*,''
 
-
-
-
 		!get start points
 		nlines=nstart
 
@@ -143,26 +130,20 @@ do nnull=1,nnulls !loop over all nulls
 		!print*,'theta=',theta/dtor
 		!print*,'phi=',phi/dtor
 
-
-
 		allocate(xs(nlines),ys(nlines),zs(nlines))
 
 		call get_startpoints(theta,phi,xs,ys,zs)
 
-
-
-
-
 		allocate(line(3,nlines),remove(3,nlines), add(3,nlines),endpoints(3,nlines))
-		 allocate(association(1,nlines),break(1,nlines))
+		allocate(association(1,nlines),break(1,nlines))
 		add=0.
 
 		!add start points to first ring
 		do j=1,nlines !start point
-		  line(1,j)=r(1)+xs(j)
-		  line(2,j)=r(2)+ys(j)
-		  line(3,j)=r(3)+zs(j)
-		  association(:,j)=j
+			line(1,j)=r(1)+xs(j)
+			line(2,j)=r(2)+ys(j)
+			line(3,j)=r(3)+zs(j)
+			association(:,j)=j
 		enddo
 
 		break=0.
@@ -184,9 +165,7 @@ do nnull=1,nnulls !loop over all nulls
 
 		write(20) nrings, npoints,ringsmax
 		write(20) nperring
-
-
-
+		
 		circumference=0.
 
 		exitcondition=.false.
@@ -195,111 +174,105 @@ do nnull=1,nnulls !loop over all nulls
 
 		!$OMP PARALLEL DEFAULT(SHARED)
 		do i=1,ringsmax !loop over number of rings we want
-			  if (sign .eq. 0) then !skip null which is uncharacterised
+				if (sign .eq. 0) then !skip null which is uncharacterised
 				!$OMP SINGLE
 				print*,'Null has zero sign'
 				!$OMP END SINGLE
 				exit
-			  endif
-			  !$OMP SINGLE
-			  nringss=nringss+1
+				endif
+				!$OMP SINGLE
+				nringss=nringss+1
 
-			  endpoints=0.
-			  add=0.
-			  remove=0.
+				endpoints=0.
+				add=0.
+				remove=0.
 
-			  write(20) nint(association)
-			  nperring(i)=nlines
+				write(20) nint(association)
+				nperring(i)=nlines
 
-			  ierror=0
-			  !call flush()
+				ierror=0
+				!call flush()
 			!$OMP END SINGLE
 
-
 			!$OMP DO  private(r,h)!, shared(ierror)
-			  do j=1,nlines !loop over all points in ring (in parallel do)
+				do j=1,nlines !loop over all points in ring (in parallel do)
 
 					r(:) = line(:,j)
 
 					if (i .lt. 50) then
-					  h=0.05
+						h=0.05
 					else
-					  h=0.5
-					 endif
-
+						h=0.5
+					endif
 
 					call trace_line(r,1,sign,h) !trace line by a distance of h
 
 					if (edge(r)) then !counter to see how many points on ring have reached outer boundary
 					endpoints(:,j)=1.
-					 else
+					else
 					endpoints(:,j)=0.
 					endif
-				   ! print*,h
+					! print*,h
 
 					line(:,j)=r(:)
 
 					association(:,j) = dble(j)
 
-
-			  enddo
+				enddo
 			!$OMP END DO
 
-			 !stop
+			!stop
 
 			!$OMP SINGLE
-			  write(20),line
+				write(20),line
 
-			  if (nlines .gt. pointsmax) then !exit if too many points on ring
+				if (nlines .gt. pointsmax) then !exit if too many points on ring
 				print*,'Too many points on ring',nlines,i
 				exitcondition = .true.
-			  endif
+				endif
 
-			  circumference(i)=circumference(i)+dist(line(:,1),line(:,nlines))
-			  do j=2,nlines
+				circumference(i)=circumference(i)+dist(line(:,1),line(:,nlines))
+				do j=2,nlines
 				circumference(i)=circumference(i)+dist(line(:,j),line(:,j-1))
-			  enddo
+				enddo
 
-			  !print*, 'ring',i,nlines!,nint(sum(endpoints(1,:))),sum(endpoints(1,:))/nlines,circumference(i)
+				!print*, 'ring',i,nlines!,nint(sum(endpoints(1,:))),sum(endpoints(1,:))/nlines,circumference(i)
 
-			  if (sum(endpoints(1,:))/nlines .gt. 0.99) then !exit if all points have reached outer boundary (left box)
+				if (sum(endpoints(1,:))/nlines .gt. 0.99) then !exit if all points have reached outer boundary (left box)
 				print*, 'All fan points have reached the outer boundary',i
 				exitcondition=.true.
-			  endif
-			  if (i .gt. 1)  then
-				if(abs(circumference(i)-circumference(i-1)) .lt. 0.1*stepmin) then
-				   print*, 'Fan has stopped growing',i
-				   exitcondition=.true.
 				endif
-			  endif
+				if (i .gt. 1)  then
+				if(abs(circumference(i)-circumference(i-1)) .lt. 0.1*stepmin) then
+					print*, 'Fan has stopped growing',i
+					exitcondition=.true.
+				endif
+				endif
 
-			  if (ierror .eq. 1) then
+				if (ierror .eq. 1) then
 				print*, 'Tracing has failed',i
 				exitcondition = .true.
-			  endif
+				endif
 
-			  call at_null(nlines,nnull,i) !determine if point is at null
+				call at_null(nlines,nnull,i) !determine if point is at null
 
-			  call add_points(nlines,i) !add points to ring if necessary
+				call add_points(nlines,i) !add points to ring if necessary
 
-			  call remove_points(nlines,i) !remove points from ring if necessary
+				call remove_points(nlines,i) !remove points from ring if necessary
 
-			  !call flush()
+				!call flush()
 			!$OMP END SINGLE
 
-			  if (exitcondition) exit
-
+				if (exitcondition) exit
 
 		enddo
 		!$OMP END PARALLEL
 		
-
 		print*, 'number of separators=',nseps
 		nsepss(nnull)=nseps
 		
 		write(12) -1
 
-		
 		close(12)
 
 		write(20,pos=1) nringss,sum(nperring)
@@ -307,22 +280,15 @@ do nnull=1,nnulls !loop over all nulls
 
 		close(20)
 
-
 		deallocate(xs,ys,zs)
 		deallocate(line,remove,add,endpoints,association,break)
 
+	enddo
 
-enddo
+	call SYSTEM_CLOCK(tstop,count_rate)
 
-call SYSTEM_CLOCK(tstop,count_rate)
+	print*,'number of separators=',int(nsepss)
 
-
-
-
-print*,'number of separators=',int(nsepss)
-
-
-print*, 'TIME=',dble(tstop-tstart)/dble(count_rate)
-
+	print*, 'TIME=',dble(tstop-tstart)/dble(count_rate)
 
 end program
