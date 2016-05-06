@@ -91,16 +91,16 @@ subroutine rk45(r,h)
 
     double precision :: mindist
     double precision :: s
-!    print*, 'rk45in'
+    !print*, 'rk45in'
 
     !minimum physical distance corresponding to fraction of gridcell (h)
-    mindist=minval( getdl(r) )*h
+    mindist = minval( getdl(r) )*h
 
     !vector containing the grid's h for each direction
     !(so h for each direction is the same physical length, equal to mindist)
-    hvec= mindist /getdl(r)
+    hvec = mindist /getdl(r)
 
-    r0=r
+    r0 = r
 
     !get rk values k1--k6
     k1=hvec*normalise(trilinear(r0,bgrid))
@@ -111,11 +111,11 @@ subroutine rk45(r,h)
     k6=hvec*normalise(trilinear(r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5 ,bgrid))
 
     !get 4th order (y) and 5th order (z) estimates
-    y= y1*k1 + y3*k3 + y4*k4 + y5*k5
-    z= z1*k1 + z3*k3 + z4*k4 + z5*k5 + z6*k6
+    y = y1*k1 + y3*k3 + y4*k4 + y5*k5
+    z = z1*k1 + z3*k3 + z4*k4 + z5*k5 + z6*k6
 
     !calculate optimum step length (s=hoptimum/h)
-    s=0.84*(tol/maxval((/modulus(z-y)/)))**0.25
+    s = 0.84*(tol/maxval((/modulus(z-y)/)))**0.25
 
 
 
@@ -127,25 +127,25 @@ subroutine rk45(r,h)
 
     !integrate by optimum step length
     !r=r0+s*k1
-   ! r=r0+s*z
- ! if (abs(h) .lt. 0.1) print*,k1
+    !r=r0+s*z
+    !if (abs(h) .lt. 0.1) print*,k1
 
     k1=s*hvec*normalise(trilinear(r0,bgrid))
     k2=s*hvec*normalise(trilinear(r0 + k21*k1 ,bgrid))
     k3=s*hvec*normalise(trilinear(r0 + k31*k1 + k32*k2 ,bgrid))
     k4=s*hvec*normalise(trilinear(r0 + k41*k1 + k42*k2 + k43*k3 ,bgrid))
     k5=s*hvec*normalise(trilinear(r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4 ,bgrid))
-   ! k6=s*h*normalise(trilinear(r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5 ,bgrid))
+    !k6=s*h*normalise(trilinear(r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5 ,bgrid))
 
-    r=r0+ y1*k1 + y3*k3 + y4*k4 + y5*k5
-!
-   ! !integrate by optimum steplength using midpoint method
-   ! !rh = r0 + 0.5*s*k1 !half point
-     h=h*s
+    r = r0+ y1*k1 + y3*k3 + y4*k4 + y5*k5
 
-     !print*,h
-    ! r=r0+h*normalise(trilinear(rh,bgrid))
-  !   print*, trilinear(rh,bgrid),'rk45'
+    !integrate by optimum steplength using midpoint method
+    !rh = r0 + 0.5*s*k1 !half point
+    h=h*s
+
+    !print*,h
+    !r=r0+h*normalise(trilinear(rh,bgrid))
+    !print*, trilinear(rh,bgrid),'rk45'
 
     !r=r0+s*(y-r0)
 
