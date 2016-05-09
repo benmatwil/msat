@@ -203,9 +203,9 @@ program ssfind
           call trace_line(r,1,sign,h) !trace line by a distance of h
 
           if (edge(r)) then !counter to see how many points on ring have reached outer boundary
-          endpoints(:,j)=1.
+            endpoints(:,j)=1.
           else
-          endpoints(:,j)=0.
+            endpoints(:,j)=0.
           endif
           ! print*,h
 
