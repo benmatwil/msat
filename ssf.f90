@@ -104,11 +104,6 @@ program ssfind
 	do nnull=1,nnulls !loop over all nulls
 		print*,''
 		print*,'Null number',nnull,'of',nnulls
-		
-		if (signs(nnull) == 0) then
-			print*, 'Sign of null zero, going onto next null'
-			cycle
-		endif
 
 		r=rnulls(:,nnull)
 		spine=spines(:,nnull)
