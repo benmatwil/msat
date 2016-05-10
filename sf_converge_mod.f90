@@ -24,14 +24,14 @@ module sfmod_converge
   function trilinear(r,b)
     implicit none
     !find the value of a function, b, at r=(x,y,z) using the 8 vertices
-    real*8 :: b(:,:,:,:)
-    real*8 :: r(3)
-    real*8 :: cube(2,2,2)
-    real*8 :: x, y, z
-    real*8 :: xp, yp, zp
-    real*8 :: f11, f12, f21, f22
-    real*8 :: f1, f2
-    real*8 :: trilinear(3)
+    double precision :: b(:,:,:,:)
+    double precision :: r(3)
+    double precision :: cube(2,2,2)
+    double precision :: x, y, z
+    double precision :: xp, yp, zp
+    double precision :: f11, f12, f21, f22
+    double precision :: f1, f2
+    double precision :: trilinear(3)
     integer :: nx, ny, nz
     integer :: dims
     integer :: nxpoints,nypoints,nzpoints
@@ -72,8 +72,8 @@ module sfmod_converge
   function dot(a,b)
     implicit none
 
-    real*8, dimension(3) :: a, b
-    real*8 :: dot
+    double precision, dimension(3) :: a, b
+    double precision :: dot
     
     dot = sum(a*b)
   end function
@@ -83,7 +83,7 @@ module sfmod_converge
   function cross(a,b)
     implicit none
 
-    real*8, dimension(3) :: cross, a, b
+    double precision, dimension(3) :: cross, a, b
     
     cross(1) = a(2)*b(3) - a(3)*b(2)
     cross(2) = a(3)*b(1) - a(1)*b(3)
@@ -95,8 +95,8 @@ module sfmod_converge
   function modulus(a)
     implicit none
 
-    real*8 :: a(3)
-    real*8 :: modulus
+    double precision :: a(3)
+    double precision :: modulus
 
     modulus = sqrt(dot(a,a))
 
@@ -107,7 +107,7 @@ module sfmod_converge
   function normalise(a)
     implicit none
 
-    real*8 :: normalise(3), a(3)
+    double precision :: normalise(3), a(3)
 
     normalise = a/modulus(a)
   end
