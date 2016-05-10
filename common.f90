@@ -16,91 +16,57 @@ integer :: nseps
 
 integer :: ierror
 
+contains
 
-
- contains
-
-
-
+!********************************************************************************
 
 function trilinear(r,b)
-    !find the value of a function, b, at (x,y,z) using the 8 vertices
-    double precision :: b(:,:,:,:)
-    double precision :: r(3)
-    double precision :: cube(2,2,2)
-    double precision :: x, y, z
-    double precision :: xp, yp, zp
-    double precision :: f11, f12, f21, f22
-    double precision :: f1, f2
-    double precision :: trilinear(3)
-    integer :: nx, ny, nz
-    integer :: dims
-    integer :: nxpoints,nypoints,nzpoints
+  !find the value of a function, b, at (x,y,z) using the 8 vertices
+  double precision :: b(:,:,:,:)
+  double precision :: r(3)
+  double precision :: cube(2,2,2)
+  double precision :: x, y, z
+  double precision :: xp, yp, zp
+  double precision :: f11, f12, f21, f22
+  double precision :: f1, f2
+  double precision :: trilinear(3)
+  integer :: nx, ny, nz
+  integer :: dims
+  integer :: nxpoints,nypoints,nzpoints
 
-    nxpoints=size(bgrid,1)
-    nypoints=size(bgrid,2)
-    nzpoints=size(bgrid,3)
+  nxpoints = size(b,1)
+  nypoints = size(b,2)
+  nzpoints = size(b,3)
 
-    xp=r(1)
-    yp=r(2)
-    zp=r(3)
+  xp = r(1)
+  yp = r(2)
+  zp = r(3)
 
-    nx=floor(xp)
-    ny=floor(yp)
-    nz=floor(zp)
+  nx = floor(xp)
+  ny = floor(yp)
+  nz = floor(zp)
 
+  x = xp-nx
+  y = yp-ny
+  z = zp-nz
 
+  do dims = 1, 3
+    cube = b(nx:nx+1,ny:ny+1,nz:nz+1,dims)
 
-    x=xp-nx
-    y=yp-ny
-    z=zp-nz
+    f11 = (1-x)*cube(1,1,1) + x*cube(2,1,1)
+    f12 = (1-x)*cube(1,1,2) + x*cube(2,1,2)
+    f21 = (1-x)*cube(1,2,1) + x*cube(2,2,1)
+    f22 = (1-x)*cube(1,2,2) + x*cube(2,2,2)
 
-    if (xp .ge. nxpoints) then
-      x=nxpoints
-      nx=nxpoints-1
-    endif
-    if (xp .le. 1.) then
-      x=1.
-      nx=1
-    endif
-    if (yp .ge. nypoints) then
-      y=nypoints
-      ny=nypoints-1
-    endif
-    if (yp .le. 1.) then
-      y=1.
-      ny=1
-    endif
-    if (zp .ge. nzpoints) then
-      z=nzpoints
-      nz=nzpoints-1
-    endif
-    if (zp .le. 1.) then
-      z=1.
-      nz=1
-    endif
+    f1 = (1-y)*f11 + y*f21
+    f2 = (1-y)*f12 + y*f22
 
-
-    do dims=1,3
-	cube=b(nx:nx+1,ny:ny+1,nz:nz+1,dims)
-
-	f11=(1-x)*cube(1,1,1) + x*cube(2,1,1)
-	f12=(1-x)*cube(1,1,2) + x*cube(2,1,2)
-	f21=(1-x)*cube(1,2,1) + x*cube(2,2,1)
-	f22=(1-x)*cube(1,2,2) + x*cube(2,2,2)
-
-	f1=(1-y)*f11 + y*f21
-	f2=(1-y)*f12 + y*f22
-
-	trilinear(dims) = (1-z)*f1 + z*f2
-    enddo
+    trilinear(dims) = (1-z)*f1 + z*f2
+  enddo
+  
 end
 
-
-
-
-
-
+!********************************************************************************
 
 !dot product between a and b
 function dot(a,b)
@@ -110,11 +76,7 @@ function dot(a,b)
   dot = sum(a*b)
 end
 
-
-
-
-
-
+!********************************************************************************
 
 !cross product between a and b
 function cross(a,b)
@@ -126,9 +88,7 @@ function cross(a,b)
   cross(3) = a(1)*b(2) - a(2)*b(1)
 end
 
-
-
-
+!********************************************************************************
 
 !normalises a
 function normalise(a)
@@ -138,11 +98,7 @@ function normalise(a)
   normalise = a/sqrt(dot(a,a))
 end
 
-
-
-
-
-
+!********************************************************************************
 
 !adds an row (val) to a nx column by ny row array at row number pos
 subroutine add_element(x,val,pos)
@@ -179,6 +135,8 @@ subroutine add_element(x,val,pos)
 
 end
 
+!********************************************************************************
+
 !removes row number pos from an array 
 subroutine remove_element(x,pos)
     double precision, allocatable, dimension(:,:) :: x
@@ -210,7 +168,7 @@ subroutine remove_element(x,pos)
 
 end
 
-
+!********************************************************************************
 
 !finds |a|
 function modulus(a)
@@ -221,26 +179,39 @@ function modulus(a)
 
 end function
 
-
-
+!********************************************************************************
 
 !determines if the vector r is outwith the computational box
-function edge(r)
-    double precision :: r(3)
-    logical :: edge
-    edge = .false.
-    if (r(1) .gt. xmax .or. r(1) .lt. xmin) edge = .true.
-    if (r(2) .gt. ymax .or. r(2) .lt. ymin) edge = .true.
-    if (r(3) .gt. zmax .or. r(3) .lt. zmin) edge = .true.
-end function
+subroutine edge(r, out)
+  double precision :: r(3)
+  logical, optional :: out
+  
+  out = .false.
+  if (r(1) .gt. xmax .or. r(1) .lt. xmin) out = .true.
+  if (coord_type == 1) then
+    if (r(2) .gt. ymax .or. r(2) .lt. ymin) out = .true.
+    if (r(3) .gt. zmax .or. r(3) .lt. zmin) out = .true.
+  else if (coord_type == 3) then
+    if (r(3) .gt. zmax .or. r(3) .lt. zmin) out = .true.
+    if (r(2) .lt. ymin) r(2) = r(2) + ymin - ymax
+    if (r(2) .gt. ymin) r(2) = r(2) - (ymin - ymax)
+  else if (coord_type == 2) then
+    if (r(2) .lt. ymin .or. r(2) .gt. ymax) then
+      if (r(2) .lt. ymin) r(2) = 2*ymin - r(2)
+      if (r(2) .gt. ymax) r(2) = 2*ymax - r(2)
+      if (r(3) .lt. (ymax-ymin)/2) then
+        r(3) = r(3) + (ymax-ymin)/2
+      else
+        r(3) = r(3) - (ymax-ymin)/2
+      endif
+    endif
+    if (r(3) .lt. zmin) r(3) = r(3) + zmax - zmin
+    if (r(3) .gt. zmax) r(3) = r(3) - (zmax - zmin)
+  endif
+      
+end subroutine
 
-
-
-
-
-
-
-
+!********************************************************************************
 
 !from the theta,phi coordinates of a fan vector, produces ring of points in the fanplane
 subroutine get_startpoints(theta,phi,xs,ys,zs)
@@ -285,7 +256,7 @@ subroutine get_startpoints(theta,phi,xs,ys,zs)
 
 end subroutine
 
-
+!********************************************************************************
 
 !rotates a vector (r) by a certain angle about the x-z plane (theta), then by an angle (phi) about the x-y plane
 function rotate(r,theta,phi)
@@ -339,16 +310,15 @@ function rotate(r,theta,phi)
 
 end
 
-
+!********************************************************************************
 
 function dist(a,b)
-    !calculates the distance between two points in grid units
-    double precision :: dist
-    double precision, dimension(3) :: a,b
+  !calculates the distance between two points in grid units
+  double precision :: dist
+  double precision, dimension(3) :: a,b
 
-    !dist=sqrt(dot(a-b,a-b))
-    dist=sqrt((a(1)-b(1))*(a(1)-b(1)) + (a(2)-b(2))*(a(2)-b(2)) + (a(3)-b(3))*(a(3)-b(3)))
-    end function
-
+  !dist=sqrt(dot(a-b,a-b))
+  dist=sqrt((a(1)-b(1))*(a(1)-b(1)) + (a(2)-b(2))*(a(2)-b(2)) + (a(3)-b(3))*(a(3)-b(3)))
+end function
 
 end module
