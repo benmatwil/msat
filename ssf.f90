@@ -27,7 +27,7 @@ program ssfind
   double precision :: a(3)
   double precision :: h
 
-  integer :: i,j
+  integer :: i, j
 
   !null parameters
   integer :: sign
@@ -50,7 +50,7 @@ program ssfind
   integer :: nperring(ringsmax)
   double precision :: circumference(ringsmax)
 
-  logical :: exitcondition
+  logical :: exitcondition, out
 
   CALL OMP_SET_NUM_THREADS(4) !have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
 
@@ -60,27 +60,55 @@ program ssfind
 
     read(10),nx,ny,nz !number of vertices
 
-    allocate(bgrid(nx,ny,nz,3))
-    !allocate(bx(nx,ny,nz),by(nx,ny,nz),bz(nx,ny,nz))
+    allocate(bgrid(0:nx+1,0:ny+1,0:nz+1,3))
+    bgrid = 0
     allocate(x(nx), y(ny), z(nz))
-    read(10),bgrid(:,:,:,1)
-    read(10),bgrid(:,:,:,2)
-    read(10),bgrid(:,:,:,3)
+    read(10),bgrid(1:nx,1:ny,1:nz,1)
+    read(10),bgrid(1:nx,1:ny,1:nz,2)
+    read(10),bgrid(1:nx,1:ny,1:nz,3)
+    
+    if (coord_type == 3) then
+      !phi repeating
+      bgrid(:,0,:,:) = bgrid(:,ny,:,:)
+      bgrid(:,ny+1,:,:) = bgrid(:,1,:,:)
+    else if (coord_type == 2) then
+      !phi repeating
+      bgrid(:,:,0,:) = bgrid(:,:,nz,:)
+      bgrid(:,:,nz+1,:) = bgrid(:,:,1,:)
+      !have theta "periodic"
+      if (2*(nz/2) == nz) then
+        !Top boundary
+        bgrid(:,0,1:nz/2,:) = bgrid(:,1,nz/2+1:nz,:)
+        bgrid(:,0,nz/2+1:nz,:) = ngrid(:,1,0:nz/2,:)
+        !Bottom boundary
+        bgrid(:,ny+1,1:nz/2,:) = bgrid(:,ny,nz/2+1:nz,:)
+        bgrid(:,ny+1,nz/2+1:nz,:) = ngrid(:,ny,0:nz/2,:)
+      else
+        !Top boundary
+        bgrid(:,0,1:nz/2,:) = (bgrid(:,1,1+nz/2:nz-1,:) + bgrid(:,1,2+nz/2:nz))/2
+        bgrid(:,0,nz/2+1,:) = (bgrid(:,1,nz,:) + bgrid(:,1,1,:))/2
+        bgrid(:,0,nz/2+2:nz,:) = (bgrid(:,1,1:nz/2,:) + bgrid(:,1,2:nz/2+1,:))/2
+        !Bottom boundary
+        bgrid(:,ny+1,1:nz/2,:) = (bgrid(:,ny,1+nz/2:nz-1,:) + bgrid(:,ny,2+nz/2:nz))/2
+        bgrid(:,ny+1,nz/2+1,:) = (bgrid(:,ny,nz,:) + bgrid(:,ny,1,:))/2
+        bgrid(:,ny+1,nz/2+2:nz,:) = (bgrid(:,ny,1:nz/2,:) + bgrid(:,ny,2:nz/2+1,:))/2
+      endif
+    endif
 
-    print*,nx,ny,nz
+    print*, nx, ny, nz
 
     read(10) x, y, z
 
-    xmin=1.
-    xmax=nx
-    ymin=1.
-    ymax=ny
-    zmin=1.
-    zmax=nz
+    xmin = 1
+    xmax = nx
+    ymin = 1
+    ymax = ny
+    zmin = 1
+    zmax = nz
 
-    dx=(x(nx)-x(1))/nx
-    dy=(y(ny)-y(1))/ny
-    dz=(z(nz)-z(1))/nz
+    dx = (x(nx)-x(1))/nx
+    dy = (y(ny)-y(1))/ny
+    dz = (z(nz)-z(1))/nz
 
   ! deallocate(bx,by,bz)
   close(10)
@@ -92,7 +120,7 @@ program ssfind
   !read in null data
 
   open (unit=10,file='output/nulls.dat',form='unformatted')
-    read (10) nnulls
+    read(10) nnulls
     allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
     read(10) signs
     read(10) rnulls,spines,fans
@@ -101,26 +129,26 @@ program ssfind
   allocate(nsepss(nnulls))
 
   !signs=-1*signs
-  do nnull=1,nnulls !loop over all nulls
-    print*,''
-    print*,'Null number',nnull,'of',nnulls
+  do nnull = 1, nnulls !loop over all nulls
+    print*, ''
+    print*, 'Null number', nnull, 'of', nnulls
 
-    r=rnulls(:,nnull)
-    spine=spines(:,nnull)
-    fan=fans(:,nnull)
-    sign=signs(nnull)
+    r = rnulls(:,nnull)
+    spine = spines(:,nnull)
+    fan = fans(:,nnull)
+    sign = signs(nnull)
 
-    a=r !backup null location
+    a = r !backup null location
 
     !print*, rnulls
     !print*, r
     !print*,''
 
     !get start points
-    nlines=nstart
+    nlines = nstart
 
-    theta=acos(fan(3))
-    phi=atan(fan(2),fan(1))
+    theta = acos(fan(3))
+    phi = atan(fan(2),fan(1))
 
     !print*,'theta=',theta/dtor
     !print*,'phi=',phi/dtor
@@ -129,19 +157,19 @@ program ssfind
 
     call get_startpoints(theta,phi,xs,ys,zs)
 
-    allocate(line(3,nlines),remove(3,nlines), add(3,nlines),endpoints(3,nlines))
-    allocate(association(1,nlines),break(1,nlines))
-    add=0.
+    allocate(line(3,nlines), remove(3,nlines), add(3,nlines), endpoints(3,nlines))
+    allocate(association(1,nlines), break(1,nlines))
+    add = 0
 
-    !add start points to first ring
-    do j=1,nlines !start point
-      line(1,j)=r(1)+xs(j)
-      line(2,j)=r(2)+ys(j)
-      line(3,j)=r(3)+zs(j)
-      association(:,j)=j
+    !add start points to first ring relative to null
+    do j = 1, nlines !Go through each start point
+      line(1,j) = r(1) + xs(j)
+      line(2,j) = r(2) + ys(j)
+      line(3,j) = r(3) + zs(j)
+      association(:,j) = j
     enddo
 
-    break=0.
+    break = 0
 
     !open (unit=10,file='output/ring.dat',form='unformatted')
     !open (unit=11,file='output/association.dat',form='unformatted')
@@ -169,13 +197,13 @@ program ssfind
 
     !$OMP PARALLEL DEFAULT(SHARED)
     do i=1,ringsmax !loop over number of rings we want
-        if (sign .eq. 0) then !skip null which is uncharacterised
+      if (sign .eq. 0) then !skip null which is uncharacterised
         !$OMP SINGLE
-        print*,'Null has zero sign'
+          print*,'Null has zero sign'
         !$OMP END SINGLE
         exit
-        endif
-        !$OMP SINGLE
+      endif
+      !$OMP SINGLE
         nringss=nringss+1
 
         endpoints=0.
@@ -190,58 +218,57 @@ program ssfind
       !$OMP END SINGLE
 
       !$OMP DO  private(r,h)!, shared(ierror)
-        do j=1,nlines !loop over all points in ring (in parallel do)
+        do j = 1, nlines !loop over all points in ring (in parallel do)
 
           r(:) = line(:,j)
 
-          if (i .lt. 50) then
-            h=0.05
+          if (i < 50) then
+            h = 0.05
           else
-            h=0.5
+            h = 0.5
           endif
 
           call trace_line(r,1,sign,h) !trace line by a distance of h
-
-          if (edge(r)) then !counter to see how many points on ring have reached outer boundary
-            endpoints(:,j)=1.
+          call edge(r, out)
+          
+          if (out) then !counter to see how many points on ring have reached outer boundary
+            endpoints(:,j) = 1
           else
-            endpoints(:,j)=0.
+            endpoints(:,j) = 0
           endif
           ! print*,h
 
-          line(:,j)=r(:)
+          line(:,j) = r(:)
 
           association(:,j) = dble(j)
 
         enddo
       !$OMP END DO
 
-      !stop
-
       !$OMP SINGLE
-        write(20),line
+        write(20), line
 
         if (nlines .gt. pointsmax) then !exit if too many points on ring
-        print*,'Too many points on ring',nlines,i
-        exitcondition = .true.
+          print*, 'Too many points on ring', nlines, i
+          exitcondition = .true.
         endif
 
-        circumference(i)=circumference(i)+dist(line(:,1),line(:,nlines))
-        do j=2,nlines
-        circumference(i)=circumference(i)+dist(line(:,j),line(:,j-1))
+        circumference(i) = circumference(i) + dist(line(:,1),line(:,nlines))
+        do j = 2, nlines
+          circumference(i) = circumference(i) + dist(line(:,j),line(:,j-1))
         enddo
 
         !print*, 'ring',i,nlines!,nint(sum(endpoints(1,:))),sum(endpoints(1,:))/nlines,circumference(i)
 
         if (sum(endpoints(1,:))/nlines .gt. 0.99) then !exit if all points have reached outer boundary (left box)
-        print*, 'All fan points have reached the outer boundary',i
-        exitcondition=.true.
+          print*, 'All fan points have reached the outer boundary', i
+          exitcondition = .true.
         endif
         if (i .gt. 1)  then
-        if(abs(circumference(i)-circumference(i-1)) .lt. 0.1*stepmin) then
-          print*, 'Fan has stopped growing',i
-          exitcondition=.true.
-        endif
+          if(abs(circumference(i)-circumference(i-1)) .lt. 0.1*stepmin) then
+            print*, 'Fan has stopped growing', i
+            exitcondition = .true.
+          endif
         endif
 
         if (ierror .eq. 1) then
@@ -258,7 +285,7 @@ program ssfind
         !call flush()
       !$OMP END SINGLE
 
-        if (exitcondition) exit
+      if (exitcondition) exit
 
     enddo
     !$OMP END PARALLEL
