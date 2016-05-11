@@ -232,7 +232,7 @@ integer :: backindex,frontindex,index,iters
 integer :: signof(nlines)
 integer :: idx
 
-double precision :: r1(3),r2(3)
+double precision :: r1(3), r2(3)
 
 double precision :: seps(nlines-1)
 
@@ -240,36 +240,36 @@ integer :: breakpos
 
 !integer ::nullinitial
 
-nnulls=size(rnulls,2)
+nnulls = size(rnulls,2)
 
-signof=0
+signof = 0
 
 
 
-do j=1,nlines !loop over all points in ring
-  do k=1,nnulls !loop over all nulls
+do j = 1, nlines !loop over all points in ring
+  do k = 1, nnulls !loop over all nulls
      if (k .eq. nullnum) cycle !ignore the null the points belong to
      if (signs(k)*signs(nullnum) .eq. 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
-     seps=0
-     sep=dist(line(:,j),rnulls(:,k))
+     seps = 0
+     sep = dist(line(:,j),rnulls(:,k))
 
      if (sep .lt. nulldist) then !point lies within nulldist
 !       print*, 'AT NULL number',k,'index',j,'sep=',sep
 
-       r(:,j)=line(:,j) !write new dummy array (is it really needed?)
+       r(:,j) = line(:,j) !write new dummy array (is it really needed?)
 
        ! check for neighbouring points that lie within 3*nulldist
-       do backindex=j-1,0,-1 !previous points
+       do backindex = j-1, 0, -1 !previous points
          if (dist(line(:,backindex),rnulls(:,k)) .lt. 3*nulldist) then
-           r(:,backindex)=line(:,backindex)
+           r(:,backindex) = line(:,backindex)
 !           print*,j,backindex,dist(line(:,backindex),rnulls(:,k))
          else
            exit
          endif
        enddo
-       do frontindex=j+1,nlines,1 !following points
-         if (dist(line(:,frontindex),rnulls(:,k)) .lt. 3*nulldist) then
-           r(:,frontindex)=line(:,frontindex)
+       do frontindex = j+1, nlines, 1 !following points
+         if (dist(line(:,frontindex), rnulls(:,k)) .lt. 3*nulldist) then
+           r(:,frontindex) = line(:,frontindex)
 !           print*,j,frontindex,dist(line(:,frontindex),rnulls(:,k))
          else
            exit
@@ -277,54 +277,54 @@ do j=1,nlines !loop over all points in ring
        enddo
 
 
-       backindex=backindex+1
-       frontindex=frontindex-1
+       backindex = backindex+1
+       frontindex = frontindex-1
 
 
        !integrate points forward until they have all left the null
-       do index=backindex,frontindex
-         sep=0.
-         iters=0
+       do index = backindex,frontindex
+         sep = 0
+         iters = 0
          do while (sep .lt. 3*nulldist)
-           h=0.01
+           h = 0.01
            call trace_line(r(:,index),1,signs(nullnum),h)
-           sep=dist(r(:,index),rnulls(:,k))
-           iters=iters+1
+           sep = dist(r(:,index),rnulls(:,k))
+           iters = iters+1
            if (iters .gt. 1000) exit
          enddo
          
          !check which side of the null the points end out on (need to know the spine vector of the null)
          if (dot(spines(:,k),r(:,index)-rnulls(:,k)) .gt. 0.) then
-           signof(index)=1
+           signof(index) = 1
          else
-           signof(index)=-1
+           signof(index) = -1
          endif
     !     print*,j,index,signof(index),iters
        enddo
 
 
        !no knowledge of spine needed for this method of finding 'split' around null
-       do index=backindex,frontindex
-         r1=normalise(r(:,backindex)-rnulls(:,k))
-         r2=normalise(r(:,index)-rnulls(:,k))
+       do index = backindex, frontindex
+         r1 = normalise(r(:,backindex)-rnulls(:,k))
+         r2 = normalise(r(:,index)-rnulls(:,k))
 
          if (dot(r1,r2) .gt. 0.) then
-           signof(index)=1
+           signof(index) = 1
          else
-           signof(index)=-1
+           signof(index) = -1
          endif
        enddo
 
 
        !an alternative method (guaranteed to find 1 break point)
-       seps=0.
-       do index=backindex,frontindex-1
-         r1=normalise(r(:,index)-rnulls(:,k))
-         r2=normalise(r(:,index+1)-rnulls(:,k))
+       seps = 0
+       do index = backindex, frontindex-1
+         r1 = normalise(r(:,index)-rnulls(:,k))
+         r2 = normalise(r(:,index+1)-rnulls(:,k))
          seps(index) = modulus(r1-r2)
        enddo
 
-       breakpos=maxloc(seps,1)
+       breakpos = maxloc(seps,1)
 
       ! signof(1:breakpos) = 1
       ! signof(breakpos+1:nlines)=-1
@@ -333,21 +333,21 @@ do j=1,nlines !loop over all points in ring
 
 
        !determine the index where the index+1th point goes to the other side of the null
-       do index=backindex+1,frontindex
+       do index = backindex+1, frontindex
          if (signof(backindex)*signof(index) .eq. -1) then
 !           print*, 'separator at index:',index-1
            break(1,index-1) = 1. !disassociate points so that new points don't get added between them as they diverge around the null
-           nseps=nseps+1
+           nseps = nseps+1
 
            !write the point's information to the separator file
            write(12) 1
-           write(12) nullnum,k
+           write(12) nullnum, k
            write(12) nring, index-1
 
  !          print*,'position of sep',line(:,index-1)
 
-           do idx=backindex,frontindex
-             line(:,idx)=r(:,idx)
+           do idx = backindex, frontindex
+             line(:,idx) = r(:,idx)
            enddo
 
 
