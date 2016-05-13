@@ -172,13 +172,13 @@ function getdl(r)
     getdl(1) = dx1
     getdl(2) = dy1
     getdl(3) = dz1
-  else if (coord_type .eq. 2) then
+  else if (coord_type .eq. 2) then !spherical coordinates
     getdl(1) = dx1 ! dr
     getdl(2) = xh*dy1 ! r d(theta)
     getdl(3) = xh*sin(yh)*dz1 ! r sin(theta) d(phi)
-  else if (coord_type .eq. 3) then
-    getdl(1) = dx1 ! d(rho)
-    getdl(2) = xh*dy1 ! rho d(theta)
+  else if (coord_type .eq. 3) then !cylindrical coordinates
+    getdl(1) = dx1 ! dR
+    getdl(2) = xh*dy1 ! R d(theta)
     getdl(3) = dz1 ! dz
   else
     print *,'Unknown coordinate system.'
