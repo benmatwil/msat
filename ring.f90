@@ -6,19 +6,17 @@ use common
 use trace
 
 !ring drawing parameters
-integer, parameter :: nstart=100 !number of startpoints in ring
+integer, parameter :: nstart = 100 !number of startpoints in ring
 
 !nulldist decoupled from maxdist1 and moved into params.f90
 !double precision, parameter :: nulldist=maxdist1*4. !maximum distance a ring point can be  for it to be treated as being 'at' a null
 
-double precision, parameter :: mindist1=maxdist1/4.d0 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
-
+double precision, parameter :: mindist1 = maxdist1/4.d0 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
 
 double precision, allocatable, dimension(:,:) :: line, add, remove, endpoints
 double precision, allocatable, dimension(:,:) :: break, association
 
 contains
-
 
 subroutine add_points(nlines,iteration)
 !adds points to rings if required
@@ -274,14 +272,11 @@ do j = 1, nlines !loop over all points in ring
         endif
       enddo
 
-
       backindex = backindex+1
       frontindex = frontindex-1
 
-
       !integrate points forward until they have all left the null
-      do index = backindex,
-      frontindex
+      do index = backindex, frontindex
         sep = 0
         iters = 0
         do while (sep .lt. 3*nulldist)
@@ -325,17 +320,14 @@ do j = 1, nlines !loop over all points in ring
 
       breakpos = maxloc(seps,1)
 
-    ! signof(1:breakpos) = 1
-    ! signof(breakpos+1:nlines)=-1
-
-
-
+      ! signof(1:breakpos) = 1
+      ! signof(breakpos+1:nlines)=-1
 
       !determine the index where the index+1th point goes to the other side of the null
       do index = backindex+1, frontindex
         if (signof(backindex)*signof(index) .eq. -1) then
 !           print*, 'separator at index:',index-1
-          break(1,index-1) = 1. !disassociate points so that new points don't get added between them as they diverge around the null
+          break(1,index-1) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
           nseps = nseps+1
 
           !write the point's information to the separator file
