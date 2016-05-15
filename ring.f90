@@ -266,7 +266,7 @@ do j = 1, nlines !loop over all points in ring
         do while (sep .lt. 3*nulldist)
           h = 0.01
           call trace_line(r(:,index),1,signs(nullnum),h)
-          call checkedge(r(:,index))
+          call edgecheck(r(:,index))
           sep = dist(r(:,index),rnulls(:,k))
           iters = iters+1
           if (iters .gt. 1000) exit
