@@ -28,8 +28,6 @@ subroutine add_points(nlines,iteration)
   double precision :: oldj
   double precision :: mindist, maxdist
   integer, intent(in) :: iteration
-  ! add=0.
-  
 
   if (iteration .le. 100) then !if close-in to the starting null we want smaller max/min separations
     mindist = mindist1*0.05

@@ -76,14 +76,14 @@ program ssfind
       bgrid(:,:,0,:) = bgrid(:,:,nz,:)
       bgrid(:,:,nz+1,:) = bgrid(:,:,1,:)
       !have theta "periodic"
-      if (2*(nz/2) == nz) then
+      if (2*(nz/2) == nz) then !if nz is even
         !Top boundary
         bgrid(:,0,1:nz/2,:) = bgrid(:,1,nz/2+1:nz,:)
         bgrid(:,0,nz/2+1:nz,:) = ngrid(:,1,0:nz/2,:)
         !Bottom boundary
         bgrid(:,ny+1,1:nz/2,:) = bgrid(:,ny,nz/2+1:nz,:)
         bgrid(:,ny+1,nz/2+1:nz,:) = ngrid(:,ny,0:nz/2,:)
-      else
+      else !if nz is odd
         !Top boundary
         bgrid(:,0,1:nz/2,:) = (bgrid(:,1,1+nz/2:nz-1,:) + bgrid(:,1,2+nz/2:nz))/2
         bgrid(:,0,nz/2+1,:) = (bgrid(:,1,nz,:) + bgrid(:,1,1,:))/2
