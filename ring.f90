@@ -42,21 +42,21 @@ subroutine add_points(nlines,iteration)
 
   do j = 1, nlines !loop over each point in ring
     if (break(1,j) .lt. 0.1) then 
-      if (outedge(line(:,j))) cycle !if point is at the edge of the box
+      if (outedge(line1(:,j))) cycle !if point is at the edge of the box
 
       if (j .lt. nlines) then !if not the last point
-        if (outedge(line(:,j+1))) cycle
-        sep = dist(line(:,j),line(:,j+1)) !distance between jth and (j+1)th point
+        if (outedge(line1(:,j+1))) cycle
+        sep = dist(line2(:,j),line2(:,j+1)) !distance between jth and (j+1)th point
         if (sep .gt. maxdist) then !if too far away
-          add(:,j) = line(:,j) + 0.5*(line(:,j+1)-line(:,j)) !add point half way between two points
+          add(:,j) = line1(:,j) + 0.5*(line1(:,j+1)-line1(:,j)) !add point half way between two points
         else
           add(:,j) = 0 !don't add anything
         endif
       else !if the last point (compare with first pint, not (j+1)th
-        if (outedge(line(:,1))) cycle
-          sep = dist(line(:,j),line(:,1))
+        if (outedge(line1(:,1))) cycle
+        sep = dist(line2(:,j),line2(:,1))
         if (sep .gt. maxdist) then
-          add(:,j) = line(:,j) + 0.5*(line(:,1)-line(:,j))
+          add(:,j) = line1(:,j) + 0.5*(line1(:,1)-line1(:,j))
         else
           add(:,j) = 0
         endif
@@ -99,11 +99,6 @@ end subroutine
 
 
 
-
-
-
-
-
 subroutine remove_points(nlines,iteration)
   !removes points from rings as required
   implicit none
@@ -129,12 +124,12 @@ subroutine remove_points(nlines,iteration)
     if (break(1,j) .lt. 0.5) then
       ! if (edge(line(:,j))) cycle
       if (j .lt. nlines) then !if not end point
-        sep = dist(line(:,j),line(:,j+1)) !distance between jth and j+1th point
+        sep = dist(line2(:,j),line2(:,j+1)) !distance between jth and j+1th point
         if (sep .lt. mindist) then !if j and j+1 are too close
           remove(:,j) = 1 !flag this point to be removed
         else
           remove(:,j) = 0!flag point to stay
-          if (outedge(line(:,j))) then !remove points that have left the simulation
+          if (outedge(line1(:,j))) then !remove points that have left the simulation
             remove(:,j) = 1
             if (j .ne. 1) then
               break(:,j-1) = 1
@@ -144,7 +139,7 @@ subroutine remove_points(nlines,iteration)
           endif
         endif
       else !if j=nlines
-        sep = dist(line(:,j),line(:,1))
+        sep = dist(line2(:,j),line2(:,1))
         if (sep .lt. mindist) then
           remove(:,j) = 1
         else
@@ -155,7 +150,7 @@ subroutine remove_points(nlines,iteration)
   enddo
 
   !if 2 adjacent points are flagged to be removed, only set one of them to be removed
-  do j=2,nlines
+  do j = 2, nlines
     if (remove(1,j-1) .gt. 0.5) then
       if (remove(1,j) .gt. 0.5) then
         remove(:,j) = 0
@@ -188,17 +183,6 @@ subroutine remove_points(nlines,iteration)
   endif
 
 end subroutine
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -245,25 +229,25 @@ do j = 1, nlines !loop over all points in ring
     if (k .eq. nullnum) cycle !ignore the null the points belong to
     if (signs(k)*signs(nullnum) .eq. 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
     seps = 0
-    sep = dist(line(:,j),rnulls(:,k))
+    sep = dist(line1(:,j),rnulls(:,k))
 
     if (sep .lt. nulldist) then !point lies within nulldist
 !       print*, 'AT NULL number',k,'index',j,'sep=',sep
 
-      r(:,j) = line(:,j) !write new dummy array (is it really needed?)
+      r(:,j) = line1(:,j) !write new dummy array (is it really needed?)
 
       ! check for neighbouring points that lie within 3*nulldist
       do backindex = j-1, 0, -1 !previous points
-        if (dist(line(:,backindex),rnulls(:,k)) .lt. 3*nulldist) then
-          r(:,backindex) = line(:,backindex)
+        if (dist(line1(:,backindex),rnulls(:,k)) .lt. 3*nulldist) then
+          r(:,backindex) = line1(:,backindex)
 !           print*,j,backindex,dist(line(:,backindex),rnulls(:,k))
         else
           exit
         endif
       enddo
       do frontindex = j+1, nlines, 1 !following points
-        if (dist(line(:,frontindex), rnulls(:,k)) .lt. 3*nulldist) then
-          r(:,frontindex) = line(:,frontindex)
+        if (dist(line1(:,frontindex), rnulls(:,k)) .lt. 3*nulldist) then
+          r(:,frontindex) = line1(:,frontindex)
 !           print*,j,frontindex,dist(line(:,frontindex),rnulls(:,k))
         else
           exit
@@ -280,6 +264,7 @@ do j = 1, nlines !loop over all points in ring
         do while (sep .lt. 3*nulldist)
           h = 0.01
           call trace_line(r(:,index),1,signs(nullnum),h)
+          call checkedge(r(:,index))
           sep = dist(r(:,index),rnulls(:,k))
           iters = iters+1
           if (iters .gt. 1000) exit
@@ -335,7 +320,7 @@ do j = 1, nlines !loop over all points in ring
 
 !          print*,'position of sep',line(:,index-1)
           do idx = backindex, frontindex
-            line(:,idx) = r(:,idx)
+            line1(:,idx) = r(:,idx) !check line
           enddo
           exit
         endif
