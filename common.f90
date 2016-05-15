@@ -229,34 +229,34 @@ subroutine get_startpoints(theta,phi,xs,ys,zs)
 
     double precision :: theta, phi
     double precision, dimension(:) :: xs, ys, zs
-    integer :: nlines
+    integer :: i, nlines
     double precision :: dtheta
     double precision :: r(3)
     double precision, parameter :: sep=0.1
 
 
-    nlines=size(xs)
+    nlines = size(xs)
 
-    dtheta=2.*pi/nlines
+    dtheta = 2.*pi/nlines
 
     !generate nlines start points in ring around equator
-    do i=1,nlines
-      r(1)=cos(i*dtheta)
-      r(2)=sin(i*dtheta)
-      r(3)=0
+    do i = 1, nlines
+      r(1) = cos(i*dtheta)
+      r(2) = sin(i*dtheta)
+      r(3) = 0
 
-      r=rotate(r,theta,phi)
+      r = rotate(r,theta,phi)
 
-      xs(i)=r(1)*sep
-      ys(i)=r(2)*sep
-      zs(i)=r(3)*sep
+      xs(i) = r(1)*sep
+      ys(i) = r(2)*sep
+      zs(i) = r(3)*sep
     enddo
 
 
 
-    r(1)=sin(theta)*cos(phi)
-    r(2)=sin(theta)*sin(phi)
-    r(3)=cos(theta)
+    r(1) = sin(theta)*cos(phi)
+    r(2) = sin(theta)*sin(phi)
+    r(3) = cos(theta)
 
     !print*,''
     !print*,'point number, dot product, distance from null'
