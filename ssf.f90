@@ -157,17 +157,19 @@ program ssfind
 
     call get_startpoints(theta,phi,xs,ys,zs)
 
-    allocate(line(3,nlines), remove(3,nlines), add(3,nlines), endpoints(3,nlines))
+    allocate(line1(3,nlines), line2(3,nlines), remove(3,nlines), add(3,nlines), endpoints(3,nlines))
     allocate(association(1,nlines), break(1,nlines))
     add = 0
 
     !add start points to first ring relative to null
     do j = 1, nlines !Go through each start point
-      line(1,j) = r(1) + xs(j)
-      line(2,j) = r(2) + ys(j)
-      line(3,j) = r(3) + zs(j)
+      line1(1,j) = r(1) + xs(j)
+      line1(2,j) = r(2) + ys(j)
+      line1(3,j) = r(3) + zs(j)
       association(:,j) = j
     enddo
+    
+    line2 = line1
 
     break = 0
 
@@ -204,23 +206,23 @@ program ssfind
         exit
       endif
       !$OMP SINGLE
-        nringss=nringss+1
+        nringss = nringss+1
 
-        endpoints=0.
-        add=0.
-        remove=0.
+        endpoints = 0
+        add = 0
+        remove = 0
 
         write(20) nint(association)
-        nperring(i)=nlines
+        nperring(i) = nlines
 
-        ierror=0
+        ierror = 0
         !call flush()
       !$OMP END SINGLE
 
       !$OMP DO  private(r,h)!, shared(ierror)
         do j = 1, nlines !loop over all points in ring (in parallel do)
 
-          r(:) = line(:,j)
+          r(:) = line1(:,j)
 
           if (i < 50) then
             h = 0.05
@@ -229,7 +231,7 @@ program ssfind
           endif
 
           call trace_line(r,1,sign,h) !trace line by a distance of h
-          call edge(r, out)
+          call edgecheck(r, out)
           
           if (out) then !counter to see how many points on ring have reached outer boundary
             endpoints(:,j) = 1
@@ -238,7 +240,8 @@ program ssfind
           endif
           ! print*,h
 
-          line(:,j) = r(:)
+          line2(:,j) = line2(:,j) + r(:) - line1(:,j)
+          line1(:,j) = r(:)
 
           association(:,j) = dble(j)
 
@@ -253,9 +256,9 @@ program ssfind
           exitcondition = .true.
         endif
 
-        circumference(i) = circumference(i) + dist(line(:,1),line(:,nlines))
+        circumference(i) = circumference(i) + dist(line2(:,1),line2(:,nlines))
         do j = 2, nlines
-          circumference(i) = circumference(i) + dist(line(:,j),line(:,j-1))
+          circumference(i) = circumference(i) + dist(line2(:,j),line2(:,j-1))
         enddo
 
         !print*, 'ring',i,nlines!,nint(sum(endpoints(1,:))),sum(endpoints(1,:))/nlines,circumference(i)

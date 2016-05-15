@@ -13,7 +13,7 @@ integer, parameter :: nstart = 100 !number of startpoints in ring
 
 double precision, parameter :: mindist1 = maxdist1/4.d0 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
 
-double precision, allocatable, dimension(:,:) :: line, add, remove, endpoints
+double precision, allocatable, dimension(:,:) :: line1, line2, add, remove, endpoints
 double precision, allocatable, dimension(:,:) :: break, association
 
 contains
@@ -42,10 +42,10 @@ subroutine add_points(nlines,iteration)
 
   do j = 1, nlines !loop over each point in ring
     if (break(1,j) .lt. 0.1) then 
-      if (edge(line(:,j))) cycle !if point is at the edge of the box
+      if (outedge(line(:,j))) cycle !if point is at the edge of the box
 
       if (j .lt. nlines) then !if not the last point
-        if (edge(line(:,j+1))) cycle
+        if (outedge(line(:,j+1))) cycle
         sep = dist(line(:,j),line(:,j+1)) !distance between jth and (j+1)th point
         if (sep .gt. maxdist) then !if too far away
           add(:,j) = line(:,j) + 0.5*(line(:,j+1)-line(:,j)) !add point half way between two points
@@ -53,7 +53,7 @@ subroutine add_points(nlines,iteration)
           add(:,j) = 0 !don't add anything
         endif
       else !if the last point (compare with first pint, not (j+1)th
-        if (edge(line(:,1))) cycle
+        if (outedge(line(:,1))) cycle
           sep = dist(line(:,j),line(:,1))
         if (sep .gt. maxdist) then
           add(:,j) = line(:,j) + 0.5*(line(:,1)-line(:,j))
@@ -68,7 +68,7 @@ subroutine add_points(nlines,iteration)
 
   !add new points
   ! where the 'add' array has a point to be added, add this point
-  j=0
+  j = 0
   do while (j .lt. nlines)
     j = j+1
     b = add(:,j)
@@ -134,7 +134,7 @@ subroutine remove_points(nlines,iteration)
           remove(:,j) = 1 !flag this point to be removed
         else
           remove(:,j) = 0!flag point to stay
-          if (edge(line(:,j))) then !remove points that have left the simulation
+          if (outedge(line(:,j))) then !remove points that have left the simulation
             remove(:,j) = 1
             if (j .ne. 1) then
               break(:,j-1) = 1

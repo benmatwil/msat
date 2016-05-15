@@ -44,8 +44,6 @@ subroutine trace_line(r,nsteps,sign,h)
   r0 = r
 
 	do while (hdum .lt. stepdist)
-	  call edge(r, out)
-    if (out) exit
 	  !h=stepstart*sign
 	  h = sign*(stepdist-hdum)
 	  call rk45(r,h)
