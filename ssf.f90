@@ -79,10 +79,10 @@ program ssfind
       if (2*(nz/2) == nz) then !if nz is even
         !Top boundary
         bgrid(:,0,1:nz/2,:) = bgrid(:,1,nz/2+1:nz,:)
-        bgrid(:,0,nz/2+1:nz,:) = ngrid(:,1,0:nz/2,:)
+        bgrid(:,0,nz/2+1:nz,:) = bgrid(:,1,0:nz/2,:)
         !Bottom boundary
         bgrid(:,ny+1,1:nz/2,:) = bgrid(:,ny,nz/2+1:nz,:)
-        bgrid(:,ny+1,nz/2+1:nz,:) = ngrid(:,ny,0:nz/2,:)
+        bgrid(:,ny+1,nz/2+1:nz,:) = bgrid(:,ny,0:nz/2,:)
       else !if nz is odd
         !Top boundary
         bgrid(:,0,1:nz/2,:) = (bgrid(:,1,1+nz/2:nz-1,:) + bgrid(:,1,2+nz/2:nz))/2
@@ -249,7 +249,7 @@ program ssfind
       !$OMP END DO
 
       !$OMP SINGLE
-        write(20), line
+        write(20), line1
 
         if (nlines .gt. pointsmax) then !exit if too many points on ring
           print*, 'Too many points on ring', nlines, i
@@ -306,7 +306,7 @@ program ssfind
     close(20)
 
     deallocate(xs,ys,zs)
-    deallocate(line,remove,add,endpoints,association,break)
+    deallocate(line1,line2,remove,add,endpoints,association,break)
 
   enddo
 
