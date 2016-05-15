@@ -2,7 +2,7 @@
 module common
 use params
 
-
+implicit none
 
 double precision, allocatable :: bgrid(:,:,:,:)
 integer, parameter :: iseed=3141592
@@ -178,6 +178,17 @@ function modulus(a)
   modulus=sqrt(dot(a,a))
 
 end function
+
+!********************************************************************************
+
+function outedge(r)
+  double precision :: r(3)
+  logical :: outedge
+  
+  outedge = .false.
+  
+  if (r(1) < xmin .or. r(1) > xmax .or. r(2) < ymin .or. r(2) > ymax .or. r(3) < zmin .or. r(3) > zmax) outedge = .true.
+end function  
 
 !********************************************************************************
 
