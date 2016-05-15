@@ -72,9 +72,10 @@ subroutine add_points(nlines,iteration)
   do while (j .lt. nlines)
     j = j+1
     b = add(:,j)
-    if(modulus(b) .gt. zero) then !if add(:,j) is not zero..
+    if (modulus(b) .gt. zero) then !if add(:,j) is not zero..
       !print*, 'point has to be added to',j
-      call add_element(line,b,j+1) !add elements to every array
+      call add_element(line1,b,j+1) !add elements to every array
+      call add_element(line2,line2(:,j) + 0.5*(line2(:,1)-line2(:,j)),j+1)
       call add_element(add,0*b,j+1)
       call add_element(endpoints,b,j+1)
       call add_element(remove,0.*b,j+1)
@@ -168,7 +169,8 @@ subroutine remove_points(nlines,iteration)
       if (nlines .lt. nstart) exit
       if (test .gt. zero) then !if point is flagged to be removed, then remove
         !print*,'remove', j,line(:,j)
-        call remove_element(line,j)
+        call remove_element(line1,j)
+        call remove_element(line2,j)
         call remove_element(add,j)
         call remove_element(endpoints,j)
         call remove_element(remove,j)
