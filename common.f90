@@ -22,7 +22,7 @@ contains
 
 function trilinear(r,b)
   !find the value of a function, b, at (x,y,z) using the 8 vertices
-  double precision :: b(:,:,:,:)
+  double precision, allocatable :: b(:,:,:,:)
   double precision :: r(3)
   double precision :: cube(2,2,2)
   double precision :: x, y, z
@@ -32,12 +32,8 @@ function trilinear(r,b)
   double precision :: trilinear(3)
   integer :: nx, ny, nz
   integer :: dims
-  integer :: nxpoints,nypoints,nzpoints
-
-  nxpoints = size(b,1)
-  nypoints = size(b,2)
-  nzpoints = size(b,3)
-
+  integer :: nxpoints, nypoints, nzpoints
+  
   xp = r(1)
   yp = r(2)
   zp = r(3)
@@ -60,10 +56,10 @@ function trilinear(r,b)
 
     f1 = (1-y)*f11 + y*f21
     f2 = (1-y)*f12 + y*f22
-
+    
     trilinear(dims) = (1-z)*f1 + z*f2
   enddo
-  
+
 end
 
 !********************************************************************************
@@ -206,6 +202,7 @@ subroutine edgecheck(r, out)
     if (r(2) .lt. ymin) r(2) = r(2) + ymin - ymax
     if (r(2) .gt. ymin) r(2) = r(2) - (ymin - ymax)
   else if (coord_type == 2) then
+    print*, 'Checking position of point'
     if (r(2) .lt. ymin .or. r(2) .gt. ymax) then
       if (r(2) .lt. ymin) r(2) = 2*ymin - r(2)
       if (r(2) .gt. ymax) r(2) = 2*ymax - r(2)
@@ -217,6 +214,7 @@ subroutine edgecheck(r, out)
     endif
     if (r(3) .lt. zmin) r(3) = r(3) + zmax - zmin
     if (r(3) .gt. zmax) r(3) = r(3) - (zmax - zmin)
+    if (r(3) .lt. zmin .or. r(3) .gt. zmax) print*, 'Moving point', r
   endif
       
 end subroutine

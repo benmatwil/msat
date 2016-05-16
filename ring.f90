@@ -48,7 +48,7 @@ subroutine add_points(nlines,iteration)
         if (outedge(line1(:,j+1))) cycle
         sep = dist(line2(:,j),line2(:,j+1)) !distance between jth and (j+1)th point
         if (sep .gt. maxdist) then !if too far away
-          add(:,j) = line1(:,j) + 0.5*(line1(:,j+1)-line1(:,j)) !add point half way between two points
+          add(:,j) = line1(:,j) + 0.5*(line2(:,j+1)-line2(:,j)) !add point half way between two points
         else
           add(:,j) = 0 !don't add anything
         endif
@@ -56,7 +56,7 @@ subroutine add_points(nlines,iteration)
         if (outedge(line1(:,1))) cycle
         sep = dist(line2(:,j),line2(:,1))
         if (sep .gt. maxdist) then
-          add(:,j) = line1(:,j) + 0.5*(line1(:,1)-line1(:,j))
+          add(:,j) = line1(:,j) + 0.5*(line2(:,1)-line2(:,j))
         else
           add(:,j) = 0
         endif

@@ -59,18 +59,26 @@ program ssfind
   open (unit=10,file=filename,access='stream')
 
     read(10),nx,ny,nz !number of vertices
-
+    print*, nx, ny, nz
+    
     allocate(bgrid(0:nx+1,0:ny+1,0:nz+1,3))
     bgrid = 0
-    allocate(x(nx), y(ny), z(nz))
+    allocate(x(0:nx+1), y(0:ny+1), z(0:nz+1))
     read(10),bgrid(1:nx,1:ny,1:nz,1)
     read(10),bgrid(1:nx,1:ny,1:nz,2)
     read(10),bgrid(1:nx,1:ny,1:nz,3)
+    read(10) x(1:nx), y(1:ny), z(1:nz)
     
+    x(0) = 2*x(1) - x(2)
+    x(nx+1) = 2*x(nx)-x(nx-1)
     if (coord_type == 3) then
       !phi repeating
       bgrid(:,0,:,:) = bgrid(:,ny,:,:)
       bgrid(:,ny+1,:,:) = bgrid(:,1,:,:)
+      y(0) = y(1) - (y(ny) - y(ny-1))
+      y(ny+1) = y(ny) + (y(1) - y(0))
+      z(0) = 2*z(1) - z(2)
+      z(nz+1) = 2*z(nz)-z(nz-1)
     else if (coord_type == 2) then
       !phi repeating
       bgrid(:,:,0,:) = bgrid(:,:,nz,:)
@@ -85,19 +93,22 @@ program ssfind
         bgrid(:,ny+1,nz/2+1:nz,:) = bgrid(:,ny,0:nz/2,:)
       else !if nz is odd
         !Top boundary
-        bgrid(:,0,1:nz/2,:) = (bgrid(:,1,1+nz/2:nz-1,:) + bgrid(:,1,2+nz/2:nz))/2
+        bgrid(:,0,1:nz/2,:) = (bgrid(:,1,1+nz/2:nz-1,:) + bgrid(:,1,2+nz/2:nz,:))/2
         bgrid(:,0,nz/2+1,:) = (bgrid(:,1,nz,:) + bgrid(:,1,1,:))/2
         bgrid(:,0,nz/2+2:nz,:) = (bgrid(:,1,1:nz/2,:) + bgrid(:,1,2:nz/2+1,:))/2
         !Bottom boundary
-        bgrid(:,ny+1,1:nz/2,:) = (bgrid(:,ny,1+nz/2:nz-1,:) + bgrid(:,ny,2+nz/2:nz))/2
+        bgrid(:,ny+1,1:nz/2,:) = (bgrid(:,ny,1+nz/2:nz-1,:) + bgrid(:,ny,2+nz/2:nz,:))/2
         bgrid(:,ny+1,nz/2+1,:) = (bgrid(:,ny,nz,:) + bgrid(:,ny,1,:))/2
         bgrid(:,ny+1,nz/2+2:nz,:) = (bgrid(:,ny,1:nz/2,:) + bgrid(:,ny,2:nz/2+1,:))/2
       endif
+      z(0) = 2*z(1) - z(2)
+      z(nz+1) = 2*z(nz)-z(nz-1)
+      y(0) = y(2)
+      y(ny+1) = y(ny-1)
+    else if (coord_type == 1) then
+      z(0) = 2*z(1) - z(2)
+      z(nz+1) = 2*z(nz)-z(nz-1)
     endif
-
-    print*, nx, ny, nz
-
-    read(10) x, y, z
 
     xmin = 1
     xmax = nx
@@ -197,15 +208,15 @@ program ssfind
 
     nringss=0
 
-    !$OMP PARALLEL DEFAULT(SHARED)
-    do i=1,ringsmax !loop over number of rings we want
+!    !$OMP PARALLEL DEFAULT(SHARED)
+    do i = 1, ringsmax !loop over number of rings we want
       if (sign .eq. 0) then !skip null which is uncharacterised
-        !$OMP SINGLE
+!        !$OMP SINGLE
           print*,'Null has zero sign'
-        !$OMP END SINGLE
+!        !$OMP END SINGLE
         exit
       endif
-      !$OMP SINGLE
+!      !$OMP SINGLE
         nringss = nringss+1
 
         endpoints = 0
@@ -217,9 +228,9 @@ program ssfind
 
         ierror = 0
         !call flush()
-      !$OMP END SINGLE
+!      !$OMP END SINGLE
 
-      !$OMP DO  private(r,h)!, shared(ierror)
+!      !$OMP DO  private(r,h)!, shared(ierror)
         do j = 1, nlines !loop over all points in ring (in parallel do)
 
           r(:) = line1(:,j)
@@ -232,7 +243,7 @@ program ssfind
 
           call trace_line(r,1,sign,h) !trace line by a distance of h
           call edgecheck(r, out)
-          
+
           if (out) then !counter to see how many points on ring have reached outer boundary
             endpoints(:,j) = 1
           else
@@ -246,9 +257,9 @@ program ssfind
           association(:,j) = dble(j)
 
         enddo
-      !$OMP END DO
+!      !$OMP END DO
 
-      !$OMP SINGLE
+!      !$OMP SINGLE
         write(20), line1
 
         if (nlines .gt. pointsmax) then !exit if too many points on ring
@@ -278,20 +289,20 @@ program ssfind
         print*, 'Tracing has failed',i
         exitcondition = .true.
         endif
-
+        print*,'Checking at null'
         call at_null(nlines,nnull,i) !determine if point is at null
-
+        print*,'Adding points'
         call add_points(nlines,i) !add points to ring if necessary
-
+        print*,'Removing points'
         call remove_points(nlines,i) !remove points from ring if necessary
 
         !call flush()
-      !$OMP END SINGLE
+!      !$OMP END SINGLE
 
       if (exitcondition) exit
 
     enddo
-    !$OMP END PARALLEL
+!    !$OMP END PARALLEL
     
     print*, 'number of separators=',nseps
     nsepss(nnull)=nseps

@@ -38,7 +38,6 @@ subroutine trace_line(r,nsteps,sign,h)
     print*, 'trace.f90'
     stop
   endif
-
   !stepdist=0.5
 
   r0 = r
@@ -47,10 +46,9 @@ subroutine trace_line(r,nsteps,sign,h)
 	  !h=stepstart*sign
 	  h = sign*(stepdist-hdum)
 	  call rk45(r,h)
+    print*, 'here', r, h, hdum
 	  hdum = hdum + abs(h)
-
-	 ! print*,stepdist,hdum
-
+	  !print*,stepdist,hdum
 	  !print*,i,h,r
 	enddo
 
@@ -81,11 +79,11 @@ subroutine rk45(r,h)
     !print*, 'rk45in'
 
     !minimum physical distance corresponding to fraction of gridcell (h)
-    mindist = minval( getdl(r) )*h
+    mindist = minval(getdl(r))*h
 
     !vector containing the grid's h for each direction
     !(so h for each direction is the same physical length, equal to mindist)
-    hvec = mindist /getdl(r)
+    hvec = mindist/getdl(r)
 
     r0 = r
 
@@ -103,8 +101,6 @@ subroutine rk45(r,h)
 
     !calculate optimum step length (s=hoptimum/h)
     s = 0.84*(tol/maxval((/modulus(z-y)/)))**0.25
-
-
 
     if (abs(s*h) .lt. stepmin) then
       s=stepmin/abs(h)
@@ -182,6 +178,8 @@ function getdl(r)
     print*,'Please select a valid one'
     stop
   endif
+  
+  getdl = abs(getdl)
 
 end function
 
