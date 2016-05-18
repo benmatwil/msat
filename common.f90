@@ -107,7 +107,6 @@ subroutine add_element(x,val,pos)
     nx=size(x,1)
     ny=size(x,2)
 
-
     allocate(dummy(nx,ny))
 
     dummy=x
@@ -181,8 +180,15 @@ function outedge(r)
   double precision :: r(3)
   logical :: outedge
   
-  outedge = .false.
-  if (r(1) < xmin .or. r(1) > xmax .or. r(2) < ymin .or. r(2) > ymax .or. r(3) < zmin .or. r(3) > zmax) outedge = .true.
+  outedge = .false.  
+  if (r(1) .gt. xmax .or. r(1) .lt. xmin) outedge = .true.
+  if (coord_type == 1) then
+    if (r(2) .gt. ymax .or. r(2) .lt. ymin) outedge = .true.
+    if (r(3) .gt. zmax .or. r(3) .lt. zmin) outedge = .true.
+  else if (coord_type == 3) then
+    if (r(3) .gt. zmax .or. r(3) .lt. zmin) outedge = .true.
+  endif
+  
 end function  
 
 !********************************************************************************
@@ -192,17 +198,12 @@ subroutine edgecheck(r, out)
   double precision :: r(3)
   logical, optional :: out
   
-  out = .false.
-  if (r(1) .gt. xmax .or. r(1) .lt. xmin) out = .true.
-  if (coord_type == 1) then
-    if (r(2) .gt. ymax .or. r(2) .lt. ymin) out = .true.
-    if (r(3) .gt. zmax .or. r(3) .lt. zmin) out = .true.
-  else if (coord_type == 3) then
-    if (r(3) .gt. zmax .or. r(3) .lt. zmin) out = .true.
+  if (present(out)) out = outedge(r)
+  
+  if (coord_type == 3) then
     if (r(2) .lt. ymin) r(2) = r(2) + ymin - ymax
     if (r(2) .gt. ymin) r(2) = r(2) - (ymin - ymax)
   else if (coord_type == 2) then
-    print*, 'Checking position of point'
     if (r(2) .lt. ymin .or. r(2) .gt. ymax) then
       if (r(2) .lt. ymin) r(2) = 2*ymin - r(2)
       if (r(2) .gt. ymax) r(2) = 2*ymax - r(2)
@@ -214,7 +215,6 @@ subroutine edgecheck(r, out)
     endif
     if (r(3) .lt. zmin) r(3) = r(3) + zmax - zmin
     if (r(3) .gt. zmax) r(3) = r(3) - (zmax - zmin)
-    if (r(3) .lt. zmin .or. r(3) .gt. zmax) print*, 'Moving point', r
   endif
       
 end subroutine

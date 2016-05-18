@@ -19,7 +19,6 @@ program ssfind
 
   integer*8 :: tstart,tstop,count_rate
   !b field readin variables
-  double precision, allocatable, dimension(:,:,:) :: bx, by, bz
   integer :: nx, ny, nz
 
   !position vector of null (and saved backup)
@@ -46,7 +45,7 @@ program ssfind
   !double precision, allocatable, dimension(:,:) :: rnulls
 
   !integer :: ringnum,index,nullnum
-  integer :: nrings,npoints
+  integer :: nrings, npoints
   integer :: nperring(ringsmax)
   double precision :: circumference(ringsmax)
 
@@ -69,9 +68,9 @@ program ssfind
     read(10),bgrid(1:nx,1:ny,1:nz,3)
     read(10) x(1:nx), y(1:ny), z(1:nz)
     
-    x(0) = 2*x(1) - x(2)
+    x(0) = 2*x(1) - x(2) !x,R,r don't repeat
     x(nx+1) = 2*x(nx)-x(nx-1)
-    if (coord_type == 3) then
+    if (coord_type == 3) then !cylindrical
       !phi repeating
       bgrid(:,0,:,:) = bgrid(:,ny,:,:)
       bgrid(:,ny+1,:,:) = bgrid(:,1,:,:)
@@ -79,7 +78,7 @@ program ssfind
       y(ny+1) = y(ny) + (y(1) - y(0))
       z(0) = 2*z(1) - z(2)
       z(nz+1) = 2*z(nz)-z(nz-1)
-    else if (coord_type == 2) then
+    else if (coord_type == 2) then !spherical
       !phi repeating
       bgrid(:,:,0,:) = bgrid(:,:,nz,:)
       bgrid(:,:,nz+1,:) = bgrid(:,:,1,:)
@@ -121,7 +120,6 @@ program ssfind
     dy = (y(ny)-y(1))/ny
     dz = (z(nz)-z(1))/nz
 
-  ! deallocate(bx,by,bz)
   close(10)
 
   print*, 'Data read in'
@@ -151,26 +149,20 @@ program ssfind
 
     a = r !backup null location
 
-    !print*, rnulls
-    !print*, r
-    !print*,''
-
     !get start points
     nlines = nstart
 
     theta = acos(fan(3))
     phi = atan(fan(2),fan(1))
 
-    !print*,'theta=',theta/dtor
-    !print*,'phi=',phi/dtor
-
     allocate(xs(nlines),ys(nlines),zs(nlines))
 
     call get_startpoints(theta,phi,xs,ys,zs)
 
-    allocate(line1(3,nlines), line2(3,nlines), remove(3,nlines), add(3,nlines), endpoints(3,nlines))
-    allocate(association(1,nlines), break(1,nlines))
-    add = 0
+    allocate(line1(3,nlines), line2(3,nlines), add1(3,nlines), add2(3,nlines))
+    allocate(association(1,nlines), break(1,nlines), remove(3,nlines), endpoints(3,nlines))
+    add1 = 0
+    add2 = 0
 
     !add start points to first ring relative to null
     do j = 1, nlines !Go through each start point
@@ -193,44 +185,44 @@ program ssfind
 
     open (unit=20,file='output/everything'//trim(fname)//'.dat',access='stream',status='replace')
 
-    nseps=0
+    nseps = 0
 
-    nrings=0
+    nrings = 0
 
-    nperring=0
+    nperring = 0
 
     write(20) nrings, npoints,ringsmax
     write(20) nperring
     
-    circumference=0.
+    circumference = 0.
 
-    exitcondition=.false.
+    exitcondition = .false.
 
     nringss=0
 
-!    !$OMP PARALLEL DEFAULT(SHARED)
+    !$OMP PARALLEL DEFAULT(SHARED)
     do i = 1, ringsmax !loop over number of rings we want
       if (sign .eq. 0) then !skip null which is uncharacterised
-!        !$OMP SINGLE
+        !$OMP SINGLE
           print*,'Null has zero sign'
-!        !$OMP END SINGLE
+        !$OMP END SINGLE
         exit
       endif
-!      !$OMP SINGLE
+      !$OMP SINGLE
         nringss = nringss+1
 
         endpoints = 0
-        add = 0
+        add1 = 0
+        add2 = 0
         remove = 0
 
         write(20) nint(association)
         nperring(i) = nlines
 
         ierror = 0
-        !call flush()
-!      !$OMP END SINGLE
+      !$OMP END SINGLE
 
-!      !$OMP DO  private(r,h)!, shared(ierror)
+      !$OMP DO  private(r,h)!, shared(ierror)
         do j = 1, nlines !loop over all points in ring (in parallel do)
 
           r(:) = line1(:,j)
@@ -242,24 +234,22 @@ program ssfind
           endif
 
           call trace_line(r,1,sign,h) !trace line by a distance of h
-          call edgecheck(r, out)
 
+          line2(:,j) = line2(:,j) + r(:) - line1(:,j)
+          call edgecheck(r, out)
           if (out) then !counter to see how many points on ring have reached outer boundary
             endpoints(:,j) = 1
           else
             endpoints(:,j) = 0
           endif
-          ! print*,h
-
-          line2(:,j) = line2(:,j) + r(:) - line1(:,j)
           line1(:,j) = r(:)
-
+          
           association(:,j) = dble(j)
 
         enddo
-!      !$OMP END DO
+      !$OMP END DO
 
-!      !$OMP SINGLE
+      !$OMP SINGLE
         write(20), line1
 
         if (nlines .gt. pointsmax) then !exit if too many points on ring
@@ -272,40 +262,35 @@ program ssfind
           circumference(i) = circumference(i) + dist(line2(:,j),line2(:,j-1))
         enddo
 
-        !print*, 'ring',i,nlines!,nint(sum(endpoints(1,:))),sum(endpoints(1,:))/nlines,circumference(i)
-
         if (sum(endpoints(1,:))/nlines .gt. 0.99) then !exit if all points have reached outer boundary (left box)
           print*, 'All fan points have reached the outer boundary', i
           exitcondition = .true.
         endif
         if (i .gt. 1)  then
-          if(abs(circumference(i)-circumference(i-1)) .lt. 0.1*stepmin) then
+          if (abs(circumference(i)-circumference(i-1)) .lt. 0.1*stepmin) then
             print*, 'Fan has stopped growing', i
             exitcondition = .true.
           endif
         endif
 
         if (ierror .eq. 1) then
-        print*, 'Tracing has failed',i
-        exitcondition = .true.
+          print*, 'Tracing has failed',i
+          exitcondition = .true.
         endif
-        print*,'Checking at null'
+        print*,'Checking at null', i, nlines
         call at_null(nlines,nnull,i) !determine if point is at null
-        print*,'Adding points'
-        call add_points(nlines,i) !add points to ring if necessary
-        print*,'Removing points'
         call remove_points(nlines,i) !remove points from ring if necessary
+        call add_points(nlines,i) !add points to ring if necessary
 
-        !call flush()
-!      !$OMP END SINGLE
+      !$OMP END SINGLE
 
       if (exitcondition) exit
 
     enddo
-!    !$OMP END PARALLEL
+    !$OMP END PARALLEL
     
     print*, 'number of separators=',nseps
-    nsepss(nnull)=nseps
+    nsepss(nnull) = nseps
     
     write(12) -1
 
@@ -317,14 +302,13 @@ program ssfind
     close(20)
 
     deallocate(xs,ys,zs)
-    deallocate(line1,line2,remove,add,endpoints,association,break)
+    deallocate(line1,line2,remove,add1,add2,endpoints,association,break)
 
   enddo
 
-  call SYSTEM_CLOCK(tstop,count_rate)
-
   print*,'number of separators=',int(nsepss)
-
+  
+  call SYSTEM_CLOCK(tstop,count_rate)
   print*, 'TIME=',dble(tstop-tstart)/dble(count_rate)
 
 end program

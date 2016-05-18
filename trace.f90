@@ -46,7 +46,7 @@ subroutine trace_line(r,nsteps,sign,h)
 	  !h=stepstart*sign
 	  h = sign*(stepdist-hdum)
 	  call rk45(r,h)
-    print*, 'here', r, h, hdum
+    !if (outedge(r)) exit
 	  hdum = hdum + abs(h)
 	  !print*,stepdist,hdum
 	  !print*,i,h,r
@@ -89,11 +89,17 @@ subroutine rk45(r,h)
 
     !get rk values k1--k6
     k1 = hvec*normalise(trilinear(r0, bgrid))
+    !print*, r0
     k2 = hvec*normalise(trilinear(r0 + k21*k1, bgrid))
+    !print*, r0 + k21*k1
     k3 = hvec*normalise(trilinear(r0 + k31*k1 + k32*k2, bgrid))
+    !print*, r0 + k31*k1 + k32*k2
     k4 = hvec*normalise(trilinear(r0 + k41*k1 + k42*k2 + k43*k3, bgrid))
+    !print*, r0 + k41*k1 + k42*k2 + k43*k3
     k5 = hvec*normalise(trilinear(r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4, bgrid))
+    !print*, r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
     k6 = hvec*normalise(trilinear(r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5, bgrid))
+    !print*, r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5
 
     !get 4th order (y) and 5th order (z) estimates
     y = y1*k1 + y3*k3 + y4*k4 + y5*k5
