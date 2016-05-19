@@ -4,7 +4,7 @@ use common
 
 !integration parameters
 
-double precision, parameter :: stepmax=1. !maximum step length (no longer used)
+double precision, parameter :: stepmax = 1 !maximum step length (no longer used)
 
 !rkf45 parameters
 double precision, parameter :: k21 = 0.25
@@ -109,9 +109,9 @@ subroutine rk45(r,h)
     s = 0.84*(tol/maxval((/modulus(z-y)/)))**0.25
 
     if (abs(s*h) .lt. stepmin) then
-      s=stepmin/abs(h)
+      s = stepmin/abs(h)
     else if (s .gt. 1.01) then
-      s=1.
+      s = 1
     endif
 
     !integrate by optimum step length
