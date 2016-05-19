@@ -37,6 +37,7 @@ function trilinear(r,b)
   xp = r(1)
   yp = r(2)
   zp = r(3)
+  !print*, xp, yp, zp
 
   nx = floor(xp)
   ny = floor(yp)
@@ -66,7 +67,7 @@ end
 
 !dot product between a and b
 function dot(a,b)
-  double precision, dimension(3) :: a,b
+  double precision, dimension(3) :: a, b
   double precision :: dot
 
   dot = sum(a*b)
