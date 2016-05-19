@@ -51,7 +51,7 @@ program ssfind
 
   logical :: exitcondition, out
 
-  CALL OMP_SET_NUM_THREADS(4) !have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
+  CALL OMP_SET_NUM_THREADS(12) !have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
 
   !read in data
   !open (unit=10,file='output/2null-edge.dat',form='unformatted')
@@ -224,13 +224,15 @@ program ssfind
 
       !$OMP DO  private(r,h)!, shared(ierror)
         do j = 1, nlines !loop over all points in ring (in parallel do)
+          print*, j
 
           r(:) = line1(:,j)
+          print*, r
 
           if (i < 50) then
             h = 0.05
           else
-            h = 0.5
+            h = 0.25
           endif
 
           call trace_line(r,1,sign,h) !trace line by a distance of h
@@ -242,7 +244,10 @@ program ssfind
           else
             endpoints(:,j) = 0
           endif
+          print*, r
+          print*, dist(r,line1(:,j))
           line1(:,j) = r(:)
+          
           
           association(:,j) = dble(j)
 
