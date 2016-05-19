@@ -132,7 +132,7 @@ subroutine remove_points(nlines,iteration)
   !remove points
   i = 1
   if (nlines > nstart) then !if the number of points isn't too small...
-    do while (i < nlines)
+    do while (i <= nlines)
       if (nlines < nstart) exit
       if (remove(1,i) > zero) then !if point is flagged to be removed, then remove
         call remove_element(line1,i)
