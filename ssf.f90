@@ -119,6 +119,12 @@ program ssfind
     dx = (x(nx)-x(1))/nx
     dy = (y(ny)-y(1))/ny
     dz = (z(nz)-z(1))/nz
+    
+    !print*, x(2:5) - x(1:4)
+    !print*, y(2:5) - y(1:4)
+    !print*, z(2:5) - z(1:4)
+    !print*, x(1:3)
+    !stop
 
   close(10)
 
@@ -160,7 +166,7 @@ program ssfind
     call get_startpoints(theta,phi,xs,ys,zs)
 
     allocate(line1(3,nlines), line2(3,nlines), add1(3,nlines), add2(3,nlines))
-    allocate(association(1,nlines), break(1,nlines), remove(3,nlines), endpoints(3,nlines))
+    allocate(association(1,nlines), break(1,nlines), remove(1,nlines), endpoints(1,nlines))
     add1 = 0
     add2 = 0
 
@@ -222,12 +228,12 @@ program ssfind
         ierror = 0
       !$OMP END SINGLE
 
-      !$OMP DO  private(r,h)!, shared(ierror)
+      !$OMP DO private(r,h)!, shared(ierror)
         do j = 1, nlines !loop over all points in ring (in parallel do)
-          print*, j
+          !print*, j
 
           r(:) = line1(:,j)
-          print*, r
+          !print*, r
 
           if (i < 50) then
             h = 0.05
@@ -244,10 +250,9 @@ program ssfind
           else
             endpoints(:,j) = 0
           endif
-          print*, r
-          print*, dist(r,line1(:,j))
+          !print*, r
+          !print*, dist(r,line1(:,j))
           line1(:,j) = r(:)
-          
           
           association(:,j) = dble(j)
 
@@ -282,7 +287,7 @@ program ssfind
           print*, 'Tracing has failed',i
           exitcondition = .true.
         endif
-        print*,'Checking at null', i, nlines
+        print*,'Checking at null', i, nlines, nnull
         call at_null(nlines,nnull,i) !determine if point is at null
         call remove_points(nlines,i) !remove points from ring if necessary
         call add_points(nlines,i) !add points to ring if necessary
@@ -311,7 +316,7 @@ program ssfind
 
   enddo
 
-  print*,'number of separators=',int(nsepss)
+  !print*,'number of separators=',int(nsepss)
   
   call SYSTEM_CLOCK(tstop,count_rate)
   print*, 'TIME=',dble(tstop-tstart)/dble(count_rate)

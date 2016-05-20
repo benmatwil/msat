@@ -26,7 +26,7 @@ subroutine add_points(nlines,iteration)
   integer :: i, j
   double precision :: mindist, maxdist
   integer, intent(in) :: iteration
-  double precision :: b(3)
+  double precision :: b1(3), b2(1)
 
   if (iteration < 100) then !if close-in to the starting null we want smaller max/min separations
     mindist = mindist1*0.05
@@ -60,18 +60,19 @@ subroutine add_points(nlines,iteration)
   !add new points
   !where the 'add' array has a point to be added, add this point
   i = 0
+  b1 = [0d0,0d0,0d0]
+  b2 = [0d0]
   do while (i .lt. nlines)
     i = i+1
-    b = dble([0,0,0])
     if (modulus(add1(:,i)) .gt. 0) then !if add(:,i) is not zero..
       !print*, 'point has to be added to',i
       call add_element(line1,add1(:,i),i+1) !add elements to every array
       call add_element(line2,add2(:,i),i+1)
-      call add_element(add1,b,i+1)
-      call add_element(add2,b,i+1)
-      call add_element(endpoints,b,i+1)
-      call add_element(remove,b,i+1)
-      call add_element(break,[0d0],i+1)
+      call add_element(add1,b1,i+1)
+      call add_element(add2,b1,i+1)
+      call add_element(endpoints,b2,i+1)
+      call add_element(remove,b2,i+1)
+      call add_element(break,b2,i+1)
       if (i .ne. nlines) then
         call add_element(association,[association(1,i)],i+1)
       else
@@ -131,10 +132,10 @@ subroutine remove_points(nlines,iteration)
 
   !remove points
   i = 1
-  if (nlines > nstart) then !if the number of points isn't too small...
+  if (nlines > nstart .or. sum(endpoints) > 0.5) then !if the number of points isn't too small...
     do while (i <= nlines)
-      if (nlines < nstart) exit
-      if (remove(1,i) > zero) then !if point is flagged to be removed, then remove
+      if (nlines <= nstart .and. sum(endpoints) < 0.5) exit
+      if (remove(1,i) > 0.5) then !if point is flagged to be removed, then remove
         call remove_element(line1,i)
         call remove_element(line2,i)
         call remove_element(add1,i)
@@ -160,7 +161,7 @@ subroutine at_null(nlines,nullnum,nring)
 implicit none
 integer :: nlines
 integer :: nullnum !the null the fan is being drawn from
-integer :: j,k
+integer :: j, k
 double precision :: sep
 integer :: nring
 integer :: icounter
