@@ -119,12 +119,6 @@ program ssfind
     dx = (x(nx)-x(1))/nx
     dy = (y(ny)-y(1))/ny
     dz = (z(nz)-z(1))/nz
-    
-    !print*, x(2:5) - x(1:4)
-    !print*, y(2:5) - y(1:4)
-    !print*, z(2:5) - z(1:4)
-    !print*, x(1:3)
-    !stop
 
   close(10)
 
