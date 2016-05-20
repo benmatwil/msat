@@ -78,12 +78,17 @@ subroutine rk45(r,h)
     double precision :: s
     !print*, 'rk45in'
 
+!print*, "getdl", getdl(r)
+!print*, "1/get", 1/getdl(r)
+!print*, h
     !minimum physical distance corresponding to fraction of gridcell (h)
     mindist = minval(getdl(r))*h
+    !print*, mindist
 
     !vector containing the grid's h for each direction
     !(so h for each direction is the same physical length, equal to mindist)
     hvec = mindist/getdl(r)
+    !print*, hvec
 
     r0 = r
 
@@ -106,13 +111,14 @@ subroutine rk45(r,h)
     z = z1*k1 + z3*k3 + z4*k4 + z5*k5 + z6*k6
 
     !calculate optimum step length (s=hoptimum/h)
-    s = 0.84*(tol/maxval((/modulus(z-y)/)))**0.25
-
+    s = 0.84*(tol/modulus(z-y))**0.25
+    
     if (abs(s*h) .lt. stepmin) then
       s = stepmin/abs(h)
     else if (s .gt. 1.01) then
       s = 1
     endif
+    !print*, s
 
     !integrate by optimum step length
     !r=r0+s*k1
@@ -158,10 +164,13 @@ function getdl(r)
   i = floor(r(1))
   j = floor(r(2))
   k = floor(r(3))
+  !print*, i, j, k
 
   dx1 = x(i+1)-x(i)
   dy1 = y(j+1)-y(j)
   dz1 = z(k+1)-z(k)
+  
+  !print*, dx1, dy1, dz1
 
   xh = x(i) + dx1/2
   yh = y(j) + dy1/2
@@ -180,12 +189,12 @@ function getdl(r)
     getdl(2) = xh*dy1 ! R d(theta)
     getdl(3) = dz1 ! dz
   else
-    print *,'Unknown coordinate system.'
-    print*,'Please select a valid one'
+    print*, 'Unknown coordinate system.'
+    print*, 'Please select a valid one'
     stop
   endif
   
-  getdl = abs(getdl)
+  !getdl = abs(getdl)
 
 end function
 
