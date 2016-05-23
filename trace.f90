@@ -2,10 +2,6 @@ module trace
 use params
 use common
 
-!integration parameters
-
-double precision, parameter :: stepmax = 1 !maximum step length (no longer used)
-
 !rkf45 parameters
 double precision, parameter :: k21 = 0.25
 double precision, parameter :: k31 = 3./32., k32 = 9./32.
@@ -13,7 +9,6 @@ double precision, parameter :: k41 = 1932./2197., k42 = -7200./2197., k43 = 7296
 double precision, parameter :: k51 = 439./216., k52 = -8., k53 = 3680./513., k54 = -845./4104.
 double precision, parameter :: k61 = -8./27., k62 = 2., k63 = -3544./2565., k64 = 1859./4104., k65 = -11./40.
 
-!more rkf45 parameters
 double precision, parameter :: y1 = 25./216., y3 = 1408./2565., y4 = 2197./4101., y5 = -1./5.
 double precision, parameter :: z1 = 16./135., z3 = 6656./12825., z4 = 28561./56430.,z5 = -9./50.,z6 = 2./55.
 
@@ -24,13 +19,13 @@ contains
 subroutine trace_line(r,nsteps,sign,h)
 !traces a line from 'r' for 'nsteps' integration steps in the direction along the line as specified by 'sign'. Each step is of length h
 	double precision :: r(3), r0(3)
-	integer :: nsteps, sign!,traceerror
+	integer :: nsteps, sign
 	double precision :: h, hdum, stepdist
   logical :: out
 
 	stepdist = h
 
-	hdum = 0.
+	hdum = 0
 
   r0 = r
 
@@ -56,57 +51,57 @@ subroutine rk45(r,h)
 !runge-kutta fehlberg integrator. Calculates a 4th order estimate (y) and a
 !fifth order estimate (z) and calculates the difference between them. From this it
 !determines the optimal step length with which to integrate the function by.
-    double precision :: r(3), h, rh(3), hvec(3)
-    double precision,dimension(3) :: k1, k2, k3, k4, k5, k6
-    double precision,dimension(3) :: r0, y, z
+  double precision :: r(3), h, rh(3), hvec(3)
+  double precision,dimension(3) :: k1, k2, k3, k4, k5, k6
+  double precision,dimension(3) :: r0, y, z
 
-    double precision :: mindist
-    double precision :: s
+  double precision :: mindist
+  double precision :: s
 
-    !minimum physical distance corresponding to fraction of gridcell (h)
-    mindist = minval(getdl(r))*h
+  !minimum physical distance corresponding to fraction of gridcell (h)
+  mindist = minval(getdl(r))*h
 
-    !vector containing the grid's h for each direction
-    !(so h for each direction is the same physical length, equal to mindist)
-    hvec = mindist/getdl(r)
+  !vector containing the grid's h for each direction
+  !(so h for each direction is the same physical length, equal to mindist)
+  hvec = mindist/getdl(r)
 
-    r0 = r
+  r0 = r
 
-    !get rk values k1--k6
-    k1 = hvec*normalise(trilinear(r0, bgrid))
-    k2 = hvec*normalise(trilinear(r0 + k21*k1, bgrid))
-    k3 = hvec*normalise(trilinear(r0 + k31*k1 + k32*k2, bgrid))
-    k4 = hvec*normalise(trilinear(r0 + k41*k1 + k42*k2 + k43*k3, bgrid))
-    k5 = hvec*normalise(trilinear(r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4, bgrid))
-    k6 = hvec*normalise(trilinear(r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5, bgrid))
+  !get rk values k1--k6
+  k1 = hvec*normalise(trilinear(r0, bgrid))
+  k2 = hvec*normalise(trilinear(r0 + k21*k1, bgrid))
+  k3 = hvec*normalise(trilinear(r0 + k31*k1 + k32*k2, bgrid))
+  k4 = hvec*normalise(trilinear(r0 + k41*k1 + k42*k2 + k43*k3, bgrid))
+  k5 = hvec*normalise(trilinear(r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4, bgrid))
+  k6 = hvec*normalise(trilinear(r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5, bgrid))
 
-    !get 4th order (y) and 5th order (z) estimates
-    y = y1*k1 + y3*k3 + y4*k4 + y5*k5
-    z = z1*k1 + z3*k3 + z4*k4 + z5*k5 + z6*k6
+  !get 4th order (y) and 5th order (z) estimates
+  y = y1*k1 + y3*k3 + y4*k4 + y5*k5
+  z = z1*k1 + z3*k3 + z4*k4 + z5*k5 + z6*k6
 
-    !calculate optimum step length (s=hoptimum/h)
-    s = 0.84*(tol/modulus(z-y))**0.25
-    
-    if (abs(s*h) < stepmin) then
-      s = stepmin/abs(h)
-    else if (s > 1.01) then
-      s = 1
-    endif
+  !calculate optimum step length (s=hoptimum/h)
+  s = 0.84*(tol/modulus(z-y))**0.25
+  
+  if (abs(s*h) < stepmin) then
+    s = stepmin/abs(h)
+  else if (s > 1.01) then
+    s = 1
+  endif
 
-    k1 = s*hvec*normalise(trilinear(r0, bgrid))
-    k2 = s*hvec*normalise(trilinear(r0 + k21*k1, bgrid))
-    k3 = s*hvec*normalise(trilinear(r0 + k31*k1 + k32*k2, bgrid))
-    k4 = s*hvec*normalise(trilinear(r0 + k41*k1 + k42*k2 + k43*k3, bgrid))
-    k5 = s*hvec*normalise(trilinear(r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4, bgrid))
+  k1 = s*hvec*normalise(trilinear(r0, bgrid))
+  k2 = s*hvec*normalise(trilinear(r0 + k21*k1, bgrid))
+  k3 = s*hvec*normalise(trilinear(r0 + k31*k1 + k32*k2, bgrid))
+  k4 = s*hvec*normalise(trilinear(r0 + k41*k1 + k42*k2 + k43*k3, bgrid))
+  k5 = s*hvec*normalise(trilinear(r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4, bgrid))
 
-    r = r0 + y1*k1 + y3*k3 + y4*k4 + y5*k5
+  r = r0 + y1*k1 + y3*k3 + y4*k4 + y5*k5
 
-    h = h*s
+  h = h*s
 
-    if (modulus(r-r0) < 0.1*h) then
-      print*, 'trace failure',modulus(r-r0),h
-      stop
-    endif
+  if (modulus(r-r0) < 0.1*h) then
+    print*, 'trace failure',modulus(r-r0),h
+    stop
+  endif
 
 end subroutine
 

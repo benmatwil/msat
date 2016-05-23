@@ -68,6 +68,7 @@ program ssfind
     read(10),bgrid(1:nx,1:ny,1:nz,3)
     read(10) x(1:nx), y(1:ny), z(1:nz)
     
+    !copy the grid over for periodicity of coordinate systems
     x(0) = 2*x(1) - x(2) !x,R,r don't repeat
     x(nx+1) = 2*x(nx)-x(nx-1)
     if (coord_type == 3) then !cylindrical
@@ -116,10 +117,6 @@ program ssfind
     zmin = 1
     zmax = nz
 
-    dx = (x(nx)-x(1))/nx
-    dy = (y(ny)-y(1))/ny
-    dz = (z(nz)-z(1))/nz
-
   close(10)
 
   print*, 'Data read in'
@@ -160,7 +157,7 @@ program ssfind
     call get_startpoints(theta,phi,xs,ys,zs)
 
     allocate(line1(3,nlines), line2(3,nlines), add1(3,nlines), add2(3,nlines))
-    allocate(association(1,nlines), break(1,nlines), remove(1,nlines), endpoints(1,nlines))
+    allocate(association(nlines), break(nlines), remove(nlines), endpoints(nlines))
     add1 = 0
     add2 = 0
 
@@ -169,7 +166,7 @@ program ssfind
       line1(1,j) = r(1) + xs(j)
       line1(2,j) = r(2) + ys(j)
       line1(3,j) = r(3) + zs(j)
-      association(:,j) = j
+      association(j) = j
     enddo
     
     line2 = line1
@@ -194,11 +191,11 @@ program ssfind
     write(20) nrings, npoints, ringsmax
     write(20) nperring
     
-    circumference = 0.
+    circumference = 0
 
     exitcondition = .false.
 
-    nringss=0
+    nringss = 0
 
     !$OMP PARALLEL DEFAULT(SHARED)
     do i = 1, ringsmax !loop over number of rings we want
@@ -216,7 +213,7 @@ program ssfind
         add2 = 0
         remove = 0
 
-        write(20) nint(association)
+        write(20) association
         nperring(i) = nlines
 
         ierror = 0
@@ -240,15 +237,15 @@ program ssfind
           line2(:,j) = line2(:,j) + r(:) - line1(:,j)
           call edgecheck(r, out)
           if (out) then !counter to see how many points on ring have reached outer boundary
-            endpoints(:,j) = 1
+            endpoints(j) = 1
           else
-            endpoints(:,j) = 0
+            endpoints(j) = 0
           endif
           !print*, r
           !print*, dist(r,line1(:,j))
           line1(:,j) = r(:)
           
-          association(:,j) = dble(j)
+          association(j) = dble(j)
 
         enddo
       !$OMP END DO
@@ -266,7 +263,7 @@ program ssfind
           circumference(i) = circumference(i) + dist(line2(:,j),line2(:,j-1))
         enddo
 
-        if (sum(endpoints(1,:))/nlines .gt. 0.99) then !exit if all points have reached outer boundary (left box)
+        if (sum(endpoints)/nlines == 1) then !exit if all points have reached outer boundary (left box)
           print*, 'All fan points have reached the outer boundary', i
           exitcondition = .true.
         endif

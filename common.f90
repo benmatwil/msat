@@ -98,69 +98,105 @@ end
 !********************************************************************************
 
 !adds an row (val) to a nx column by ny row array at row number pos
+subroutine add_row(x,vec,pos)
+  implicit none
+  
+  double precision, allocatable, dimension(:,:) :: x, dummy
+  double precision :: vec(:)
+  integer, optional :: pos
+  integer :: nx, ny, position
+
+  nx = size(x,1)
+  ny = size(x,2)
+  
+  if (present(pos)) then
+    position = pos
+  else
+    position = ny+1
+  endif
+
+  dummy = x
+
+  deallocate(x)
+  allocate(x(nx,ny+1))
+
+  x(:,1:position-1) = dummy(:,1:position-1)
+  x(:,position) = vec
+  x(:,position+1:ny+1) = dummy(:,position:ny)
+
+end
+
+!********************************************************************************
+
+!adds an row (val) to a nx column by ny row array at row number pos
 subroutine add_element(x,val,pos)
-    double precision, allocatable, dimension(:,:) :: x
-    double precision :: val(:)
-    double precision, allocatable, dimension(:,:) :: dummy
-    integer :: pos
-    integer :: nx, ny
+  implicit none
+  
+  integer, allocatable, dimension(:) :: x, dummy
+  integer, optional :: pos
+  integer :: nx, ny, position, val
 
-    nx=size(x,1)
-    ny=size(x,2)
+  nx = size(x)
+  
+  if (present(pos)) then
+    position = pos
+  else
+    position = ny+1
+  endif
 
-    allocate(dummy(nx,ny))
+  dummy = x
 
-    dummy=x
+  deallocate(x)
+  allocate(x(nx+1))
 
-    deallocate(x)
-    allocate(x(nx,ny+1))
-
-    if (pos .eq. 1) then
-      x(:,1)=val
-      x(:,2:ny+1)=dummy
-    else if (pos .eq. ny+1 .or. pos .lt. 1) then
-      x(:,1:ny)=dummy
-      x(:,ny+1)=val
-    else
-      x(:,1:pos-1) = dummy(:,1:pos-1)
-      x(:,pos)=val
-      x(:,pos+1:ny+1)=dummy(:,pos:ny)
-    endif
-
-    deallocate(dummy)
+  x(1:position-1) = dummy(1:position-1)
+  x(position) = val
+  x(position+1:nx+1) = dummy(position:nx)
 
 end
 
 !********************************************************************************
 
 !removes row number pos from an array 
+subroutine remove_row(x,pos)
+  implicit none
+  
+  double precision, allocatable, dimension(:,:) :: x, dummy
+  integer :: pos
+  integer :: nx, ny
+
+  nx = size(x,1)
+  ny = size(x,2)
+
+  dummy = x
+
+  deallocate(x)
+  allocate(x(nx,ny-1))
+
+  x(:,1:pos-1) = dummy(:,1:pos-1)
+  x(:,pos:ny-1) = dummy(:,pos+1:ny)
+
+end
+
+!********************************************************************************
+
+!removes element number pos from an array 
 subroutine remove_element(x,pos)
-    double precision, allocatable, dimension(:,:) :: x
-    double precision, allocatable, dimension(:,:) :: dummy
-    integer :: pos
-    integer :: nx, ny
+  implicit none
+  
+  integer, allocatable, dimension(:) :: x, dummy
+  integer :: pos
+  integer :: nx
 
-    nx=size(x,1)
-    ny=size(x,2)
+  nx = size(x)
 
+  dummy = x
 
-    allocate(dummy(nx,ny))
+  deallocate(x)
+  allocate(x(nx-1))
 
-    dummy=x
-
-    deallocate(x)
-    allocate(x(nx,ny-1))
-
-    if (pos .eq. 1) then
-      x(:,1:ny-1)=dummy(:,2:ny)
-    else if (pos .eq. ny) then
-      x(:,1:ny-1)=dummy(:,1:ny-1)
-    else
-      x(:,1:pos-1)=dummy(:,1:pos-1)
-      x(:,pos:ny-1)=dummy(:,pos+1:ny)
-    endif
-
-    deallocate(dummy)
+  x(1:pos-1) = dummy(1:pos-1)
+  x(pos:nx-1) = dummy(pos+1:nx)
 
 end
 

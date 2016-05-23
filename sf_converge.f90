@@ -318,7 +318,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       i = 1
       do while (i <= size(crossfan,2))
         if (modulus(crossfan(:,i)) < 2d-1) then
-          call remove_element(crossfan, i)
+          call remove_vector(crossfan, i)
         else
           crossfan(:,i) = normalise(crossfan(:,i))
           i = i+1
@@ -360,7 +360,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         do while (i <= size(rfanred,2))
           dotprod = abs(dot(maxvec,rfanred(:,i)))
           if (dotprod > 2d-1) then
-            call remove_element(rfanred, i)
+            call remove_vector(rfanred, i)
           else
             i = i+1
           endif

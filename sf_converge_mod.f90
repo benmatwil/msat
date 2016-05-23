@@ -128,7 +128,7 @@ module sfmod_converge
 
   !********************************************************************************
 
-  subroutine remove_element(x,pos)
+  subroutine remove_vector(x,pos)
     implicit none
 
     double precision, allocatable, dimension(:,:) :: x, dummy
@@ -138,24 +138,14 @@ module sfmod_converge
     nx = size(x,1)
     ny = size(x,2)
 
-    allocate(dummy(nx,ny))
-
     dummy = x
 
     deallocate(x)
     allocate(x(nx,ny-1))
     
-    if (pos .eq. 1) then
-      x(:,1:ny-1) = dummy(:,2:ny)
-    else if (pos .eq. ny) then
-      x(:,1:ny-1) = dummy(:,1:ny-1)
-    else
-      x(:,1:pos-1) = dummy(:,1:pos-1)
-      x(:,pos:ny-1) = dummy(:,pos+1:ny)
-    endif
+    x(:,1:pos-1) = dummy(:,1:pos-1)
+    x(:,pos:ny-1) = dummy(:,pos+1:ny)
     
-    deallocate(dummy)
-
   end
   
   !********************************************************************************
@@ -163,9 +153,8 @@ module sfmod_converge
   subroutine add_element(x,val)
     implicit none
 
-    integer, allocatable, dimension(:,:) :: x
+    integer, allocatable, dimension(:,:) :: x, dummy
     integer :: val
-    integer, allocatable, dimension(:,:) :: dummy
     integer :: nx, ny
 
     nx = size(x,1)
@@ -180,8 +169,6 @@ module sfmod_converge
 
     x(:,1:ny) = dummy
     x(:,ny+1) = val
-
-    deallocate(dummy)
 
   end
 
@@ -207,7 +194,7 @@ module sfmod_converge
       nclosei = 0
       do while (j < n+1)
         if (modulus(vecarray(:,i)-vecarray(:,j)) < accur) then
-          call remove_element(vecarray,j)
+          call remove_vector(vecarray,j)
           n = size(vecarray,2)
           nclosei = nclosei + 1
         else

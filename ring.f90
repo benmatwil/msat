@@ -13,8 +13,8 @@ integer, parameter :: nstart = 100 !number of startpoints in ring
 
 double precision, parameter :: mindist1 = maxdist1/4.d0 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
 
-double precision, allocatable, dimension(:,:) :: line1, line2, add1, add2, remove, endpoints
-double precision, allocatable, dimension(:,:) :: break, association
+double precision, allocatable, dimension(:,:) :: line1, line2, add1, add2
+integer, allocatable, dimension(:) :: break, association, remove, endpoints
 
 contains
 
@@ -39,7 +39,7 @@ subroutine add_points(nlines,iteration)
   add2 = 0
 
   do i = 1, nlines !loop over each point in ring
-    if (break(1,i) < 0.5) then
+    if (break(i) == 0) then
       if (i < nlines) then !if not the last point
         j = i+1
       else
@@ -64,17 +64,17 @@ subroutine add_points(nlines,iteration)
     i = i+1
     if (modulus(add1(:,i)) > 0) then !if add(:,i) is not zero..
       !print*, 'point has to be added to',i
-      call add_element(line1,add1(:,i),i+1) !add elements to every array
-      call add_element(line2,add2(:,i),i+1)
-      call add_element(add1,b1,i+1)
-      call add_element(add2,b1,i+1)
-      call add_element(endpoints,b2,i+1)
-      call add_element(remove,b2,i+1)
-      call add_element(break,b2,i+1)
+      call add_row(line1,add1(:,i),i+1) !add elements to every array
+      call add_row(line2,add2(:,i),i+1)
+      call add_row(add1,b1,i+1)
+      call add_row(add2,b1,i+1)
+      call add_element(endpoints,0,i+1)
+      call add_element(remove,0,i+1)
+      call add_element(break,0,i+1)
       if (i /= nlines) then
-        call add_element(association,[association(1,i)],i+1)
+        call add_element(association,association(i),i+1)
       else
-        call add_element(association,[1.d0],i+1)
+        call add_element(association,1,i+1)
       endif
       i = i+1
       nlines = nlines+1
@@ -104,38 +104,34 @@ subroutine remove_points(nlines,iteration)
   remove = 0
 
   do i = 1, nlines !loop over all points
-    if (break(1,i) < 0.5) then
+    if (break(i) == 0) then
       if (i < nlines) then !if not end point
         j = i+1
       else
         j = 1
       endif
-      if (dist(line2(:,i),line2(:,j)) < mindist) then !if i and i+1 are too close
-        if (i /= 1) then
-          if (remove(1,i-1) < 0.5) remove(:,i) = 1 !flag this point to be removed, only if adjacent hasn't been flagged
-        endif
-      endif
+      if (dist(line2(:,i),line2(:,j)) < mindist .and. i /= 1 .and. remove(i-1) == 0) remove(i) = 1 !if i and i+1 are too close
     endif
-    if (endpoints(1,i) > 0.5) then !remove points that have left the simulation
-      remove(:,i) = 1
+    if (endpoints(i) == 1) then !remove points that have left the simulation
+      remove(i) = 1
       if (i /= 1) then
-        break(:,i-1) = 1
+        break(i-1) = 1
       else
-        break(:,nlines) = 1
+        break(nlines) = 1
       endif
     endif
   enddo
 
   !remove points
   i = 1
-  if (nlines > nstart .or. sum(endpoints) > 0.5) then !if the number of points isn't too small...
+  if (nlines > nstart .or. sum(endpoints) > 0) then !if the number of points isn't too small...
     do while (i <= nlines)
-      if (nlines <= nstart .and. sum(endpoints) < 0.5) exit
-      if (remove(1,i) > 0.5) then !if point is flagged to be removed, then remove
-        call remove_element(line1,i)
-        call remove_element(line2,i)
-        call remove_element(add1,i)
-        call remove_element(add2,i)
+      if (nlines <= nstart .and. sum(endpoints) == 0) exit
+      if (remove(i) == 1) then !if point is flagged to be removed, then remove
+        call remove_row(line1,i)
+        call remove_row(line2,i)
+        call remove_row(add1,i)
+        call remove_row(add2,i)
         call remove_element(endpoints,i)
         call remove_element(remove,i)
         call remove_element(association,i)
@@ -225,7 +221,7 @@ do j = 1, nlines !loop over all points in ring
         enddo
         
         !check which side of the null the points end out on (need to know the spine vector of the null)
-        if (dot(spines(:,k),r(:,index)-rnulls(:,k)) > 0.) then
+        if (dot(spines(:,k),r(:,index)-rnulls(:,k)) > 0) then
           signof(index) = 1
         else
           signof(index) = -1
@@ -264,7 +260,7 @@ do j = 1, nlines !loop over all points in ring
       do index = backindex+1, frontindex
         if (signof(backindex)*signof(index) == -1) then
 !           print*, 'separator at index:',index-1
-          break(1,index-1) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
+          break(index-1) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
           nseps = nseps+1
 
           !write the point's information to the separator file
