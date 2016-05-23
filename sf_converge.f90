@@ -310,8 +310,10 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       ! find the cross product of one vector with every otherwise
       ! well converged ring if all cross products are all the same point
       allocate(crossfan(3,nfanchk-1))
-      do i = 2, nfanchk
-        crossfan(:,i-1) = cross(rfanchk(:,1),rfanchk(:,i))
+      j = maxval(maxloc(densepos))
+      do i = 1, nfanchk !perhaps change this to maxval(densepos) as chosen vector
+        if (i < j) crossfan(:,i) = cross(rfanchk(:,j),rfanchk(:,i))
+        if (i > j) crossfan(:,i-1) = cross(rfanchk(:,j),rfanchk(:,i))
       enddo
       i = 1
       do while (i <= size(crossfan,2))
