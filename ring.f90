@@ -24,15 +24,13 @@ subroutine add_points(nlines,iteration)
   
   integer :: nlines
   integer :: i, j
-  double precision :: mindist, maxdist
+  double precision :: maxdist
   integer, intent(in) :: iteration
   double precision :: b1(3), b2(1)
 
   if (iteration < 100) then !if close-in to the starting null we want smaller max/min separations
-    mindist = mindist1*0.05
     maxdist = maxdist1*0.05
   else
-    mindist = mindist1
     maxdist = maxdist1
   endif
 
@@ -42,12 +40,12 @@ subroutine add_points(nlines,iteration)
 
   do i = 1, nlines !loop over each point in ring
     if (break(1,i) < 0.5) then
-      if (i .lt. nlines) then !if not the last point
+      if (i < nlines) then !if not the last point
         j = i+1
       else
         j = 1
       endif
-      if (dist(line2(:,i),line2(:,j)) .gt. maxdist) then !if two adjacent points too far away
+      if (dist(line2(:,i),line2(:,j)) > maxdist) then !if two adjacent points too far away
         add1(:,i) = line1(:,i) + 0.5*(line2(:,j)-line2(:,i)) !add point half way between two points
         add2(:,i) = line2(:,i) + 0.5*(line2(:,j)-line2(:,i))
       else
@@ -62,9 +60,9 @@ subroutine add_points(nlines,iteration)
   i = 0
   b1 = [0d0,0d0,0d0]
   b2 = [0d0]
-  do while (i .lt. nlines)
+  do while (i < nlines)
     i = i+1
-    if (modulus(add1(:,i)) .gt. 0) then !if add(:,i) is not zero..
+    if (modulus(add1(:,i)) > 0) then !if add(:,i) is not zero..
       !print*, 'point has to be added to',i
       call add_element(line1,add1(:,i),i+1) !add elements to every array
       call add_element(line2,add2(:,i),i+1)
@@ -73,7 +71,7 @@ subroutine add_points(nlines,iteration)
       call add_element(endpoints,b2,i+1)
       call add_element(remove,b2,i+1)
       call add_element(break,b2,i+1)
-      if (i .ne. nlines) then
+      if (i /= nlines) then
         call add_element(association,[association(1,i)],i+1)
       else
         call add_element(association,[1.d0],i+1)
@@ -93,15 +91,13 @@ subroutine remove_points(nlines,iteration)
   integer :: nlines
   integer :: i, j
   integer, intent(in) :: iteration
-  double precision :: mindist, maxdist
+  double precision :: mindist
 
 
   if (iteration < 100) then
     mindist = mindist1*0.05
-    maxdist = maxdist1*0.05
   else
     mindist = mindist1
-    maxdist = maxdist1
   endif
 
   !check for too tightly spaced points, flag points to be removed
@@ -109,12 +105,12 @@ subroutine remove_points(nlines,iteration)
 
   do i = 1, nlines !loop over all points
     if (break(1,i) < 0.5) then
-      if (i .lt. nlines) then !if not end point
+      if (i < nlines) then !if not end point
         j = i+1
       else
         j = 1
       endif
-      if (dist(line2(:,i),line2(:,j)) .lt. mindist) then !if i and i+1 are too close
+      if (dist(line2(:,i),line2(:,j)) < mindist) then !if i and i+1 are too close
         if (i /= 1) then
           if (remove(1,i-1) < 0.5) remove(:,i) = 1 !flag this point to be removed, only if adjacent hasn't been flagged
         endif
@@ -122,7 +118,7 @@ subroutine remove_points(nlines,iteration)
     endif
     if (endpoints(1,i) > 0.5) then !remove points that have left the simulation
       remove(:,i) = 1
-      if (i .ne. 1) then
+      if (i /= 1) then
         break(:,i-1) = 1
       else
         break(:,nlines) = 1
@@ -185,19 +181,19 @@ signof = 0
 
 do j = 1, nlines !loop over all points in ring
   do k = 1, nnulls !loop over all nulls
-    if (k .eq. nullnum) cycle !ignore the null the points belong to
-    if (signs(k)*signs(nullnum) .eq. 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
+    if (k == nullnum) cycle !ignore the null the points belong to
+    if (signs(k)*signs(nullnum) == 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
     seps = 0
     sep = dist(line1(:,j),rnulls(:,k))
 
-    if (sep .lt. nulldist) then !point lies within nulldist
+    if (sep < nulldist) then !point lies within nulldist
 !       print*, 'AT NULL number',k,'index',j,'sep=',sep
 
       r(:,j) = line1(:,j) !write new dummy array (is it really needed?)
 
       ! check for neighbouring points that lie within 3*nulldist
       do backindex = j-1, 0, -1 !previous points
-        if (dist(line1(:,backindex),rnulls(:,k)) .lt. 3*nulldist) then
+        if (dist(line1(:,backindex),rnulls(:,k)) < 3*nulldist) then
           r(:,backindex) = line1(:,backindex)
 !           print*,j,backindex,dist(line(:,backindex),rnulls(:,k))
         else
@@ -205,7 +201,7 @@ do j = 1, nlines !loop over all points in ring
         endif
       enddo
       do frontindex = j+1, nlines, 1 !following points
-        if (dist(line1(:,frontindex), rnulls(:,k)) .lt. 3*nulldist) then
+        if (dist(line1(:,frontindex), rnulls(:,k)) < 3*nulldist) then
           r(:,frontindex) = line1(:,frontindex)
 !           print*,j,frontindex,dist(line(:,frontindex),rnulls(:,k))
         else
@@ -220,17 +216,16 @@ do j = 1, nlines !loop over all points in ring
       do index = backindex, frontindex
         sep = 0
         iters = 0
-        do while (sep .lt. 3*nulldist)
+        do while (sep < 3*nulldist .and. iters < 1000)
           h = 0.01
           call trace_line(r(:,index),1,signs(nullnum),h)
           call edgecheck(r(:,index))
           sep = dist(r(:,index),rnulls(:,k))
           iters = iters+1
-          if (iters .gt. 1000) exit
         enddo
         
         !check which side of the null the points end out on (need to know the spine vector of the null)
-        if (dot(spines(:,k),r(:,index)-rnulls(:,k)) .gt. 0.) then
+        if (dot(spines(:,k),r(:,index)-rnulls(:,k)) > 0.) then
           signof(index) = 1
         else
           signof(index) = -1
@@ -244,7 +239,7 @@ do j = 1, nlines !loop over all points in ring
         r1 = normalise(r(:,backindex)-rnulls(:,k))
         r2 = normalise(r(:,index)-rnulls(:,k))
 
-        if (dot(r1,r2) .gt. 0.) then
+        if (dot(r1,r2) > 0.) then
           signof(index) = 1
         else
           signof(index) = -1
@@ -263,11 +258,11 @@ do j = 1, nlines !loop over all points in ring
       breakpos = maxloc(seps,1)
 
       ! signof(1:breakpos) = 1
-      ! signof(breakpos+1:nlines)=-1
+      ! signof(breakpos+1:nlines) = -1
 
       !determine the index where the index+1th point goes to the other side of the null
       do index = backindex+1, frontindex
-        if (signof(backindex)*signof(index) .eq. -1) then
+        if (signof(backindex)*signof(index) == -1) then
 !           print*, 'separator at index:',index-1
           break(1,index-1) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
           nseps = nseps+1

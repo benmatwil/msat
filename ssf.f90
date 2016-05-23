@@ -191,7 +191,7 @@ program ssfind
 
     nperring = 0
 
-    write(20) nrings, npoints,ringsmax
+    write(20) nrings, npoints, ringsmax
     write(20) nperring
     
     circumference = 0.
@@ -256,7 +256,7 @@ program ssfind
       !$OMP SINGLE
         write(20), line1
 
-        if (nlines .gt. pointsmax) then !exit if too many points on ring
+        if (nlines > pointsmax) then !exit if too many points on ring
           print*, 'Too many points on ring', nlines, i
           exitcondition = .true.
         endif
@@ -270,14 +270,14 @@ program ssfind
           print*, 'All fan points have reached the outer boundary', i
           exitcondition = .true.
         endif
-        if (i .gt. 1)  then
+        if (i > 1)  then
           if (abs(circumference(i)-circumference(i-1)) .lt. 0.1*stepmin) then
             print*, 'Fan has stopped growing', i
             exitcondition = .true.
           endif
         endif
 
-        if (ierror .eq. 1) then
+        if (ierror == 1) then
           print*, 'Tracing has failed',i
           exitcondition = .true.
         endif

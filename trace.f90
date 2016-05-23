@@ -31,36 +31,22 @@ subroutine trace_line(r,nsteps,sign,h)
 	stepdist = h
 
 	hdum = 0.
-  
-  if (abs(sign) .ne. 1) then
-    print*, 'sign=',sign
-    print*, 'no sign information. ERROR'
-    print*, 'trace.f90'
-    stop
-  endif
-  !stepdist=0.5
 
   r0 = r
 
-	do while (hdum .lt. stepdist)
-	  !h=stepstart*sign
+	do while (hdum < stepdist)
 	  h = sign*(stepdist-hdum)
 	  call rk45(r,h)
-    !if (outedge(r)) exit
 	  hdum = hdum + abs(h)
-	  !print*,stepdist,hdum
-	  !print*,i,h,r
 	enddo
 
-	if (modulus(r-r0) .lt. 0.1*stepdist) then
+	if (modulus(r-r0) < 0.1*stepdist) then
 	!  print *,'field line not tracing',modulus(r-r0),stepdist
 	!  print *, r
  	!  print*, r0
  	  ierror=0
 	  !stop
 	endif
-
-   ! if (edge(r)) print *, 'reached outer boundary'
 
 end
 
@@ -76,35 +62,23 @@ subroutine rk45(r,h)
 
     double precision :: mindist
     double precision :: s
-    !print*, 'rk45in'
 
-!print*, "getdl", getdl(r)
-!print*, "1/get", 1/getdl(r)
-!print*, h
     !minimum physical distance corresponding to fraction of gridcell (h)
     mindist = minval(getdl(r))*h
-    !print*, mindist
 
     !vector containing the grid's h for each direction
     !(so h for each direction is the same physical length, equal to mindist)
     hvec = mindist/getdl(r)
-    !print*, hvec
 
     r0 = r
 
     !get rk values k1--k6
     k1 = hvec*normalise(trilinear(r0, bgrid))
-    !print*, r0
     k2 = hvec*normalise(trilinear(r0 + k21*k1, bgrid))
-    !print*, r0 + k21*k1
     k3 = hvec*normalise(trilinear(r0 + k31*k1 + k32*k2, bgrid))
-    !print*, r0 + k31*k1 + k32*k2
     k4 = hvec*normalise(trilinear(r0 + k41*k1 + k42*k2 + k43*k3, bgrid))
-    !print*, r0 + k41*k1 + k42*k2 + k43*k3
     k5 = hvec*normalise(trilinear(r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4, bgrid))
-    !print*, r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
     k6 = hvec*normalise(trilinear(r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5, bgrid))
-    !print*, r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5
 
     !get 4th order (y) and 5th order (z) estimates
     y = y1*k1 + y3*k3 + y4*k4 + y5*k5
@@ -113,38 +87,23 @@ subroutine rk45(r,h)
     !calculate optimum step length (s=hoptimum/h)
     s = 0.84*(tol/modulus(z-y))**0.25
     
-    if (abs(s*h) .lt. stepmin) then
+    if (abs(s*h) < stepmin) then
       s = stepmin/abs(h)
-    else if (s .gt. 1.01) then
+    else if (s > 1.01) then
       s = 1
     endif
-    !print*, s
-
-    !integrate by optimum step length
-    !r=r0+s*k1
-    !r=r0+s*z
-    !if (abs(h) .lt. 0.1) print*,k1
 
     k1 = s*hvec*normalise(trilinear(r0, bgrid))
     k2 = s*hvec*normalise(trilinear(r0 + k21*k1, bgrid))
     k3 = s*hvec*normalise(trilinear(r0 + k31*k1 + k32*k2, bgrid))
     k4 = s*hvec*normalise(trilinear(r0 + k41*k1 + k42*k2 + k43*k3, bgrid))
     k5 = s*hvec*normalise(trilinear(r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4, bgrid))
-    !k6=s*h*normalise(trilinear(r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5 ,bgrid))
 
     r = r0 + y1*k1 + y3*k3 + y4*k4 + y5*k5
 
-    !integrate by optimum steplength using midpoint method
-    !rh = r0 + 0.5*s*k1 !half point
     h = h*s
 
-    !print*,h
-    !r=r0+h*normalise(trilinear(rh,bgrid))
-    !print*, trilinear(rh,bgrid),'rk45'
-
-    !r=r0+s*(y-r0)
-
-    if (modulus(r-r0) .lt. 0.1*h) then
+    if (modulus(r-r0) < 0.1*h) then
       print*, 'trace failure',modulus(r-r0),h
       stop
     endif
@@ -164,29 +123,26 @@ function getdl(r)
   i = floor(r(1))
   j = floor(r(2))
   k = floor(r(3))
-  !print*, i, j, k
 
   dx1 = x(i+1)-x(i)
   dy1 = y(j+1)-y(j)
   dz1 = z(k+1)-z(k)
   
-  !print*, dx1, dy1, dz1
-
   xh = x(i) + dx1/2
   yh = y(j) + dy1/2
   zh = z(k) + dz1/2
 
-  if (coord_type .eq. 1) then !Cartesian coordinates
+  if (coord_type == 1) then !Cartesian coordinates
     getdl(1) = dx1
     getdl(2) = dy1
     getdl(3) = dz1
-  else if (coord_type .eq. 2) then !spherical coordinates
+  else if (coord_type == 2) then !spherical coordinates
     getdl(1) = dx1 ! dr
     getdl(2) = xh*dy1 ! r d(theta)
     getdl(3) = xh*sin(yh)*dz1 ! r sin(theta) d(phi)
-  else if (coord_type .eq. 3) then !cylindrical coordinates
+  else if (coord_type == 3) then !cylindrical coordinates
     getdl(1) = dx1 ! dR
-    getdl(2) = xh*dy1 ! R d(theta)
+    getdl(2) = xh*dy1 ! R d(phi)
     getdl(3) = dz1 ! dz
   else
     print*, 'Unknown coordinate system.'
@@ -194,8 +150,6 @@ function getdl(r)
     stop
   endif
   
-  !getdl = abs(getdl)
-
 end function
 
 end module
