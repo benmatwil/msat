@@ -153,130 +153,102 @@ subroutine at_null(nlines,nullnum,nring)
 implicit none
 integer :: nlines
 integer :: nullnum !the null the fan is being drawn from
-integer :: j, k
-double precision :: sep
+integer :: i, j, k
 integer :: nring
-integer :: icounter
 
 double precision :: h
 
-double precision :: r(3,nlines)
-integer :: backindex,frontindex,index,iters
-integer :: signof(nlines)
-integer :: idx
+double precision, allocatable :: r(:,:)
+integer :: close(nlines), maxcount(2)
+integer :: index, count, nr
+integer, allocatable :: signof(:)
 
-double precision :: r1(3), r2(3)
+close = 0
 
-double precision :: seps(nlines-1)
-
-integer :: breakpos
-
-nnulls = size(rnulls,2)
-
-signof = 0
-
-do j = 1, nlines !loop over all points in ring
-  do k = 1, nnulls !loop over all nulls
-    if (k == nullnum) cycle !ignore the null the points belong to
-    if (signs(k)*signs(nullnum) == 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
-    seps = 0
-    sep = dist(line1(:,j),rnulls(:,k))
-
-    if (sep < nulldist) then !point lies within nulldist
-!       print*, 'AT NULL number',k,'index',j,'sep=',sep
-
-      r(:,j) = line1(:,j) !write new dummy array (is it really needed?)
-
-      ! check for neighbouring points that lie within 3*nulldist
-      do backindex = j-1, 0, -1 !previous points
-        if (dist(line1(:,backindex),rnulls(:,k)) < 3*nulldist) then
-          r(:,backindex) = line1(:,backindex)
-!           print*,j,backindex,dist(line(:,backindex),rnulls(:,k))
-        else
-          exit
-        endif
-      enddo
-      do frontindex = j+1, nlines, 1 !following points
-        if (dist(line1(:,frontindex), rnulls(:,k)) < 3*nulldist) then
-          r(:,frontindex) = line1(:,frontindex)
-!           print*,j,frontindex,dist(line(:,frontindex),rnulls(:,k))
-        else
-          exit
-        endif
-      enddo
-
-      backindex = backindex+1
-      frontindex = frontindex-1
-
-      !integrate points forward until they have all left the null
-      do index = backindex, frontindex
-        sep = 0
-        iters = 0
-        do while (sep < 3*nulldist .and. iters < 1000)
-          h = 0.01
-          call trace_line(r(:,index),1,signs(nullnum),h)
-          call edgecheck(r(:,index))
-          sep = dist(r(:,index),rnulls(:,k))
-          iters = iters+1
-        enddo
-        
-        !check which side of the null the points end out on (need to know the spine vector of the null)
-        if (dot(spines(:,k),r(:,index)-rnulls(:,k)) > 0) then
-          signof(index) = 1
-        else
-          signof(index) = -1
-        endif
-  !     print*,j,index,signof(index),iters
-      enddo
-
-
-      !no knowledge of spine needed for this method of finding 'split' around null
-      do index = backindex, frontindex
-        r1 = normalise(r(:,backindex)-rnulls(:,k))
-        r2 = normalise(r(:,index)-rnulls(:,k))
-
-        if (dot(r1,r2) > 0.) then
-          signof(index) = 1
-        else
-          signof(index) = -1
-        endif
-      enddo
-
-
-      !an alternative method (guaranteed to find 1 break point)
-      seps = 0
-      do index = backindex, frontindex-1
-        r1 = normalise(r(:,index)-rnulls(:,k))
-        r2 = normalise(r(:,index+1)-rnulls(:,k))
-        seps(index) = modulus(r1-r2)
-      enddo
-
-      breakpos = maxloc(seps,1)
-
-      ! signof(1:breakpos) = 1
-      ! signof(breakpos+1:nlines) = -1
-
-      !determine the index where the index+1th point goes to the other side of the null
-      do index = backindex+1, frontindex
-        if (signof(backindex)*signof(index) == -1) then
-!           print*, 'separator at index:',index-1
-          break(index-1) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
-          nseps = nseps+1
-
-          !write the point's information to the separator file
-          write(12) 1
-          write(12) nullnum, k
-          write(12) nring, index-1
-
-!          print*,'position of sep',line(:,index-1)
-          do idx = backindex, frontindex
-            line1(:,idx) = r(:,idx) !check line
-          enddo
-          exit
-        endif
-      enddo
-    endif
+do i = 1, size(rnulls,2)
+  if (i == nullnum) cycle !ignore the null the points belong to
+  if (signs(i)*signs(nullnum) == 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
+  do j = 1, nlines
+    !sep = dist(line1(:,j),rnulls(:,i))
+    if (dist(line1(:,j),rnulls(:,i)) < nulldist) close(j) = j !point lies within nulldist
   enddo
+
+  if (maxval(close) > 0) then
+    count = 0
+    maxcount = [0,0]
+    nr = nlines
+    k = 0
+    do while (k <= nr)
+      if (close(k) == 0) count = count + 1
+      if (close(k) /= 0) then
+        if (count > maxcount(1)) maxcount = [count,k-1]
+        count = 0
+      endif
+      if (k == nlines) then
+        if (close(1) == 0 .and. close(nlines) == 0) then
+          k = 1
+          nr = 1
+        else
+          k = k + 1
+        endif
+      elseif (nr /= nlines) then
+        if (close(k+1) == 0) then
+          nr = nr + 1
+          k = k + 1
+        else
+          k = k + 1
+        endif
+      else
+        k = k + 1
+      endif
+    enddo
+    
+    nr = size(line1,2)-maxcount(1)
+    if (allocated(r)) deallocate(r)
+    if (maxcount(2) - maxcount(1) >= 1) then !biggest gap is not contained in array
+      allocate(r(3,nr))
+      r(:,1:nlines-maxcount(2)) = line1(:,maxcount(2)+1:nlines)
+      r(:,nlines-maxcount(2)+1:nr) = line1(:,1:maxcount(2)-maxcount(1))
+    else
+      r = line1(:,maxcount(2)+1:nr+maxcount(2))
+    endif
+    
+    if (allocated(signof)) deallocate(signof)
+    allocate(signof(nr))
+    signof = 0
+    do index = 1, nr
+      !sep = 0
+      count = 0
+      do while (dist(r(:,index),rnulls(:,k)) < 3*nulldist .and. count < 1000)
+        h = 0.01
+        call trace_line(r(:,index),1,signs(nullnum),h)
+        call edgecheck(r(:,index))
+        !sep = dist(r(:,index),rnulls(:,k))
+        count = count+1
+      enddo
+      
+      !check which side of the null the points end out on
+      if (dot(spines(:,k),r(:,index)-rnulls(:,k)) > 0) then
+        signof(index) = 1
+      else
+        signof(index) = -1
+      endif
+    enddo
+    
+    do index = 2, nr
+      if (signof(1)*signof(index) == -1) then
+        break(mod(index-1+maxcount(2),nlines)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
+        nseps = nseps+1
+
+        !write the point's information to the separator file
+        write(12) 1
+        write(12) nullnum, i
+        write(12) nring, mod(index-1+maxcount(2),nlines)
+
+        exit
+      endif
+    enddo
+  endif
 enddo
 
 end subroutine

@@ -245,7 +245,7 @@ program ssfind
           !print*, dist(r,line1(:,j))
           line1(:,j) = r(:)
           
-          association(j) = dble(j)
+          association(j) = j
 
         enddo
       !$OMP END DO

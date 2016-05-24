@@ -18,30 +18,30 @@ contains
 
 subroutine trace_line(r,nsteps,sign,h)
 !traces a line from 'r' for 'nsteps' integration steps in the direction along the line as specified by 'sign'. Each step is of length h
-	double precision :: r(3), r0(3)
-	integer :: nsteps, sign
-	double precision :: h, hdum, stepdist
-  logical :: out
+  double precision :: r(3), r0(3)
+  integer :: nsteps, sign
+  double precision :: h, hdum, stepdist
+  !logical :: out
 
-	stepdist = h
+  stepdist = h
 
-	hdum = 0
+  hdum = 0
 
   r0 = r
 
-	do while (hdum < stepdist)
-	  h = sign*(stepdist-hdum)
-	  call rk45(r,h)
-	  hdum = hdum + abs(h)
-	enddo
+  do while (hdum < stepdist)
+    h = sign*(stepdist-hdum)
+    call rk45(r,h)
+    hdum = hdum + abs(h)
+  enddo
 
-	if (modulus(r-r0) < 0.1*stepdist) then
-	!  print *,'field line not tracing',modulus(r-r0),stepdist
-	!  print *, r
- 	!  print*, r0
- 	  ierror=0
-	  !stop
-	endif
+  if (modulus(r-r0) < 0.1*stepdist) then
+  !  print *,'field line not tracing',modulus(r-r0),stepdist
+  !  print *, r
+   !  print*, r0
+     ierror=0
+    !stop
+  endif
 
 end
 
@@ -51,7 +51,7 @@ subroutine rk45(r,h)
 !runge-kutta fehlberg integrator. Calculates a 4th order estimate (y) and a
 !fifth order estimate (z) and calculates the difference between them. From this it
 !determines the optimal step length with which to integrate the function by.
-  double precision :: r(3), h, rh(3), hvec(3)
+  double precision :: r(3), h, hvec(3)
   double precision,dimension(3) :: k1, k2, k3, k4, k5, k6
   double precision,dimension(3) :: r0, y, z
 
@@ -110,7 +110,7 @@ end subroutine
 function getdl(r)
   !outputs length of one gridcell in 'physical' length units (essentially (dx,dy,dz))
   double precision :: r(3) !grid cell number
-  double precision :: dx1, dy1, dz1, x1, y1, z1
+  double precision :: dx1, dy1, dz1
   double precision :: getdl(3)
   integer :: i, j, k
   double precision :: xh, yh, zh !x, y and z at the midpoint of the cell

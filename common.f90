@@ -32,7 +32,6 @@ function trilinear(r,b)
   double precision :: trilinear(3)
   integer :: nx, ny, nz
   integer :: dims
-  integer :: nxpoints, nypoints, nzpoints
   
   xp = r(1)
   yp = r(2)
@@ -109,6 +108,8 @@ subroutine add_row(x,vec,pos)
   nx = size(x,1)
   ny = size(x,2)
   
+  !print*, vec, pos, nx, ny
+  
   if (present(pos)) then
     position = pos
   else
@@ -128,30 +129,32 @@ end
 
 !********************************************************************************
 
-!adds an row (val) to a nx column by ny row array at row number pos
+!adds an element (val) to a nx array at element number pos
 subroutine add_element(x,val,pos)
   implicit none
   
   integer, allocatable, dimension(:) :: x, dummy
   integer, optional :: pos
-  integer :: nx, ny, position, val
+  integer :: nx, position, val
 
   nx = size(x)
+  !print*, nx, val, pos
   
   if (present(pos)) then
     position = pos
   else
-    position = ny+1
+    position = nx+1
   endif
-
+  
   dummy = x
-
+  
   deallocate(x)
   allocate(x(nx+1))
-
+  
   x(1:position-1) = dummy(1:position-1)
   x(position) = val
   x(position+1:nx+1) = dummy(position:nx)
+  !print*, nx, val, pos
 
 end
 
