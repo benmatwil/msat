@@ -221,7 +221,7 @@ do i = 1, size(rnulls,2)
       !interpolate points along fieldlines
       count = 0
       do while (dist(r(:,index),rnulls(:,k)) < 3*nulldist .and. count < 1000)
-        h = 0.01
+        h = 1d-2
         call trace_line(r(:,index),1,signs(nullnum),h)
         call edgecheck(r(:,index))
         count = count+1
