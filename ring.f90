@@ -168,12 +168,13 @@ close = 0
 do i = 1, size(rnulls,2)
   if (i == nullnum) cycle !ignore the null the points belong to
   if (signs(i)*signs(nullnum) == 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
+  ! first find all points that lie within nulldist and note their index
   do j = 1, nlines
-    !sep = dist(line1(:,j),rnulls(:,i))
     if (dist(line1(:,j),rnulls(:,i)) < nulldist) close(j) = j !point lies within nulldist
   enddo
 
-  if (maxval(close) > 0) then
+  if (maxval(close) > 0) then !if there are any points that lie within this distance
+    ! find the longest consectutive number of points not near to the null (should be more not near another null)
     count = 0
     maxcount = [0,0]
     nr = nlines
@@ -203,8 +204,8 @@ do i = 1, size(rnulls,2)
       endif
     enddo
     
+    !select all points not in this longest chain to be tested for change in side of the fan
     nr = size(line1,2)-maxcount(1)
-    if (allocated(r)) deallocate(r)
     if (maxcount(2) - maxcount(1) >= 1) then !biggest gap is not contained in array
       allocate(r(3,nr))
       r(:,1:nlines-maxcount(2)) = line1(:,maxcount(2)+1:nlines)
@@ -213,17 +214,16 @@ do i = 1, size(rnulls,2)
       r = line1(:,maxcount(2)+1:nr+maxcount(2))
     endif
     
-    if (allocated(signof)) deallocate(signof)
+    
     allocate(signof(nr))
     signof = 0
     do index = 1, nr
-      !sep = 0
+      !interpolate points along fieldlines
       count = 0
       do while (dist(r(:,index),rnulls(:,k)) < 3*nulldist .and. count < 1000)
         h = 0.01
         call trace_line(r(:,index),1,signs(nullnum),h)
         call edgecheck(r(:,index))
-        !sep = dist(r(:,index),rnulls(:,k))
         count = count+1
       enddo
       
@@ -233,21 +233,23 @@ do i = 1, size(rnulls,2)
       else
         signof(index) = -1
       endif
-    enddo
-    
-    do index = 2, nr
-      if (signof(1)*signof(index) == -1) then
-        break(mod(index-1+maxcount(2),nlines)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
-        nseps = nseps+1
+      
+      !if theres a change in sign, theres the separator
+      if (index /= 1) then
+        if (signof(index-1)*signof(index) == -1) then
+          break(mod(index-1+maxcount(2),nlines)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
+          nseps = nseps+1
 
-        !write the point's information to the separator file
-        write(12) 1
-        write(12) nullnum, i
-        write(12) nring, mod(index-1+maxcount(2),nlines)
+          !write the point's information to the separator file
+          write(12) 1
+          write(12) nullnum, i
+          write(12) nring, mod(index-1+maxcount(2),nlines)
 
-        exit
+          exit
+        endif
       endif
     enddo
+    deallocate(r, signof)
   endif
 enddo
 
