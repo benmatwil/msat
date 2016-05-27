@@ -6,6 +6,7 @@ implicit none
 
 character (len=30) :: intfmt = "(a,'(',i4,',',i4,',',i4')',a)"
 character (len=40) :: dblfmt= "(a,'(',f9.5,',',f9.5,',',f9.5,')',a)"
+character (len=100) :: arg
 
 double precision, allocatable, dimension(:) :: xs, ys, zs !x,y and z coordinates of confirmed nulls
 double precision, allocatable, dimension(:) :: xp,yp,zp
@@ -48,6 +49,15 @@ print*,'#######################################################################'
 ! by(nx,ny,nz) (double precision)
 ! bz(nx,ny,nz) (double precision)
 
+if (command_argument_count() > 0) then 
+  do i = 1, command_argument_count()
+    call get_command_argument(i,arg)
+    if (arg(1:2) == 'f=') then
+      filename = arg(3:)
+    endif
+  enddo
+endif
+print*, filename
 
 open (unit=10,file=filename,access='stream')
 

@@ -51,19 +51,18 @@ subroutine rk45(r,h)
 !runge-kutta fehlberg integrator. Calculates a 4th order estimate (y) and a
 !fifth order estimate (z) and calculates the difference between them. From this it
 !determines the optimal step length with which to integrate the function by.
-  double precision :: r(3), h, hvec(3)
-  double precision,dimension(3) :: k1, k2, k3, k4, k5, k6
-  double precision,dimension(3) :: r0, y, z
-
-  double precision :: mindist
-  double precision :: s
+  double precision :: h, hvec(3), mindist, s
+  double precision, dimension(3) :: k1, k2, k3, k4, k5, k6
+  double precision, dimension(3) :: r, r0, y, z, dl
 
   !minimum physical distance corresponding to fraction of gridcell (h)
-  mindist = minval(getdl(r))*h
+  dl = getdl(r)
+  mindist = (minval(dl))*h
 
   !vector containing the grid's h for each direction
   !(so h for each direction is the same physical length, equal to mindist)
-  hvec = mindist/getdl(r)
+  hvec = mindist/dl
+  !print*, mindist, h, hvec
 
   r0 = r
 
@@ -84,7 +83,8 @@ subroutine rk45(r,h)
   
   if (abs(s*h) < stepmin) then
     s = stepmin/abs(h)
-  else if (s > 1.01) then
+  endif
+  if (s > 1.01) then
     s = 1
   endif
 

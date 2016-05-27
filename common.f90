@@ -10,7 +10,7 @@ double precision :: xmin, xmax, ymin, ymax, zmin, zmax
 double precision, dimension(:), allocatable :: x, y, z
 integer :: nnulls
 double precision :: dx, dy, dz
-double precision, allocatable, dimension(:,:) :: rnulls, spines, fans
+double precision, allocatable, dimension(:,:) :: rnulls, rnullsalt, spines, fans
 integer , allocatable, dimension(:) :: signs
 integer :: nseps
 
@@ -97,7 +97,7 @@ end
 !********************************************************************************
 
 !adds an row (val) to a nx column by ny row array at row number pos
-subroutine add_row(x,vec,pos)
+subroutine add_element(x,vec,pos)
   implicit none
   
   double precision, allocatable, dimension(:,:) :: x, dummy
@@ -121,47 +121,24 @@ subroutine add_row(x,vec,pos)
   deallocate(x)
   allocate(x(nx,ny+1))
 
-  x(:,1:position-1) = dummy(:,1:position-1)
-  x(:,position) = vec
-  x(:,position+1:ny+1) = dummy(:,position:ny)
-
-end
-
-!********************************************************************************
-
-!adds an element (val) to a nx array at element number pos
-subroutine add_element(x,val,pos)
-  implicit none
-  
-  integer, allocatable, dimension(:) :: x, dummy
-  integer, optional :: pos
-  integer :: nx, position, val
-
-  nx = size(x)
-  !print*, nx, val, pos
-  
-  if (present(pos)) then
-    position = pos
+  if (position == 1) then
+    x(:,1) = vec
+    x(:,2:ny+1) = dummy
+  elseif (position == ny+1) then
+    x(:,1:ny) = dummy
+    x(:,ny+1) = vec
   else
-    position = nx+1
+    x(:,1:position-1) = dummy(:,1:position-1)
+    x(:,position) = vec
+    x(:,position+1:ny+1) = dummy(:,position:ny)
   endif
-  
-  dummy = x
-  
-  deallocate(x)
-  allocate(x(nx+1))
-  
-  x(1:position-1) = dummy(1:position-1)
-  x(position) = val
-  x(position+1:nx+1) = dummy(position:nx)
-  !print*, nx, val, pos
 
 end
 
 !********************************************************************************
 
 !removes row number pos from an array 
-subroutine remove_row(x,pos)
+subroutine remove_element(x,pos)
   implicit none
   
   double precision, allocatable, dimension(:,:) :: x, dummy
@@ -176,31 +153,15 @@ subroutine remove_row(x,pos)
   deallocate(x)
   allocate(x(nx,ny-1))
 
-  x(:,1:pos-1) = dummy(:,1:pos-1)
-  x(:,pos:ny-1) = dummy(:,pos+1:ny)
-
-end
-
-!********************************************************************************
-
-!removes element number pos from an array 
-subroutine remove_element(x,pos)
-  implicit none
+  if (pos == 1) then
+    x = dummy(:,2:ny)
+  elseif (pos == ny) then
+    x = dummy(:,1:ny-1)
+  else
+    x(:,1:pos-1) = dummy(:,1:pos-1)
+    x(:,pos:ny-1) = dummy(:,pos+1:ny)
+  endif
   
-  integer, allocatable, dimension(:) :: x, dummy
-  integer :: pos
-  integer :: nx
-
-  nx = size(x)
-
-  dummy = x
-
-  deallocate(x)
-  allocate(x(nx-1))
-
-  x(1:pos-1) = dummy(1:pos-1)
-  x(pos:nx-1) = dummy(pos+1:nx)
-
 end
 
 !********************************************************************************

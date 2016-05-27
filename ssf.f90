@@ -52,7 +52,7 @@ program ssfind
   logical :: exitcondition, out
 
   CALL OMP_SET_NUM_THREADS(12) !have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
-
+  
   !read in data
   !open (unit=10,file='output/2null-edge.dat',form='unformatted')
   open (unit=10,file=filename,access='stream')
@@ -84,22 +84,22 @@ program ssfind
       bgrid(:,:,0,:) = bgrid(:,:,nz,:)
       bgrid(:,:,nz+1,:) = bgrid(:,:,1,:)
       !have theta "periodic"
-      if (2*(nz/2) == nz) then !if nz is even
+      if (2*(nz/2) == nz) then !if nz (nphi) is even
         !Top boundary
-        bgrid(:,0,1:nz/2,:) = bgrid(:,1,nz/2+1:nz,:)
-        bgrid(:,0,nz/2+1:nz,:) = bgrid(:,1,0:nz/2,:)
+        bgrid(:,0,1:nz/2,:) = bgrid(:,2,nz/2+1:nz,:)
+        bgrid(:,0,nz/2+1:nz,:) = bgrid(:,2,0:nz/2,:)
         !Bottom boundary
-        bgrid(:,ny+1,1:nz/2,:) = bgrid(:,ny,nz/2+1:nz,:)
-        bgrid(:,ny+1,nz/2+1:nz,:) = bgrid(:,ny,0:nz/2,:)
+        bgrid(:,ny+1,1:nz/2,:) = bgrid(:,ny-1,nz/2+1:nz,:)
+        bgrid(:,ny+1,nz/2+1:nz,:) = bgrid(:,ny-1,0:nz/2,:)
       else !if nz is odd
         !Top boundary
-        bgrid(:,0,1:nz/2,:) = (bgrid(:,1,1+nz/2:nz-1,:) + bgrid(:,1,2+nz/2:nz,:))/2
-        bgrid(:,0,nz/2+1,:) = (bgrid(:,1,nz,:) + bgrid(:,1,1,:))/2
-        bgrid(:,0,nz/2+2:nz,:) = (bgrid(:,1,1:nz/2,:) + bgrid(:,1,2:nz/2+1,:))/2
+        bgrid(:,0,1:nz/2,:) = (bgrid(:,2,1+nz/2:nz-1,:) + bgrid(:,2,2+nz/2:nz,:))/2
+        bgrid(:,0,nz/2+1,:) = (bgrid(:,2,nz,:) + bgrid(:,2,1,:))/2
+        bgrid(:,0,nz/2+2:nz,:) = (bgrid(:,2,1:nz/2,:) + bgrid(:,2,2:nz/2+1,:))/2
         !Bottom boundary
-        bgrid(:,ny+1,1:nz/2,:) = (bgrid(:,ny,1+nz/2:nz-1,:) + bgrid(:,ny,2+nz/2:nz,:))/2
-        bgrid(:,ny+1,nz/2+1,:) = (bgrid(:,ny,nz,:) + bgrid(:,ny,1,:))/2
-        bgrid(:,ny+1,nz/2+2:nz,:) = (bgrid(:,ny,1:nz/2,:) + bgrid(:,ny,2:nz/2+1,:))/2
+        bgrid(:,ny+1,1:nz/2,:) = (bgrid(:,ny-1,1+nz/2:nz-1,:) + bgrid(:,ny-1,2+nz/2:nz,:))/2
+        bgrid(:,ny+1,nz/2+1,:) = (bgrid(:,ny-1,nz,:) + bgrid(:,ny-1,1,:))/2
+        bgrid(:,ny+1,nz/2+2:nz,:) = (bgrid(:,ny-1,1:nz/2,:) + bgrid(:,ny-1,2:nz/2+1,:))/2
       endif
       z(0) = 2*z(1) - z(2)
       z(nz+1) = 2*z(nz)-z(nz-1)
@@ -129,13 +129,39 @@ program ssfind
     read(10) nnulls
     allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
     read(10) signs
-    read(10) rnulls,spines,fans
+    read(10) rnulls, spines, fans
   close(10)
-
+  
+  rnullsalt = rnulls
+  if (coord_type == 2) then
+    do i = 1, nnulls
+      if (rnullalt(2,i) < ymin+1)
+        rnullalt(2,i) = 2*zmin - rnullalt(2,i)
+        if (2*(nz/2) == nz) then
+          rnullalt = mod(rnullalt + nz/2 + 1,nz)
+        else
+          rnullalt = mod(rnullalt + nz/2 + 0.5 + 1, nz)
+        endif
+      elseif (rnullalt(2,i) > ymax-1)
+        runullalt(2,i) = 2*zmax - rnullalt(2,i)
+        if (2*(nz/2) == nz) then
+          rnullalt = mod(rnullalt + nz/2 + 1,nz)
+        else
+          rnullalt = mod(rnullalt + nz/2 + 0.5 + 1, nz)
+        endif
+      endif
+      if (rnullalt(3,i) < zmax+1) then
+        rnullalt(3,i) = rnullalt(3,i) + zmax - 1
+      elseif (rnullalt(3,i) > zmax-1) then
+        rnullalt(3,i) = rnullalt(3,i) - zmax + 2
+      endif
+    enddo
+  endif
+  
   allocate(nsepss(nnulls))
 
   !signs=-1*signs
-  do nnull = 1, nnulls !loop over all nulls
+  do nnull = 10,10!1, nnulls !loop over all nulls
     print*, ''
     print*, 'Null number', nnull, 'of', nnulls
 
@@ -157,7 +183,7 @@ program ssfind
     call get_startpoints(theta,phi,xs,ys,zs)
 
     allocate(line1(3,nlines), line2(3,nlines), add1(3,nlines), add2(3,nlines))
-    allocate(association(nlines), break(nlines), remove(nlines), endpoints(nlines))
+    allocate(association(1,nlines), break(1,nlines), remove(1,nlines), endpoints(1,nlines))
     add1 = 0
     add2 = 0
 
@@ -166,7 +192,7 @@ program ssfind
       line1(1,j) = r(1) + xs(j)
       line1(2,j) = r(2) + ys(j)
       line1(3,j) = r(3) + zs(j)
-      association(j) = j
+      association(1,j) = j
     enddo
     
     line2 = line1
@@ -237,15 +263,15 @@ program ssfind
           line2(:,j) = line2(:,j) + r(:) - line1(:,j)
           call edgecheck(r, out)
           if (out) then !counter to see how many points on ring have reached outer boundary
-            endpoints(j) = 1
+            endpoints(1,j) = 1
           else
-            endpoints(j) = 0
+            endpoints(1,j) = 0
           endif
           !print*, r
-          !print*, dist(r,line1(:,j))
+          !if (dist(r,line1(:,j)) > 0.5) print*, "bigger"
           line1(:,j) = r(:)
           
-          association(j) = j
+          association(1,j) = j
 
         enddo
       !$OMP END DO
@@ -263,7 +289,7 @@ program ssfind
           circumference(i) = circumference(i) + dist(line2(:,j),line2(:,j-1))
         enddo
 
-        if (sum(endpoints)/nlines == 1) then !exit if all points have reached outer boundary (left box)
+        if (sum(endpoints)/nlines > 0.99) then !exit if all points have reached outer boundary (left box)
           print*, 'All fan points have reached the outer boundary', i
           exitcondition = .true.
         endif
