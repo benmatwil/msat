@@ -83,7 +83,7 @@ subroutine rk45(r,h)
   
   if (abs(s*h) < stepmin) then
     s = stepmin/abs(h)
-  endif
+  endif ! is this correct?
   if (s > 1.01) then
     s = 1
   endif
