@@ -172,7 +172,7 @@ do i = 1, size(rnulls,2)
   if (signs(i)*signs(nullnum) == 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
   ! first find all points that lie within nulldist and note their index
   do j = 1, nlines
-    if (dist(line1(:,j),rnulls(:,i)) < nulldist) close(j) = j !point lies within nulldist
+    if (dist(line1(:,j),rnulls(:,i)) < nulldist .or. dist(line1(:,j),rnullsalt(:,i)) < nulldist) close(j) = j !point lies within nulldist
   enddo
 
   if (maxval(close) > 0) then !if there are any points that lie within this distance
@@ -225,7 +225,7 @@ do i = 1, size(rnulls,2)
       do while (dist(r(:,index),rnulls(:,i)) < 3*nulldist .and. count < 1000)
         h = 1d-2
         call trace_line(r(:,index),1,signs(nullnum),h)
-        if (outedge(r(:,index))) print*, "outedge"
+        !if (outedge(r(:,index))) print*, "outedge"
         call edgecheck(r(:,index))
         count = count+1
       enddo
@@ -240,6 +240,7 @@ do i = 1, size(rnulls,2)
       !if theres a change in sign, theres the separator
       if (index /= 1) then
         if (signof(index-1)*signof(index) == -1) then
+          print*, index-1+maxcount(2), nlines
           break(1,mod(index-1+maxcount(2),nlines)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
           nseps = nseps+1
 
