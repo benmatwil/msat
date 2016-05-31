@@ -41,11 +41,24 @@ function trilinear(r,b)
   nx = floor(xp)
   ny = floor(yp)
   nz = floor(zp)
+  
+  if (outedge(r)) then
+    if (coord_type == 2) then
+      if (xp < xmin) then
+        xp = xmin
+        nx = floor(xp)
+      endif
+      if (xp > xmax) then
+        xp = xmax
+        nx = floor(xp)-1
+      endif
+    endif
+  endif
 
   x = xp-nx
   y = yp-ny
   z = zp-nz
-
+  
   do dims = 1, 3
     cube = b(nx:nx+1,ny:ny+1,nz:nz+1,dims)
 
