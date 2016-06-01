@@ -211,14 +211,11 @@ program ssfind
 
     break = 0
 
-    !open (unit=10,file='output/ring.dat',form='unformatted')
-    !open (unit=11,file='output/association.dat',form='unformatted')
-
     write(fname,fmt) nnull
 
-    open (unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted')
+    open(unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted')
 
-    open (unit=20,file='output/everything'//trim(fname)//'.dat',access='stream',status='replace')
+    open(unit=20,file='output/everything'//trim(fname)//'.dat',access='stream',status='replace')
 
     nseps = 0
 
@@ -257,7 +254,7 @@ program ssfind
         ierror = 0
       !$OMP END SINGLE
 
-      !$OMP DO private(r,h)!, shared(ierror)
+      !$OMP DO private(r,h)
         do j = 1, nlines !loop over all points in ring (in parallel do)
           !print*, j
 
@@ -307,7 +304,7 @@ program ssfind
         endif
         if (i > 1)  then
           if (abs(circumference(i)-circumference(i-1)) .lt. 0.1*stepmin) then
-            print*, 'Fan has stopped growing', i
+            print*, 'Fan has stopped growing/shrinking', i
             exitcondition = .true.
           endif
         endif
