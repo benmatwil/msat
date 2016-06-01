@@ -145,28 +145,29 @@ program ssfind
   close(10)
   
   rnullsalt = rnulls
-  if (coord_type == 2) then
+  
+  !for sphericals
+  if (coord_type == 2) then 
     do i = 1, nnulls
-      if (rnullsalt(2,i) < ymin+1) then
-        rnullsalt(2,i) = 2*zmin - rnullsalt(2,i)
-        if (2*(nz/2) == nz) then
-          rnullsalt(3,i) = mod(rnullsalt(3,i) + nz/2 + 1, dble(nz))
-        else
-          rnullsalt(3,i) = mod(rnullsalt(3,i) + nz/2 + 0.5 + 1, dble(nz))
-        endif
-      elseif (rnullsalt(2,i) > ymax-1) then
-        rnullsalt(2,i) = 2*zmax - rnullsalt(2,i)
-        if (2*(nz/2) == nz) then
-          rnullsalt(3,i) = mod(rnullsalt(3,i) + nz/2 + 1, dble(nz))
-        else
-          rnullsalt(3,i) = mod(rnullsalt(3,i) + nz/2 + 0.5 + 1, dble(nz))
-        endif
-      endif
-      if (rnullsalt(3,i) < zmax+1) then
-        rnullsalt(3,i) = rnullsalt(3,i) + zmax - 1
-      elseif (rnullsalt(3,i) > zmax-1) then
-        rnullsalt(3,i) = rnullsalt(3,i) - zmax + 2
-      endif
+      !check whether null is at the lower phi boundary
+      rnullsalt(3,i) = rnullsalt(3,i) - 1
+      call edgecheck(rnullsalt(3,i))
+      rnullsalt(3,i) = rnullsalt(3,i) + 1
+      
+      !check whether null is at the upper phi boundary
+      rnullsalt(3,i) = rnullsalt(3,i) + 1
+      call edgecheck(rnullsalt(3,i))
+      rnullsalt(3,i) = rnullsalt(3,i) - 1
+      
+      !check whether null is at the lower theta boundary
+      rnullsalt(2,i) = rnullsalt(2,i) - 1
+      call edgecheck(rnullsalt(2,i))
+      rnullsalt(2,i) = rnullsalt(2,i) - 1
+      
+      !check whether null is at the upper theta boundary
+      rnullsalt(2,i) = rnullsalt(2,i) + 1
+      call edgecheck(rnullsalt(2,i))
+      rnullsalt(2,i) = rnullsalt(2,i) + 1
     enddo
   endif
   
@@ -252,20 +253,18 @@ program ssfind
         nperring(i) = nlines
 
         ierror = 0
+        
+        if (i < 50) then
+          h = 5d-2
+        else
+          h = 25d-2
+        endif
       !$OMP END SINGLE
 
-      !$OMP DO private(r,h)
+      !$OMP DO private(r), firstprivate(h)
         do j = 1, nlines !loop over all points in ring (in parallel do)
-          !print*, j
 
           r(:) = line1(:,j)
-          !print*, r
-
-          if (i < 50) then
-            h = 5d-2
-          else
-            h = 25d-2
-          endif
 
           call trace_line(r,1,sign,h) !trace line by a distance of h
 
@@ -276,8 +275,6 @@ program ssfind
           else
             endpoints(1,j) = 0
           endif
-          !print*, r
-          !if (dist(r,line1(:,j)) > 0.5) print*, "bigger"
           line1(:,j) = r(:)
           
           association(1,j) = j
@@ -293,15 +290,16 @@ program ssfind
           exitcondition = .true.
         endif
 
-        circumference(i) = circumference(i) + dist(line2(:,1),line2(:,nlines))
-        do j = 2, nlines
-          circumference(i) = circumference(i) + dist(line2(:,j),line2(:,j-1))
-        enddo
-
         if (sum(endpoints)/nlines > 0.99) then !exit if all points have reached outer boundary (left box)
           print*, 'All fan points have reached the outer boundary', i
           exitcondition = .true.
         endif
+        
+        circumference(i) = circumference(i) + dist(line2(:,1),line2(:,nlines))
+        do j = 2, nlines
+          circumference(i) = circumference(i) + dist(line2(:,j),line2(:,j-1))
+        enddo
+        
         if (i > 1)  then
           if (abs(circumference(i)-circumference(i-1)) .lt. 0.1*stepmin) then
             print*, 'Fan has stopped growing/shrinking', i
@@ -313,6 +311,7 @@ program ssfind
           print*, 'Tracing has failed',i
           exitcondition = .true.
         endif
+        
         !print*,'Checking at null', i, nlines, nnull
         call at_null(nlines,nnull,i) !determine if point is at null
         call remove_points(nlines,i) !remove points from ring if necessary
