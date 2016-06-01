@@ -245,7 +245,6 @@ subroutine get_startpoints(theta,phi,xs,ys,zs)
     double precision :: r(3)
     double precision, parameter :: sep=0.1
 
-
     nlines = size(xs)
 
     dtheta = 2.*pi/nlines
@@ -263,18 +262,9 @@ subroutine get_startpoints(theta,phi,xs,ys,zs)
       zs(i) = r(3)*sep
     enddo
 
-
-
     r(1) = sin(theta)*cos(phi)
     r(2) = sin(theta)*sin(phi)
     r(3) = cos(theta)
-
-    !print*,''
-    !print*,'point number, dot product, distance from null'
-    !do i=1,nlines
-    !  print*,i,r(1)*xs(i)+r(2)*ys(i)+r(3)*zs(i),sqrt(xs(i)**2+ys(i)**2+zs(i)**2)
-    !enddo
-
 
 end subroutine
 
