@@ -152,33 +152,33 @@ program ssfind
       !check whether null is at the lower phi boundary
       if (rnullsalt(3,i) < zmin + 1) then
         rnullsalt(3,i) = rnullsalt(3,i) - 1
-        call edgecheck(rnullsalt(3,i))
+        call edgecheck(rnullsalt(:,i))
         rnullsalt(3,i) = rnullsalt(3,i) + 1
       endif
       
       !check whether null is at the upper phi boundary
       if (rnullsalt(3,i) > zmax - 1) then
         rnullsalt(3,i) = rnullsalt(3,i) + 1
-        call edgecheck(rnullsalt(3,i))
+        call edgecheck(rnullsalt(:,i))
         rnullsalt(3,i) = rnullsalt(3,i) - 1
       endif
       
       !check whether null is at the lower theta boundary
       if (rnullsalt(2,i) < ymin + 1) then
         rnullsalt(2,i) = rnullsalt(2,i) - 1
-        call edgecheck(rnullsalt(2,i))
+        call edgecheck(rnullsalt(:,i))
         rnullsalt(2,i) = rnullsalt(2,i) - 1
       endif
       
       !check whether null is at the upper theta boundary
       if (rnullsalt(2,i) > ymax - 1) then
         rnullsalt(2,i) = rnullsalt(2,i) + 1
-        call edgecheck(rnullsalt(2,i))
+        call edgecheck(rnullsalt(:,i))
         rnullsalt(2,i) = rnullsalt(2,i) + 1
       endif
     enddo
   endif
-  print*, 'moved points'
+  
   allocate(nsepss(nnulls))
 
   !signs=-1*signs
@@ -219,11 +219,8 @@ program ssfind
     line2 = line1
 
     break = 0
-    print*, 'about to move points', nnull
-    print*, "'", fname, "'"
 
     write(fname,fmt) nnull
-    print*, 'about to move points'
 
     open(unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted')
 
