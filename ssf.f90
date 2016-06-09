@@ -145,7 +145,7 @@ program ssfind
   close(10)
   
   rnullsalt = rnulls
-  
+  print*, 'about to move points'
   !for sphericals
   if (coord_type == 2) then 
     do i = 1, nnulls
@@ -164,21 +164,21 @@ program ssfind
       endif
       
       !check whether null is at the lower theta boundary
-      if (rnullsalt < ymin + 1) then
+      if (rnullsalt(2,i) < ymin + 1) then
         rnullsalt(2,i) = rnullsalt(2,i) - 1
         call edgecheck(rnullsalt(2,i))
         rnullsalt(2,i) = rnullsalt(2,i) - 1
       endif
       
       !check whether null is at the upper theta boundary
-      if (rnullsalt > ymax - 1) then
+      if (rnullsalt(2,i) > ymax - 1) then
         rnullsalt(2,i) = rnullsalt(2,i) + 1
         call edgecheck(rnullsalt(2,i))
         rnullsalt(2,i) = rnullsalt(2,i) + 1
       endif
     enddo
   endif
-  
+  print*, 'moved points'
   allocate(nsepss(nnulls))
 
   !signs=-1*signs
@@ -219,8 +219,11 @@ program ssfind
     line2 = line1
 
     break = 0
+    print*, 'about to move points', nnull
+    print*, "'", fname, "'"
 
     write(fname,fmt) nnull
+    print*, 'about to move points'
 
     open(unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted')
 
@@ -234,22 +237,22 @@ program ssfind
 
     write(20) nrings, npoints, ringsmax
     write(20) nperring
-    
+
     circumference = 0
 
     exitcondition = .false.
 
     nringss = 0
 
-    !$OMP PARALLEL DEFAULT(SHARED)
+!    !$OMP PARALLEL DEFAULT(SHARED)
     do i = 1, ringsmax !loop over number of rings we want
       if (sign .eq. 0) then !skip null which is uncharacterised
-        !$OMP SINGLE
+!        !$OMP SINGLE
           print*,'Null has zero sign'
-        !$OMP END SINGLE
+!        !$OMP END SINGLE
         exit
       endif
-      !$OMP SINGLE
+!      !$OMP SINGLE
         nringss = nringss+1
 
         endpoints = 0
@@ -267,9 +270,10 @@ program ssfind
         else
           h = 25d-2
         endif
-      !$OMP END SINGLE
+!      !$OMP END SINGLE
 
-      !$OMP DO private(r), firstprivate(h)
+!      !$OMP DO private(r), firstprivate(h)
+      !$OMP PARALLEL DO private(r), firstprivate(h)
         do j = 1, nlines !loop over all points in ring (in parallel do)
 
           r(:) = line1(:,j)
@@ -288,9 +292,10 @@ program ssfind
           association(1,j) = j
 
         enddo
-      !$OMP END DO
+      !$OMP END PARALLEL DO
+!      !$OMP END DO
 
-      !$OMP SINGLE
+!      !$OMP SINGLE
         write(20), line1
 
         if (nlines > pointsmax) then !exit if too many points on ring
@@ -325,12 +330,12 @@ program ssfind
         call remove_points(nlines,i) !remove points from ring if necessary
         call add_points(nlines,i) !add points to ring if necessary
 
-      !$OMP END SINGLE
+!      !$OMP END SINGLE
 
       if (exitcondition) exit
 
     enddo
-    !$OMP END PARALLEL
+!    !$OMP END PARALLEL
     
     print*, 'number of separators=',nseps
     nsepss(nnull) = nseps
