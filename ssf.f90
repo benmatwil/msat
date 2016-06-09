@@ -241,15 +241,15 @@ program ssfind
 
     nringss = 0
 
-!    !$OMP PARALLEL DEFAULT(SHARED)
+    !$OMP PARALLEL DEFAULT(SHARED)
     do i = 1, ringsmax !loop over number of rings we want
       if (sign .eq. 0) then !skip null which is uncharacterised
-!        !$OMP SINGLE
+        !$OMP SINGLE
           print*,'Null has zero sign'
-!        !$OMP END SINGLE
+        !$OMP END SINGLE
         exit
       endif
-!      !$OMP SINGLE
+      !$OMP SINGLE
         nringss = nringss+1
 
         endpoints = 0
@@ -267,10 +267,9 @@ program ssfind
         else
           h = 25d-2
         endif
-!      !$OMP END SINGLE
+      !$OMP END SINGLE
 
-!      !$OMP DO private(r), firstprivate(h)
-      !$OMP PARALLEL DO private(r), firstprivate(h)
+      !$OMP DO private(r), firstprivate(h)
         do j = 1, nlines !loop over all points in ring (in parallel do)
 
           r(:) = line1(:,j)
@@ -289,10 +288,9 @@ program ssfind
           association(1,j) = j
 
         enddo
-      !$OMP END PARALLEL DO
-!      !$OMP END DO
+      !$OMP END DO
 
-!      !$OMP SINGLE
+      !$OMP SINGLE
         write(20), line1
 
         if (nlines > pointsmax) then !exit if too many points on ring
@@ -327,12 +325,12 @@ program ssfind
         call remove_points(nlines,i) !remove points from ring if necessary
         call add_points(nlines,i) !add points to ring if necessary
 
-!      !$OMP END SINGLE
+      !$OMP END SINGLE
 
       if (exitcondition) exit
 
     enddo
-!    !$OMP END PARALLEL
+    !$OMP END PARALLEL
     
     print*, 'number of separators=',nseps
     nsepss(nnull) = nseps
