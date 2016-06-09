@@ -167,6 +167,7 @@ integer, allocatable :: signof(:)
 
 close = 0
 
+! !$OMP PARALLEL DO default(private), shared(nring,nlines,nullnum)
 do i = 1, size(rnulls,2)
   if (i == nullnum) cycle !ignore the null the points belong to
   if (signs(i)*signs(nullnum) == 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
@@ -256,6 +257,7 @@ do i = 1, size(rnulls,2)
     deallocate(r, signof)
   endif
 enddo
+! !$OMP END PARALLEL DO
 
 end subroutine
 
