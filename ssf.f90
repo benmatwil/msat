@@ -145,7 +145,6 @@ program ssfind
   close(10)
   
   rnullsalt = rnulls
-  print*, 'about to move points'
   !for sphericals
   if (coord_type == 2) then 
     do i = 1, nnulls
@@ -261,18 +260,18 @@ program ssfind
         nperring(i) = nlines
 
         ierror = 0
-        
-        if (i < 50) then
-          h = 5d-2
-        else
-          h = 25d-2
-        endif
       !$OMP END SINGLE
 
-      !$OMP DO private(r), firstprivate(h)
+      !$OMP DO private(r,h)
         do j = 1, nlines !loop over all points in ring (in parallel do)
 
           r(:) = line1(:,j)
+
+          if (i < 50) then
+            h = 5d-2
+          else
+            h = 25d-2
+          endif
 
           call trace_line(r,sign,h) !trace line by a distance of h
 
