@@ -53,7 +53,6 @@ subroutine rk45(r,h)
   double precision :: h, hvec(3), mindist, s
   double precision, dimension(3) :: k1, k2, k3, k4, k5, k6
   double precision, dimension(3) :: r, r0, rtest, y, z, dl
-  logical :: out
   
   !minimum physical distance corresponding to fraction of gridcell (h)
   !dl = sign(dble([1,1,1]),getdl(r))
