@@ -16,12 +16,11 @@ contains
 
 !********************************************************************************
 
-subroutine trace_line(r,nsteps,sign,h)
+subroutine trace_line(r,sign,h)
 !traces a line from 'r' for 'nsteps' integration steps in the direction along the line as specified by 'sign'. Each step is of length h
   double precision :: r(3), r0(3)
-  integer :: nsteps, sign
+  integer :: sign
   double precision :: h, hdum, stepdist
-  !logical :: out
 
   stepdist = h
 

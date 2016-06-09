@@ -224,7 +224,7 @@ do i = 1, size(rnulls,2)
       count = 0
       do while (dist(r(:,index),rnulls(:,i)) < 3*nulldist .and. count < 1000)
         h = 1d-2
-        call trace_line(r(:,index),1,signs(nullnum),h)
+        call trace_line(r(:,index),signs(nullnum),h)
         !if (outedge(r(:,index))) print*, "outedge"
         call edgecheck(r(:,index))
         count = count+1

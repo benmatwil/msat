@@ -150,24 +150,32 @@ program ssfind
   if (coord_type == 2) then 
     do i = 1, nnulls
       !check whether null is at the lower phi boundary
-      rnullsalt(3,i) = rnullsalt(3,i) - 1
-      call edgecheck(rnullsalt(3,i))
-      rnullsalt(3,i) = rnullsalt(3,i) + 1
+      if (rnullsalt(3,i) < zmin + 1) then
+        rnullsalt(3,i) = rnullsalt(3,i) - 1
+        call edgecheck(rnullsalt(3,i))
+        rnullsalt(3,i) = rnullsalt(3,i) + 1
+      endif
       
       !check whether null is at the upper phi boundary
-      rnullsalt(3,i) = rnullsalt(3,i) + 1
-      call edgecheck(rnullsalt(3,i))
-      rnullsalt(3,i) = rnullsalt(3,i) - 1
+      if (rnullsalt(3,i) > zmax - 1) then
+        rnullsalt(3,i) = rnullsalt(3,i) + 1
+        call edgecheck(rnullsalt(3,i))
+        rnullsalt(3,i) = rnullsalt(3,i) - 1
+      endif
       
       !check whether null is at the lower theta boundary
-      rnullsalt(2,i) = rnullsalt(2,i) - 1
-      call edgecheck(rnullsalt(2,i))
-      rnullsalt(2,i) = rnullsalt(2,i) - 1
+      if (rnullsalt < ymin + 1) then
+        rnullsalt(2,i) = rnullsalt(2,i) - 1
+        call edgecheck(rnullsalt(2,i))
+        rnullsalt(2,i) = rnullsalt(2,i) - 1
+      endif
       
       !check whether null is at the upper theta boundary
-      rnullsalt(2,i) = rnullsalt(2,i) + 1
-      call edgecheck(rnullsalt(2,i))
-      rnullsalt(2,i) = rnullsalt(2,i) + 1
+      if (rnullsalt > ymax - 1) then
+        rnullsalt(2,i) = rnullsalt(2,i) + 1
+        call edgecheck(rnullsalt(2,i))
+        rnullsalt(2,i) = rnullsalt(2,i) + 1
+      endif
     enddo
   endif
   
@@ -266,7 +274,7 @@ program ssfind
 
           r(:) = line1(:,j)
 
-          call trace_line(r,1,sign,h) !trace line by a distance of h
+          call trace_line(r,sign,h) !trace line by a distance of h
 
           line2(:,j) = line2(:,j) + r(:) - line1(:,j)
           call edgecheck(r, out)
