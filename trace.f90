@@ -125,7 +125,7 @@ subroutine rk45(r,h)
   h = h*s
 
   if (modulus(r-r0) < 0.1*h) then
-    !print*, 'trace failure',modulus(r-r0),h
+    print*, 'trace failure',modulus(r-r0),h
     stop
   endif
 

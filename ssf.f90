@@ -319,14 +319,17 @@ program ssfind
           exitcondition = .true.
         endif
         
-        !print*,'Checking at null', i, nlines, nnull
+        print*,'Checking at null', i, nlines, nnull
         call at_null(nlines,nnull,i) !determine if point is at null
         call remove_points(nlines,i) !remove points from ring if necessary
         call add_points(nlines,i) !add points to ring if necessary
 
       !$OMP END SINGLE
 
-      if (exitcondition) exit
+      if (exitcondition) then
+      print*, 'exiting'
+      exit
+      endif
 
     enddo
     !$OMP END PARALLEL
