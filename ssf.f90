@@ -326,10 +326,7 @@ program ssfind
 
       !$OMP END SINGLE
 
-      if (exitcondition) then
-      print*, 'exiting'
-      exit
-      endif
+      if (exitcondition) exit
 
     enddo
     !$OMP END PARALLEL
