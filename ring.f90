@@ -28,7 +28,7 @@ subroutine add_points(nlines,iteration)
   integer, intent(in) :: iteration
   double precision :: b1(3), b2(1)
 
-  if (iteration < 100) then !if close-in to the starting null we want smaller max/min separations
+  if (iteration < 100) then !if near-in to the starting null we want smaller max/min separations
     maxdist = maxdist1*0.05
   else
     maxdist = maxdist1
@@ -111,7 +111,7 @@ subroutine remove_points(nlines,iteration)
         j = 1
       endif
       if (i /= 1) then
-        if (dist(line2(:,i),line2(:,j)) < mindist .and. remove(1,i-1) < 0.5) remove(1,i) = 1 !if i and i+1 are too close
+        if (dist(line2(:,i),line2(:,j)) < mindist .and. remove(1,i-1) < 0.5) remove(1,i) = 1 !if i and i+1 are too near
       endif
     endif
     if (endpoints(1,i) > 0.5) then !remove points that have left the simulation
@@ -161,61 +161,59 @@ integer :: nring
 double precision :: h
 
 double precision, allocatable :: r(:,:)
-integer :: close(nlines), maxcount(2)
-integer :: index, count, nr
+integer :: near(nlines), notnear(nlines), endgap, gapsize
+integer :: index, count, nr, nnc
 integer, allocatable :: signof(:)
 
-close = 0
+
 
 do i = 1, size(rnulls,2)
   if (i == nullnum) cycle !ignore the null the points belong to
   if (signs(i)*signs(nullnum) == 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
+  
+  near = 0
+  notnear = 0
+
   ! first find all points that lie within nulldist and note their index
   do j = 1, nlines
-    if (dist(line1(:,j),rnulls(:,i)) < nulldist .or. dist(line1(:,j),rnullsalt(:,i)) < nulldist) close(j) = j !point lies within nulldist
+    if (dist(line1(:,j),rnulls(:,i)) < nulldist .or. dist(line1(:,j),rnullsalt(:,i)) < nulldist) near(j) = j !point lies within nulldist
   enddo
 
-  if (maxval(close) > 0) then !if there are any points that lie within this distance
+  if (maxval(near) > 0) then !if there are any points that lie within this distance
     ! find the longest consectutive number of points not near to the null (should be more not near another null)
-    count = 0
-    maxcount = [0,0]
-    nr = nlines
-    k = 1
-    do while (k <= nr)
-      if (close(k) == 0) count = count + 1
-      if (close(k) /= 0) then
-        if (count > maxcount(1)) maxcount = [count,k-1]
-        count = 0
+    nnc = 0
+    do k = 1, nlines
+      if (near(k) /= 0) then
+      	notnear(k) = 0
+        nnc = 0
       endif
-      if (k == nlines) then
-        if (close(1) == 0 .and. close(nlines) == 0) then
-          k = 1
-          nr = 1
-        else
-          k = k + 1
-        endif
-      elseif (nr /= nlines) then
-        if (close(k+1) == 0) then
-          nr = nr + 1
-          k = k + 1
-        else
-          k = k + 1
-        endif
-      else
-        k = k + 1
+      if (near(k) == 0) then
+        nnc = nnc + 1
+        notnear(k) = nnc
       endif
     enddo
+    if (nnc /= 0) then
+      k = 1
+      do while (near(k) == 0)
+        nnc = nnc + 1
+        notnear(k) = nnc
+        k = k + 1
+      enddo
+    endif
+
+    gapsize = maxval(notnear) ! number of points in biggest gap not near null
+    endgap = maxloc(notnear,1) ! location of last non-near point
     
     !select all points not in this longest chain to be tested for change in side of the fan
-    nr = size(line1,2)-maxcount(1)
-    if (maxcount(2) - maxcount(1) >= 1) then !biggest gap is not contained in array
+    nr = size(line1,2) - gapsize
+    if (endgap - gapsize >= 0) then !biggest gap is contained in array
+      ! want to make r contain points from both ends of the array
       allocate(r(3,nr))
-      r(:,1:nlines-maxcount(2)) = line1(:,maxcount(2)+1:nlines)
-      r(:,nlines-maxcount(2)+1:nr) = line1(:,1:maxcount(2)-maxcount(1))
+      r(:,1:nlines-endgap) = line1(:,endgap+1:nlines)
+      r(:,nlines-endgap+1:nr) = line1(:,1:endgap-gapsize)
     else
-      r = line1(:,maxcount(2)+1:nr+maxcount(2))
+      r = line1(:,endgap+1:endgap+nr)
     endif
-    
     
     allocate(signof(nr))
     signof = 0
@@ -240,14 +238,14 @@ do i = 1, size(rnulls,2)
       !if theres a change in sign, theres the separator
       if (index /= 1) then
         if (signof(index-1)*signof(index) == -1) then
-          print*, index-1+maxcount(2), nlines
-          break(1,mod(index-1+maxcount(2),nlines)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
+          print*, index-1+endgap, nlines
+          break(1,mod(index-1+endgap,nlines)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
           nseps = nseps+1
 
           !write the point's information to the separator file
           write(12) 1
           write(12) nullnum, i
-          write(12) nring, mod(index-1+maxcount(2),nlines)
+          write(12) nring, mod(index-1+endgap,nlines)
 
           exit
         endif
