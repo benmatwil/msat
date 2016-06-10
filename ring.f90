@@ -37,7 +37,6 @@ subroutine add_points(nlines,iteration)
   !test for gaps. Where gaps need to be filled, put this info into 'add'
   add1 = 0
   add2 = 0
-
   do i = 1, nlines !loop over each point in ring
     if (break(1,i) < 0.5) then
       if (i < nlines) then !if not the last point
@@ -102,7 +101,6 @@ subroutine remove_points(nlines,iteration)
 
   !check for too tightly spaced points, flag points to be removed
   remove = 0
-
   do i = 1, nlines !loop over all points
     if (break(1,i) < 0.5) then
       if (i < nlines) then !if not end point
@@ -166,8 +164,7 @@ integer :: near(nlines), notnear(nlines), endgap, gapsize
 integer :: index, count, nr, nnc
 integer, allocatable :: signof(:)
 
-
-
+!$OMP PARALLEL DO default(shared) private(near, notnear, nnc, k, gapsize, endgap, nr, r, ir, rmap, signof, index, count, h)
 do i = 1, size(rnulls,2)
   if (i == nullnum) cycle !ignore the null the points belong to
   if (signs(i)*signs(nullnum) == 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
@@ -184,13 +181,12 @@ do i = 1, size(rnulls,2)
     ! find the longest consectutive number of points not near to the null (should be more not near another null)
     nnc = 0
     do k = 1, nlines
-      if (near(k) /= 0) then
-      	notnear(k) = 0
-        nnc = 0
-      endif
       if (near(k) == 0) then
         nnc = nnc + 1
         notnear(k) = nnc
+      else
+        notnear(k) = 0
+        nnc = 0
       endif
     enddo
     if (nnc /= 0) then
@@ -202,8 +198,8 @@ do i = 1, size(rnulls,2)
       enddo
     endif
 
-    gapsize = maxval(notnear) ! number of points in biggest gap not near null
     endgap = maxloc(notnear,1) ! location of last non-near point
+    gapsize = notnear(endgap) ! number of points in biggest gap not near null
     
     !select all points not in this longest chain to be tested for change in side of the fan
     nr = size(line1,2) - gapsize
@@ -248,7 +244,7 @@ do i = 1, size(rnulls,2)
       !if theres a change in sign, theres the separator
       if (index /= 1) then
         if (signof(index-1)*signof(index) == -1) then
-          print*, rmap(index-1), nlines, nlines-rmap(index-1)
+          !print*, rmap(index-1), nlines, nlines-rmap(index-1)
           break(1,rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
           nseps = nseps+1
 
@@ -263,6 +259,7 @@ do i = 1, size(rnulls,2)
     deallocate(r, signof)
   endif
 enddo
+!$OMP END PARALLEL DO
 
 end subroutine
 
