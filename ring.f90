@@ -155,12 +155,13 @@ subroutine at_null(nlines,nullnum,nring)
 implicit none
 integer :: nlines
 integer :: nullnum !the null the fan is being drawn from
-integer :: i, j, k
+integer :: i, j, k, ir
 integer :: nring
 
 double precision :: h
 
 double precision, allocatable :: r(:,:)
+integer, allocatable :: rmap(:)
 integer :: near(nlines), notnear(nlines), endgap, gapsize
 integer :: index, count, nr, nnc
 integer, allocatable :: signof(:)
@@ -206,13 +207,23 @@ do i = 1, size(rnulls,2)
     
     !select all points not in this longest chain to be tested for change in side of the fan
     nr = size(line1,2) - gapsize
+    allocate(r(3,nr), rmap(nr))
     if (endgap - gapsize >= 0) then !biggest gap is contained in array
-      ! want to make r contain points from both ends of the array
-      allocate(r(3,nr))
+      ! want to make r contain points from both ends of line1
       r(:,1:nlines-endgap) = line1(:,endgap+1:nlines)
+      do ir = 1, nlines-endgap
+        rmap(ir) = ir + endgap
+      enddo
       r(:,nlines-endgap+1:nr) = line1(:,1:endgap-gapsize)
+      do ir = nlines-endgap+1, nr
+        rmap(ir) = ir - nlines + endgap
+      enddo
     else
+      ! r is some continuous set of line1
       r = line1(:,endgap+1:endgap+nr)
+      do ir = 1, nr
+        rmap(ir) = ir + endgap
+      enddo
     endif
     
     allocate(signof(nr))
@@ -223,7 +234,6 @@ do i = 1, size(rnulls,2)
       do while (dist(r(:,index),rnulls(:,i)) < 3*nulldist .and. count < 1000)
         h = 1d-2
         call trace_line(r(:,index),signs(nullnum),h)
-        !if (outedge(r(:,index))) print*, "outedge"
         call edgecheck(r(:,index))
         count = count+1
       enddo
@@ -238,15 +248,14 @@ do i = 1, size(rnulls,2)
       !if theres a change in sign, theres the separator
       if (index /= 1) then
         if (signof(index-1)*signof(index) == -1) then
-          print*, index-1+endgap, nlines
-          break(1,mod(index-1+endgap,nlines)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
+          print*, rmap(index-1), nlines, nlines-rmap(index-1)
+          break(1,rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
           nseps = nseps+1
 
           !write the point's information to the separator file
           write(12) 1
           write(12) nullnum, i
-          write(12) nring, mod(index-1+endgap,nlines)
-
+          write(12) nring, rmap(index-1)
           exit
         endif
       endif
