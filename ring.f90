@@ -202,7 +202,7 @@ do i = 1, size(rnulls,2)
     gapsize = notnear(endgap) ! number of points in biggest gap not near null
     
     !select all points not in this longest chain to be tested for change in side of the fan
-    nr = size(line1,2) - gapsize
+    nr = nlines - gapsize
     allocate(r(3,nr), rmap(nr))
     if (endgap - gapsize >= 0) then !biggest gap is contained in array
       ! want to make r contain points from both ends of line1
@@ -256,7 +256,7 @@ do i = 1, size(rnulls,2)
         endif
       endif
     enddo
-    deallocate(r, signof)
+    deallocate(r, signof, rmap)
   endif
 enddo
 !$OMP END PARALLEL DO
