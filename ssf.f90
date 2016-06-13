@@ -142,7 +142,7 @@ program ssfind
     call get_startpoints(theta,phi,xs,ys,zs)
 
     allocate(line1(3,nlines), line2(3,nlines), add1(3,nlines), add2(3,nlines))
-    allocate(association(1,nlines), break(1,nlines), remove(1,nlines), endpoints(1,nlines))
+    allocate(association(nlines), break(nlines), remove(nlines), endpoints(nlines))
     add1 = 0
     add2 = 0
 
@@ -151,7 +151,7 @@ program ssfind
       line1(1,j) = r(1) + xs(j)
       line1(2,j) = r(2) + ys(j)
       line1(3,j) = r(3) + zs(j)
-      association(1,j) = j
+      association(j) = j
     enddo
     
     line2 = line1
@@ -212,13 +212,13 @@ program ssfind
           line2(:,j) = line2(:,j) + r(:) - line1(:,j)
           call edgecheck(r, out)
           if (out) then !counter to see how many points on ring have reached outer boundary
-            endpoints(1,j) = 1
+            endpoints(j) = 1
           else
-            endpoints(1,j) = 0
+            endpoints(j) = 0
           endif
           line1(:,j) = r(:)
           
-          association(1,j) = j
+          association(j) = j
 
         enddo
       !$OMP END PARALLEL DO
