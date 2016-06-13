@@ -101,17 +101,17 @@ subroutine remove_points(nlines,iteration)
   !check for too tightly spaced points, flag points to be removed
   remove = 0
   do i = 1, nlines !loop over all points
-    if (break(i) < 0.5) then
+    if (break(i) == 0) then
       if (i < nlines) then !if not end point
         j = i+1
       else
         j = 1
       endif
       if (i /= 1) then
-        if (dist(line2(:,i),line2(:,j)) < mindist .and. remove(i-1) < 0.5) remove(i) = 1 !if i and i+1 are too near
+        if (dist(line2(:,i),line2(:,j)) < mindist .and. remove(i-1) == 0) remove(i) = 1 !if i and i+1 are too near
       endif
     endif
-    if (endpoints(i) > 0.5) then !remove points that have left the simulation
+    if (endpoints(i) == 1) then !remove points that have left the simulation
       remove(i) = 1
       if (i /= 1) then
         break(i-1) = 1
@@ -123,7 +123,7 @@ subroutine remove_points(nlines,iteration)
 
   !remove points
   i = 1
-  if (nlines > nstart .or. sum(endpoints) > 0) then !if the number of points isn't too small...
+  if (nlines > nstart .or. sum(endpoints) /= 0) then !if the number of points isn't too small...
     do while (i <= nlines)
       if (nlines <= nstart .and. sum(endpoints) == 0) exit
       if (remove(i) > 0.5) then !if point is flagged to be removed, then remove

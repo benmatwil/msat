@@ -229,7 +229,7 @@ program ssfind
         exitcondition = .true.
       endif
 
-      if (sum(endpoints)/nlines > 0.99) then !exit if all points have reached outer boundary (left box)
+      if (sum(endpoints)/nlines == 1) then !exit if all points have reached outer boundary (left box)
         print*, 'All fan points have reached the outer boundary', i
         exitcondition = .true.
       endif
