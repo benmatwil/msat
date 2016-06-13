@@ -120,9 +120,9 @@ program ssfind
   allocate(nsepss(nnulls))
 
   !signs=-1*signs
-  do nnull = 1,10!1, nnulls !loop over all nulls
+  do nnull = 14,14!1, nnulls !loop over all nulls
     print*, ''
-    print*, 'Null number', nnull, 'of', nnulls
+    print*, 'Null number ', trim(nnull), ' of ', trim(nnulls)
 
     r = rnulls(:,nnull)
     spine = spines(:,nnull)
