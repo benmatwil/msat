@@ -110,7 +110,7 @@ end
 !********************************************************************************
 
 !adds an row (val) to a nx column by ny row array at row number pos
-subroutine add_element(x,vec,pos)
+subroutine add_vector(x,vec,pos)
   implicit none
   
   double precision, allocatable, dimension(:,:) :: x, dummy
@@ -120,8 +120,6 @@ subroutine add_element(x,vec,pos)
 
   nx = size(x,1)
   ny = size(x,2)
-  
-  !print*, vec, pos, nx, ny
   
   if (present(pos)) then
     position = pos
@@ -150,13 +148,50 @@ end
 
 !********************************************************************************
 
+!adds an row (val) to a nx column by ny row array at row number pos
+subroutine add_element(x,num,pos)
+  implicit none
+  
+  integer, allocatable, dimension(:) :: x, dummy
+  integer :: num
+  integer, optional :: pos
+  integer :: nx, position
+
+  nx = size(x)
+  
+  if (present(pos)) then
+    position = pos
+  else
+    position = nx+1
+  endif
+
+  dummy = x
+
+  deallocate(x)
+  allocate(x(nx+1))
+
+  if (position == 1) then
+    x(1) = num
+    x(2:nx+1) = dummy
+  elseif (position == nx+1) then
+    x(1:nx) = dummy
+    x(nx+1) = num
+  else
+    x(1:position-1) = dummy(1:position-1)
+    x(position) = num
+    x(position+1:nx+1) = dummy(position:nx)
+  endif
+
+end
+
+!********************************************************************************
+
 !removes row number pos from an array 
-subroutine remove_element(x,pos)
+subroutine remove_vector(x,pos)
   implicit none
   
   double precision, allocatable, dimension(:,:) :: x, dummy
-  integer :: pos
-  integer :: nx, ny
+  integer :: pos, nx, ny
 
   nx = size(x,1)
   ny = size(x,2)
@@ -173,6 +208,33 @@ subroutine remove_element(x,pos)
   else
     x(:,1:pos-1) = dummy(:,1:pos-1)
     x(:,pos:ny-1) = dummy(:,pos+1:ny)
+  endif
+  
+end
+
+!********************************************************************************
+
+!removes row number pos from an array 
+subroutine remove_element(x,pos)
+  implicit none
+  
+  integer, allocatable, dimension(:) :: x, dummy
+  integer :: pos, nx
+
+  nx = size(x)
+
+  dummy = x
+
+  deallocate(x)
+  allocate(x(nx-1))
+
+  if (pos == 1) then
+    x = dummy(2:nx)
+  elseif (pos == nx) then
+    x = dummy(1:nx-1)
+  else
+    x(1:pos-1) = dummy(1:pos-1)
+    x(pos:nx-1) = dummy(pos+1:nx)
   endif
   
 end
@@ -283,11 +345,11 @@ function rotate(r,theta,phi)
     roty(1,1)=cos(-theta)
     roty(1,2)=0
     roty(1,3)=-sin(-theta)
-    !
+    
     roty(2,1)=0
     roty(2,2)=1
     roty(2,3)=0
-    !
+    
     roty(3,1)=sin(-theta)
     roty(3,2)=0
     roty(3,3)=cos(-theta)

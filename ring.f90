@@ -14,7 +14,7 @@ integer, parameter :: nstart = 100 !number of startpoints in ring
 double precision, parameter :: mindist1 = maxdist1/4.d0 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
 
 double precision, allocatable, dimension(:,:) :: line1, line2, add1, add2
-double precision, allocatable, dimension(:,:) :: break, association, remove, endpoints
+integer, allocatable, dimension(:,:) :: break, association, remove, endpoints
 
 contains
 
@@ -26,7 +26,7 @@ subroutine add_points(nlines,iteration)
   integer :: i, j
   double precision :: maxdist
   integer, intent(in) :: iteration
-  double precision :: b1(3), b2(1)
+  double precision :: b1(3)
 
   if (iteration < 100) then !if near-in to the starting null we want smaller max/min separations
     maxdist = maxdist1*0.05
@@ -38,7 +38,7 @@ subroutine add_points(nlines,iteration)
   add1 = 0
   add2 = 0
   do i = 1, nlines !loop over each point in ring
-    if (break(1,i) < 0.5) then
+    if (break(i) < 0.5) then
       if (i < nlines) then !if not the last point
         j = i+1
       else
@@ -57,23 +57,22 @@ subroutine add_points(nlines,iteration)
   !add new points
   !where the 'add' array has a point to be added, add this point
   i = 0
-  b1 = [0d0,0d0,0d0]
-  b2 = [0d0]
+  b = [0d0,0d0,0d0]
   do while (i < nlines)
     i = i+1
     if (modulus(add1(:,i)) > 0) then !if add(:,i) is not zero..
       !print*, 'point has to be added to',i
-      call add_element(line1,add1(:,i),i+1) !add elements to every array
-      call add_element(line2,add2(:,i),i+1)
-      call add_element(add1,b1,i+1)
-      call add_element(add2,b1,i+1)
-      call add_element(endpoints,b2,i+1)
-      call add_element(remove,b2,i+1)
-      call add_element(break,b2,i+1)
+      call add_vector(line1,add1(:,i),i+1) !add elements to every array
+      call add_vector(line2,add2(:,i),i+1)
+      call add_vector(add1,b1,i+1)
+      call add_vector(add2,b1,i+1)
+      call add_element(endpoints,0,i+1)
+      call add_element(remove,0,i+1)
+      call add_element(break,0,i+1)
       if (i /= nlines) then
-        call add_element(association,[association(1,i)],i+1)
+        call add_element(association,association(i),i+1)
       else
-        call add_element(association,[1d0],i+1)
+        call add_element(association,1,i+1)
       endif
       i = i+1
       nlines = nlines+1
@@ -102,22 +101,22 @@ subroutine remove_points(nlines,iteration)
   !check for too tightly spaced points, flag points to be removed
   remove = 0
   do i = 1, nlines !loop over all points
-    if (break(1,i) < 0.5) then
+    if (break(i) < 0.5) then
       if (i < nlines) then !if not end point
         j = i+1
       else
         j = 1
       endif
       if (i /= 1) then
-        if (dist(line2(:,i),line2(:,j)) < mindist .and. remove(1,i-1) < 0.5) remove(1,i) = 1 !if i and i+1 are too near
+        if (dist(line2(:,i),line2(:,j)) < mindist .and. remove(i-1) < 0.5) remove(i) = 1 !if i and i+1 are too near
       endif
     endif
-    if (endpoints(1,i) > 0.5) then !remove points that have left the simulation
-      remove(1,i) = 1
+    if (endpoints(i) > 0.5) then !remove points that have left the simulation
+      remove(i) = 1
       if (i /= 1) then
-        break(1,i-1) = 1
+        break(i-1) = 1
       else
-        break(1,nlines) = 1
+        break(nlines) = 1
       endif
     endif
   enddo
@@ -127,11 +126,11 @@ subroutine remove_points(nlines,iteration)
   if (nlines > nstart .or. sum(endpoints) > 0) then !if the number of points isn't too small...
     do while (i <= nlines)
       if (nlines <= nstart .and. sum(endpoints) == 0) exit
-      if (remove(1,i) > 0.5) then !if point is flagged to be removed, then remove
-        call remove_element(line1,i)
-        call remove_element(line2,i)
-        call remove_element(add1,i)
-        call remove_element(add2,i)
+      if (remove(i) > 0.5) then !if point is flagged to be removed, then remove
+        call remove_vector(line1,i)
+        call remove_vector(line2,i)
+        call remove_vector(add1,i)
+        call remove_vector(add2,i)
         call remove_element(endpoints,i)
         call remove_element(remove,i)
         call remove_element(association,i)
@@ -241,7 +240,7 @@ subroutine at_null(nlines,nullnum,nring)
         if (index /= 1) then
           if (signof(index-1)*signof(index) == -1) then
             !print*, rmap(index-1), nlines, nlines-rmap(index-1)
-            break(1,rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
+            break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
             nseps = nseps+1
 
             !write the point's information to the separator file
