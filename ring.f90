@@ -14,7 +14,7 @@ integer, parameter :: nstart = 100 !number of startpoints in ring
 double precision, parameter :: mindist1 = maxdist1/4.d0 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
 
 double precision, allocatable, dimension(:,:) :: line1, line2, add1, add2
-integer, allocatable, dimension(:,:) :: break, association, remove, endpoints
+integer, allocatable, dimension(:) :: break, association, remove, endpoints
 
 contains
 
@@ -26,7 +26,7 @@ subroutine add_points(nlines,iteration)
   integer :: i, j
   double precision :: maxdist
   integer, intent(in) :: iteration
-  double precision :: b1(3)
+  double precision :: b(3)
 
   if (iteration < 100) then !if near-in to the starting null we want smaller max/min separations
     maxdist = maxdist1*0.05
