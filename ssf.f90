@@ -122,7 +122,7 @@ program ssfind
   !signs=-1*signs
   do nnull = 14,14!1, nnulls !loop over all nulls
     print*, ''
-    print*, 'Null number ', trim(nnull), ' of ', trim(nnulls)
+    print*, 'Null number', nnull, 'of', nnulls
 
     r = rnulls(:,nnull)
     spine = spines(:,nnull)
