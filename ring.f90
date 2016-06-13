@@ -64,8 +64,8 @@ subroutine add_points(nlines,iteration)
       !print*, 'point has to be added to',i
       call add_vector(line1,add1(:,i),i+1) !add elements to every array
       call add_vector(line2,add2(:,i),i+1)
-      call add_vector(add1,b1,i+1)
-      call add_vector(add2,b1,i+1)
+      call add_vector(add1,b,i+1)
+      call add_vector(add2,b,i+1)
       call add_element(endpoints,0,i+1)
       call add_element(remove,0,i+1)
       call add_element(break,0,i+1)
