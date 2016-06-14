@@ -199,12 +199,18 @@ contains
 
         endgap = maxloc(notnear,1) ! location of last non-near point
         gapsize = notnear(endgap) ! number of points in biggest gap not near null
-        
-        !select all points not in this longest chain to be tested for change in side of the fan
         nextra = 20 !number of points to test either side of test points
         nr = nlines - gapsize + 2*nextra !total number to test (nlines-gapsize near null)
-        n1 = modulo(endgap + 1 - nextra - 1, nlines) + 1
-        n2 = modulo(nlines + endgap - gapsize + nextra - 1, nlines) + 1
+
+        if (gapsize == 0 .or. nr >= nlines) then
+          n1 = 1
+          n2 = nlines
+          nr = nlines
+        else
+          !select all points not in this longest chain to be tested for change in side of the fan
+          n1 = modulo(endgap + 1 - nextra - 1, nlines) + 1
+          n2 = modulo(nlines + endgap - gapsize + nextra - 1, nlines) + 1
+        endif
         allocate(r(3,nr), rmap(nr))
 
         if (n1 <= n2) then

@@ -115,7 +115,7 @@ program ssfind
   allocate(nsepss(nnulls))
 
   !signs=-1*signs
-  do nnull = 1, nnulls !loop over all nulls
+  do nnull = 1, nnulls!loop over all nulls
     print*, ''
     print*, 'Null number', nnull, 'of', nnulls
 
