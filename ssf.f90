@@ -9,15 +9,11 @@ program ssfind
 
   implicit none
 
-  !integer :: ierror
-
   character (len=8), parameter :: fmt='(I3.3)'
   character (len=5) :: fname
 
   integer :: nringss
-
   integer*8 :: tstart,tstop,count_rate !to time program
-  
   integer :: nx, ny, nz !size of grid
 
   !position vector of null (and saved backup)
@@ -33,7 +29,6 @@ program ssfind
   double precision :: theta, phi
 
   double precision, allocatable, dimension(:) :: nsepss
-
   double precision, allocatable, dimension(:) :: xs, ys, zs
 
   !number of lines
@@ -163,19 +158,15 @@ program ssfind
     open(unit=20,file='output/everything'//trim(fname)//'.dat',access='stream',status='replace')
 
     nseps = 0
-
     nrings = 0
-
     nperring = 0
+    nringss = 0
+    circumference = 0
 
     write(20) nrings, npoints, ringsmax
     write(20) nperring
 
-    circumference = 0
-
     exitcondition = .false.
-
-    nringss = 0
 
     do i = 1, ringsmax !loop over number of rings we want
       if (sign .eq. 0) then !skip null which is uncharacterised
@@ -222,14 +213,14 @@ program ssfind
       !$OMP END PARALLEL DO
       write(20), line1
 
-      if (nlines > pointsmax) then !exit if too many points on ring
+      if (nlines > pointsmax) then
         print*, 'Too many points on ring', nlines, i
-        exitcondition = .true.
+        exitcondition = .true. !exit if too many points on ring
       endif
 
-      if (sum(endpoints)/nlines == 1) then !exit if all points have reached outer boundary (left box)
+      if (sum(endpoints)/nlines == 1) then
         print*, 'All fan points have reached the outer boundary', i
-        exitcondition = .true.
+        exitcondition = .true. !exit if all points have reached outer boundary (left box)
       endif
       
       circumference(i) = circumference(i) + dist(line2(:,1),line2(:,nlines))
@@ -237,10 +228,10 @@ program ssfind
         circumference(i) = circumference(i) + dist(line2(:,j),line2(:,j-1))
       enddo
       
-      if (i > 1)  then
+      if (i > 1) then
         if (abs(circumference(i)-circumference(i-1)) .lt. 0.1*stepmin) then
           print*, 'Fan has stopped growing/shrinking', i
-          exitcondition = .true.
+          exitcondition = .true. !exit if fan not changing size
         endif
       endif
 
