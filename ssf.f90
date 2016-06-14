@@ -120,7 +120,7 @@ program ssfind
   allocate(nsepss(nnulls))
 
   !signs=-1*signs
-  do nnull = 14,14!1, nnulls !loop over all nulls
+  do nnull = 1, nnulls !loop over all nulls
     print*, ''
     print*, 'Null number', nnull, 'of', nnulls
 
@@ -143,8 +143,6 @@ program ssfind
 
     allocate(line1(3,nlines), line2(3,nlines), add1(3,nlines), add2(3,nlines))
     allocate(association(nlines), break(nlines), remove(nlines), endpoints(nlines))
-    add1 = 0
-    add2 = 0
 
     !add start points to first ring relative to null
     do j = 1, nlines !Go through each start point
