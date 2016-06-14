@@ -149,16 +149,15 @@ end
 !********************************************************************************
 
 !adds an row (val) to a nx column by ny row array at row number pos
-subroutine add_element(x,num,pos)
+subroutine add_element(x,number,pos)
   implicit none
   
   integer, allocatable, dimension(:) :: x, dummy
-  integer :: num
   integer, optional :: pos
-  integer :: nx, position
+  integer :: nx, position, number
 
-  nx = size(x)
-  
+  nx = size(x,1)
+
   if (present(pos)) then
     position = pos
   else
@@ -171,14 +170,14 @@ subroutine add_element(x,num,pos)
   allocate(x(nx+1))
 
   if (position == 1) then
-    x(1) = num
+    x(1) = number
     x(2:nx+1) = dummy
   elseif (position == nx+1) then
     x(1:nx) = dummy
-    x(nx+1) = num
+    x(nx+1) = number
   else
     x(1:position-1) = dummy(1:position-1)
-    x(position) = num
+    x(position) = number
     x(position+1:nx+1) = dummy(position:nx)
   endif
 
