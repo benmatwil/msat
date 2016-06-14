@@ -114,9 +114,12 @@ subroutine add_vector(x,vec,pos)
   implicit none
   
   double precision, allocatable, dimension(:,:) :: x, dummy
+  double precision, allocatable, dimension(:) :: vec1
   double precision :: vec(:)
   integer, optional :: pos
   integer :: nx, ny, position
+
+  vec1 = vec
 
   nx = size(x,1)
   ny = size(x,2)
@@ -133,14 +136,14 @@ subroutine add_vector(x,vec,pos)
   allocate(x(nx,ny+1))
 
   if (position == 1) then
-    x(:,1) = vec
+    x(:,1) = vec1
     x(:,2:ny+1) = dummy
   elseif (position == ny+1) then
     x(:,1:ny) = dummy
-    x(:,ny+1) = vec
+    x(:,ny+1) = vec1
   else
     x(:,1:position-1) = dummy(:,1:position-1)
-    x(:,position) = vec
+    x(:,position) = vec1
     x(:,position+1:ny+1) = dummy(:,position:ny)
   endif
 
@@ -148,13 +151,14 @@ end
 
 !********************************************************************************
 
-!adds an row (val) to a nx column by ny row array at row number pos
 subroutine add_element(x,number,pos)
   implicit none
   
   integer, allocatable, dimension(:) :: x, dummy
   integer, optional :: pos
-  integer :: nx, position, number
+  integer :: nx, position, number, flag
+  
+  flag = number
 
   nx = size(x,1)
 
@@ -170,14 +174,14 @@ subroutine add_element(x,number,pos)
   allocate(x(nx+1))
 
   if (position == 1) then
-    x(1) = number
+    x(1) = flag
     x(2:nx+1) = dummy
   elseif (position == nx+1) then
     x(1:nx) = dummy
-    x(nx+1) = number
+    x(nx+1) = flag
   else
     x(1:position-1) = dummy(1:position-1)
-    x(position) = number
+    x(position) = flag
     x(position+1:nx+1) = dummy(position:nx)
   endif
 
