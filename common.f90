@@ -39,15 +39,41 @@ contains
     ny = floor(yp)
     nz = floor(zp)
     
+    !if point goes out of an edge which is not periodic, set point to be at boundary to trilinear
+    !it will go out and be removed soon
     if (outedge(r)) then
-      if (coord_type == 2) then
-        if (xp < xmin) then
-          xp = xmin
-          nx = floor(xp)
+      !first coordinate needs checking in all coordinate systems
+      if (xp < xmin) then
+        xp = xmin
+        nx = floor(xp)
+      elseif (xp > xmax) then
+        xp = xmax
+        nx = floor(xp)-1
+      endif
+      if (coord_type == 1) then
+        !for cartesians
+        if (yp < ymin) then
+          yp = ymin
+          ny = floor(yp)
+        elseif (yp > ymax) then
+          yp = ymax
+          ny = floor(yp)-1
         endif
-        if (xp > xmax) then
-          xp = xmax
-          nx = floor(xp)-1
+        if (zp < zmin) then
+          zp = zmin
+          nz = floor(zp)
+        elseif (zp > zmax) then
+          zp = zmax
+          nz = floor(zp)-1
+        endif
+      elseif (coord_type == 3) then
+        !for cylindricals
+        if (zp < zmin) then
+          zp = zmin
+          nz = floor(zp)
+        elseif (zp > zmax) then
+          zp = zmax
+          nz = floor(zp)-1
         endif
       endif
     endif

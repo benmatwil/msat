@@ -79,8 +79,9 @@ program ssfind
   close(10)
   
   rnullsalt = rnulls
-  !for sphericals
-  if (coord_type == 2) then 
+  
+  if (coord_type == 2) then
+    !for sphericals 
     do i = 1, nnulls
       !check whether null is at the lower phi boundary
       if (rnullsalt(3,i) < zmin + 1) then
@@ -108,6 +109,21 @@ program ssfind
         rnullsalt(2,i) = rnullsalt(2,i) + 1
         call edgecheck(rnullsalt(:,i))
         rnullsalt(2,i) = rnullsalt(2,i) + 1
+      endif
+    enddo
+  elseif (coord_type == 3) then
+    !for cylindricals
+    do i = 1, nnulls
+      if (rnullsalt(2,i) < ymin + 1) then
+        rnullsalt(2,i) = rnullsalt(2,i) - 1
+        call edgecheck(rnullsalt(:,i))
+        rnullsalt(2,i) = rnullsalt(2,i) + 1
+      endif
+      
+      if (rnullsalt(2,i) > ymax - 1) then
+        rnullsalt(2,i) = rnullsalt(2,i) + 1
+        call edgecheck(rnullsalt(:,i))
+        rnullsalt(2,i) = rnullsalt(2,i) - 1
       endif
     enddo
   endif
