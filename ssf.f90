@@ -45,27 +45,23 @@ program ssfind
   
   !read in data
   open (unit=10,file=filename,access='stream')
-
     read(10), nx, ny, nz !number of vertices
-    print*, nx, ny, nz
-    
+    print*, "Grid dimensions are", nx, ny, nz
     allocate(bgrid(nx,ny,nz,3))
     allocate(x(nx), y(ny), z(nz))
     read(10), bgrid(:,:,:,1)
     read(10), bgrid(:,:,:,2)
     read(10), bgrid(:,:,:,3)
     read(10) x, y, z
-
-    xmin = 1
-    xmax = nx
-    ymin = 1
-    ymax = ny
-    zmin = 1
-    zmax = nz
-
   close(10)
-
-  print*, 'Data read in'
+  
+  xmin = 1
+  xmax = nx
+  ymin = 1
+  ymax = ny
+  zmin = 1
+  zmax = nz
+  print*, "Data read in, grid dimensions are", nx, ny, nz
 
   call SYSTEM_CLOCK(tstart,count_rate) !to time how long it takes
 
@@ -114,12 +110,14 @@ program ssfind
   elseif (coord_type == 3) then
     !for cylindricals
     do i = 1, nnulls
+      ! check whether null is at lower phi boundary
       if (rnullsalt(2,i) < ymin + 1) then
         rnullsalt(2,i) = rnullsalt(2,i) - 1
         call edgecheck(rnullsalt(:,i))
         rnullsalt(2,i) = rnullsalt(2,i) + 1
       endif
       
+      ! check whether null is at upper phi boundary
       if (rnullsalt(2,i) > ymax - 1) then
         rnullsalt(2,i) = rnullsalt(2,i) + 1
         call edgecheck(rnullsalt(:,i))
