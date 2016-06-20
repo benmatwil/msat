@@ -250,6 +250,7 @@ contains
               nseps = nseps+1
 
               !write the point's information to the separator file
+              print*, 1, nullnum, i, nring, rmap(index-1)
               write(12) 1
               write(12) nullnum, i
               write(12) nring, rmap(index-1)

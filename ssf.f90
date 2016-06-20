@@ -9,7 +9,7 @@ program ssfind
 
   implicit none
 
-  character (len=8), parameter :: fmt='(I3.3)'
+  character (len=8), parameter :: fmt='(I4.4)'
   character (len=5) :: fname
 
   integer :: nringss
@@ -169,7 +169,7 @@ program ssfind
 
     write(fname,fmt) nnull
 
-    open(unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted')
+    open(unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted',access='stream')
 
     open(unit=20,file='output/everything'//trim(fname)//'.dat',access='stream',status='replace')
 
