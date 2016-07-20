@@ -28,7 +28,7 @@ contains
       h = sign*(stepdist-hdum)
       call rk45(r,h)
       hdum = hdum + abs(h)
-      if (modulus(r-r0)) < 0.1*stepdist) print*, modulus(r-r0), hdum
+      if (modulus(r-r0) < 0.1*stepdist) print*, modulus(r-r0), hdum
     enddo
 
     if (modulus(r-r0) < 0.1*stepdist) then
