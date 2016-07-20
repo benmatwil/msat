@@ -234,6 +234,8 @@ contains
               count = count+1
             enddo
             
+            !if (count == 1000) !then we want to remove points as they appear to be stuck at the null
+            
             !check which side of the null the points end out on
             if (dot(spines(:,i),r(:,index)-rnulls(:,i)) > 0) then
               signof(index) = 1
