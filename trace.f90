@@ -21,9 +21,7 @@ contains
     double precision :: h, hdum, stepdist
 
     stepdist = h
-
     hdum = 0
-
     r0 = r
 
     do while (hdum < stepdist .and. .not. outedge(r))

@@ -99,7 +99,6 @@ contains
     endif
 
     !check for too tightly spaced points, flag points to be removed
-    remove = 0
     do i = 1, nlines !loop over all points
       if (break(i) == 0) then
         if (i < nlines) then !if not end point
@@ -234,7 +233,11 @@ contains
               count = count+1
             enddo
             
-            !if (count == 1000) !then we want to remove points as they appear to be stuck at the null
+            if (count == 1000) then !then we want to remove points as they appear to be stuck at the null
+              remove(rmap(index)) = 1
+              break(rmap(index)) = 1
+              cycle
+            endif
             
             !check which side of the null the points end out on
             if (dot(spines(:,i),r(:,index)-rnulls(:,i)) > 0) then
@@ -251,7 +254,7 @@ contains
                 nseps = nseps+1
 
                 !write the point's information to the separator file
-                print*, 1, nullnum, i, nring, rmap(index-1), nlines
+                !print*, 1, nullnum, i, nring, rmap(index-1), nlines
                 write(12) 1
                 write(12) nullnum, i
                 write(12) nring, rmap(index-1)
