@@ -33,7 +33,7 @@ contains
     enddo
 
     if (modulus(r-r0) < 0.1*stepdist) then
-      print *,'field line not tracing',modulus(r-r0),stepdist
+      !print *,'field line not tracing',modulus(r-r0),stepdist
       ierror = 1
     endif
 
