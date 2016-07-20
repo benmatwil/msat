@@ -166,99 +166,99 @@ contains
     !$OMP PARALLEL DO default(shared) private(near, notnear, nnc, k, gapsize, endgap, nr, r, ir, rmap, signof, index, count, h)
     do i = 1, size(rnulls,2)
       if (i == nullnum) cycle !ignore the null the points belong to
-      if (signs(i)*signs(nullnum) == 1) cycle !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
-      
-      near = 0
-      notnear = 0
+      if (signs(i)*signs(nullnum) /= 1) then !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
+        near = 0
+        notnear = 0
 
-      ! first find all points that lie within nulldist and note their index
-      do j = 1, nlines
-        if (dist(line1(:,j),rnulls(:,i)) < nulldist .or. dist(line1(:,j),rnullsalt(:,i)) < nulldist) near(j) = j !point lies within nulldist
-      enddo
-
-      if (maxval(near) > 0) then !if there are any points that lie within this distance
-        ! find the longest consectutive number of points not near to the null (should be more not near another null)
-        nnc = 0
-        do k = 1, nlines
-          if (near(k) == 0) then
-            nnc = nnc + 1
-            notnear(k) = nnc
-          else
-            notnear(k) = 0
-            nnc = 0
-          endif
+        ! first find all points that lie within nulldist and note their index
+        do j = 1, nlines
+          if (dist(line1(:,j),rnulls(:,i)) < nulldist .or. dist(line1(:,j),rnullsalt(:,i)) < nulldist) near(j) = j !point lies within nulldist
         enddo
-        if (nnc /= 0) then
-          k = 1
-          do while (near(k) == 0)
-            nnc = nnc + 1
-            notnear(k) = nnc
-            k = k + 1
-          enddo
-        endif
 
-        endgap = maxloc(notnear,1) ! location of last non-near point
-        gapsize = notnear(endgap) ! number of points in biggest gap not near null
-        nextra = 20 !number of points to test either side of test points
-        nr = nlines - gapsize + 2*nextra !total number to test (nlines-gapsize near null)
-
-        if (gapsize == 0 .or. nr >= nlines) then
-          n1 = 1
-          n2 = nlines
-          nr = nlines
-        else
-          !select all points not in this longest chain to be tested for change in side of the fan
-          n1 = modulo(endgap + 1 - nextra - 1, nlines) + 1
-          n2 = modulo(nlines + endgap - gapsize + nextra - 1, nlines) + 1
-        endif
-        allocate(r(3,nr), rmap(nr))
-
-        if (n1 <= n2) then
-          r = line1(:,n1:n2)
-          rmap = [(i,i=n1,n2)]
-        else
-          r(:,1:nlines-n1+1) = line1(:,n1:nlines)
-          rmap(1:nlines-n1+1) = [(i,i=n1,nlines)]
-          r(:,nlines-n1+2:nr) = line1(:,1:n2)
-          rmap(nlines-n1+2:nr) = [(i,i=1,n2)]
-        endif
-        
-        allocate(signof(nr))
-        signof = 0
-        do index = 1, nr
-          !interpolate points along fieldlines
-          count = 0
-          do while (dist(r(:,index),rnulls(:,i)) < 3*nulldist .and. count < 1000)
-            h = 1d-2
-            call trace_line(r(:,index),signs(nullnum),h)
-            call edgecheck(r(:,index))
-            count = count+1
-          enddo
-          
-          !check which side of the null the points end out on
-          if (dot(spines(:,i),r(:,index)-rnulls(:,i)) > 0) then
-            signof(index) = 1
-          else
-            signof(index) = -1
-          endif
-          
-          !if theres a change in sign, theres the separator
-          if (index /= 1) then
-            if (signof(index-1)*signof(index) == -1) then
-              !print*, rmap(index-1), nlines, nlines-rmap(index-1)
-              break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
-              nseps = nseps+1
-
-              !write the point's information to the separator file
-              print*, 1, nullnum, i, nring, rmap(index-1)
-              write(12) 1
-              write(12) nullnum, i
-              write(12) nring, rmap(index-1)
-              exit
+        if (maxval(near) > 0) then !if there are any points that lie within this distance
+          ! find the longest consectutive number of points not near to the null (should be more not near another null)
+          nnc = 0
+          do k = 1, nlines
+            if (near(k) == 0) then
+              nnc = nnc + 1
+              notnear(k) = nnc
+            else
+              notnear(k) = 0
+              nnc = 0
             endif
+          enddo
+          if (nnc /= 0) then
+            k = 1
+            do while (near(k) == 0)
+              nnc = nnc + 1
+              notnear(k) = nnc
+              k = k + 1
+            enddo
           endif
-        enddo
-        deallocate(r, signof, rmap)
+
+          endgap = maxloc(notnear,1) ! location of last non-near point
+          gapsize = notnear(endgap) ! number of points in biggest gap not near null
+          nextra = 20 !number of points to test either side of test points
+          nr = nlines - gapsize + 2*nextra !total number to test (nlines-gapsize near null)
+
+          if (gapsize == 0 .or. nr >= nlines) then
+            n1 = 1
+            n2 = nlines
+            nr = nlines
+          else
+            !select all points not in this longest chain to be tested for change in side of the fan
+            n1 = modulo(endgap + 1 - nextra - 1, nlines) + 1
+            n2 = modulo(nlines + endgap - gapsize + nextra - 1, nlines) + 1
+          endif
+          allocate(r(3,nr), rmap(nr))
+
+          if (n1 <= n2) then
+            r = line1(:,n1:n2)
+            rmap = [(i,i=n1,n2)]
+          else
+            r(:,1:nlines-n1+1) = line1(:,n1:nlines)
+            rmap(1:nlines-n1+1) = [(i,i=n1,nlines)]
+            r(:,nlines-n1+2:nr) = line1(:,1:n2)
+            rmap(nlines-n1+2:nr) = [(i,i=1,n2)]
+          endif
+          
+          allocate(signof(nr))
+          signof = 0
+          do index = 1, nr
+            !interpolate points along fieldlines
+            count = 0
+            do while (dist(r(:,index),rnulls(:,i)) < 3*nulldist .and. count < 1000)
+              h = 1d-2
+              call trace_line(r(:,index),signs(nullnum),h)
+              call edgecheck(r(:,index))
+              count = count+1
+            enddo
+            
+            !check which side of the null the points end out on
+            if (dot(spines(:,i),r(:,index)-rnulls(:,i)) > 0) then
+              signof(index) = 1
+            else
+              signof(index) = -1
+            endif
+            
+            !if theres a change in sign, theres the separator
+            if (index /= 1) then
+              if (signof(index-1)*signof(index) == -1) then
+                !print*, rmap(index-1), nlines, nlines-rmap(index-1)
+                break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
+                nseps = nseps+1
+
+                !write the point's information to the separator file
+                print*, 1, nullnum, i, nring, rmap(index-1), nlines
+                write(12) 1
+                write(12) nullnum, i
+                write(12) nring, rmap(index-1)
+                exit
+              endif
+            endif
+          enddo
+          deallocate(r, signof, rmap)
+        endif      
       endif
     enddo
     !$OMP END PARALLEL DO
