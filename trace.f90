@@ -28,11 +28,6 @@ contains
       h = sign*(stepdist-hdum)
       call rk45(r,h)
       hdum = hdum + abs(h)
-      if (modulus(r-r0) < 0.1*stepdist) then
-        print*, modulus(r-r0), hdum
-        
-      endif
-
     enddo
     
     if (modulus(r-r0) < 0.1*stepdist) then
