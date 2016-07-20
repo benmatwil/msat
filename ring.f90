@@ -220,6 +220,9 @@ contains
             r(:,nlines-n1+2:nr) = line1(:,1:n2)
             rmap(nlines-n1+2:nr) = [(i,i=1,n2)]
           endif
+
+          allocate(signof(nr))
+          signof = 0
           
           do index = 1, nr
             !extrapolate points along fieldlines
@@ -231,18 +234,7 @@ contains
               count = count+1
             enddo
 
-          if (signs(i)*signs(nullnum) == -1) then
-            
-              
-              if (count == 1000) then !then we want to remove points as they appear to be stuck at the null
-                remove(rmap(index)) = 1
-                break(rmap(index-1)) = 1
-                cycle
-              endif
-
-              allocate(signof(nr))
-              signof = 0
-              
+            if (signs(i)*signs(nullnum) == -1) then              
               !check which side of the null the points end out on
               if (dot(spines(:,i),r(:,index)-rnulls(:,i)) > 0) then
                 signof(index) = 1
@@ -266,7 +258,11 @@ contains
                 endif
               endif
             else
-
+              if (count == 1000) then !then we want to remove points as they appear to be stuck at the null
+                remove(rmap(index)) = 1
+                break(rmap(index-1)) = 1
+                cycle
+              endif
             endif
           enddo
           deallocate(r, signof, rmap)
