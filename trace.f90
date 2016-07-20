@@ -30,11 +30,11 @@ contains
       hdum = hdum + abs(h)
       if (modulus(r-r0) < 0.1*stepdist) then
         print*, modulus(r-r0), hdum
-        print*, ''
+        
       endif
 
     enddo
-
+    print*, ''
     if (modulus(r-r0) < 0.1*stepdist) then
       !print *,'field line not tracin',modulus(r-r0),stepdist
       ierror = 1
