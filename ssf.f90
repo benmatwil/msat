@@ -10,7 +10,7 @@ program ssfind
   implicit none
 
   character (len=8), parameter :: fmt='(I4.4)'
-  character (len=5) :: fname
+  character (len=5) :: fname, fname2
 
   integer :: nringss
   integer*8 :: tstart,tstop,count_rate !to time program
@@ -46,7 +46,6 @@ program ssfind
   !read in data
   open (unit=10,file=filename,access='stream')
     read(10), nx, ny, nz !number of vertices
-    print*, "Grid dimensions are", nx, ny, nz
     allocate(bgrid(nx,ny,nz,3))
     allocate(x(nx), y(ny), z(nz))
     read(10), bgrid(:,:,:,1)
@@ -67,7 +66,7 @@ program ssfind
 
   !read in null data
 
-  open (unit=10,file='output/nulls.dat',form='unformatted')
+  open (unit=10,file='output/nullsben.dat',form='unformatted')
     read(10) nnulls
     allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
     read(10) signs
@@ -167,7 +166,7 @@ program ssfind
 
     write(fname,fmt) nnull
 
-    open(unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted',access='stream')
+    open(unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted',access='stream',status='replace')
 
     open(unit=20,file='output/everything'//trim(fname)//'.dat',access='stream',status='replace')
 
@@ -187,6 +186,9 @@ program ssfind
         print*,'Null has zero sign'
         exit
       endif
+
+      write(fname2,fmt) i
+      open(unit=21,file='output/everything'//trim(fname)//'-'//trim(fname2)//'.dat',access='stream',status='replace')
 
       nringss = nringss+1
 
@@ -255,9 +257,13 @@ program ssfind
       endif
       
       !print*,'Checking at null', i, nlines, nnull
-      call at_null(nlines,nnull,i) !determine if point is at null
       call remove_points(nlines,i) !remove points from ring if necessary
       call add_points(nlines,i) !add points to ring if necessary
+      call at_null(nlines,nnull,i) !determine if point is at null
+
+
+      write(21) nlines, line1, association
+      close(21)
 
       if (exitcondition) exit
 
