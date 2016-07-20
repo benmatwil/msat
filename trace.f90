@@ -34,9 +34,9 @@ contains
       endif
 
     enddo
-    print*, ''
+    
     if (modulus(r-r0) < 0.1*stepdist) then
-      !print *,'field line not tracin',modulus(r-r0),stepdist
+      print *,'field line not tracin',modulus(r-r0),stepdist
       ierror = 1
     endif
 
