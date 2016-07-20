@@ -221,10 +221,8 @@ contains
             rmap(nlines-n1+2:nr) = [(i,i=1,n2)]
           endif
           
-          allocate(signof(nr))
-          signof = 0
           do index = 1, nr
-            !interpolate points along fieldlines
+            !extrapolate points along fieldlines
             count = 0
             do while (dist(r(:,index),rnulls(:,i)) < 3*nulldist .and. count < 1000)
               h = 1d-2
@@ -232,34 +230,43 @@ contains
               call edgecheck(r(:,index))
               count = count+1
             enddo
-            
-            if (count == 1000) then !then we want to remove points as they appear to be stuck at the null
-              remove(rmap(index)) = 1
-              break(rmap(index)) = 1
-              cycle
-            endif
-            
-            !check which side of the null the points end out on
-            if (dot(spines(:,i),r(:,index)-rnulls(:,i)) > 0) then
-              signof(index) = 1
-            else
-              signof(index) = -1
-            endif
-            
-            !if theres a change in sign, theres the separator
-            if (index /= 1) then
-              if (signof(index-1)*signof(index) == -1) then
-                !print*, rmap(index-1), nlines, nlines-rmap(index-1)
-                break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
-                nseps = nseps+1
 
-                !write the point's information to the separator file
-                !print*, 1, nullnum, i, nring, rmap(index-1), nlines
-                write(12) 1
-                write(12) nullnum, i
-                write(12) nring, rmap(index-1)
-                exit
+          if (signs(i)*signs(nullnum) == -1) then
+            
+              
+              if (count == 1000) then !then we want to remove points as they appear to be stuck at the null
+                remove(rmap(index)) = 1
+                break(rmap(index-1)) = 1
+                cycle
               endif
+
+              allocate(signof(nr))
+              signof = 0
+              
+              !check which side of the null the points end out on
+              if (dot(spines(:,i),r(:,index)-rnulls(:,i)) > 0) then
+                signof(index) = 1
+              else
+                signof(index) = -1
+              endif
+              
+              !if theres a change in sign, theres the separator
+              if (index /= 1) then
+                if (signof(index-1)*signof(index) == -1) then
+                  !print*, rmap(index-1), nlines, nlines-rmap(index-1)
+                  break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
+                  nseps = nseps+1
+
+                  !write the point's information to the separator file
+                  !print*, 1, nullnum, i, nring, rmap(index-1), nlines
+                  write(12) 1
+                  write(12) nullnum, i
+                  write(12) nring, rmap(index-1)
+                  exit
+                endif
+              endif
+            else
+
             endif
           enddo
           deallocate(r, signof, rmap)

@@ -31,7 +31,7 @@ contains
     enddo
     
     if (modulus(r-r0) < 0.1*stepdist) then
-      print *,'field line not tracin',modulus(r-r0),stepdist
+      print *,'field line not tracin',modulus(r-r0),stepdist, sign
       ierror = 1
     endif
 
