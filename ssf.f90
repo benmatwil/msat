@@ -12,7 +12,6 @@ program ssfind
   character (len=8), parameter :: fmt='(I4.4)'
   character (len=5) :: fname, fname2
 
-  integer :: nringss
   integer*8 :: tstart,tstop,count_rate !to time program
   integer :: nx, ny, nz !size of grid
 
@@ -173,7 +172,6 @@ program ssfind
     nseps = 0
     nrings = 0
     nperring = 0
-    nringss = 0
     circumference = 0
 
     write(20) nrings, npoints, ringsmax
@@ -190,7 +188,7 @@ program ssfind
       write(fname2,fmt) i
       open(unit=21,file='output/everything'//trim(fname)//'-'//trim(fname2)//'.dat',access='stream',status='replace')
 
-      nringss = nringss+1
+      nrings = nrings+1
 
       endpoints = 0
       add1 = 0
@@ -260,6 +258,8 @@ program ssfind
       call remove_points(nlines,i) !remove points from ring if necessary
       call add_points(nlines,i) !add points to ring if necessary
       call at_null(nlines,nnull,i) !determine if point is at null
+      call remove_points(nlines,i)
+      call add_points(nlines,i)
 
 
       write(21) nlines, line1, association
@@ -269,14 +269,14 @@ program ssfind
 
     enddo
     
-    print*, 'number of separators=',nseps
+    print*, 'number of separators=',nseps, 'number of rings', nrings
     nsepss(nnull) = nseps
     
     write(12) -1
 
     close(12)
 
-    write(20,pos=1) nringss,sum(nperring)
+    write(20,pos=1) nrings,sum(nperring)
     write(20,pos=13) nperring
 
     close(20)
