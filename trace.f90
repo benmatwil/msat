@@ -28,11 +28,11 @@ contains
       h = sign*(stepdist-hdum)
       call rk45(r,h)
       hdum = hdum + abs(h)
-      print*, modulus(r-r0), hdum
+      if (modulus(r-r0)) < 0.1*stepdist) print*, modulus(r-r0), hdum
     enddo
 
     if (modulus(r-r0) < 0.1*stepdist) then
-      print *,'field line not tracin',modulus(r-r0),stepdist
+      !print *,'field line not tracin',modulus(r-r0),stepdist
       ierror = 1
     endif
 
@@ -63,28 +63,22 @@ contains
 
     !get rk values k1--k6
     rtest = r0
-    !print*, 'k1'
     call edgecheck(rtest)
     k1 = hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k21*k1
     call edgecheck(rtest)
-    !print*, 'k2'
     k2 = hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k31*k1 + k32*k2
     call edgecheck(rtest)
-    !print*, 'k3'
     k3 = hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k41*k1 + k42*k2 + k43*k3
     call edgecheck(rtest)
-    !print*, 'k4'
     k4 = hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
     call edgecheck(rtest)
-    !print*, 'k5'
     k5 = hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
     call edgecheck(rtest)
-    !print*, 'k6'
     k6 = hvec*normalise(trilinear(rtest, bgrid))
     
 
