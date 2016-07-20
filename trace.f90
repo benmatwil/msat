@@ -28,10 +28,11 @@ contains
       h = sign*(stepdist-hdum)
       call rk45(r,h)
       hdum = hdum + abs(h)
+      print*, modulus(r-r0), hdum
     enddo
 
     if (modulus(r-r0) < 0.1*stepdist) then
-      !print *,'field line not tracing',modulus(r-r0),stepdist
+      print *,'field line not tracin',modulus(r-r0),stepdist
       ierror = 1
     endif
 
