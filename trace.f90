@@ -3,14 +3,14 @@ use params
 use common
 
 !rkf45 parameters
-double precision, parameter :: k21 = 0.25
-double precision, parameter :: k31 = 3./32., k32 = 9./32.
-double precision, parameter :: k41 = 1932./2197., k42 = -7200./2197., k43 = 7296./2197.
-double precision, parameter :: k51 = 439./216., k52 = -8., k53 = 3680./513., k54 = -845./4104.
-double precision, parameter :: k61 = -8./27., k62 = 2., k63 = -3544./2565., k64 = 1859./4104., k65 = -11./40.
+double precision, parameter :: k21 = 0.25d0
+double precision, parameter :: k31 = 3d0/32d0, k32 = 9d0/32d0
+double precision, parameter :: k41 = 1932d0/2197d0, k42 = -7200d0/2197d0, k43 = 7296d0/2197d0
+double precision, parameter :: k51 = 439d0/216d0, k52 = -8d0, k53 = 3680d0/513d0, k54 = -845d0/4104d0
+double precision, parameter :: k61 = -8d0/27d0, k62 = 2d0, k63 = -3544d0/2565d0, k64 = 1859d0/4104d0, k65 = -11d0/40d0
 
-double precision, parameter :: y1 = 25./216., y3 = 1408./2565., y4 = 2197./4101., y5 = -1./5.
-double precision, parameter :: z1 = 16./135., z3 = 6656./12825., z4 = 28561./56430.,z5 = -9./50.,z6 = 2./55.
+double precision, parameter :: y1 = 25d0/216d0, y3 = 1408d0/2565d0, y4 = 2197d0/4101d0, y5 = -1d0/5d0
+double precision, parameter :: z1 = 16d0/135d0, z3 = 6656d0/12825d0, z4 = 28561d0/56430d0,z5 = -9d0/50d0,z6 = 2d0/55d0
 
 contains
 
