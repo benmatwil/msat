@@ -29,6 +29,6 @@ module params
   ! (1) = Cartesian (x,y,z)
   ! (2) = Spherical (r,theta,phi) (theta=polar angle, phi=azimuthal angle)
   ! (3) = Cylindrical (rho,phi,z)
-  integer, parameter :: coord_type = 2
+  integer, parameter :: coord_type = 1
 
 end module
