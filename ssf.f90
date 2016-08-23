@@ -185,8 +185,8 @@ program ssfind
         exit
       endif
 
-      write(fname2,fmt) i
-      open(unit=21,file='output/everything'//trim(fname)//'-'//trim(fname2)//'.dat',access='stream',status='replace')
+      !write(fname2,fmt) i
+      !open(unit=21,file='output/everything'//trim(fname)//'-'//trim(fname2)//'.dat',access='stream',status='replace')
 
       nrings = nrings+1
 
@@ -262,8 +262,8 @@ program ssfind
       call add_points(nlines,i)
 
 
-      write(21) nlines, line1, association
-      close(21)
+      !write(21) nlines, line1, association
+      !close(21)
 
       if (exitcondition) exit
 
