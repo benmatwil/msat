@@ -18,7 +18,7 @@ module params
 
   !ssfind parameters
   double precision, parameter :: maxdist1 = 0.15 !maximum distance between points in a ring
-  integer, parameter :: ringsmax = 1500 !maximum # of rings
+  integer, parameter :: ringsmax = 2500 !maximum # of rings
   integer, parameter :: pointsmax = 30000 !maximum number of points in ring
   double precision, parameter :: nulldist = 0.6 !maximum distance a ring point can be for it to be treated as being 'at' a null
 
