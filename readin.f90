@@ -3,7 +3,7 @@
 
 module readin_mod
 
-integer, parameter :: skip = 10 !number of rings to skip
+integer, parameter :: skip = 30 !number of rings to skip
 
 integer :: nrings, npoints, nringsmax
 integer, allocatable :: nperring(:)
@@ -64,7 +64,7 @@ double precision :: sep, sep1, sep2, sep3
 double precision, allocatable, dimension(:,:) :: rnulls
 
 
-character (len=8), parameter :: fmt='(I3.3)'
+character (len=8), parameter :: fmt='(I4.4)'
 character (len=5) :: fname
 
 !open (unit=10,file='output/nulls.dat',access='stream')
@@ -91,7 +91,7 @@ do null=1,nnulls
 
 write(fname,fmt) null
 
-open(unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted')
+open(unit=12,file='output/separator'//trim(fname)//'.dat',access='stream')
 
 
 open (unit=10,file='output/everything'//trim(fname)//'.dat',access='stream')
@@ -99,7 +99,7 @@ read(10) nrings, npoints, nringsmax
 allocate(nperring(nringsmax))
 read(10) nperring
 
-open (unit=11,file='output/sep'//trim(fname)//'.dat',form='unformatted')
+open (unit=11,file='output/sep'//trim(fname)//'.dat',access='stream')
 
 print*,'nrings, npoints, nringsmax'
 print*,nrings, npoints, nringsmax
