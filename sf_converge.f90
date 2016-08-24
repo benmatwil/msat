@@ -82,7 +82,7 @@ program sf_converge
   if (nullend - nullstart /= nnulls - 1) stop
   
   !now write data to nulls.dat
-  open(unit=10,file='output/nullsben.dat',form='unformatted')
+  open(unit=10,file='output/nulls.dat',form='unformatted')
   write(10) nnulls
   write(10) signs
   write(10) rnulls,spines,fans
