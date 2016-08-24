@@ -9,38 +9,32 @@ character (len=40) :: dblfmt= "(a,'(',f9.5,',',f9.5,',',f9.5,')',a)"
 character (len=100) :: arg
 
 double precision, allocatable, dimension(:) :: xs, ys, zs !x,y and z coordinates of confirmed nulls
-double precision, allocatable, dimension(:) :: xp,yp,zp
+double precision, allocatable, dimension(:) :: xp, yp, zp
  
 double precision, dimension(:,:,:), allocatable :: bx, by, bz
 
 integer, dimension(:,:,:), allocatable :: candidates !array containing coords of candidate cells (1 if candidate, 0 if not)
-
-double precision, dimension(2,2,2) :: cube,cbx,cby,cbz !arrays containing vertices surrounding a cell
+double precision, dimension(2,2,2) :: cube, cbx, cby, cbz !arrays containing vertices surrounding a cell
 double precision :: x, y, z !coordinates of a null
-double precision, allocatable, dimension(:) :: xgrid,ygrid,zgrid
+double precision, allocatable, dimension(:) :: xgrid, ygrid, zgrid
 
-integer :: nx,ny,nz !number of vertices
-integer :: nx1,ny1,nz1 !number of cells
+integer :: nx, ny, nz !number of vertices
+integer :: nx1, ny1, nz1 !number of cells
 
-integer :: i,j,k
+integer :: i, j, k
 integer :: ii, jj, kk
 
 integer :: nnulls
-
 integer :: itestx, itesty, itestz, itest
 
 integer :: ierror
-
 double precision :: dx
-
 double precision, allocatable, dimension(:,:) :: distances
-
 
 print*,'#######################################################################'
 print*,'#                         Null Finding Code                           #'
 print*,'#                      (Written by G P S Gibb)                        #'
 print*,'#######################################################################'
-
 
 !open file
 !file contains:
@@ -83,7 +77,6 @@ print*, ''
 print*, '-----------------------------------------------------------------------'
 print*,  ''
 
-
 nx1 = nx-1 !number of cells (not vertices)
 ny1 = ny-1
 nz1 = nz-1
@@ -116,7 +109,7 @@ do k = 1, nz1
       itestz = switch(cube)
       if (itestz == 0) cycle
 
-      cube(:,:,:) = bx(i:i+1,j:j+1,k:k+1)**2 + by(i:i+1,j:j+1,k:k+1)**2 + bz(i:i+1,j:j+1,k:k+1)**2
+      cube(:,:,:) = bx(i:i+1, j:j+1, k:k+1)**2 + by(i:i+1, j:j+1, k:k+1)**2 + bz(i:i+1, j:j+1, k:k+1)**2
       if (sum(cube) < 8*zero) cycle
 
       candidates(i,j,k) = 1
@@ -125,14 +118,13 @@ do k = 1, nz1
     enddo
   enddo
 enddo
+
 print*, ''
 write(*,"(a,i5)"), ' Number of candidate nulls found = ', nnulls
-
 
 print*, ''
 print*, '-----------------------------------------------------------------------'
 print*, ''
-
 
 print*, 'Now looping over all candidate nulls...'
 !now loop over candidates and test for nulls using bilinear method on faces
@@ -140,13 +132,13 @@ do k = 1, nz1
   do j = 1, ny1
     do i = 1, nx1
       if (candidates(i,j,k) == 1) then
-        cbx = bx(i:i+1,j:j+1,k:k+1) !bx cell
-        cby = by(i:i+1,j:j+1,k:k+1) !by cell
-        cbz = bz(i:i+1,j:j+1,k:k+1) !bz cell
+        cbx = bx(i:i+1 ,j:j+1, k:k+1) !bx cell
+        cby = by(i:i+1 ,j:j+1, k:k+1) !by cell
+        cbz = bz(i:i+1 ,j:j+1, k:k+1) !bz cell
 
-        call normalize(cbx,cby,cbz)
+        call normalize(cbx, cby, cbz)
 
-        call bilin_test(cbx,cby,cbz,itest) !check for null within (or on face/corner/edge of) cell
+        call bilin_test(cbx, cby, cbz, itest) !check for null within (or on face/corner/edge of) cell
 
         if (itest == 0) then
           candidates(i,j,k) = 0 !if no null found remove this candidate
@@ -159,60 +151,53 @@ do k = 1, nz1
   enddo
 enddo
 
-!stop
-
 print*, ''
 print*, '-----------------------------------------------------------------------'
 print*, ''
 
-
 allocate(xs(0), ys(0), zs(0))
 allocate(xp(0), yp(0), zp(0))
 
-nnulls=sum(candidates)
+nnulls = sum(candidates)
 
 !find coordinates of null
-Write(*,"(a,i5)"), ' Number of confirmed nulls=',sum(candidates)
+write(*,"(a,i5)"), ' Number of confirmed nulls=', sum(candidates)
 print*, ''
-print*,"Now determining each null's location to sub-gridcell accuracy:"
-do k=1,nz1
-  do j=1,ny1
-    do i=1,nx1
-       if (candidates(i,j,k) .eq. 1) then
-       print*,''
-       !print*,'---------------------------------------'
-       print*,''
-       write(*,intfmt) 'Null in gridcell ',i,j,k,':'
-       cbx=bx(i:i+1,j:j+1,k:k+1)
-       cby=by(i:i+1,j:j+1,k:k+1)
-       cbz=bz(i:i+1,j:j+1,k:k+1)
+print*, "Now determining each null's location to sub-gridcell accuracy:"
+do k = 1, nz1
+  do j = 1, ny1
+    do i = 1, nx1
+      if (candidates(i,j,k) == 1) then
+        print*, ''
+        print*, ''
+        write(*,intfmt) 'Null in gridcell ', i, j, k, ':'
+        cbx = bx(i:i+1, j:j+1, k:k+1)
+        cby = by(i:i+1, j:j+1, k:k+1)
+        cbz = bz(i:i+1, j:j+1, k:k+1)
 
-       call normalize(cbx,cby,cbz)
+        call normalize(cbx, cby, cbz)
 
-       x=0.
-       y=0.
-       z=0.
+        x = 0.
+        y = 0.
+        z = 0.
 
-       dx=1.
-       !Print*, 'Attempting to use trilinear method within cell...'
-       do ii=1,sig_figs
-         dx=dx/10.000
-         call subgrid(cbx,cby,cbz,dx,x,y,z,ierror) !chop cell into 10x10x10 subcells, and check for nulls in each subcell
-         if (ierror .eq. 1) exit
-         !stop
-       enddo
+        dx = 1.
+        !Print*, 'Attempting to use trilinear method within cell...'
+        do ii = 1, sig_figs
+          dx = dx/10.000
+          call subgrid(cbx, cby, cbz, dx, x, y, z, ierror) !chop cell into 10x10x10 subcells, and check for nulls in each subcell
+          if (ierror == 1) exit
+        enddo
 
-       if (ierror .eq. 1) then
-         x=x+5.*dx
-         y=y+5.*dx
-         z=z+5.*dx
-       else
-        ! print*,'Success!'
-         write(*,dblfmt)'Null at ',i+x,j+y,k+z,' in gridcell coordinates'
-         !print*,'Gridcell Coordinates'
-       endif
-
-
+        if (ierror == 1) then
+          x = x + 5.*dx
+          y = y + 5.*dx
+          z = z + 5.*dx
+        else
+          !print*,'Success!'
+          write(*,dblfmt) 'Null at ', i+x, j+y, k+z, ' in gridcell coordinates'
+          !print*,'Gridcell Coordinates'
+        endif
 
 !        if (ierror .eq. 1) then
 !          print*, 'Attemptig to use Newton Raphson...'
@@ -223,75 +208,70 @@ do k=1,nz1
 !          endif
 !        endif
 
+        if (ierror == 1) then
+          print*, "Don't believe this null. Removing from list"
+          nnulls = nnulls-1
 
-       if (ierror .eq. 1) then
-             print*,"Don't believe this null. Removing from list"
-             nnulls=nnulls-1
+          !print*, 'Attempting to use brute force...'
+          !call brute_force(cbx,cby,cbz,x,y,z)
+          !write(*,dblfmt)'Null at ',i+x,j+y,k+z,' in gridcell coordinates'
+        else
 
+          !add this null to the list of nulls (in gridcell coordinates)
 
-            !print*, 'Attempting to use brute force...'
-            !call brute_force(cbx,cby,cbz,x,y,z)
-            !write(*,dblfmt)'Null at ',i+x,j+y,k+z,' in gridcell coordinates'
-       else
+          call add_element(xs, x+i)
+          call add_element(ys, y+j)
+          call add_element(zs, z+k)
 
-       !add this null to the list of nulls (in gridcell coordinates)
+          write(*,dblfmt) 'Null at ', linear(x, xgrid(i:i+1)), linear(y, ygrid(j:j+1)), linear(z, zgrid(k:k+1)), ' in real units'
 
-       call add_element(xs,x+i)
-       call add_element(ys,y+j)
-       call add_element(zs,z+k)
-
-       write(*,dblfmt)'Null at ',linear(x,xgrid(i:i+1)), linear(y,ygrid(j:j+1)), linear(z,zgrid(k:k+1)),' in real units'
-
-       !add this null to the lost of nulls (in 'real' units)
-       call add_element(xp,linear(x,xgrid(i:i+1)))
-       call add_element(yp,linear(y,ygrid(j:j+1)))
-       call add_element(zp,linear(z,zgrid(k:k+1)))
+          !add this null to the lost of nulls (in 'real' units)
+          call add_element(xp, linear(x, xgrid(i:i+1)))
+          call add_element(yp, linear(y, ygrid(j:j+1)))
+          call add_element(zp, linear(z, zgrid(k:k+1)))
 
 
-       cbx=bx(i:i+1,j:j+1,k:k+1)
-       cby=by(i:i+1,j:j+1,k:k+1)
-       cbz=bz(i:i+1,j:j+1,k:k+1)
+          cbx = bx(i:i+1, j:j+1, k:k+1)
+          cby = by(i:i+1, j:j+1, k:k+1)
+          cbz = bz(i:i+1, j:j+1, k:k+1)
 
-       !print*, 'Sanity check:'
-       write(*,"(a,ES10.3)"), '|B| at point is',sqrt(trilinear_cell(x,y,z,cbx)**2+&
-       trilinear_cell(x,y,z,cby)**2+trilinear_cell(x,y,z,cbz)**2)
+          !print*, 'Sanity check:'
+          write(*,"(a,ES10.3)"), '|B| at point is', sqrt(trilinear_cell(x, y, z, cbx)**2 + &
+          trilinear_cell(x, y, z, cby)**2+trilinear_cell(x, y, z, cbz)**2)
 
-       endif
-
-       endif
+        endif
+      endif
     enddo
   enddo
 enddo
 
-print*,''
-print*,'found',nnulls,'nulls'
+print*, ''
+print*, 'found', nnulls, 'nulls'
 
-print*,''
-print*,'-----------------------------------------------------------------------'
-print*,''
+print*, ''
+print*, '-----------------------------------------------------------------------'
+print*, ''
 
-Print*,'Now checking for duplicate nulls:'
-call remove_duplicates(xs,ys,zs,nnulls,xp,yp,zp)
+print*, 'Now checking for duplicate nulls:'
+call remove_duplicates(xs, ys, zs, nnulls, xp, yp, zp)
 
-print*,''
-print*,'Final number of nulls=',nnulls
+print*, ''
+print*, 'Final number of nulls=', nnulls
 
-print*,"Now writing null positions to 'null.dat'"
+print*, "Now writing null positions to 'null.dat'"
 
+open(unit=10, file='output/null.dat', form='unformatted')
+  write(10) nnulls
 
-open(unit=10,file='output/null.dat',form='unformatted')
-write(10) nnulls
-
-do i=1,nnulls
-  write(10) xs(i),ys(i),zs(i)
-enddo
-do i=1,nnulls
-  write(10) xp(i),yp(i),zp(i)
-enddo
-
+  do i = 1, nnulls
+    write(10) xs(i), ys(i), zs(i)
+  enddo
+  do i = 1, nnulls
+    write(10) xp(i), yp(i), zp(i)
+  enddo
 close(10)
-print*,''
 
-print*,'Done!'
+print*, ''
+print*, 'Done!'
 
 end program
