@@ -9,7 +9,7 @@ program sf_converge
   double precision, allocatable :: rnulls(:,:), spines(:,:), fans(:,:)
   integer, allocatable :: signs(:), spirals(:), warnings(:)
   
-  integer :: nnulls, nullstart, nullend
+  integer :: nnulls, nullstart, nullend, savedata = 0
   character(len=12) :: arg
 
   integer :: pcount, ncount, ucount
@@ -53,6 +53,7 @@ program sf_converge
         arg = arg(3:)
         read(arg,*) nullstart
         nullend = nullstart
+        savedata = 1
       endif
     enddo
   else
@@ -65,7 +66,7 @@ program sf_converge
     print*, 'Evaluating null', i,' of', nnulls
     rnull = rnulls(:,i)
     
-    call get_properties(sign,spine,fan,spiral,warning)
+    call get_properties(sign,spine,fan,spiral,warning,savedata)
     
     signs(i) = sign
     spines(:,i) = spine
@@ -113,13 +114,13 @@ end program
 !********************************************************************************
 
 !characterise each null
-subroutine get_properties(sign,spine,fan,spiral,warning)
+subroutine get_properties(sign,spine,fan,spiral,warning,savedata)
   use sfmod_converge
 
   implicit none
   integer :: i, j, count, n, imin, nfw, nbw, nspine, nfan, nfanchk, maxcount
   double precision :: r(3), b(3)
-  integer :: flag, testgordon, savedata, flagfw, flagbw
+  integer :: flag, flagfw, flagbw
   double precision :: dphi, dtheta
   double precision :: fact, acc, spinecheck
   double precision :: mindot, dotprod
@@ -258,8 +259,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     spine = rspine(:,1)
   else ! if no reduction is two, use that the spine should be the densest accumulation of points
     ! also likely we have a source or a sink so div(B) is non-zero
-    call remove_duplicates(rconvergefw1, 5d-2, denseposfw)
-    call remove_duplicates(rconvergebw1, 5d-2, denseposbw)
+    call remove_duplicates(rconvergefw1, 1d-2, denseposfw)
+    call remove_duplicates(rconvergebw1, 1d-2, denseposbw)
     nfw = maxval(denseposfw)
     nbw = maxval(denseposbw)
     print*, "Density of densest points", nfw, nbw
@@ -267,24 +268,27 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
       spine = rconvergebw1(:,maxval(maxloc(denseposbw)))
       rfan = rconvergefw
       rspine = rconvergebw
-      !sign = 1
+      sign = 1
     else if (nbw < nfw) then
       spine = rconvergefw1(:,maxval(maxloc(denseposfw)))
       rfan = rconvergebw
       rspine = rconvergefw
-      !sign = -1
+      sign = -1
     else ! not sure how to to decide in this case, haven't found a case like this yet...
       print*, "Uh oh, can't decide!"
-        open(unit=10, file="spinedata.dat", access="stream")
+      open(unit=10, file="spinedata.dat", access="stream")
         write(10) size(rconvergefw,2), rconvergefw
         close(10)
         open(unit=10, file="fandata.dat", access="stream")
         write(10) size(rconvergebw,2), rconvergebw
-        close(10)
+      close(10)
+      sign = 0 ! check to make sure it isn't flagging any proper nulls
     endif
     deallocate(denseposfw, denseposbw)
-    sign = 0 ! check to make sure it isn't flagging any proper nulls
+    
   endif
+
+  if (sign /= signguess) sign = 0
 
   ! We have picked rspine and rfan so can get rid of rconverges
   deallocate(rconvergebw, rconvergefw, rconvergefw1, rconvergebw1)
@@ -342,7 +346,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
         enddo
         minvec = rfan(:,imin)
         print*, "Perp vec is at ", imin, "out of a total of ", size(rfan,2)
-        ! Now check for a full ring for spiralling
+        ! Now check for a full ring for spiralling, this will pick up perfect potential nulls too :(
         nfan = size(rfan,2)
         allocate(distarr(nfan,nfan))
         do i = 1, nfan
@@ -376,8 +380,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning)
     minvec = normalise(cross(spine,maxvec))
   endif
 
-  ! Save data if there is a problematic null for inspection
-  savedata = 0
+  ! Save data if there is a problematic null for inspection by map.pro
   if (savedata == 1) then
     open(unit=10, file="spinedata.dat", access="stream")
     write(10) size(rspine,2), rspine, spine
