@@ -18,7 +18,7 @@ program ssfind
   !position vector of null (and saved backup)
   double precision :: r(3)
   double precision :: a(3)
-  double precision :: h
+  double precision :: h, h0
 
   integer :: i, j
 
@@ -65,7 +65,7 @@ program ssfind
 
   !read in null data
 
-  open (unit=10,file='output/nullsben.dat',form='unformatted')
+  open (unit=10,file='output/nulls.dat',form='unformatted')
     read(10) nnulls
     allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
     read(10) signs
@@ -199,16 +199,18 @@ program ssfind
       nperring(i) = nlines
 
       ierror = 0
+
+      if (i < 50) then
+        h0 = 5d-2
+      else
+        h0 = 25d-2
+      endif
+
       !$OMP PARALLEL DO private(r,h)
         do j = 1, nlines !loop over all points in ring (in parallel do)
 
           r(:) = line1(:,j)
-
-          if (i < 50) then
-            h = 5d-2
-          else
-            h = 25d-2
-          endif
+          h = h0
 
           call trace_line(r,sign,h) !trace line by a distance of h
 
@@ -225,6 +227,7 @@ program ssfind
 
         enddo
       !$OMP END PARALLEL DO
+
       write(20), line1
 
       if (nlines > pointsmax) then
@@ -243,7 +246,7 @@ program ssfind
       enddo
       
       if (i > 1) then
-        if (abs(circumference(i)-circumference(i-1)) .lt. 0.1*stepmin) then
+        if (abs(circumference(i)-circumference(i-1)) == 0.1*stepmin) then
           print*, 'Fan has stopped growing/shrinking', i
           exitcondition = .true. !exit if fan not changing size
         endif
@@ -255,6 +258,10 @@ program ssfind
       endif
       
       !print*,'Checking at null', i, nlines, nnull
+      print*, 'h', h0, nlines
+      nulldist = 0.6!1.5*h0
+      maxdist1 = 0.15!0.75*h0
+      mindist1 = maxdist1/4
       call remove_points(nlines,i) !remove points from ring if necessary
       call add_points(nlines,i) !add points to ring if necessary
       call at_null(nlines,nnull,i) !determine if point is at null
