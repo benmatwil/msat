@@ -59,130 +59,115 @@ if (command_argument_count() > 0) then
 endif
 print*, filename
 
-open (unit=10,file=filename,access='stream')
+open(unit=10, file=filename, access='stream')
 
-print*,''
-print*,"Reading in data from: '",trim(filename),"'..."
+  print*, ''
+  print*, "Reading in data from: '", trim(filename), "'..."
 
+  read(10), nx, ny, nz !number of vertices
+  print*, ''
+  write(*, intfmt), 'Number of points in grid: (nx,ny,nz) = ', nx, ny, nz, ''
 
-read(10),nx,ny,nz !number of vertices
-print*,''
-Write(*,intfmt),'Number of points in grid: (nx,ny,nz) = ',nx,ny,nz,''
-!print*,nx,ny,nz
+  allocate(bx(nx,ny,nz), by(nx,ny,nz), bz(nx,ny,nz))
+  allocate(xgrid(nx), ygrid(ny), zgrid(nz))
 
-
-allocate(bx(nx,ny,nz),by(nx,ny,nz),bz(nx,ny,nz))
-allocate(xgrid(nx),ygrid(ny),zgrid(nz))
-
-read(10),bx
-read(10),by
-read(10),bz
-read(10),xgrid,ygrid,zgrid
-!print*,''
-!print*,'Gridsize='
-!print*,nx,ny,nz
-
-
-!print*,maxval(bx),minval(bx)
+  read(10), bx
+  read(10), by
+  read(10), bz
+  read(10), xgrid, ygrid, zgrid
 
 close(10)
 
 print*, 'Done!'
-print*,''
-print*,'-----------------------------------------------------------------------'
-print*,''
+print*, ''
+print*, '-----------------------------------------------------------------------'
+print*,  ''
 
 
-nx1=nx-1 !number of cells (not vertices)
-ny1=ny-1
-nz1=nz-1
+nx1 = nx-1 !number of cells (not vertices)
+ny1 = ny-1
+nz1 = nz-1
 
 allocate(candidates(nx1,ny1,nz1)) ! integer array where candidate cells are flagged
 
-nnulls=0
+nnulls = 0
 
-print*,'Checking for candidate nulls...'
+print*, 'Checking for candidate nulls...'
 
 !loop over each cell checking if bx, by and bz switch sign
-do k=1,nz1
- do j=1,ny1
-    do i=1,nx1
+do k = 1, nz1
+  do j = 1, ny1
+    do i = 1, nx1
 
-       candidates(i,j,k)=0
+      candidates(i,j,k) = 0
 
-       !check if bx changes sign
-       cube(:,:,:)=bx(i:i+1,j:j+1,k:k+1)
-       itestx=switch(cube)
-       if (itestx .eq. 0) cycle
+      !check if bx changes sign
+      cube(:,:,:) = bx(i:i+1, j:j+1, k:k+1)
+      itestx = switch(cube)
+      if (itestx == 0) cycle
 
-       !check by changes sign
-       cube(:,:,:)=by(i:i+1,j:j+1,k:k+1)
-       itesty=switch(cube)
-       if (itesty .eq. 0) cycle
+      !check by changes sign
+      cube(:,:,:) = by(i:i+1, j:j+1, k:k+1)
+      itesty = switch(cube)
+      if (itesty == 0) cycle
 
-       !check bz changes sign
-       cube(:,:,:)=bz(i:i+1,j:j+1,k:k+1)
-       itestz=switch(cube)
-       if (itestz .eq. 0) cycle
+      !check bz changes sign
+      cube(:,:,:) = bz(i:i+1, j:j+1, k:k+1)
+      itestz = switch(cube)
+      if (itestz == 0) cycle
 
-       cube(:,:,:)=bx(i:i+1,j:j+1,k:k+1)**2 + by(i:i+1,j:j+1,k:k+1)**2 + bz(i:i+1,j:j+1,k:k+1)**2
-       if (sum(cube) .lt. 8*zero) cycle
+      cube(:,:,:) = bx(i:i+1,j:j+1,k:k+1)**2 + by(i:i+1,j:j+1,k:k+1)**2 + bz(i:i+1,j:j+1,k:k+1)**2
+      if (sum(cube) < 8*zero) cycle
 
-       candidates(i,j,k)=1
-       nnulls=nnulls+1
+      candidates(i,j,k) = 1
+      nnulls = nnulls+1
 
-
-
-     enddo
-   enddo
+    enddo
+  enddo
 enddo
-print*,''
-Write(*,"(a,i5)"), ' Number of candidate nulls found=',nnulls
+print*, ''
+write(*,"(a,i5)"), ' Number of candidate nulls found = ', nnulls
 
 
-print*,''
-print*,'-----------------------------------------------------------------------'
-print*,''
+print*, ''
+print*, '-----------------------------------------------------------------------'
+print*, ''
 
 
-print*,'Now looping over all candidate nulls...'
+print*, 'Now looping over all candidate nulls...'
 !now loop over candidates and test for nulls using bilinear method on faces
+do k = 1, nz1
+  do j = 1, ny1
+    do i = 1, nx1
+      if (candidates(i,j,k) == 1) then
+        cbx = bx(i:i+1,j:j+1,k:k+1) !bx cell
+        cby = by(i:i+1,j:j+1,k:k+1) !by cell
+        cbz = bz(i:i+1,j:j+1,k:k+1) !bz cell
 
-do k=1,nz1
-  do j=1,ny1
-    do i=1,nx1
-       if (candidates(i,j,k) .eq. 1) then
-       !print*,''
-       ! write(*,intfmt) 'Candidate cell with coordinates ',i,j,k,':'
-         cbx=bx(i:i+1,j:j+1,k:k+1) !bx cell
-         cby=by(i:i+1,j:j+1,k:k+1) !by cell
-         cbz=bz(i:i+1,j:j+1,k:k+1) !bz cell
+        call normalize(cbx,cby,cbz)
 
-         call normalize(cbx,cby,cbz)
+        call bilin_test(cbx,cby,cbz,itest) !check for null within (or on face/corner/edge of) cell
 
-         call bilin_test(cbx,cby,cbz,itest) !check for null within (or on face/corner/edge of) cell
-
-         if (itest .eq. 0) then
-          candidates(i,j,k)=0 !if no null found remove this candidate
-      !    print*,'No Null'
+        if (itest == 0) then
+          candidates(i,j,k) = 0 !if no null found remove this candidate
         else
       !    print*,'Null!'
         endif
          !print *, ''
-       endif
+      endif
     enddo
   enddo
 enddo
 
 !stop
 
-print*,''
-print*,'-----------------------------------------------------------------------'
-print*,''
+print*, ''
+print*, '-----------------------------------------------------------------------'
+print*, ''
 
 
-allocate(xs(0),ys(0),zs(0))
-allocate(xp(0),yp(0),zp(0))
+allocate(xs(0), ys(0), zs(0))
+allocate(xp(0), yp(0), zp(0))
 
 nnulls=sum(candidates)
 
