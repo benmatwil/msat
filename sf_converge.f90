@@ -120,7 +120,7 @@ subroutine get_properties(sign,spine,fan,spiral,warning,savedata)
   implicit none
   integer :: i, j, count, n, imin, nfw, nbw, nspine, nfan, nfanchk, maxcount
   double precision :: r(3), b(3)
-  integer :: flag, flagfw, flagbw
+  integer :: flag, flagfw, flagbw, savedata
   double precision :: dphi, dtheta
   double precision :: fact, acc, spinecheck
   double precision :: mindot, dotprod
