@@ -289,12 +289,12 @@ contains
     logical :: outedge
     
     outedge = .false.  
-    if (r(1) .gt. xmax .or. r(1) .lt. xmin) outedge = .true.
+    if (r(1) > xmax .or. r(1) < xmin) outedge = .true.
     if (coord_type == 1) then
-      if (r(2) .gt. ymax .or. r(2) .lt. ymin) outedge = .true.
-      if (r(3) .gt. zmax .or. r(3) .lt. zmin) outedge = .true.
+      if (r(2) > ymax .or. r(2) < ymin) outedge = .true.
+      if (r(3) > zmax .or. r(3) < zmin) outedge = .true.
     else if (coord_type == 3) then
-      if (r(3) .gt. zmax .or. r(3) .lt. zmin) outedge = .true.
+      if (r(3) > zmax .or. r(3) < zmin) outedge = .true.
     endif
     
   end function  
@@ -309,20 +309,20 @@ contains
     if (present(out)) out = outedge(r)
     
     if (coord_type == 3) then
-      if (r(2) .lt. ymin) r(2) = r(2) + ymin - ymax
-      if (r(2) .gt. ymin) r(2) = r(2) - (ymin - ymax)
+      if (r(2) < ymin) r(2) = r(2) + ymin - ymax
+      if (r(2) > ymin) r(2) = r(2) - (ymin - ymax)
     else if (coord_type == 2) then
-      if (r(2) .lt. ymin .or. r(2) .gt. ymax) then
-        if (r(2) .lt. ymin) r(2) = 2*ymin - r(2)
-        if (r(2) .gt. ymax) r(2) = 2*ymax - r(2)
-        if (r(3) .lt. (ymax-ymin)/2) then
+      if (r(2) < ymin .or. r(2) > ymax) then
+        if (r(2) < ymin) r(2) = 2*ymin - r(2)
+        if (r(2) > ymax) r(2) = 2*ymax - r(2)
+        if (r(3) < (ymax-ymin)/2) then
           r(3) = r(3) + (ymax-ymin)/2
         else
           r(3) = r(3) - (ymax-ymin)/2
         endif
       endif
-      if (r(3) .lt. zmin) r(3) = r(3) + zmax - zmin
-      if (r(3) .gt. zmax) r(3) = r(3) - (zmax - zmin)
+      if (r(3) < zmin) r(3) = r(3) + zmax - zmin
+      if (r(3) > zmax) r(3) = r(3) - (zmax - zmin)
     endif
         
   end subroutine
