@@ -8,7 +8,7 @@ double precision, allocatable, dimension(:,:,:) :: bx, by, bz, ee
 double precision, allocatable, dimension(:) :: x, y, z    !coordinates of grid
 
 !xyz grid parameters
-integer, parameter :: nnx=200, nny=200, nnz=600 !size of grid
+integer, parameter :: nnx=201, nny=201, nnz=601 !size of grid
 double precision, parameter :: xxmin=-2.5, xxmax=2.5  !xrange
 double precision, parameter :: yymin=-2.5, yymax=2.5  !yrange
 double precision, parameter :: zzmin=-7.5, zzmax=7.5  !zrange
@@ -34,11 +34,12 @@ aa = 0.5
 tt = 0.75
 
 do k=1,nnz
-  z(k) = zzmin + (zzmax-zzmin)*(k-1)/nnz 
+  z(k) = zzmin + (zzmax-zzmin)*(k-1)/(nnz-1)
+  print*, z(k)
   do j=1,nny
-    y(j) = yymin + (yymax-yymin)*(j-1)/nny 
+    y(j) = yymin + (yymax-yymin)*(j-1)/(nny-1)
     do i=1,nnx
-      x(i) = xxmin + (xxmax-xxmin)*(i-1)/nnx 
+      x(i) = xxmin + (xxmax-xxmin)*(i-1)/(nnx-1)
       ee(i,j,k) = exp(-((x(i)-xc)/aa)**2-((y(j)-yc)/aa)**2-((z(k)-zc)/ll)**2)
       bx(i,j,k) = (b0/(L**2))*x(i)*(z(k) - 3*z0)-tt*(2*b1*(y(j)-yc)/aa)*ee(i,j,k) 
       by(i,j,k) = (b0/(L**2))*y(j)*(z(k) + 3*z0)+tt*(2*b1*(x(i)-xc)/aa)*ee(i,j,k) 
