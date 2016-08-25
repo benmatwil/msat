@@ -24,7 +24,7 @@ integer :: nx1, ny1, nz1 !number of cells
 integer :: i, j, k
 integer :: ii, jj, kk
 
-integer :: nnulls
+integer :: nnulls, nvert
 integer :: itestx, itesty, itestz, itest
 
 integer :: ierror
@@ -136,7 +136,7 @@ do k = 1, nz1
         cby = by(i:i+1 ,j:j+1, k:k+1) !by cell
         cbz = bz(i:i+1 ,j:j+1, k:k+1) !bz cell
 
-        call normalize(cbx, cby, cbz)
+        call normalise(cbx, cby, cbz)
 
         call bilin_test(cbx, cby, cbz, itest) !check for null within (or on face/corner/edge of) cell
 
@@ -175,7 +175,7 @@ do k = 1, nz1
         cby = by(i:i+1, j:j+1, k:k+1)
         cbz = bz(i:i+1, j:j+1, k:k+1)
 
-        call normalize(cbx, cby, cbz)
+        call normalise(cbx, cby, cbz)
 
         x = 0.
         y = 0.
@@ -218,7 +218,6 @@ do k = 1, nz1
         else
 
           !add this null to the list of nulls (in gridcell coordinates)
-
           call add_element(xs, x+i)
           call add_element(ys, y+j)
           call add_element(zs, z+k)
@@ -252,11 +251,37 @@ print*, ''
 print*, '-----------------------------------------------------------------------'
 print*, ''
 
+if (1 == 1) then  
+  print*, 'Now checking for nulls of vertices:'
+  nvert = 0
+  do k = 2, nz-1
+    do j = 2, ny-1
+      do i = 2, nz-1
+        if (sqrt(bx(i,j,k)**2 + by(i,j,k)**2 + bz(i,j,k)**2) < zero) then
+          print*, 'mod(B)',bx(i,j,k),by(i,j,k),bz(i,j,k),sqrt(bx(i,j,k)**2 + by(i,j,k)**2 + bz(i,j,k)**2)
+          call add_element(xs, dble(i))
+          call add_element(ys, dble(j))
+          call add_element(zs, dble(k))
+          call add_element(xp, xgrid(i))
+          call add_element(yp, ygrid(j))
+          call add_element(zp, zgrid(k))
+          nvert = nvert + 1
+          print*, i,j,k
+          print*,xgrid(i),ygrid(j),zgrid(k)
+          print*, ''
+        endif
+      enddo
+    enddo
+  enddo
+  print*, 'Found', nvert, 'nulls at vertices'
+endif
+
 print*, 'Now checking for duplicate nulls:'
 call remove_duplicates(xs, ys, zs, nnulls, xp, yp, zp)
 
 print*, ''
 print*, 'Final number of nulls=', nnulls
+print*, 'Is this the same?', size(xp,1)
 
 print*, "Now writing null positions to 'null.dat'"
 
