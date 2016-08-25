@@ -8,7 +8,7 @@ contains
     !tests surface of cube using bilinear method
     implicit none
 
-    integer :: i, inull,n
+    integer :: i, inull, n
     !integer :: itest1, itest2, itest3
     !integer :: face
     !integer :: idum
@@ -30,11 +30,9 @@ contains
     !5- yz intersection (1/0)
     !6- sign on x on this inersection (-1/1 /10 if null on face)
 
-
     inull = 0 !integer variable defining null. 1=null, 0=no null
     test = 0 !set test array to zero
     edge = 0 !integer variable defining null on edge. 1=null, 0=no null
-
 
     !face #1 : (bottom face)
     facex = cbx(:,:,1)
@@ -749,7 +747,7 @@ contains
   end
 
 
-  subroutine normalize(a,b,c)
+  subroutine normalise(a,b,c)
     double precision, dimension(2,2,2) :: a, b, c
     double precision :: scale
 
@@ -796,7 +794,7 @@ contains
           do i = j+1, n
             !print*,nnulls,i,j
             sep = (x(i) - x(j))**2 + (y(i) - y(j))**2 + (z(i) - z(j))**2
-            if (sep < 0.01) then
+            if (sep < 1d-3) then
               print*, 'removing duplcate at index', j
               call remove_element(x, j)
               call remove_element(y, j)
