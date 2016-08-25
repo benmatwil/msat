@@ -34,10 +34,10 @@ program sf_converge
 
   !read in bgrid
   open(unit=10,file=filename,access='stream')
-  read(10) nx, ny, nz
-  allocate(bgrid(nx,ny,nz,3), x(nx), y(ny), z(nz))
-  read(10) bgrid
-  read(10) x, y, z
+    read(10) nx, ny, nz
+    allocate(bgrid(nx,ny,nz,3), x(nx), y(ny), z(nz))
+    read(10) bgrid
+    read(10) x, y, z
   close(10)
 
   dx = (x(nx)-x(1))/nx
@@ -83,9 +83,9 @@ program sf_converge
   
   !now write data to nulls.dat
   open(unit=10,file='output/nulls.dat',form='unformatted')
-  write(10) nnulls
-  write(10) signs
-  write(10) rnulls,spines,fans
+    write(10) nnulls
+    write(10) signs
+    write(10) rnulls,spines,fans
   close(10)
 
   print*, ''
