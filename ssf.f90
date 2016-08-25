@@ -245,12 +245,12 @@ program ssfind
         circumference(i) = circumference(i) + dist(line2(:,j),line2(:,j-1))
       enddo
       
-      if (i > 1) then
-        if (abs(circumference(i)-circumference(i-1)) == 0.1*stepmin) then
-          print*, 'Fan has stopped growing/shrinking', i
-          exitcondition = .true. !exit if fan not changing size
-        endif
-      endif
+      !if (i > 1) then
+      !  if (abs(circumference(i)-circumference(i-1)) == 0.1*stepmin) then
+      !    print*, 'Fan has stopped growing/shrinking', i
+      !    exitcondition = .true. !exit if fan not changing size
+      !  endif
+      !endif
 
       if (ierror == 1) then
         print*, 'Tracing has failed',i
