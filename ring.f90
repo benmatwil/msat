@@ -28,17 +28,17 @@ contains
     integer, intent(in) :: iteration
     double precision :: b(3)
 
-    if (iteration < 100) then !if near-in to the starting null we want smaller max/min separations
-      maxdist = maxdist1*0.05
-    else
+    !if (iteration < 100) then !if near-in to the starting null we want smaller max/min separations
+    !  maxdist = maxdist1*0.05
+    !else
       maxdist = maxdist1
-    endif
+    !endif
 
     !test for gaps. Where gaps need to be filled, put this info into 'add'
     add1 = 0
     add2 = 0
     do i = 1, nlines !loop over each point in ring
-      if (break(i) < 0.5) then
+      if (break(i) == 0) then
         if (i < nlines) then !if not the last point
           j = i+1
         else
@@ -47,9 +47,10 @@ contains
         if (dist(line2(:,i),line2(:,j)) > maxdist) then !if two adjacent points too far away
           add1(:,i) = line1(:,i) + 0.5*(line2(:,j)-line2(:,i)) !add point half way between two points
           add2(:,i) = line2(:,i) + 0.5*(line2(:,j)-line2(:,i))
+          if (outedge(add2(:,i))) print*, 'adding point out'
         else
-          add1(:,i) = 0 !don't add anything
-          add2(:,i) = 0
+          add1(:,i) = 0d0 !don't add anything
+          add2(:,i) = 0d0
         endif
       endif
     enddo
@@ -91,12 +92,11 @@ contains
     integer, intent(in) :: iteration
     double precision :: mindist
 
-
-    if (iteration < 100) then
-      mindist = mindist1*0.05
-    else
+    !if (iteration < 100) then
+    !  mindist = mindist1*0.05
+    !else
       mindist = mindist1
-    endif
+    !endif
 
     !check for too tightly spaced points, flag points to be removed
     do i = 1, nlines !loop over all points
@@ -120,12 +120,32 @@ contains
       endif
     enddo
 
+    !do i = 1, nlines
+    !  if (i == 1) then !if not end point
+    !    j = nlines
+    !  else
+    !    j = i-1
+    !  endif
+    !  if (remove(i) == 1 .and. break(i) == 1 .and. break(j) == 0) then
+    !    if (i /= 1) then
+    !      break(i-1) = 1
+    !    else
+    !      break(nlines) = 1
+    !    endif
+    !    print*, 'going to remove bad point', iteration, i, j
+    !  endif
+    !enddo
+    !print*, sum(remove), sum(break), iteration
+    !do i = 1, nlines
+    !  if (remove(i) == 1 .or. break(i) == 1) print*, remove(i), break(i)
+    !enddo
+
     !remove points
     i = 1
     if (nlines > nstart .or. sum(endpoints) /= 0) then !if the number of points isn't too small...
       do while (i <= nlines)
         if (nlines <= nstart .and. sum(endpoints) == 0) exit
-        if (remove(i) == 1) then !if point is flagged to be removed, then remove
+        if (remove(i) >= 1) then !if point is flagged to be removed, then remove
           call remove_vector(line1,i)
           call remove_vector(line2,i)
           call remove_vector(add1,i)
@@ -246,6 +266,7 @@ contains
               if (index /= 1) then
                 if (signof(index-1)*signof(index) == -1) then
                   !print*, rmap(index-1), nlines, nlines-rmap(index-1)
+                  print*, 'Found a separator', nring
                   break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
                   nseps = nseps+1
 
@@ -254,7 +275,7 @@ contains
                   write(12) 1
                   write(12) nullnum, i
                   write(12) nring, rmap(index-1)
-                  exit
+                  !exit
                 endif
               endif
             else
