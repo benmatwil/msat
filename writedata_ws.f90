@@ -41,9 +41,9 @@ do k=1,nnz
     do i=1,nnx
       x(i) = xxmin + (xxmax-xxmin)*(i-1)/(nnx-1)
       ee(i,j,k) = exp(-((x(i)-xc)/aa)**2-((y(j)-yc)/aa)**2-((z(k)-zc)/ll)**2)
-      bx(i,j,k) = (b0/(L**2))*x(i)*(z(k) - 3*z0)-tt*(2*b1*(y(j)-yc)/aa)*ee(i,j,k) 
-      by(i,j,k) = (b0/(L**2))*y(j)*(z(k) + 3*z0)+tt*(2*b1*(x(i)-xc)/aa)*ee(i,j,k) 
-      bz(i,j,k) = (b0/(L**2))*(z0**2 - z(k)**2 + x(i)**2 + y(j)**2)
+      bx(i,j,k) = (b0/(L**2))*x(i)*(z(k) - 3*z0)!-tt*(2*b1*(y(j)-yc)/aa)*ee(i,j,k) 
+      by(i,j,k) = (b0/(L**2))*y(j)*(z(k) + 3*z0)!+tt*(2*b1*(x(i)-xc)/aa)*ee(i,j,k) 
+      bz(i,j,k) = (b0/(L**2))*(z0**2 - z(k)**2 + 0.5*x(i)**2 + 0.5*y(j)**2)
     enddo
   enddo
 enddo
