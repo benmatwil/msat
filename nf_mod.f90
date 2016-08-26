@@ -792,7 +792,6 @@ contains
         !allocate(distances(n,n))
         do j = 1, n
           do i = j+1, n
-            !print*,nnulls,i,j
             sep = (x(i) - x(j))**2 + (y(i) - y(j))**2 + (z(i) - z(j))**2
             if (sep < 1d-3) then
               print*, 'removing duplcate at index', j

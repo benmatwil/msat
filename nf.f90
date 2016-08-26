@@ -251,30 +251,29 @@ print*, ''
 print*, '-----------------------------------------------------------------------'
 print*, ''
 
-if (1 == 1) then  
-  print*, 'Now checking for nulls of vertices:'
-  nvert = 0
-  do k = 2, nz-1
-    do j = 2, ny-1
-      do i = 2, nz-1
-        if (sqrt(bx(i,j,k)**2 + by(i,j,k)**2 + bz(i,j,k)**2) < zero) then
-          print*, 'mod(B)',bx(i,j,k),by(i,j,k),bz(i,j,k),sqrt(bx(i,j,k)**2 + by(i,j,k)**2 + bz(i,j,k)**2)
-          call add_element(xs, dble(i))
-          call add_element(ys, dble(j))
-          call add_element(zs, dble(k))
-          call add_element(xp, xgrid(i))
-          call add_element(yp, ygrid(j))
-          call add_element(zp, zgrid(k))
-          nvert = nvert + 1
-          print*, i,j,k
-          print*,xgrid(i),ygrid(j),zgrid(k)
-          print*, ''
-        endif
-      enddo
+print*, 'Now checking for nulls of vertices:'
+nvert = 0
+do k = 1, nz
+  do j = 1, ny
+    do i = 1, nx
+      if (sqrt(bx(i,j,k)**2 + by(i,j,k)**2 + bz(i,j,k)**2) == 0) then ! 0 or zero?
+        call add_element(xs, dble(i))
+        call add_element(ys, dble(j))
+        call add_element(zs, dble(k))
+        call add_element(xp, xgrid(i))
+        call add_element(yp, ygrid(j))
+        call add_element(zp, zgrid(k))
+        nvert = nvert + 1
+      endif
     enddo
   enddo
-  print*, 'Found', nvert, 'nulls at vertices'
-endif
+enddo
+print*, 'Found', nvert, 'nulls at vertices'
+nnulls = nnulls + nvert
+
+print*, ''
+print*, '-----------------------------------------------------------------------'
+print*, ''
 
 print*, 'Now checking for duplicate nulls:'
 call remove_duplicates(xs, ys, zs, nnulls, xp, yp, zp)
