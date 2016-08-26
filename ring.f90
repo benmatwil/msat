@@ -125,7 +125,7 @@ contains
     if (nlines > nstart .or. sum(endpoints) /= 0) then !if the number of points isn't too small...
       do while (i <= nlines)
         if (nlines <= nstart .and. sum(endpoints) == 0) exit
-        if (remove(i) > 0.5) then !if point is flagged to be removed, then remove
+        if (remove(i) == 1) then !if point is flagged to be removed, then remove
           call remove_vector(line1,i)
           call remove_vector(line2,i)
           call remove_vector(add1,i)
