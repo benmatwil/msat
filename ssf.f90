@@ -195,9 +195,6 @@ program ssfind
       add2 = 0
       remove = 0
 
-      write(20) association
-      nperring(i) = nlines
-
       ierror = 0
 
       if (i < 50) then
@@ -228,7 +225,7 @@ program ssfind
         enddo
       !$OMP END PARALLEL DO
 
-      write(20), line1
+      !write(20), line1
 
       if (nlines > pointsmax) then
         print*, 'Too many points on ring', nlines, i
@@ -240,10 +237,10 @@ program ssfind
         exitcondition = .true. !exit if all points have reached outer boundary (left box)
       endif
       
-      circumference(i) = circumference(i) + dist(line2(:,1),line2(:,nlines))
-      do j = 2, nlines
-        circumference(i) = circumference(i) + dist(line2(:,j),line2(:,j-1))
-      enddo
+      !circumference(i) = circumference(i) + dist(line2(:,1),line2(:,nlines))
+      !do j = 2, nlines
+      !  circumference(i) = circumference(i) + dist(line2(:,j),line2(:,j-1))
+      !enddo
       
       !if (i > 1) then
       !  if (abs(circumference(i)-circumference(i-1)) == 0.1*stepmin) then
@@ -258,19 +255,25 @@ program ssfind
       endif
       
       !print*,'Checking at null', i, nlines, nnull
-      print*, 'h', h0, nlines
-      nulldist = 0.6!1.5*h0
-      maxdist1 = 0.15!0.75*h0
+      nulldist = 0.6d0!1.5d0*h0
+      maxdist1 = 0.15d0!0.75d0*h0
       mindist1 = maxdist1/4
+      !print*, 'h', h0, nlines
+      !print*, nulldist, maxdist1, mindist1
       call remove_points(nlines,i) !remove points from ring if necessary
       call add_points(nlines,i) !add points to ring if necessary
-      call at_null(nlines,nnull,i) !determine if point is at null
-      call remove_points(nlines,i)
-      call add_points(nlines,i)
+          !print*, sum(remove), sum(break), i
 
+      call at_null(nlines,nnull,i) !determine if point is at null
+      !call remove_points(nlines,i)
+      !call add_points(nlines,i)
+    !print*, sum(remove), sum(break), i
 
       !write(21) nlines, line1, association
       !close(21)
+
+      nperring(i) = nlines
+      write(20) association, break, line1
 
       if (exitcondition) exit
 
