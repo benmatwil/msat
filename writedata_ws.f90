@@ -22,7 +22,7 @@ double precision, parameter :: zzmin=-7.5, zzmax=7.5  !zrange
 allocate(bx(nnx,nny,nnz),by(nnx,nny,nnz),bz(nnx,nny,nnz),ee(nnx,nny,nnz))
 allocate(x(nnx),y(nny),z(nnz))
 
-b0 = 1.0 
+b0 = 1.0
 L = 1.0
 z0 = 5.0
 b1 = 20.0
