@@ -11,7 +11,8 @@ integer, parameter :: nstart = 100 !number of startpoints in ring
 !nulldist decoupled from maxdist1 and moved into params.f90
 !double precision, parameter :: nulldist=maxdist1*4. !maximum distance a ring point can be  for it to be treated as being 'at' a null
 
-double precision, parameter :: mindist1 = maxdist1/4d0 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
+!double precision, parameter :: mindist1 = maxdist1/4d0 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
+double precision, parameter :: maxdist1, mindist, nulldist
 
 double precision, allocatable, dimension(:,:) :: line1, line2, add1, add2
 integer, allocatable, dimension(:) :: break, association, remove, endpoints
@@ -19,7 +20,7 @@ integer, allocatable, dimension(:) :: break, association, remove, endpoints
 contains
 
   subroutine add_points(nlines,iteration)
-  !adds points to rings if required
+    !adds points to rings if required
     implicit none
     
     integer :: nlines

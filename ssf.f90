@@ -265,9 +265,9 @@ program ssfind
       
       !print*,'Checking at null', iring, nlines, inull
       !print*, 'h', h0, nlines
-      !nulldist = 1.5*h0
-      !maxdist1 = 0.75*h0
-      !mindist1 = maxdist1/4
+      nulldist = 0.6!1.5*h0
+      maxdist1 = 0.15!0.75*h0
+      mindist1 = maxdist1/4
       call remove_points(nlines,iring) !remove points from ring if necessary
       call add_points(nlines,iring) !add points to ring if necessary
       call at_null(nlines,inull,iring) !determine if point is at null
