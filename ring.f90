@@ -30,7 +30,7 @@ contains
     double precision :: b(3)
 
     if (iteration < 100) then !if near-in to the starting null we want smaller max/min separations
-      maxdist = maxdist1*0.25
+      maxdist = maxdist1*0.05
     else
       maxdist = maxdist1
     endif
@@ -94,7 +94,7 @@ contains
     double precision :: mindist
 
     if (iteration < 100) then
-      mindist = mindist1*0.25
+      mindist = mindist1*0.05
     else
       mindist = mindist1
     endif
