@@ -258,7 +258,7 @@ program ssfind
       endif
       
       !print*,'Checking at null', i, nlines, nnull
-      print*, 'h', h0, nlines
+      !print*, 'h', h0, nlines
       nulldist = 0.6!1.5*h0
       maxdist1 = 0.15!0.75*h0
       mindist1 = maxdist1/4
