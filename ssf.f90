@@ -265,7 +265,7 @@ program ssfind
       
       !print*,'Checking at null', iring, nlines, inull
       !print*, 'h', h0, nlines
-      nulldist = 1.5*h0
+      nulldist = 0.6!1.5*h0
       maxdist1 = 0.75*h0
       mindist1 = maxdist1/4
       call remove_points(nlines,iring) !remove points from ring if necessary
