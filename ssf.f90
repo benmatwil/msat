@@ -20,7 +20,7 @@ program ssfind
   double precision :: a(3)
   double precision :: h, h0
 
-  integer :: i, j
+  integer :: iring, iline, inull
 
   !null parameters
   integer :: sign
@@ -32,8 +32,6 @@ program ssfind
 
   !number of lines
   integer :: nlines
-  integer :: nnull
-
   integer :: nrings, npoints
   integer :: nperring(ringsmax)
   double precision :: circumference(ringsmax)
@@ -76,50 +74,50 @@ program ssfind
   
   if (coord_type == 2) then
     !for sphericals 
-    do i = 1, nnulls
+    do inull = 1, nnulls
       !check whether null is at the lower phi boundary
-      if (rnullsalt(3,i) < zmin + 1) then
-        rnullsalt(3,i) = rnullsalt(3,i) - 1
-        call edgecheck(rnullsalt(:,i))
-        rnullsalt(3,i) = rnullsalt(3,i) + 1
+      if (rnullsalt(3,inull) < zmin + 1) then
+        rnullsalt(3,inull) = rnullsalt(3,inull) - 1
+        call edgecheck(rnullsalt(:,inull))
+        rnullsalt(3,inull) = rnullsalt(3,inull) + 1
       endif
       
       !check whether null is at the upper phi boundary
-      if (rnullsalt(3,i) > zmax - 1) then
-        rnullsalt(3,i) = rnullsalt(3,i) + 1
-        call edgecheck(rnullsalt(:,i))
-        rnullsalt(3,i) = rnullsalt(3,i) - 1
+      if (rnullsalt(3,inull) > zmax - 1) then
+        rnullsalt(3,inull) = rnullsalt(3,inull) + 1
+        call edgecheck(rnullsalt(:,inull))
+        rnullsalt(3,inull) = rnullsalt(3,inull) - 1
       endif
       
       !check whether null is at the lower theta boundary
-      if (rnullsalt(2,i) < ymin + 1) then
-        rnullsalt(2,i) = rnullsalt(2,i) - 1
-        call edgecheck(rnullsalt(:,i))
-        rnullsalt(2,i) = rnullsalt(2,i) - 1
+      if (rnullsalt(2,inull) < ymin + 1) then
+        rnullsalt(2,inull) = rnullsalt(2,inull) - 1
+        call edgecheck(rnullsalt(:,inull))
+        rnullsalt(2,inull) = rnullsalt(2,inull) - 1
       endif
       
       !check whether null is at the upper theta boundary
-      if (rnullsalt(2,i) > ymax - 1) then
-        rnullsalt(2,i) = rnullsalt(2,i) + 1
-        call edgecheck(rnullsalt(:,i))
-        rnullsalt(2,i) = rnullsalt(2,i) + 1
+      if (rnullsalt(2,inull) > ymax - 1) then
+        rnullsalt(2,inull) = rnullsalt(2,inull) + 1
+        call edgecheck(rnullsalt(:,inull))
+        rnullsalt(2,inull) = rnullsalt(2,inull) + 1
       endif
     enddo
   elseif (coord_type == 3) then
     !for cylindricals
-    do i = 1, nnulls
+    do inull = 1, nnulls
       ! check whether null is at lower phi boundary
-      if (rnullsalt(2,i) < ymin + 1) then
-        rnullsalt(2,i) = rnullsalt(2,i) - 1
-        call edgecheck(rnullsalt(:,i))
-        rnullsalt(2,i) = rnullsalt(2,i) + 1
+      if (rnullsalt(2,inull) < ymin + 1) then
+        rnullsalt(2,inull) = rnullsalt(2,inull) - 1
+        call edgecheck(rnullsalt(:,inull))
+        rnullsalt(2,inull) = rnullsalt(2,inull) + 1
       endif
       
       ! check whether null is at upper phi boundary
-      if (rnullsalt(2,i) > ymax - 1) then
-        rnullsalt(2,i) = rnullsalt(2,i) + 1
-        call edgecheck(rnullsalt(:,i))
-        rnullsalt(2,i) = rnullsalt(2,i) - 1
+      if (rnullsalt(2,inull) > ymax - 1) then
+        rnullsalt(2,inull) = rnullsalt(2,inull) + 1
+        call edgecheck(rnullsalt(:,inull))
+        rnullsalt(2,inull) = rnullsalt(2,inull) - 1
       endif
     enddo
   endif
@@ -127,14 +125,14 @@ program ssfind
   allocate(nsepss(nnulls))
 
   !signs=-1*signs
-  do nnull = 1, nnulls!loop over all nulls
+  do inull = 1, nnulls!loop over all nulls
     print*, ''
-    print*, 'Null number', nnull, 'of', nnulls
+    print*, 'Null number', inull, 'of', nnulls
 
-    r = rnulls(:,nnull)
-    spine = spines(:,nnull)
-    fan = fans(:,nnull)
-    sign = signs(nnull)
+    r = rnulls(:,inull)
+    spine = spines(:,inull)
+    fan = fans(:,inull)
+    sign = signs(inull)
 
     a = r !backup null location
 
@@ -152,18 +150,18 @@ program ssfind
     allocate(association(nlines), break(nlines), remove(nlines), endpoints(nlines))
 
     !add start points to first ring relative to null
-    do j = 1, nlines !Go through each start point
-      line1(1,j) = r(1) + xs(j)
-      line1(2,j) = r(2) + ys(j)
-      line1(3,j) = r(3) + zs(j)
-      association(j) = j
+    do iline = 1, nlines !Go through each start point
+      line1(1,iline) = r(1) + xs(iline)
+      line1(2,iline) = r(2) + ys(iline)
+      line1(3,iline) = r(3) + zs(iline)
+      association(iline) = iline
     enddo
     
     line2 = line1
 
     break = 0
 
-    write(fname,fmt) nnull
+    write(fname,fmt) inull
 
     open(unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted',access='stream',status='replace')
 
@@ -179,13 +177,13 @@ program ssfind
 
     exitcondition = .false.
 
-    do i = 1, ringsmax !loop over number of rings we want
+    do iring = 1, ringsmax !loop over number of rings we want
       if (sign .eq. 0) then !skip null which is uncharacterised
         print*,'Null has zero sign'
         exit
       endif
 
-      !write(fname2,fmt) i
+      !write(fname2,fmt) iring
       !open(unit=21,file='output/everything'//trim(fname)//'-'//trim(fname2)//'.dat',access='stream',status='replace')
 
       nrings = nrings+1
@@ -196,34 +194,34 @@ program ssfind
       remove = 0
 
       write(20) association
-      nperring(i) = nlines
+      nperring(iring) = nlines
 
       ierror = 0
 
-      if (i < 50) then
+      if (iring < 50) then
         h0 = 5d-2
       else
         h0 = 25d-2
       endif
 
       !$OMP PARALLEL DO private(r,h)
-        do j = 1, nlines !loop over all points in ring (in parallel do)
+        do iline = 1, nlines !loop over all points in ring (in parallel do)
 
-          r(:) = line1(:,j)
+          r(:) = line1(:,iline)
           h = h0
 
           call trace_line(r,sign,h) !trace line by a distance of h
 
-          line2(:,j) = line2(:,j) + r(:) - line1(:,j)
+          line2(:,iline) = line2(:,iline) + r(:) - line1(:,iline)
           call edgecheck(r, out)
           if (out) then !counter to see how many points on ring have reached outer boundary
-            endpoints(j) = 1
+            endpoints(iline) = 1
           else
-            endpoints(j) = 0
+            endpoints(iline) = 0
           endif
-          line1(:,j) = r(:)
+          line1(:,iline) = r(:)
           
-          association(j) = j
+          association(iline) = iline
 
         enddo
       !$OMP END PARALLEL DO
@@ -231,42 +229,42 @@ program ssfind
       write(20), line1
 
       if (nlines > pointsmax) then
-        print*, 'Too many points on ring', nlines, i
+        print*, 'Too many points on ring', nlines, iring
         exitcondition = .true. !exit if too many points on ring
       endif
 
       if (sum(endpoints)/nlines == 1) then
-        print*, 'All fan points have reached the outer boundary', i
+        print*, 'All fan points have reached the outer boundary', iring
         exitcondition = .true. !exit if all points have reached outer boundary (left box)
       endif
       
-      circumference(i) = circumference(i) + dist(line2(:,1),line2(:,nlines))
-      do j = 2, nlines
-        circumference(i) = circumference(i) + dist(line2(:,j),line2(:,j-1))
+      circumference(iring) = circumference(iring) + dist(line2(:,1),line2(:,nlines))
+      do iline = 2, nlines
+        circumference(iring) = circumference(iring) + dist(line2(:,iline),line2(:,iline-1))
       enddo
       
-      !if (i > 1) then
-      !  if (abs(circumference(i)-circumference(i-1)) == 0.1*stepmin) then
-      !    print*, 'Fan has stopped growing/shrinking', i
+      !if (iring > 1) then
+      !  if (abs(circumference(iring)-circumference(iring-1)) == 0.1*stepmin) then
+      !    print*, 'Fan has stopped growing/shrinking', iring
       !    exitcondition = .true. !exit if fan not changing size
       !  endif
       !endif
 
       if (ierror == 1) then
-        print*, 'Tracing has failed',i
+        print*, 'Tracing has failed',iring
         exitcondition = .true.
       endif
       
-      !print*,'Checking at null', i, nlines, nnull
+      !print*,'Checking at null', iring, nlines, inull
       !print*, 'h', h0, nlines
-      nulldist = 0.6!1.5*h0
-      maxdist1 = 0.15!0.75*h0
+      nulldist = 1.5*h0
+      maxdist1 = 0.75*h0
       mindist1 = maxdist1/4
-      call remove_points(nlines,i) !remove points from ring if necessary
-      call add_points(nlines,i) !add points to ring if necessary
-      call at_null(nlines,nnull,i) !determine if point is at null
-      call remove_points(nlines,i)
-      call add_points(nlines,i)
+      call remove_points(nlines,iring) !remove points from ring if necessary
+      call add_points(nlines,iring) !add points to ring if necessary
+      call at_null(nlines,inull,iring) !determine if point is at null
+      call remove_points(nlines,iring)
+      call add_points(nlines,iring)
 
 
       !write(21) nlines, line1, association
@@ -277,7 +275,7 @@ program ssfind
     enddo
     
     print*, 'number of separators=',nseps, 'number of rings', nrings
-    nsepss(nnull) = nseps
+    nsepss(inull) = nseps
     
     write(12) -1
 
