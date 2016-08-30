@@ -140,6 +140,10 @@ contains
     !  if (remove(i) == 1 .or. break(i) == 1) print*, remove(i), break(i)
     !enddo
 
+    do i = 1, nlines-1
+      if (dist(line1(:,i),line1(:,i+1)) > 3* maxdist1) break(i) = 1
+    enddo
+
     !remove points
     i = 1
     if (nlines > nstart .or. sum(endpoints) /= 0) then !if the number of points isn't too small...
