@@ -23,7 +23,7 @@ contains
     implicit none
     
     integer :: nlines
-    integer :: i, j
+    integer :: iline, nxtline
     double precision :: maxdist
     integer, intent(in) :: iteration
     double precision :: b(3)
@@ -37,45 +37,45 @@ contains
     !test for gaps. Where gaps need to be filled, put this info into 'add'
     add1 = 0
     add2 = 0
-    do i = 1, nlines !loop over each point in ring
-      if (break(i) == 0) then
-        if (i < nlines) then !if not the last point
-          j = i+1
+    do iline = 1, nlines !loop over each point in ring
+      if (break(iline) == 0) then
+        if (iline < nlines) then !if not the last point
+          nxtline = iline+1
         else
-          j = 1
+          nxtline = 1
         endif
-        if (dist(line2(:,i),line2(:,j)) > maxdist) then !if two adjacent points too far away
-          add1(:,i) = line1(:,i) + 0.5*(line2(:,j)-line2(:,i)) !add point half way between two points
-          add2(:,i) = line2(:,i) + 0.5*(line2(:,j)-line2(:,i))
-          !if (outedge(add2(:,i))) print*, 'adding point out'
+        if (dist(line2(:,iline),line2(:,nxtline)) > maxdist) then !if two adjacent points too far away
+          add1(:,iline) = line1(:,iline) + 0.5*(line2(:,nxtline)-line2(:,iline)) !add point half way between two points
+          add2(:,iline) = line2(:,iline) + 0.5*(line2(:,nxtline)-line2(:,iline))
+          !if (outedge(add2(:,iline))) print*, 'adding point out'
         else
-          add1(:,i) = 0d0 !don't add anything
-          add2(:,i) = 0d0
+          add1(:,iline) = 0d0 !don't add anything
+          add2(:,iline) = 0d0
         endif
       endif
     enddo
       
     !add new points
     !where the 'add' array has a point to be added, add this point
-    i = 0
+    iline = 0
     b = [0d0,0d0,0d0]
-    do while (i < nlines)
-      i = i+1
-      if (modulus(add1(:,i)) > 0) then !if add(:,i) is not zero..
-        !print*, 'point has to be added to',i
-        call add_vector(line1,add1(:,i),i+1) !add elements to every array
-        call add_vector(line2,add2(:,i),i+1)
-        call add_vector(add1,b,i+1)
-        call add_vector(add2,b,i+1)
-        call add_element(endpoints,0,i+1)
-        call add_element(remove,0,i+1)
-        call add_element(break,0,i+1)
-        if (i /= nlines) then
-          call add_element(association,association(i),i+1)
+    do while (iline < nlines)
+      iline = iline+1
+      if (modulus(add1(:,iline)) > 0) then !if add(:,iline) is not zero..
+        !print*, 'point has to be added to',iline
+        call add_vector(line1,add1(:,iline),iline+1) !add elements to every array
+        call add_vector(line2,add2(:,iline),iline+1)
+        call add_vector(add1,b,iline+1)
+        call add_vector(add2,b,iline+1)
+        call add_element(endpoints,0,iline+1)
+        call add_element(remove,0,iline+1)
+        call add_element(break,0,iline+1)
+        if (iline /= nlines) then
+          call add_element(association,association(iline),iline+1)
         else
-          call add_element(association,1,i+1)
+          call add_element(association,1,iline+1)
         endif
-        i = i+1
+        iline = iline+1
         nlines = nlines+1
       endif
     enddo
@@ -88,7 +88,7 @@ contains
     implicit none
 
     integer :: nlines
-    integer :: i, j
+    integer :: iline, nxtline
     integer, intent(in) :: iteration
     double precision :: mindist
 
@@ -99,68 +99,68 @@ contains
     endif
 
     !check for too tightly spaced points, flag points to be removed
-    do i = 1, nlines !loop over all points
-      if (break(i) == 0) then
-        if (i < nlines) then !if not end point
-          j = i+1
+    do iline = 1, nlines !loop over all points
+      if (break(iline) == 0) then
+        if (iline < nlines) then !if not end point
+          nxtline = iline+1
         else
-          j = 1
+          nxtline = 1
         endif
-        if (i /= 1) then
-          if (dist(line2(:,i),line2(:,j)) < mindist .and. remove(i-1) == 0) remove(i) = 1 !if i and i+1 are too near
+        if (iline /= 1) then
+          if (dist(line2(:,iline),line2(:,nxtline)) < mindist .and. remove(iline-1) == 0) remove(iline) = 1 !if iline and iline+1 are too near
         endif
       endif
-      if (endpoints(i) == 1) then !remove points that have left the simulation
-        remove(i) = 1
-        if (i /= 1) then
-          break(i-1) = 1
+      if (endpoints(iline) == 1) then !remove points that have left the simulation
+        remove(iline) = 1
+        if (iline /= 1) then
+          break(iline-1) = 1
         else
           break(nlines) = 1
         endif
       endif
     enddo
 
-    !do i = 1, nlines
-    !  if (i == 1) then !if not end point
-    !    j = nlines
+    !do iline = 1, nlines
+    !  if (iline == 1) then !if not end point
+    !    nxtline = nlines
     !  else
-    !    j = i-1
+    !    nxtline = iline-1
     !  endif
-    !  if (remove(i) == 1 .and. break(i) == 1 .and. break(j) == 0) then
-    !    if (i /= 1) then
-    !      break(i-1) = 1
+    !  if (remove(iline) == 1 .and. break(iline) == 1 .and. break(nxtline) == 0) then
+    !    if (iline /= 1) then
+    !      break(iline-1) = 1
     !    else
     !      break(nlines) = 1
     !    endif
-    !    print*, 'going to remove bad point', iteration, i, j
+    !    print*, 'going to remove bad point', iteration, iline, nxtline
     !  endif
     !enddo
     !print*, sum(remove), sum(break), iteration
-    !do i = 1, nlines
-    !  if (remove(i) == 1 .or. break(i) == 1) print*, remove(i), break(i)
+    !do iline = 1, nlines
+    !  if (remove(iline) == 1 .or. break(iline) == 1) print*, remove(iline), break(iline)
     !enddo
 
-    do i = 1, nlines-1
-      if (dist(line1(:,i),line1(:,i+1)) > 3* maxdist1) break(i) = 1
+    do iline = 1, nlines-1
+      if (dist(line1(:,iline),line1(:,iline+1)) > 3*maxdist1) break(iline) = 1
     enddo
 
     !remove points
-    i = 1
+    iline = 1
     if (nlines > nstart .or. sum(endpoints) /= 0) then !if the number of points isn't too small...
-      do while (i <= nlines)
+      do while (iline <= nlines)
         if (nlines <= nstart .and. sum(endpoints) == 0) exit
-        if (remove(i) >= 1) then !if point is flagged to be removed, then remove
-          call remove_vector(line1,i)
-          call remove_vector(line2,i)
-          call remove_vector(add1,i)
-          call remove_vector(add2,i)
-          call remove_element(endpoints,i)
-          call remove_element(remove,i)
-          call remove_element(association,i)
-          call remove_element(break,i)
+        if (remove(iline) >= 1) then !if point is flagged to be removed, then remove
+          call remove_vector(line1,iline)
+          call remove_vector(line2,iline)
+          call remove_vector(add1,iline)
+          call remove_vector(add2,iline)
+          call remove_element(endpoints,iline)
+          call remove_element(remove,iline)
+          call remove_element(association,iline)
+          call remove_element(break,iline)
           nlines = nlines-1
         else
-          i = i+1
+          iline = iline+1
         endif
       enddo
     endif
