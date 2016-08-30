@@ -11,7 +11,7 @@ integer, parameter :: nstart = 100 !number of startpoints in ring
 !nulldist decoupled from maxdist1 and moved into params.f90
 !double precision, parameter :: nulldist=maxdist1*4. !maximum distance a ring point can be  for it to be treated as being 'at' a null
 
-double precision :: nulldist, maxdist1, mindist1 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
+double precision :: mindist1 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
 
 double precision, allocatable, dimension(:,:) :: line1, line2, add1, add2
 integer, allocatable, dimension(:) :: break, association, remove, endpoints
@@ -28,11 +28,11 @@ contains
     integer, intent(in) :: iteration
     double precision :: b(3)
 
-    !if (iteration < 100) then !if near-in to the starting null we want smaller max/min separations
-    !  maxdist = maxdist1*0.05
-    !else
+    if (iteration < 100) then !if near-in to the starting null we want smaller max/min separations
+      maxdist = maxdist1*0.05
+    else
       maxdist = maxdist1
-    !endif
+    endif
 
     !test for gaps. Where gaps need to be filled, put this info into 'add'
     add1 = 0
@@ -47,7 +47,7 @@ contains
         if (dist(line2(:,i),line2(:,j)) > maxdist) then !if two adjacent points too far away
           add1(:,i) = line1(:,i) + 0.5*(line2(:,j)-line2(:,i)) !add point half way between two points
           add2(:,i) = line2(:,i) + 0.5*(line2(:,j)-line2(:,i))
-          if (outedge(add2(:,i))) print*, 'adding point out'
+          !if (outedge(add2(:,i))) print*, 'adding point out'
         else
           add1(:,i) = 0d0 !don't add anything
           add2(:,i) = 0d0
@@ -92,11 +92,11 @@ contains
     integer, intent(in) :: iteration
     double precision :: mindist
 
-    !if (iteration < 100) then
-    !  mindist = mindist1*0.05
-    !else
+    if (iteration < 100) then
+      mindist = mindist1*0.05
+    else
       mindist = mindist1
-    !endif
+    endif
 
     !check for too tightly spaced points, flag points to be removed
     do i = 1, nlines !loop over all points

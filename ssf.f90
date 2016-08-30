@@ -238,10 +238,10 @@ program ssfind
         exitcondition = .true. !exit if all points have reached outer boundary (left box)
       endif
       
-      circumference(iring) = circumference(iring) + dist(line2(:,1),line2(:,nlines))
-      do iline = 2, nlines
-        circumference(iring) = circumference(iring) + dist(line2(:,iline),line2(:,iline-1))
-      enddo
+      !circumference(iring) = circumference(iring) + dist(line2(:,1),line2(:,nlines))
+      !do iline = 2, nlines
+      !  circumference(iring) = circumference(iring) + dist(line2(:,iline),line2(:,iline-1))
+      !enddo
       
       !if (iring > 1) then
       !  if (abs(circumference(iring)-circumference(iring-1)) == 0.1*stepmin) then
@@ -257,14 +257,14 @@ program ssfind
       
       !print*,'Checking at null', iring, nlines, inull
       !print*, 'h', h0, nlines
-      nulldist = 1.5*h0
-      maxdist1 = 0.75*h0
-      mindist1 = maxdist1/4
+      !nulldist = 1.5*h0
+      !maxdist1 = 0.75*h0
+      !mindist1 = maxdist1/4
       call remove_points(nlines,iring) !remove points from ring if necessary
       call add_points(nlines,iring) !add points to ring if necessary
       call at_null(nlines,inull,iring) !determine if point is at null
-      call remove_points(nlines,iring)
-      call add_points(nlines,iring)
+      !call remove_points(nlines,iring)
+      !call add_points(nlines,iring)
 
 
       !write(21) nlines, line1, association
