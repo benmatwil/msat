@@ -216,6 +216,14 @@ program ssfind
           call edgecheck(r, out)
           if (out) then !counter to see how many points on ring have reached outer boundary
             endpoints(iline) = 1
+            if (iline /= 1) then
+              break(iline-1) = 1
+            else
+              break(nlines) = 1
+            endif
+            if (iline == 1) then
+              if (dist(line2(:,1),line2(:,nlines)) > maxdist1) break(nlines) = 1
+            endif
           else
             endpoints(iline) = 0
           endif
