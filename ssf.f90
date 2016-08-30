@@ -10,7 +10,7 @@ program ssfind
   implicit none
 
   character (len=8), parameter :: fmt='(I4.4)'
-  character (len=5) :: fname, fname2
+  character (len=5) :: fname
 
   integer*8 :: tstart,tstop,count_rate !to time program
   integer :: nx, ny, nz !size of grid
@@ -183,9 +183,6 @@ program ssfind
         exit
       endif
 
-      !write(fname2,fmt) iring
-      !open(unit=21,file='output/everything'//trim(fname)//'-'//trim(fname2)//'.dat',access='stream',status='replace')
-
       nrings = nrings+1
 
       endpoints = 0
@@ -273,10 +270,6 @@ program ssfind
       call at_null(nlines,inull,iring) !determine if point is at null
       !call remove_points(nlines,iring)
       !call add_points(nlines,iring)
-
-
-      !write(21) nlines, line1, association
-      !close(21)
 
       if (exitcondition) exit
 
