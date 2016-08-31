@@ -48,7 +48,7 @@ program readin
   implicit none
 
   integer*8 :: a, p
-  integer :: i, inull, nrcount
+  integer :: iring, inull, nrcount
 
   integer :: nnulls, null, nullnum_f, nullnum_t
 
@@ -70,27 +70,27 @@ program readin
 
     allocate(rnulls(3,nnulls))
 
-    do i=1,nnulls
-      read (10) rnulls(:,i)
-      print*, 'null position', i, rnulls(:,i)
+    do inull=1,nnulls
+      read (10) rnulls(:,inull)
+      print*, 'null position', inull, rnulls(:,inull)
     enddo
   close(10)
 
-  do null = 1, nnulls
+  do inull = 1, nnulls
 
-    write(fname,fmt) null
+    write(fname,fmt) inull
 
     open(unit=12,file='output/separator'//trim(fname)//'.dat',access='stream')
     open(unit=10,file='output/everything'//trim(fname)//'.dat',access='stream')
 
     read(10) nrings, npoints, nringsmax
-    allocate(nperring(nringsmax))
+    allocate(nperring(0:nringsmax-1))
     read(10) nperring
 
     open(unit=11,file='output/sep'//trim(fname)//'.dat',access='stream')
 
     print*, 'nrings, npoints, nringsmax'
-    print*, nrings, npoints, nringsmax
+    print*, nrings, npoints, nringsmax-1
 
     preamble = 3 + nringsmax !takes you up to end of 'header'
 
@@ -109,13 +109,13 @@ program readin
 
       print*, 'Tracing Separator...'
 
-      do i = nring, 1, -1 !trace back each ring to the start
+      do iring = nring, 1, -1 !trace back each ring to the start
 
-        call position(i,index,a,p) !get positions in file belonging to the current ring
+        call position(iring,index,a,p) !get positions in file belonging to the current ring
 
         read(10, pos=a) association !read association for point number index in ring 1
-        read(10, pos=p) r !read position of point index on ring i
-        if (i == nring) then 
+        read(10, pos=p) r !read position of point index on ring iring
+        if (iring == nring) then 
           x(nring+1) = rnulls(1,nullnum_t)
           y(nring+1) = rnulls(2,nullnum_t)
           z(nring+1) = rnulls(3,nullnum_t)
@@ -124,12 +124,12 @@ program readin
           print*,r
         endif
         !write ring position vector into x, y and z
-        x(i) = r(1)
-        y(i) = r(2)
-        z(i) = r(3)
+        x(iring) = r(1)
+        y(iring) = r(2)
+        z(iring) = r(3)
         index = association
 
-        if (i == 1) print*,r
+        if (iring == 1) print*,r
 
       enddo
 
@@ -146,26 +146,27 @@ program readin
     close(11)
     close(12)
 
+    ! Just writes a selection of rings to file i.e. every "skip"ped number of rings
     print*, 'writing rings to file'
 
     open(unit=11,file='output/ringidl'//trim(fname)//'.dat',form='unformatted')
 
     print*, 'nrings=', nrings
     nrcount = 0
-    do i = 1, nrings-2, skip
+    do iring = 1, nrings-2, skip
       nrcount = nrcount+1
     enddo
     write(11), nrcount
 
-    do i = 1, nrings-2, skip
-      call position(i,1,a,p)
-      allocate(x(nperring(i)), y(nperring(i)), z(nperring(i)), ring(3,nperring(i)))
+    do iring = 1, nrings-2, skip
+      call position(iring,1,a,p)
+      allocate(x(nperring(iring)), y(nperring(iring)), z(nperring(iring)), ring(3,nperring(iring)))
       read(10, pos=p) ring
       x = ring(1,:)
       y = ring(2,:)
       z = ring(3,:)
 
-      write(11) nperring(i)
+      write(11) nperring(iring)
       write(11) x, y, z
       deallocate(x, y, z, ring)
     enddo

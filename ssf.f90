@@ -30,7 +30,7 @@ program ssfind
   !number of lines
   integer :: nlines
   integer :: nrings, npoints
-  integer :: nperring(ringsmax+1)
+  integer :: nperring(0:ringsmax)
   double precision :: circumference(ringsmax)
 
   logical :: exitcondition, out
@@ -133,9 +133,7 @@ program ssfind
 
     theta = acos(fan(3))
     phi = atan(fan(2), fan(1))
-
     allocate(xs(nlines), ys(nlines), zs(nlines))
-
     call get_startpoints(theta,phi, xs,ys,zs)
 
     allocate(line1(3,nlines), line2(3,nlines), add1(3,nlines), add2(3,nlines))
@@ -148,20 +146,17 @@ program ssfind
       line1(3,iline) = r(3) + zs(iline)
       association(iline) = iline
     enddo
-    
     line2 = line1
 
-    break = 0
-
     write(fname,fmt) inull
-
     open(unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted',access='stream',status='replace')
-
     open(unit=20,file='output/everything'//trim(fname)//'.dat',access='stream',status='replace')
 
+    break = 0
     nseps = 0
     nrings = 1
     nperring = 0
+    nperring(0) = nlines
     circumference = 0
 
     write(20) nrings, 0, ringsmax+1
