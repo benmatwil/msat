@@ -31,7 +31,6 @@ program ssfind
   integer :: nlines
   integer :: nrings, npoints
   integer :: nperring(0:ringsmax)
-  double precision :: circumference(ringsmax)
 
   logical :: exitcondition, out
 
@@ -157,7 +156,6 @@ program ssfind
     nrings = 1
     nperring = 0
     nperring(0) = nlines
-    circumference = 0
 
     write(20) nrings, 0, ringsmax+1
     write(20) nperring
@@ -204,7 +202,7 @@ program ssfind
             break(nlines) = 1
           endif
           if (iline == 1) then
-            if (dist(line2(:,1),line2(:,nlines)) > maxdist1) break(nlines) = 1
+            if (dist(line2(:,1),line2(:,nlines)) > maxdist) break(nlines) = 1
           endif
         else
           endpoints(iline) = 0
@@ -228,40 +226,28 @@ program ssfind
         exitcondition = .true. !exit if all points have reached outer boundary (left box)
       endif
       
-      !circumference(iring) = circumference(iring) + dist(line2(:,1),line2(:,nlines))
-      !do iline = 2, nlines
-      !  circumference(iring) = circumference(iring) + dist(line2(:,iline),line2(:,iline-1))
-      !enddo
-      
-      !if (iring > 1) then
-      !  if (abs(circumference(iring)-circumference(iring-1)) == 0.1*stepmin) then
-      !    print*, 'Fan has stopped growing/shrinking', iring
-      !    exitcondition = .true. !exit if fan not changing size
-      !  endif
-      !endif
-
       if (ierror == 1) then
         print*, 'Tracing has failed', iring
         exitcondition = .true.
       endif
       
+      !print*,'Checking at null', iring, nlines, inull
+      if (iring < 50) then
+        maxdist = 0.1*h0!0.0075d0
+      elseif (iring < 100) then
+        maxdist = 0.08*h0!0.0075d0=0.15*0.05
+      else
+        maxdist = 0.8*h0!0.15
+      endif
+      nulldist = 1.6*h0 !0.6
+      mindist = maxdist/4
+      !print*, iring, h0, nulldist, maxdist1, mindist1, nlines
+
       do iline = 1, nlines-1
-        if (dist(line1(:,iline),line1(:,iline)) > 3*maxdist1) then
+        if (dist(line1(:,iline),line1(:,iline)) > 3*maxdist) then
           break(iline) = 1
         endif
       enddo
-      
-      !print*,'Checking at null', iring, nlines, inull
-      !print*, 'h', h0, nlines
-      if (iring < 50) then
-        maxdist1 = 0.0075d0
-      elseif (iring < 100) then
-        maxdist1 = 0.0075d0
-      else
-        maxdist1 = 0.15!0.75*h0
-      endif
-      nulldist = 0.6!1.5*h0
-      mindist1 = maxdist1/4
 
       call remove_points(nlines,iring) !remove points from ring if necessary
       call add_points(nlines,iring) !add points to ring if necessary

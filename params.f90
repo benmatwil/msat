@@ -15,15 +15,11 @@ module params
   double precision, parameter :: rsphere = 1d-4 !radius of sphere which the dot products are calculated on
   double precision, parameter :: rtraceto = 1d-1 !the radius the field line tracer traces lines to (should be larger than rsphere)
 
-
   !ssfind parameters
   integer, parameter :: ringsmax = 2500 !maximum # of rings
   integer, parameter :: pointsmax = 30000 !maximum number of points in ring
-  !double precision, parameter :: nulldist = 0.6 !maximum distance a ring point can be for it to be treated as being 'at' a null
-  !double precision, parameter :: maxdist1 = 0.15 !maximum distance between points in a ring
-
-  double precision,parameter :: tol = 1.d-5 !tolerance of rkf45 scheme
-  double precision,parameter :: stepmin = 0.0003 !minimum step length
+  double precision, parameter :: tol = 1.d-5 !tolerance of rkf45 scheme
+  double precision, parameter :: stepmin = 0.0003 !minimum step length
 
   ! coordinate type
   ! (1) = Cartesian (x,y,z)

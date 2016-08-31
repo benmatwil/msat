@@ -12,7 +12,7 @@ integer, parameter :: nstart = 100 !number of startpoints in ring
 !double precision, parameter :: nulldist=maxdist1*4. !maximum distance a ring point can be  for it to be treated as being 'at' a null
 
 !double precision, parameter :: mindist1 = maxdist1/4d0 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
-double precision :: maxdist1, mindist1, nulldist
+double precision :: maxdist, mindist, nulldist
 
 double precision, allocatable, dimension(:,:) :: line1, line2, add1, add2
 integer, allocatable, dimension(:) :: break, association, remove, endpoints
@@ -25,15 +25,8 @@ contains
     
     integer :: nlines
     integer :: iline, nxtline
-    double precision :: maxdist
     integer, intent(in) :: iteration
     double precision :: b(3)
-
-    !if (iteration < 100) then !if near-in to the starting null we want smaller max/min separations
-    !  maxdist = maxdist1*0.05
-    !else
-      maxdist = maxdist1
-    !endif
 
     !test for gaps. Where gaps need to be filled, put this info into 'add'
     add1 = 0
@@ -91,13 +84,6 @@ contains
     integer :: nlines
     integer :: iline, nxtline
     integer, intent(in) :: iteration
-    double precision :: mindist
-
-    !if (iteration < 100) then
-    !  mindist = mindist1*0.05
-    !else
-      mindist = mindist1
-    !endif
 
     !check for too tightly spaced points, flag points to be removed
     do iline = 1, nlines !loop over all points
@@ -142,7 +128,7 @@ contains
     !enddo
 
     do iline = 1, nlines-1
-      if (dist(line1(:,iline),line1(:,iline+1)) > 3*maxdist1) break(iline) = 1
+      if (dist(line1(:,iline),line1(:,iline+1)) > 3*maxdist) break(iline) = 1
     enddo
 
     !remove points
@@ -270,17 +256,14 @@ contains
               !if theres a change in sign, theres the separator
               if (index /= 1) then
                 if (signof(index-1)*signof(index) == -1) then
-                  !print*, rmap(index-1), nlines, nlines-rmap(index-1)
                   print*, 'Found a separator', nring
                   break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
-                  nseps = nseps+1
+                  nseps = nseps + 1
 
                   !write the point's information to the separator file
-                  !print*, 1, nullnum, i, nring, rmap(index-1), nlines
                   write(12) 1
                   write(12) nullnum, i
                   write(12) nring, rmap(index-1)
-                  !exit
                 endif
               endif
             else
