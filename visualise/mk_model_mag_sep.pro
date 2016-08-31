@@ -2,7 +2,7 @@ pro model_add_sepsurf,oModel,frame,rake=rake
   
   print,'Separatrix surface rings'
   get_nulls,nnulls,signs,r,spine,nulls
-  
+;nnulls=1
   for i=0,nnulls-1 do begin
     if keyword_set(rake) then colour=[0,255,0] $
     else begin
@@ -37,8 +37,17 @@ pro model_add_sepsurf,oModel,frame,rake=rake
       y=dblarr(n)
       z=dblarr(n)
       readu,fan,x,y,z
-      
-      oModel->add,obj_new("IDLgrPolyline",x,y,z,color=colour)
+
+      break = lonarr(n)
+      readu,fan,break
+
+      breaks = [-1, where(break eq 1, /null), n-1]
+      for ib = 0, n_elements(breaks)-2 do begin
+        ;print, breaks[ib]+1,breaks[ib+1]
+        if breaks[ib] ne breaks[ib+1] then oModel -> add, obj_new("IDLgrPolyline", x[breaks[ib]+1:breaks[ib+1]], y[breaks[ib]+1:breaks[ib+1]], z[breaks[ib]+1:breaks[ib+1]], color=colour)
+      endfor
+
+      ;if where(break eq 1, /null) ne !null then stop
           
       readu,fan,n
     endwhile
@@ -193,19 +202,19 @@ pro model_add_separators,oModel,frame
   ;files=findfile(string(format='("output/{rake_seps,separators}_",I3.3,' $
   ;  +'"_*.dat*")',frame),count=nfiles)
   ;print,files,nfiles
- ; index=1
+  ;index=1
   ;for i=0,nfiles-1 do begin
-;  i = 1
+  ;i = 1
    
    ;seps=read_separators(files[i])
    
     get_nulls,nnulls,signs,r,spine,nulls
-    
+    nnulls=1
     for null=1,nnulls do begin
 ;    null = 1
     seps=read_separators('output/sep'+string(null,'(I4.4)')+'.dat')
     
-    print,null, 'output/sep'+string(null,'(I4.4)')+'.dat', n_elements(seps), size(seps)
+    print, null, ' output/sep'+string(null,'(I4.4)')+'.dat', size(seps)
     if keyword_set(seps) then begin
     for j=0,(size(seps))[1]-1 do begin
 ;    j=4
