@@ -99,12 +99,12 @@ program readin
       print*, 'ring number and index within ring where separator starts'
       print*, nring, index
 
-      allocate(x(nring+1), y(nring+1), z(nring+1))
+      allocate(x(0:nring+1), y(0:nring+1), z(0:nring+1))
 
       print*, 'Tracing Separator...'
       print*, 'Start ring is', nring
 
-      do iring = nring, 1, -1 !trace back each ring to the start
+      do iring = nring, 0, -1 !trace back each ring to the start
 
         call position(iring,index,a,b,p) !get positions in file belonging to the current ring
 
@@ -114,9 +114,9 @@ program readin
           x(nring+1) = rnulls(1,nullnum_t)
           y(nring+1) = rnulls(2,nullnum_t)
           z(nring+1) = rnulls(3,nullnum_t)
-          print*,'End null, last point and start of separator'
+          print*, 'End null, last point and start of separator'
           print*, x(nring+1), y(nring+1), z(nring+1)
-          print*,r
+          print*, r
         endif
         !write ring position vector into x, y and z
         x(iring) = r(1)
@@ -128,13 +128,12 @@ program readin
 
       enddo
 
-      nring = nring+1
-
-      write(11) nring
+      write(11) nring+2
       write(11) nringsmax
       write(11) x, y, z
 
-      deallocate(x,y,z)
+      deallocate(x, y, z)
+      print*, ''
     enddo
 
     write(11) -1
@@ -144,7 +143,7 @@ program readin
     ! Just writes a selection of rings to file i.e. every "skip"ped number of rings
     print*, 'writing rings to file'
 
-    open(unit=11,file='output/ringidl'//trim(fname)//'.dat',form='unformatted')
+    open(unit=11, file='output/ringidl'//trim(fname)//'.dat', form='unformatted')
 
     print*, 'nrings=', nrings
     nrcount = 0
@@ -159,6 +158,7 @@ program readin
       allocate(brk(nperring(iring)))
       read(10, pos=b) brk
       read(10, pos=p) ring
+      
       x = ring(1,:)
       y = ring(2,:)
       z = ring(3,:)
