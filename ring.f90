@@ -29,11 +29,11 @@ contains
     integer, intent(in) :: iteration
     double precision :: b(3)
 
-    if (iteration < 100) then !if near-in to the starting null we want smaller max/min separations
-      maxdist = maxdist1*0.05
-    else
+    !if (iteration < 100) then !if near-in to the starting null we want smaller max/min separations
+    !  maxdist = maxdist1*0.05
+    !else
       maxdist = maxdist1
-    endif
+    !endif
 
     !test for gaps. Where gaps need to be filled, put this info into 'add'
     add1 = 0
@@ -93,11 +93,11 @@ contains
     integer, intent(in) :: iteration
     double precision :: mindist
 
-    if (iteration < 100) then
-      mindist = mindist1*0.05
-    else
+    !if (iteration < 100) then
+    !  mindist = mindist1*0.05
+    !else
       mindist = mindist1
-    endif
+    !endif
 
     !check for too tightly spaced points, flag points to be removed
     do iline = 1, nlines !loop over all points
