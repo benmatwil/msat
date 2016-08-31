@@ -24,8 +24,7 @@ contains
   !a - the association number (which point in ring (index-1) the point in ring (nring) came from
   !p - the position of the ring vector
   subroutine position(nring,index,a,p)
-    integer*8 :: a
-    integer*8 :: p
+    integer*8 :: a, p
     integer :: uptoring
 
     !1 whole ring contains 3*np vector points and np association points
@@ -176,5 +175,7 @@ program readin
 
     deallocate(nperring)
   enddo
+
+  print*, "Completed readin successfully"
 
 end
