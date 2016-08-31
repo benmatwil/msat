@@ -7,14 +7,14 @@ program sf_converge
   implicit none
 
   double precision, allocatable :: rnulls(:,:), spines(:,:), fans(:,:)
-  integer, allocatable :: signs(:), spirals(:), warnings(:)
+  integer, allocatable :: signs(:), warnings(:)
   
   integer :: nnulls, nullstart, nullend, savedata = 0
   character(len=12) :: arg
 
   integer :: pcount, ncount, ucount
 
-  integer :: sign, spiral, warning
+  integer :: sign, warning
   double precision, dimension(3) :: spine, fan
 
   integer :: i
@@ -24,7 +24,7 @@ program sf_converge
 
   read(10) nnulls
 
-  allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),spirals(nnulls),warnings(nnulls))
+  allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),warnings(nnulls))
 
   do i = 1,nnulls
     read(10) rnulls(:,i)
@@ -66,12 +66,11 @@ program sf_converge
     print*, 'Evaluating null', i,' of', nnulls
     rnull = rnulls(:,i)
     
-    call get_properties(sign,spine,fan,spiral,warning,savedata)
+    call get_properties(sign,spine,fan,warning,savedata)
     
     signs(i) = sign
     spines(:,i) = spine
     fans(:,i) = fan
-    spirals(i) = spiral
     warnings(i) = warning
     
     print*, ''
@@ -90,13 +89,13 @@ program sf_converge
 
   print*, ''
   print*, 'Summary:'
-  print*, 'number, sign, spiral, warning'
+  print*, 'number, sign, warning'
 
   pcount = 0
   ucount = 0
   ncount = 0
   do i = 1, nnulls
-    print*, i, signs(i), spirals(i), warnings(i)
+    print*, i, signs(i), warnings(i)
     if (signs(i) .eq. 1) pcount = pcount+1
     if (signs(i) .eq. -1) ncount = ncount+1
     if (signs(i) .eq. 0) ucount = ucount+1
@@ -114,17 +113,17 @@ end program
 !********************************************************************************
 
 !characterise each null
-subroutine get_properties(sign,spine,fan,spiral,warning,savedata)
+subroutine get_properties(sign,spine,fan,warning,savedata)
   use sfmod_converge
 
   implicit none
-  integer :: i, j, count, n, imin, nfw, nbw, nspine, nfan, nfanchk, maxcount
+  integer :: i, j, count, n, imin, nfw, nbw, nspine, nfan, nfanchk, maxcount, again
   double precision :: r(3), b(3)
   integer :: flag, flagfw, flagbw, savedata
-  double precision :: dphi, dtheta
+  double precision :: dphi, dtheta, angle
   double precision :: fact, acc, spinecheck
   double precision :: mindot, dotprod
-  integer :: sign, spiral, warning, signguess
+  integer :: sign, warning, signguess
   integer, allocatable, dimension(:,:) :: densepos, denseposfw, denseposbw
 
   double precision, dimension(3) :: spine, fan, maxvec, minvec
@@ -133,67 +132,68 @@ subroutine get_properties(sign,spine,fan,spiral,warning,savedata)
   double precision, dimension(:,:), allocatable :: rspine, rfan, rfanchk, rfanred, dummy, crossfan, distarr
   double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw, distchk
 
-  !set up theta and phi for sphere around null
-  dphi = 360.d0/dble(nphi)
-  dtheta = 180.d0/dble(ntheta-1)
-
-  do i = 1, nphi
-    phis(i) = (i-1)*dphi
-  enddo
-
-  do j = 1, ntheta
-    thetas(j) = (j-1)*dtheta
-  enddo
-
-  phis = phis*dtor
-  thetas = thetas*dtor
-  
-  spiral = 0
-
   print*, 'Null at:', rnull
-  print*, 'B=', trilinear(rnull, bgrid)
+  print*, 'B =', trilinear(rnull, bgrid)
   print*, '--------------------------------------------------------------------------'
 
   allocate(rconvergefw(3,nphi*ntheta), rconvergebw(3,nphi*ntheta))
   allocate(roldfw(3), rnewfw(3), bnewfw(3), roldbw(3), rnewbw(3), bnewbw(3))
 
-  ! Working on a sphere of size rsphere
-  fact = 1d-2*rsphere
-  acc = 1d-10*rsphere
-  flagfw = 0
-  flagbw = 0
-  ! loop over each point to find converged point
-  do j = 1, ntheta
+  !set up theta and phi for sphere around null
+  dphi = 360.d0/dble(nphi)
+  dtheta = 180.d0/dble(ntheta-1)
+  
+  angle = 0
+  main: do
+    again = 0
     do i = 1, nphi
-      count = 0
-      maxcount = 5000
-      flag = 0
-      r = sphere2cart(rsphere,thetas(j),phis(i))
-      b = trilinear(r+rnull, bgrid)
-      rnewfw = r
-      rnewbw = r
-      bnewfw = b
-      bnewbw = b
-      roldfw = [0,0,0]
-      roldbw = [0,0,0]
-      do while (modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc .and. count < maxcount) ! do enough times for spine to converge
-        call it_conv(roldfw,rnewfw,bnewfw,fact,1)
-        call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
-        count = count + 1
-        !if (flag == 0) then
-        !  if (modulus(rnewfw-roldfw) < acc .or. modulus(rnewbw-roldbw) < acc) then
-        !    flag = 1
-        !    maxcount = 1*count ! does this factor need changing?
-        !  endif
-        !endif
-      enddo
-      if (modulus(rnewfw-roldfw) < acc) flagfw = flagfw + 1
-      if (modulus(rnewbw-roldbw) < acc) flagbw = flagbw + 1
-      n = i+(j-1)*nphi
-      rconvergefw(:,n) = normalise(rnewfw)
-      rconvergebw(:,n) = normalise(rnewbw)
+      phis(i) = (i-1)*dphi + angle
     enddo
-  enddo
+    do j = 1, ntheta
+      thetas(j) = (j-1)*dtheta + angle
+    enddo
+
+    phis = phis*dtor
+    thetas = thetas*dtor
+    
+    ! Working on a sphere of size rsphere
+    fact = 1d-2*rsphere
+    acc = 1d-10*rsphere
+    flagfw = 0
+    flagbw = 0
+    ! loop over each point to find converged point
+    do j = 1, ntheta
+      do i = 1, nphi
+        count = 0
+        maxcount = 5000
+        flag = 0
+        r = sphere2cart(rsphere,thetas(j),phis(i))
+        b = trilinear(r+rnull, bgrid)
+        rnewfw = r
+        rnewbw = r
+        bnewfw = b
+        bnewbw = b
+        roldfw = [0,0,0]
+        roldbw = [0,0,0]
+        do while (modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc .and. count < maxcount) ! do enough times for spine to converge
+          call it_conv(roldfw,rnewfw,bnewfw,fact,1)
+          call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
+          count = count + 1
+        enddo
+        if (count < 100) then
+          angle = angle + 1
+          print*, "Adjusting the angles and starting again"
+          cycle main
+        endif
+        if (modulus(rnewfw-roldfw) < acc) flagfw = flagfw + 1
+        if (modulus(rnewbw-roldbw) < acc) flagbw = flagbw + 1
+        n = i+(j-1)*nphi
+        rconvergefw(:,n) = normalise(rnewfw)
+        rconvergebw(:,n) = normalise(rnewbw)
+      enddo
+    enddo
+    exit
+  enddo main
   
   print*, 'forward stopped', flagfw, 'backward stopped', flagbw
   if (flagfw < flagbw) then
@@ -215,6 +215,11 @@ subroutine get_properties(sign,spine,fan,spiral,warning,savedata)
 
   nfw = size(rconvergefw,2)
   nbw = size(rconvergebw,2)
+
+  print*, 'forwards'
+  print*, rconvergefw
+  print*, 'backwards'
+  print*, rconvergebw
 
   ! first determine the spine and which is which
   if (nfw == 2 .or. nbw == 2) then ! if one of the reductions only has two vectors, can guarantee one is spine
@@ -263,7 +268,11 @@ subroutine get_properties(sign,spine,fan,spiral,warning,savedata)
     call remove_duplicates(rconvergebw1, 1d-2, denseposbw)
     nfw = maxval(denseposfw)
     nbw = maxval(denseposbw)
-    print*, "Density of densest points", nfw, nbw
+    print*, "Density of densest points"
+    print*, '       Forwards', maxloc(denseposfw), nfw
+    print*, rconvergefw1
+    print*, denseposfw
+    print*, '       Backwards', maxloc(denseposbw), nbw
     if (nfw < nbw) then
       spine = rconvergebw1(:,maxval(maxloc(denseposbw)))
       rfan = rconvergefw
@@ -346,16 +355,6 @@ subroutine get_properties(sign,spine,fan,spiral,warning,savedata)
         enddo
         minvec = rfan(:,imin)
         print*, "Perp vec is at ", imin, "out of a total of ", size(rfan,2)
-        ! Now check for a full ring for spiralling, this will pick up perfect potential nulls too :(
-        nfan = size(rfan,2)
-        allocate(distarr(nfan,nfan))
-        do i = 1, nfan
-          do j = 1, nfan
-            distarr(i,j) = modulus(rfan(:,i)-rfan(:,j))
-          enddo
-        enddo
-        if (maxval(minval(distarr,2,distarr > 0)) < 1d-1) spiral = 1
-        deallocate(distarr)
       else ! we have a ball, find vectors approximately perpendicular and pick one in the densest area
         print*, "We have a ball"
         ! find most set of almost perpendicular vectors and then pick densest packed one
@@ -397,8 +396,8 @@ subroutine get_properties(sign,spine,fan,spiral,warning,savedata)
 
   print*, '-------------------------------------------------------------------------'
   print*, "Final dot prod is"
-  print*, "        min/max           ", "      min/spine          ", "      max/spine       "
-  print*, dot(minvec,maxvec), dot(minvec,spine), dot(maxvec,spine)
+  print*, "        min/max           ", "      max/spine       ", "      min/spine          "
+  print*, dot(minvec,maxvec), dot(maxvec,spine), dot(minvec,spine)
   print*, '-------------------------------------------------------------------------'
 
   !sign = -sign !check which sign needs to be which
@@ -407,7 +406,6 @@ subroutine get_properties(sign,spine,fan,spiral,warning,savedata)
 
   if (sign .eq. 0) print*, "Warning, sign = 0 and null likely a source or a sink"
   print*, 'Sign =  ', sign
-  print*, 'Spiral =', spiral
   print*, 'Spine = ', spine
   print*, 'Fan =   ', fan
   print*, 'Tilt =  ', abs(90-acos(dot(fan,spine))/dtor)
