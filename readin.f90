@@ -12,8 +12,8 @@ integer*8 :: pos
 integer :: preamble
 
 double precision :: r(3)
-double precision, allocatable :: ring(:,:)
-double precision, allocatable, dimension(:) :: x,y,z
+double precision, allocatable :: ring(:,:), brk(:)
+double precision, allocatable, dimension(:) :: x, y, z
 
 integer :: opt
 integer :: nring, index
@@ -156,6 +156,8 @@ program readin
     do iring = 1, nrings-2, skip
       call position(iring,1,a,b,p)
       allocate(x(nperring(iring)), y(nperring(iring)), z(nperring(iring)), ring(3,nperring(iring)))
+      allocate(brk(nperring(iring)))
+      read(10, pos=b) brk
       read(10, pos=p) ring
       x = ring(1,:)
       y = ring(2,:)
@@ -163,7 +165,8 @@ program readin
 
       write(11) nperring(iring)
       write(11) x, y, z
-      deallocate(x, y, z, ring)
+      write(11) brk
+      deallocate(x, y, z, ring, brk)
     enddo
     write(11) -1
     close(11)
