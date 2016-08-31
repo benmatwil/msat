@@ -55,7 +55,7 @@ program ssfind
   zmax = nz
   print*, "Data read in, grid dimensions are", nx, ny, nz
 
-  call SYSTEM_CLOCK(tstart,count_rate) !to time how long it takes
+  call system_clock(tstart,count_rate) !to time how long it takes
 
   !read in null data
 
@@ -233,13 +233,13 @@ program ssfind
       
       !print*,'Checking at null', iring, nlines, inull
       if (iring < 50) then
-        maxdist = 0.1*h0!0.0075d0
+        maxdist = 0.1d0*h0!0.0075d0
       elseif (iring < 100) then
-        maxdist = 0.08*h0!0.0075d0=0.15*0.05
+        maxdist = 0.08d0*h0!0.0075d0=0.15*0.05
       else
-        maxdist = 0.8*h0!0.15
+        maxdist = 0.8d0*h0!0.15
       endif
-      nulldist = 1.6*h0 !0.6
+      nulldist = 1.6d0*h0 !0.6
       mindist = maxdist/4
       !print*, iring, h0, nulldist, maxdist1, mindist1, nlines
 
@@ -264,6 +264,8 @@ program ssfind
       endif
 
     enddo
+
+    if (nrings == ringsmax) print*, "Reached maximum number of rings"
     
     print*, 'number of separators=', nseps, 'number of rings', nrings
     
@@ -279,7 +281,7 @@ program ssfind
 
   enddo
 
-  call SYSTEM_CLOCK(tstop, count_rate)
+  call system_clock(tstop, count_rate)
   print*, 'TIME = ', dble(tstop - tstart)/dble(count_rate)
 
 end program
