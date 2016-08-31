@@ -145,7 +145,6 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   
   angle = 0
   main: do
-    again = 0
     do i = 1, nphi
       phis(i) = (i-1)*dphi + angle
     enddo
