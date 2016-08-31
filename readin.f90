@@ -23,17 +23,18 @@ contains
   !gets the position numbers in the file for ring number 'nring' and point number 'index' within that ring. The position numbers are:
   !a - the association number (which point in ring (index-1) the point in ring (nring) came from
   !p - the position of the ring vector
-  subroutine position(nring,index,a,p)
-    integer*8 :: a, p
+  subroutine position(nring,index,a,b,p)
+    integer*8 :: a, b, p
     integer :: uptoring
 
     !1 whole ring contains 3*np vector points and np association points
-
-    uptoring = preamble + (sum(nperring(1:nring-1))*7)
+    uptoring = preamble + sum(nperring(0:nring-1))*8
     a = uptoring + (index-1)*1
-    p = uptoring + nperring(nring)*1 + (index-1)*6
+    b = uptoring + nperring(nring)*1 + (index-1)*1
+    p = uptoring + nperring(nring)*2 + (index-1)*6
 
     a = a*4 + 1
+    b = b*4 + 1
     p = p*4 + 1
 
   end subroutine
@@ -47,22 +48,16 @@ program readin
   use params
   implicit none
 
-  integer*8 :: a, p
+  integer*8 :: a, b, p
   integer :: iring, inull, nrcount
 
-  integer :: nnulls, null, nullnum_f, nullnum_t
+  integer :: nnulls, nullnum_f, nullnum_t
 
   double precision :: sep, sep1, sep2, sep3
   double precision, allocatable, dimension(:,:) :: rnulls
 
-
   character (len=8), parameter :: fmt='(I4.4)'
   character (len=5) :: fname
-
-  !open (unit=10,file='output/nulls.dat',access='stream')
-  !read(10) nnulls
-  !print*,'num nulls',nnulls
-  !close(10)
 
   open(unit=10,file='output/null.dat',form='unformatted')
     read(10) nnulls
@@ -77,7 +72,6 @@ program readin
   close(10)
 
   do inull = 1, nnulls
-
     write(fname,fmt) inull
 
     open(unit=12,file='output/separator'//trim(fname)//'.dat',access='stream')
@@ -101,17 +95,18 @@ program readin
       print*, 'Separator starts from null', nullnum_f
       print*, 'Separator ends at null', nullnum_t
 
-      read(12) nring,index !ring number and index within the ring the start point of the separator belongs to
+      read(12) nring, index !ring number and index within the ring the start point of the separator belongs to
       print*, 'ring number and index within ring where separator starts'
-      print*, nring,index
+      print*, nring, index
 
       allocate(x(nring+1), y(nring+1), z(nring+1))
 
       print*, 'Tracing Separator...'
+      print*, 'Start ring is', nring
 
       do iring = nring, 1, -1 !trace back each ring to the start
 
-        call position(iring,index,a,p) !get positions in file belonging to the current ring
+        call position(iring,index,a,b,p) !get positions in file belonging to the current ring
 
         read(10, pos=a) association !read association for point number index in ring 1
         read(10, pos=p) r !read position of point index on ring iring
@@ -129,7 +124,7 @@ program readin
         z(iring) = r(3)
         index = association
 
-        if (iring == 1) print*,r
+        if (iring == 1) print*, r
 
       enddo
 
@@ -159,7 +154,7 @@ program readin
     write(11), nrcount
 
     do iring = 1, nrings-2, skip
-      call position(iring,1,a,p)
+      call position(iring,1,a,b,p)
       allocate(x(nperring(iring)), y(nperring(iring)), z(nperring(iring)), ring(3,nperring(iring)))
       read(10, pos=p) ring
       x = ring(1,:)

@@ -161,7 +161,7 @@ program ssfind
 
     write(20) nrings, 0, ringsmax+1
     write(20) nperring
-    write(20) association, line1
+    write(20) association, break, line1
 
     exitcondition = .false.
 
@@ -171,15 +171,12 @@ program ssfind
         exit
       endif
 
-      nrings = nrings + 1
-
       endpoints = 0
       add1 = 0
       add2 = 0
       remove = 0
 
       !write(20) association
-      nperring(iring) = nlines
 
       ierror = 0
 
@@ -244,7 +241,7 @@ program ssfind
       !endif
 
       if (ierror == 1) then
-        print*, 'Tracing has failed',iring
+        print*, 'Tracing has failed', iring
         exitcondition = .true.
       endif
       
@@ -272,21 +269,23 @@ program ssfind
       !call remove_points(nlines,iring)
       !call add_points(nlines,iring)
 
-      write(20) association, line1
+      nperring(iring) = nlines
+      write(20) association, break, line1
 
-      if (exitcondition) exit
+      if (exitcondition) then
+        nrings = iring
+        exit
+      endif
 
     enddo
     
-    print*, 'number of separators=',nseps, 'number of rings', nrings-1
+    print*, 'number of separators=', nseps, 'number of rings', nrings
     
     write(12) -1
-
     close(12)
 
     write(20,pos=1) nrings, sum(nperring)
     write(20,pos=13) nperring
-
     close(20)
 
     deallocate(xs, ys, zs)
