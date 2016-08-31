@@ -179,7 +179,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
           call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
           count = count + 1
         enddo
-        if (count < 100) then
+        if (count < 100 .or. count == maxcount) then
           angle = angle + 1
           print*, "Adjusting the initial points and starting again"
           cycle main
