@@ -182,7 +182,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
         enddo
         if (count < 100) then
           angle = angle + 1
-          print*, "Adjusting the angles and starting again"
+          print*, "Adjusting the initial points and starting again"
           cycle main
         endif
         if (modulus(rnewfw-roldfw) < acc) flagfw = flagfw + 1
