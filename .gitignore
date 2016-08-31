@@ -9,8 +9,7 @@ nf
 sf
 ssf
 readin
-writedata
-visualise
+writedata*
 tritest
 sf_converge
 *.dat

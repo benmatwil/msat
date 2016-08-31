@@ -10,6 +10,8 @@ datafile='data/newmag.dat'
 .r visualise/get_nulls
 
 
-;o=mk_model_mag_sep(datafile,/box,/nulls,/separators,/sepsurf,/spines)
-o=mk_model_mag_sep(datafile,/box,/nulls,/separators,/fanlines,/spines)
+;o=mk_model_mag_sep(datafile,/box,/nulls,/sepsurf,/spines)
+o=mk_model_mag_sep(datafile,/box,/nulls,/separators,/spines)
+;o=mk_model_mag_sep(datafile,/box,/nulls,/sepsurf,/separators,/spines)
+;o=mk_model_mag_sep(datafile,/box,/nulls,/separators,/fanlines,/spines)
 xobjview,o 
