@@ -117,7 +117,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   use sfmod_converge
 
   implicit none
-  integer :: i, j, count, n, imin, nfw, nbw, nspine, nfan, nfanchk, maxcount, again
+  integer :: i, j, count, n, imin, nfw, nbw, nspine, nfan, nfanchk, maxcount
   double precision :: r(3), b(3)
   integer :: flag, flagfw, flagbw, savedata
   double precision :: dphi, dtheta, angle
