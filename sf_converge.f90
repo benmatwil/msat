@@ -129,8 +129,8 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   double precision, dimension(3) :: spine, fan, maxvec, minvec
   
   double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rconvergefw1, rconvergebw1
-  double precision, dimension(:,:), allocatable :: rspine, rfan, rfanchk, rfanred, dummy, crossfan, distarr
-  double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw, distchk
+  double precision, dimension(:,:), allocatable :: rspine, rfan, rfanchk, rfanred, dummy, crossfan
+  double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
 
   print*, 'Null at:', rnull
   print*, 'B =', trilinear(rnull, bgrid)
@@ -410,7 +410,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   print*, 'Tilt =  ', abs(90-acos(dot(fan,spine))/dtor)
 
   warning = 0
-  if (abs(90-acos(dot(fan,spine))/dtor) .lt. 10.) then
+  if (abs(90-acos(dot(fan,spine))/dtor) < 10.) then
     print*, 'WARNING: SPINE AND FAN STRONGLY INCLINED'
     warning = 1
   endif
