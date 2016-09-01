@@ -10,7 +10,7 @@ program sf_converge
   integer, allocatable :: signs(:), warnings(:)
   
   integer :: nnulls, nullstart, nullend, savedata = 0
-  character(len=12) :: arg
+  character(len=100) :: arg
 
   integer :: pcount, ncount, ucount
 
@@ -18,6 +18,30 @@ program sf_converge
   double precision, dimension(3) :: spine, fan
 
   integer :: i
+
+  nullstart = 1
+  nullend = nnulls
+  if (command_argument_count() > 0) then 
+    do i = 1, command_argument_count()
+      call get_command_argument(i,arg)
+      if (arg(1:2) == 'n=') then
+        arg = arg(3:)
+        read(arg,*) nullstart
+        nullend = nullstart
+        savedata = 1
+      endif
+    enddo
+  endif
+
+  filename = defaultfilename
+  if (command_argument_count() > 0) then
+    do i = 1, command_argument_count()
+      call get_command_argument(i,arg)
+      if (arg(1:5) == 'data=')
+        filename = trim(arg(6:))
+      endif
+    enddo
+  endif
 
   !Read in 'null.dat'
   open (unit=10,file='output/null.dat',form='unformatted')
@@ -44,21 +68,6 @@ program sf_converge
 
   print*, 'There are ', nnulls,' nulls to analyse'
   print*, '-----------------------------------------------------------------------------'
-  
-  if (command_argument_count() > 0) then 
-    do i = 1, command_argument_count()
-      call get_command_argument(i,arg)
-      if (arg(1:2) == 'n=') then
-        arg = arg(3:)
-        read(arg,*) nullstart
-        nullend = nullstart
-        savedata = 1
-      endif
-    enddo
-  else
-    nullstart = 1
-    nullend = nnulls
-  endif
 
   !now loop over each null and characterise
   do i = nullstart, nullend!1, nnulls

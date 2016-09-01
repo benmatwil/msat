@@ -5,7 +5,8 @@ module params
   double precision, parameter :: dtor = pi/180.d0
 
   !data file containing the magnetic field data
-  character (len=100) :: filename = 'data/newmag.dat'
+  character (len=100) :: defaultfilename = 'data/newmag.dat'
+  character (len=100) :: filename
 
   !nullfinder parameters
   double precision, parameter :: zero = 1.d-10 !what the code treats as zero

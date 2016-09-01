@@ -35,6 +35,16 @@ program ssfind
   logical :: exitcondition, out
 
   CALL OMP_SET_NUM_THREADS(8) !have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
+
+  filename = defaultfilename
+  if (command_argument_count() > 0) then
+    do i = 1, command_argument_count()
+      call get_command_argument(i,arg)
+      if (arg(1:5) == 'data=')
+        filename = trim(arg(6:))
+      endif
+    enddo
+  endif
   
   !read in data
   open (unit=10,file=filename,access='stream')
