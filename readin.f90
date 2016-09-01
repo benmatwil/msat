@@ -129,7 +129,7 @@ program readin
       enddo
 
       write(11) nring+2
-      write(11) nringsmax
+      write(11) nringsmax+1
       write(11) x, y, z
 
       deallocate(x, y, z)
@@ -144,7 +144,6 @@ program readin
     print*, 'writing rings to file'
 
     open(unit=11, file='output/ringidl'//trim(fname)//'.dat', form='unformatted')
-
     print*, 'nrings=', nrings
     nrcount = 0
     do iring = 1, nrings-2, skip
