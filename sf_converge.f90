@@ -18,6 +18,17 @@ program sf_converge
 
   integer :: i
 
+  !Read in 'null.dat'
+  open (unit=10,file='output/null.dat',form='unformatted')
+
+  read(10) nnulls
+    allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),warnings(nnulls))
+
+    do i = 1,nnulls
+      read(10) rnulls(:,i)
+    enddo
+  close(10)
+
   nullstart = 1
   nullend = nnulls
   if (command_argument_count() > 0) then 
@@ -41,17 +52,6 @@ program sf_converge
       endif
     enddo
   endif
-
-  !Read in 'null.dat'
-  open (unit=10,file='output/null.dat',form='unformatted')
-
-  read(10) nnulls
-    allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),warnings(nnulls))
-
-    do i = 1,nnulls
-      read(10) rnulls(:,i)
-    enddo
-  close(10)
 
   !read in bgrid
   open(unit=10,file=filename,access='stream')
