@@ -1,0 +1,7 @@
+#!/usr/bin/env tcsh
+
+make
+nf $1
+sf_converge $1
+ssf $1
+readin
