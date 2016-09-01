@@ -10,7 +10,6 @@ program sf_converge
   integer, allocatable :: signs(:), warnings(:)
   
   integer :: nnulls, nullstart, nullend, savedata = 0
-  character(len=100) :: arg
 
   integer :: pcount, ncount, ucount
 
@@ -37,7 +36,7 @@ program sf_converge
   if (command_argument_count() > 0) then
     do i = 1, command_argument_count()
       call get_command_argument(i,arg)
-      if (arg(1:5) == 'data=')
+      if (arg(1:5) == 'data=') then
         filename = trim(arg(6:))
       endif
     enddo

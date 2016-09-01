@@ -6,7 +6,7 @@ module params
 
   !data file containing the magnetic field data
   character (len=100) :: defaultfilename = 'data/newmag.dat'
-  character (len=100) :: filename
+  character (len=100) :: filename, arg
 
   !nullfinder parameters
   double precision, parameter :: zero = 1.d-10 !what the code treats as zero

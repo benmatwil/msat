@@ -4,9 +4,8 @@ program nullfinder
 
   implicit none
 
-  character (len=30) :: intfmt = "(a,'(',i4,',',i4,',',i4')',a)"
-  character (len=40) :: dblfmt= "(a,'(',f9.5,',',f9.5,',',f9.5,')',a)"
-  character (len=100) :: arg
+  character(len=30) :: intfmt = "(a,'(',i4,',',i4,',',i4')',a)"
+  character(len=40) :: dblfmt= "(a,'(',f9.5,',',f9.5,',',f9.5,')',a)"
 
   double precision, allocatable, dimension(:) :: xs, ys, zs !x,y and z coordinates of confirmed nulls
   double precision, allocatable, dimension(:) :: xp, yp, zp
@@ -47,7 +46,7 @@ program nullfinder
   if (command_argument_count() > 0) then
     do i = 1, command_argument_count()
       call get_command_argument(i,arg)
-      if (arg(1:5) == 'data=')
+      if (arg(1:5) == 'data=') then
         filename = trim(arg(6:))
       endif
     enddo
