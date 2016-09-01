@@ -16,8 +16,8 @@ module params
   double precision, parameter :: rtraceto = 1d-1 !the radius the field line tracer traces lines to (should be larger than rsphere)
 
   !ssfind parameters
-  integer, parameter :: ringsmax = 2500 !maximum # of rings
-  integer, parameter :: pointsmax = 30000 !maximum number of points in ring
+  integer, parameter :: ringsmax = 6000 !maximum # of rings
+  integer, parameter :: pointsmax = 60000 !maximum number of points in ring
   double precision, parameter :: tol = 1.d-5 !tolerance of rkf45 scheme
   double precision, parameter :: stepmin = 0.0003 !minimum step length
 

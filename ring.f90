@@ -126,10 +126,11 @@ contains
     !do iline = 1, nlines
     !  if (remove(iline) == 1 .or. break(iline) == 1) print*, remove(iline), break(iline)
     !enddo
-
+if (1 == 0) then
     do iline = 1, nlines-1
       if (dist(line1(:,iline),line1(:,iline+1)) > 3*maxdist) break(iline) = 1
     enddo
+endif
 
     !remove points
     iline = 1
@@ -255,7 +256,7 @@ contains
               
               !if theres a change in sign, theres the separator
               if (index /= 1) then
-                if (signof(index-1)*signof(index) == -1) then
+                if (signof(index-1)*signof(index) == -1 .and. break(rmap(index-1)) /= 1) then
                   print*, 'Found a separator', nring
                   break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
                   nseps = nseps + 1

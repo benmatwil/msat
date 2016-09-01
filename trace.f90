@@ -32,6 +32,7 @@ contains
     
     if (modulus(r-r0) < 0.1*stepdist) then
       !print *,'field line not tracin',modulus(r-r0),stepdist, sign
+      !print*, r
       ierror = 1
     endif
 

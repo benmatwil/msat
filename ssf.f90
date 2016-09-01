@@ -153,7 +153,7 @@ program ssfind
 
     break = 0
     nseps = 0
-    nrings = 1
+    nrings = ringsmax
     nperring = 0
     nperring(0) = nlines
 
@@ -242,12 +242,13 @@ program ssfind
       nulldist = 1.6d0*h0 !0.6
       mindist = maxdist/4
       !print*, iring, h0, nulldist, maxdist1, mindist1, nlines
-
+if (1==0) then
       do iline = 1, nlines-1
         if (dist(line1(:,iline),line1(:,iline)) > 3*maxdist) then
           break(iline) = 1
         endif
       enddo
+endif
 
       call remove_points(nlines,iring) !remove points from ring if necessary
       call add_points(nlines,iring) !add points to ring if necessary
