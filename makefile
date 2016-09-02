@@ -1,13 +1,16 @@
 FC = gfortran
 FFLAGS = -O3
 
-all: writedata writedata_ws nf sf ssf readin sf_converge
+all: writedata writedata_ws writedata_ws_gen nf sf ssf readin sf_converge
 	
 writedata : params.f90 writedata.f90
 	$(FC) $(FFLAGS) params.f90 writedata.f90 -o writedata
 
 writedata_ws : params.f90 writedata_ws.f90
 	$(FC) $(FFLAGS) params.f90 writedata_ws.f90 -o writedata_ws
+
+writedata_ws_gen : params.f90 writedata_ws_gen.f90
+	$(FC) $(FFLAGS) params.f90 writedata_ws_gen.f90 -o writedata_ws_gen
 
 nf : params.f90 nf_mod.f90 nf.f90
 	$(FC) $(FFLAGS) params.f90 nf_mod.f90 nf.f90 -o nf
