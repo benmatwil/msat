@@ -18,7 +18,7 @@ module params
 
   !ssfind parameters
   integer, parameter :: ringsmax = 6000 !maximum # of rings
-  integer, parameter :: pointsmax = 60000 !maximum number of points in ring
+  integer, parameter :: pointsmax = 100000 !maximum number of points in ring
   double precision, parameter :: tol = 1.d-5 !tolerance of rkf45 scheme
   double precision, parameter :: stepmin = 0.0003 !minimum step length
 
