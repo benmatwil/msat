@@ -38,6 +38,7 @@ contains
         else
           nxtline = 1
         endif
+        if (dist(line2(:,iline),line2(:,nxtline)) > 150) print*, 'Points very far away', dist(line2(:,iline),line2(:,nxtline))
         if (dist(line2(:,iline),line2(:,nxtline)) > maxdist) then !if two adjacent points too far away
           add1(:,iline) = line1(:,iline) + 0.5*(line2(:,nxtline)-line2(:,iline)) !add point half way between two points
           add2(:,iline) = line2(:,iline) + 0.5*(line2(:,nxtline)-line2(:,iline))

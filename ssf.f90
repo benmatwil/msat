@@ -194,16 +194,16 @@ program ssfind
         h0 = 25d-2
       endif
 
-      main: do inullchk = 1, nnulls
-        if (inullchk == inull) cycle
-        do iline = 1, nlines
-          if (dist(rnulls(:,inullchk), line1(:, iline)) < 1) then
-            print*, "Some close points, slowing down"
-            h0 = h0/2
-            exit main
-          endif
-        enddo
-      enddo main
+      !main: do inullchk = 1, nnulls
+      !  if (inullchk == inull) cycle
+      !  do iline = 1, nlines
+      !    if (dist(rnulls(:,inullchk), line1(:, iline)) < 1) then
+      !      print*, "Some close points, slowing down"
+      !      h0 = h0/2
+      !      exit main
+      !    endif
+      !  enddo
+      !enddo main
 
       !$OMP PARALLEL DO private(r,h)
       do iline = 1, nlines !loop over all points in ring (in parallel do)
@@ -262,7 +262,7 @@ program ssfind
       endif
       nulldist = 1.4d0*h0 !0.6
       mindist = maxdist/3
-      print*, iring, h0, nulldist, maxdist, mindist, nlines
+      !print*, iring, h0, nulldist, maxdist, mindist, nlines
 if (1==0) then
       do iline = 1, nlines-1
         if (dist(line1(:,iline),line1(:,iline)) > 3*maxdist) then
