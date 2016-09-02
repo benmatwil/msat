@@ -2,7 +2,7 @@ pro model_add_sepsurf,oModel,frame,rake=rake
   
   print,'Separatrix surface rings'
   get_nulls,nnulls,signs,r,spine,nulls
-;nnulls=1
+nnulls=1
   for i=0,nnulls-1 do begin
     if keyword_set(rake) then colour=[0,255,0] $
     else begin
@@ -239,7 +239,7 @@ end
 
 pro model_add_nulls,oModel,frame
 
-  radius=0.8
+  radius=0.1
   scl=((8*!dpi)/(3*sqrt(6)))^(1/3.)
   print,"scl=",scl
   ;nulls=getnulls(frame)
