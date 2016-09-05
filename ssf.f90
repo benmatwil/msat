@@ -18,6 +18,7 @@ program ssfind
   !position vector of null (and saved backup)
   double precision :: r(3)
   double precision :: h, h0
+  double precision :: slowdown
 
   integer :: iring, iline, inull, i, inullchk
 
@@ -146,7 +147,7 @@ program ssfind
     call get_startpoints(theta,phi, xs,ys,zs)
 
     allocate(line1(3,nlines), line2(3,nlines), add1(3,nlines), add2(3,nlines))
-    allocate(association(nlines), break(nlines), remove(nlines), endpoints(nlines))
+    allocate(association(nlines), break(nlines), remove(nlines), endpoints(nlines), nearnull(nlines))
 
     !add start points to first ring relative to null
     do iline = 1, nlines !Go through each start point
@@ -180,18 +181,36 @@ program ssfind
       endif
 
       endpoints = 0
-      add1 = 0
-      add2 = 0
+      add1 = 0d0
+      add2 = 0d0
       remove = 0
+      nearnull = 0
 
       !write(20) association
 
       ierror = 0
 
+      slowdown = 1d0
+      do iline = 1, nlines
+        do inullchk = 1, nnulls
+          if (inullchk == inull) cycle
+          if (dist(rnulls(:,inullchk), line1(:, iline)) < 1) then
+            !print*, 'close to null'
+            nearnull(iline) = 1
+            exit
+          endif
+        enddo
+      enddo
+
+      if (sum(nearnull) > 0) then
+        print*, 'slowing down, adding points near null'
+        slowdown = 2d0
+      endif
+
       if (iring < 50) then
-        h0 = 5d-2
+        h0 = 5d-2/slowdown
       else
-        h0 = 25d-2
+        h0 = 25d-2/slowdown
       endif
 
       !main: do inullchk = 1, nnulls
@@ -254,15 +273,15 @@ program ssfind
       
       !print*,'Checking at null', iring, nlines, inull
       if (iring < 50) then
-        maxdist = 0.1d0*h0!0.0075d0
+        maxdist = 0.1d0*h0*slowdown!0.0075d0
       elseif (iring < 100) then
-        maxdist = 0.08d0*h0!0.0075d0=0.15*0.05
+        maxdist = 0.08d0*h0*slowdown!0.0075d0=0.15*0.05
       else
-        maxdist = 0.6d0*h0!0.15
+        maxdist = 0.6d0*h0*slowdown!0.15
       endif
-      nulldist = 1.4d0*h0 !0.6
+      nulldist = 1.4d0*h0*slowdown !0.6
       mindist = maxdist/3
-      !print*, iring, h0, nulldist, maxdist, mindist, nlines
+      print*, iring, h0, nulldist, maxdist, mindist, nlines
 if (1==0) then
       do iline = 1, nlines-1
         if (dist(line1(:,iline),line1(:,iline)) > 3*maxdist) then
@@ -299,11 +318,11 @@ endif
     close(20)
 
     deallocate(xs, ys, zs)
-    deallocate(line1,line2, remove,add1,add2, endpoints,association,break)
+    deallocate(line1,line2, remove,add1,add2, endpoints,association,break,nearnull)
 
   enddo
 
   call system_clock(tstop, count_rate)
-  print*, 'TIME = ', dble(tstop - tstart)/dble(count_rate)
+  print*, 'TIME = ', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)" 
 
 end program

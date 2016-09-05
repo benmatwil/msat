@@ -15,7 +15,7 @@ integer, parameter :: nstart = 100 !number of startpoints in ring
 double precision :: maxdist, mindist, nulldist
 
 double precision, allocatable, dimension(:,:) :: line1, line2, add1, add2
-integer, allocatable, dimension(:) :: break, association, remove, endpoints
+integer, allocatable, dimension(:) :: break, association, remove, endpoints, nearnull
 
 contains
 
@@ -26,20 +26,25 @@ contains
     integer :: nlines
     integer :: iline, nxtline
     integer, intent(in) :: iteration
-    double precision :: b(3)
+    double precision :: b(3), maxdist0
 
     !test for gaps. Where gaps need to be filled, put this info into 'add'
     add1 = 0
     add2 = 0
     do iline = 1, nlines !loop over each point in ring
+      maxdist0 = maxdist
       if (break(iline) == 0) then
         if (iline < nlines) then !if not the last point
           nxtline = iline+1
         else
           nxtline = 1
         endif
-        if (dist(line2(:,iline),line2(:,nxtline)) > 150) print*, 'Points very far away', dist(line2(:,iline),line2(:,nxtline))
-        if (dist(line2(:,iline),line2(:,nxtline)) > maxdist) then !if two adjacent points too far away
+        if (nearnull(iline) == 1 .or. nearnull(nxtline) == 1) maxdist0 = maxdist/2d0
+        if (dist(line2(:,iline),line2(:,nxtline)) > maxdist0*5 .and. (nearnull(iline) == 0 .or. nearnull(nxtline) == 0)) then
+          !print*, 'Points very far away', dist(line2(:,iline),line2(:,nxtline))
+        endif
+        !if (iteration >= 1636) print*, maxdist, maxdist0 
+        if (dist(line2(:,iline),line2(:,nxtline)) > maxdist0) then !if two adjacent points too far away
           add1(:,iline) = line1(:,iline) + 0.5*(line2(:,nxtline)-line2(:,iline)) !add point half way between two points
           add2(:,iline) = line2(:,iline) + 0.5*(line2(:,nxtline)-line2(:,iline))
           !if (outedge(add2(:,iline))) print*, 'adding point out'
@@ -65,6 +70,7 @@ contains
         call add_element(endpoints,0,iline+1)
         call add_element(remove,0,iline+1)
         call add_element(break,0,iline+1)
+        call add_element(nearnull,0,iline+1)
         if (iline /= nlines) then
           call add_element(association,association(iline),iline+1)
         else
@@ -83,7 +89,7 @@ contains
     implicit none
 
     integer :: nlines
-    integer :: iline, nxtline
+    integer :: iline, nxtline, prevline
     integer, intent(in) :: iteration
 
     !check for too tightly spaced points, flag points to be removed
@@ -124,9 +130,16 @@ contains
     !  endif
     !enddo
     !print*, sum(remove), sum(break), iteration
-    !do iline = 1, nlines
-    !  if (remove(iline) == 1 .or. break(iline) == 1) print*, remove(iline), break(iline)
-    !enddo
+    do iline = 1, nlines
+      if (iline == 1) then
+        prevline = nlines
+      else
+        prevline = iline-1
+      endif
+      if (remove(iline) == 1 .and. break(iline) == 1 .and. break(prevline) /= 1) then
+        print*, remove(iline), break(iline), break(prevline)
+      endif
+    enddo
 if (1 == 0) then
     do iline = 1, nlines-1
       if (dist(line1(:,iline),line1(:,iline+1)) > 3*maxdist) break(iline) = 1
@@ -147,6 +160,7 @@ endif
           call remove_element(remove,iline)
           call remove_element(association,iline)
           call remove_element(break,iline)
+          call remove_element(nearnull,iline)
           nlines = nlines-1
         else
           iline = iline+1
