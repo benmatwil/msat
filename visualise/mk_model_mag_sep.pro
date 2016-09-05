@@ -10,16 +10,6 @@ nnulls=1
         if signs[i] lt 0 then colour = [128,128,255] else colour = [128,255,128]
       endelse
     endelse
-;     if keyword_set(rake) then begin
-;  ;     p=read_sepsurf(files[i],maxrings=1000)
-;      p=read_sepsurf(files[i])
-;     endif else begin
-;       file=findfile(string(format='("output/null_",I3.3,' $
-;         +'"_",I0.1,".dat")',frame,i+1),count=count)
-;       if count lt 1 then continue
-;  ;     p=read_sepsurf(file,maxrings=1000)
-;      p=read_sepsurf(file)
-;     endelse
     
     file='output/ringidl'+string(i+1,'(I4.4)')+'.dat'
     print,file
@@ -54,34 +44,6 @@ nnulls=1
      
     close,fan
     
-;     for j=0,n_elements(p)-1 do begin
-;       if j mod 20 ne 0 then continue
-;       pnts=*p[j]
-;       if n_elements(pnts) le 1 then continue
-;       
-;       ii=where((pnts.flags and 8) eq 8)
-;       if ii[0] eq -1 then begin
-;         ii=[lindgen(n_elements(pnts)),0]
-;         oModel->add,obj_new("IDLgrPolyline",pnts[ii].pos[0], $
-;           pnts[ii].pos[1],pnts[ii].pos[2],color=colour)
-;       endif else begin
-;         pnts=shift(pnts,-min(ii)-1)
-;         ii=ii-min(ii)
-;         
-;         for k=0,n_elements(ii)-2 do begin
-;           if ii[k+1]-ii[k] le 1 then continue
-;           oModel->add,obj_new("IDLgrPolyline",pnts[ii[k]:ii[k+1]-1].pos[0], $
-;             pnts[ii[k]:ii[k+1]-1].pos[1],pnts[ii[k]:ii[k+1]-1].pos[2], $
-;             color=colour)
-;         endfor
-;         k=n_elements(ii)-1
-;         if ii[k] lt n_elements(pnts)-1 then begin
-;           oModel->add,obj_new("IDLgrPolyline",pnts[ii[k]:*].pos[0], $
-;             pnts[ii[k]:*].pos[1],pnts[ii[k]:*].pos[2],color=colour)
-;         endif
-;       endelse
-;     endfor
-;     ptr_free,p
   endfor
   
   free_lun,fan
@@ -101,9 +63,7 @@ pro model_add_spines,oModel,frame,bgrid,xx,yy,zz
   for i=0,nnulls-1 do begin
     spine = (spines(*,i))
     posi = r(*,i)
-    ;spine=reverse(spine)
     print,spine
-    ;spine = spine/sqrt(total(spine^2))
     ds = signs(i)/abs(signs(i))
     if (ds gt 0) then col = [250,0,0] else col = [0,0,250]
   startpt = posi+ro*spine
@@ -199,14 +159,6 @@ end
 pro model_add_separators,oModel,frame
 
   print,'plot separators'
-  ;files=findfile(string(format='("output/{rake_seps,separators}_",I3.3,' $
-  ;  +'"_*.dat*")',frame),count=nfiles)
-  ;print,files,nfiles
-  ;index=1
-  ;for i=0,nfiles-1 do begin
-  ;i = 1
-   
-   ;seps=read_separators(files[i])
    
     get_nulls,nnulls,signs,r,spine,nulls
     nnulls=1
@@ -242,32 +194,13 @@ pro model_add_nulls,oModel,frame
   radius=0.1
   scl=((8*!dpi)/(3*sqrt(6)))^(1/3.)
   print,"scl=",scl
-  ;nulls=getnulls(frame)
   
   get_nulls,nnulls,signs,r,spine,nulls
-  
-;   get_lun,null
-;   openr,null,'output/nulls.dat',/f77_unformatted
-;   nnulls=0l
-;   readu,null,nnulls
-;   nulls=0
-;   if (nnulls gt 0) then begin
-;     signs=lonarr(nnulls)
-;     r=dblarr(3,nnulls)
-;     readu,null,signs
-;     readu,null,r
-;     ;r = (r-1)/128.*4.-2.
-;     print,'NOTE: HARDWIRED TO USE GRIDCELL COORDINATES'
-;     nulls=1
-;   endif
   
   print,nnulls
   print,signs
   print,r
- ; stop
   
-  
-  ;print,nulls.pos
   if keyword_set(nulls) eq 0 then return
   for i=0,nnulls-1 do begin
     if abs(signs(i)) eq 2 then begin
@@ -283,7 +216,6 @@ pro model_add_nulls,oModel,frame
       /shading)
   endfor
   
-  ;stop
 end
 
 pro model_add_box,oModel,box
@@ -303,13 +235,7 @@ end
 function mk_model_mag_sep,fname,nulls=nulls,separators=separators,$
 sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
 
-; if keyword_set(spines) or keyword_set(sepsurf) then begin
-   ;fnum = strmid(strcompress(string(frame+1000),/remove_all),1,3)
    get_lun,lun
-   ;n = 200
-   ;xx = dblarr(n,n,n)
-   ;yy = dblarr(n,n,n)
-   ;zz = dblarr(n,n,n)
    
    nx=0l
    ny=0l
@@ -324,7 +250,6 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
    zz = dblarr(nx,ny,nz)
    
    readu,lun,xx,yy,zz
-   ;close,lun
    bgrid = dblarr(nx,ny,nz,3)
    bgrid[*,*,*,0] = xx
    bgrid[*,*,*,1] = yy
@@ -333,7 +258,6 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
    yy = dblarr(ny)
    zz = dblarr(nz)
   
-   ;openr,lun,"data/stretch.dat"
    readu,lun,xx,yy,zz
    close,lun
    free_lun,lun
@@ -353,10 +277,6 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
    print,max(xx),min(xx)
    print,max(yy), min(yy)
    print,max(zz),min(zz)
-   
-   ;stop
-   
- ;endif
 
   oModel=obj_new("IDLgrModel")
   if keyword_set(box)        then model_add_box,oModel,box
