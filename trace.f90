@@ -21,7 +21,7 @@ contains
     double precision :: h, hdum, stepdist
 
     stepdist = h
-    hdum = 0
+    hdum = 0d0
     r0 = r
 
     do while (hdum < stepdist .and. .not. outedge(r))
@@ -30,7 +30,7 @@ contains
       hdum = hdum + abs(h)
     enddo
     
-    if (modulus(r-r0) < 0.1*stepdist) then
+    if (modulus(r-r0) < 0.1d0*stepdist .and. .not. outedge(r)) then
       !print *,'field line not tracin',modulus(r-r0),stepdist, sign
       !print*, r
       ierror = 1
@@ -87,10 +87,10 @@ contains
     z = z1*k1 + z3*k3 + z4*k4 + z5*k5 + z6*k6
 
     !calculate optimum step length (s = hoptimum/h)
-    s = 0.84*(tol/modulus(z-y))**0.25
+    s = 0.84d0*(tol/modulus(z-y))**0.25d0
     
     if (abs(s*h) < stepmin) s = stepmin/abs(h)
-    if (s > 1) s = 1
+    if (s > 1) s = 1d0
 
     rtest = r0
     call edgecheck(rtest)
@@ -112,10 +112,10 @@ contains
 
     h = h*s
 
-    if (modulus(r-r0) < 0.1*h) then
+    !if (modulus(r-r0) < 0.1d0*h) then
       !print*, 'trace failure',modulus(r-r0),h
       !stop
-    endif
+    !endif
 
   end subroutine
 
@@ -144,21 +144,24 @@ contains
     yh = y(j) + dy1/2
     zh = z(k) + dz1/2
 
-    if (coord_type == 1) then !Cartesian coordinates
+    if (coord_type == 1) then
+      !cartesian coordinates
       getdl(1) = dx1
       getdl(2) = dy1
       getdl(3) = dz1
-    else if (coord_type == 2) then !spherical coordinates
+    else if (coord_type == 2) then
+      !spherical coordinates
       getdl(1) = dx1 ! dr
       getdl(2) = xh*dy1 ! r d(theta)
       getdl(3) = xh*sin(yh)*dz1 ! r sin(theta) d(phi)
-    else if (coord_type == 3) then !cylindrical coordinates
+    else if (coord_type == 3) then
+      !cylindrical coordinates
       getdl(1) = dx1 ! dR
       getdl(2) = xh*dy1 ! R d(phi)
       getdl(3) = dz1 ! dz
     else
-      !print*, 'Unknown coordinate system.'
-      !print*, 'Please select a valid one'
+      print*, 'No coordinate system selected.'
+      print*, 'Please select a valid one in params.f90'
       stop
     endif
     
