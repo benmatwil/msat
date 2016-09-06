@@ -35,7 +35,7 @@ program ssfind
 
   logical :: exitcondition, out
 
-  CALL OMP_SET_NUM_THREADS(8) !have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
+  call omp_set_num_threads(8) !have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
 
   filename = defaultfilename
   if (command_argument_count() > 0) then
@@ -48,7 +48,7 @@ program ssfind
   endif
   
   !read in data
-  open (unit=10,file=filename,access='stream')
+  open(unit=10,file=filename,access='stream')
     read(10), nx, ny, nz !number of vertices
     allocate(bgrid(nx,ny,nz,3))
     allocate(x(nx), y(ny), z(nz))
@@ -186,15 +186,11 @@ program ssfind
       remove = 0
       nearnull = 0
 
-      !write(20) association
-
-      ierror = 0
-
       slowdown = 1d0
       do iline = 1, nlines
         do inullchk = 1, nnulls
           if (inullchk == inull) cycle
-          if (dist(rnulls(:,inullchk), line1(:, iline)) < 1) then
+          if (dist(rnulls(:,inullchk), line1(:, iline)) < 0.75) then
             !print*, 'close to null'
             nearnull(iline) = 1
             exit
@@ -254,8 +250,6 @@ program ssfind
       enddo
       !$OMP END PARALLEL DO
 
-      !write(20), line1
-
       if (nlines > pointsmax) then
         print*, 'Too many points on ring', nlines, iring
         exitcondition = .true. !exit if too many points on ring
@@ -313,8 +307,8 @@ endif
     write(12) -1
     close(12)
 
-    write(20,pos=1) nrings, sum(nperring)
-    write(20,pos=13) nperring
+    write(20, pos=1) nrings, sum(nperring)
+    write(20, pos=13) nperring
     close(20)
 
     deallocate(xs, ys, zs)

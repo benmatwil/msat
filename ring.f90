@@ -29,8 +29,8 @@ contains
     double precision :: b(3), maxdist0
 
     !test for gaps. Where gaps need to be filled, put this info into 'add'
-    add1 = 0
-    add2 = 0
+    add1 = 0d0
+    add2 = 0d0
     do iline = 1, nlines !loop over each point in ring
       maxdist0 = maxdist
       if (break(iline) == 0) then
@@ -45,8 +45,8 @@ contains
         endif
         !if (iteration >= 1636) print*, maxdist, maxdist0 
         if (dist(line2(:,iline),line2(:,nxtline)) > maxdist0) then !if two adjacent points too far away
-          add1(:,iline) = line1(:,iline) + 0.5*(line2(:,nxtline)-line2(:,iline)) !add point half way between two points
-          add2(:,iline) = line2(:,iline) + 0.5*(line2(:,nxtline)-line2(:,iline))
+          add1(:,iline) = line1(:,iline) + 0.5d0*(line2(:,nxtline)-line2(:,iline)) !add point half way between two points
+          add2(:,iline) = line2(:,iline) + 0.5d0*(line2(:,nxtline)-line2(:,iline))
           !if (outedge(add2(:,iline))) print*, 'adding point out'
         else
           add1(:,iline) = 0d0 !don't add anything
@@ -61,7 +61,7 @@ contains
     b = [0d0,0d0,0d0]
     do while (iline < nlines)
       iline = iline+1
-      if (modulus(add1(:,iline)) > 0) then !if add(:,iline) is not zero..
+      if (modulus(add1(:,iline)) > 1d-4) then !if add(:,iline) is not zero..
         !print*, 'point has to be added to',iline
         call add_vector(line1,add1(:,iline),iline+1) !add elements to every array
         call add_vector(line2,add2(:,iline),iline+1)
