@@ -20,7 +20,7 @@ contains
     implicit none
     
     integer :: nlines
-    integer :: iline, nxtline
+    integer :: iline, nxtline, iadd, nadd
     integer, intent(in) :: iteration
     double precision :: b(3), maxdist0
 
@@ -50,26 +50,23 @@ contains
       
     !add new points
     !where the 'add' array has a point to be added, add this point
-    iline = 0
-    b = [0d0,0d0,0d0]
-    do while (iline < nlines)
-      iline = iline+1
-      if (modulus(add1(:,iline)) > 1d-4) then !if add(:,iline) is not zero..
-        !print*, 'point has to be added to',iline
-        call add_vector(line1,add1(:,iline),iline+1) !add elements to every array
-        call add_vector(line2,add2(:,iline),iline+1)
-        call add_vector(add1,b,iline+1)
-        call add_vector(add2,b,iline+1)
-        call add_element(break,0,iline+1)
+    nadd = 1
+    do iline = 1, nlines
+      if (modulus(add1(:,iline)) > 1d-4) then !if |add(:,iline)| is not zero, all points > (1,1,1)
+        iadd = iline + nadd
+        call add_vector(line1,add1(:,iline),iadd) !add elements to every array
+        call add_vector(line2,add2(:,iline),iadd)
+        call add_element(break,0,iadd)
         if (iline /= nlines) then
-          call add_element(association,association(iline),iline+1)
+          call add_element(association,association(iline),iadd)
         else
-          call add_element(association,1,iline+1)
+          call add_element(association,1,iadd)
         endif
-        iline = iline+1
-        nlines = nlines+1
+        nadd = nadd + 1
       endif
     enddo
+
+    nlines = size(line1, 2)
 
     deallocate(add1, add2)
     
@@ -82,7 +79,7 @@ contains
     implicit none
 
     integer :: nlines
-    integer :: iline, nxtline!, prevline
+    integer :: iline, nxtline, iremove, nremove!, prevline
     integer, intent(in) :: iteration
 
     allocate(remove(nlines))
@@ -114,22 +111,22 @@ contains
     enddo
 
     !remove points
-    iline = 1
+    nremove = 0
     if (nlines > nstart .or. sum(endpoints) /= 0) then !if the number of points isn't too small...
-      do while (iline <= nlines)
+      do iline = 1, nlines
         if (nlines <= nstart .and. sum(endpoints) == 0) exit
-        if (remove(iline) >= 1) then !if point is flagged to be removed, then remove
-          call remove_vector(line1,iline)
-          call remove_vector(line2,iline)
-          call remove_element(remove, iline)
-          call remove_element(association,iline)
-          call remove_element(break,iline)
-          nlines = nlines-1
-        else
-          iline = iline+1
+        if (remove(iline) == 1) then !if point is flagged to be removed, then remove
+          iremove = iline - nremove
+          call remove_vector(line1,iremove)
+          call remove_vector(line2,iremove)
+          call remove_element(association,iremove)
+          call remove_element(break,iremove)
+          nremove = nremove + 1
         endif
       enddo
     endif
+
+    nlines = size(line1, 2)
 
     deallocate(remove)
 
@@ -238,7 +235,7 @@ contains
               !if theres a change in sign, theres the separator
               if (index /= 1) then
                 if (signof(index-1)*signof(index) == -1 .and. break(rmap(index-1)) /= 1) then
-                  print*, 'Found a separator', nring
+                  print*, 'Found a separator', nring, rmap(index-1)
                   break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
                   nseps = nseps + 1
 
