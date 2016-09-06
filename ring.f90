@@ -170,7 +170,7 @@ contains
 
   !********************************************************************************
 
-  subroutine at_null(nlines,nullnum,nring)
+  subroutine sep_detect(nlines,nullnum,nring)
   !Determine whether a point in a ring is 'near' a null, and if so, integrate it and its neighbours forward to see if any of them diverge around the null (i.e. a separator). 
 
     implicit none

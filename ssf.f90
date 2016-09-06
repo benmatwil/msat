@@ -167,6 +167,7 @@ program ssfind
     nrings = ringsmax
     nperring = 0
     nperring(0) = nlines
+    slowdown = 1d0
 
     write(20) nrings, 0, ringsmax+1
     write(20) nperring
@@ -185,23 +186,6 @@ program ssfind
       add2 = 0d0
       remove = 0
       nearnull = 0
-
-      slowdown = 1d0
-      do iline = 1, nlines
-        do inullchk = 1, nnulls
-          if (inullchk == inull) cycle
-          if (dist(rnulls(:,inullchk), line1(:, iline)) < 0.75) then
-            !print*, 'close to null'
-            nearnull(iline) = 1
-            exit
-          endif
-        enddo
-      enddo
-
-      if (sum(nearnull) > 0) then
-        print*, 'slowing down, adding points near null'
-        slowdown = 2d0
-      endif
 
       if (iring < 50) then
         h0 = 5d-2/slowdown
@@ -259,10 +243,27 @@ program ssfind
       print*, iring, h0, nulldist, maxdist, mindist, nlines
 
       call remove_points(nlines,iring) !remove points from ring if necessary
-      call add_points(nlines,iring) !add points to ring if necessary
-      call at_null(nlines,inull,iring) !determine if point is at null
-      !call remove_points(nlines,iring)
-      !call add_points(nlines,iring)
+
+      slowdown = 1d0
+      do iline = 1, nlines
+        do inullchk = 1, nnulls
+          if (signs(inullchk) == signs(inull)) cycle
+          if (dist(rnulls(:,inullchk), line1(:, iline)) < 0.75) then
+            !print*, 'close to null'
+            nearnull(iline) = 1
+            exit
+          endif
+        enddo
+      enddo
+      if (sum(nearnull) > 0) then
+        print*, 'slowing down, adding points near null'
+        slowdown = 2d0
+      endif
+      !add points to ring if necessary
+      call add_points(nlines,iring)
+
+      !determine if point is at null
+      call sep_detect(nlines,inull,iring)
 
       nperring(iring) = nlines
       write(20) association, break, line1
