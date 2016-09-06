@@ -5,7 +5,7 @@ module params
   double precision, parameter :: dtor = pi/180.d0
 
   !data file containing the magnetic field data
-  character (len=100), paramater :: defaultfilename = 'data/magfield.dat'
+  character (len=100), parameter :: defaultfilename = 'data/magfield.dat'
   character (len=100) :: filename, arg
 
   !nullfinder parameters
