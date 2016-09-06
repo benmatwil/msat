@@ -49,7 +49,7 @@ do k=1,nnz
 enddo
 
 
-open (unit=10,file=filename,access='stream')
+open (unit=10,file=defaultfilename,access='stream')
 write(10) nnx, nny, nnz
 write(10) bx,by,bz
 write(10) x, y, z
