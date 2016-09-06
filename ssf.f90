@@ -242,7 +242,8 @@ program ssfind
       mindist = maxdist/3
       print*, iring, h0, nulldist, maxdist, mindist, nlines
 
-      call remove_points(nlines,iring) !remove points from ring if necessary
+      !remove points from ring if necessary
+      call remove_points(nlines,iring)
 
       slowdown = 1d0
       do iline = 1, nlines
@@ -262,7 +263,7 @@ program ssfind
       !add points to ring if necessary
       call add_points(nlines,iring)
 
-      !determine if point is at null
+      !determine if any lines are separators
       call sep_detect(nlines,inull,iring)
 
       nperring(iring) = nlines
