@@ -278,7 +278,7 @@ contains
     double precision, dimension(3) :: a
     double precision :: modulus
 
-    modulus=sqrt(dot(a,a))
+    modulus = sqrt(dot(a,a))
 
   end function
 
@@ -422,10 +422,10 @@ contains
     !calculates the distance between two points in grid units
     
     double precision :: dist
-    double precision, dimension(3) :: a,b
+    double precision, dimension(3) :: a, b
 
-    !dist=sqrt(dot(a-b,a-b))
-    dist=sqrt((a(1)-b(1))*(a(1)-b(1)) + (a(2)-b(2))*(a(2)-b(2)) + (a(3)-b(3))*(a(3)-b(3)))
+    !dist = sqrt((a(1)-b(1))*(a(1)-b(1)) + (a(2)-b(2))*(a(2)-b(2)) + (a(3)-b(3))*(a(3)-b(3)))
+    dist = sqrt((a(1)-b(1))**2 + (a(2)-b(2))**2 + (a(3)-b(3))**2)
 
   end function
 
