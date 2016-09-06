@@ -209,17 +209,6 @@ program ssfind
         h0 = 25d-2/slowdown
       endif
 
-      !main: do inullchk = 1, nnulls
-      !  if (inullchk == inull) cycle
-      !  do iline = 1, nlines
-      !    if (dist(rnulls(:,inullchk), line1(:, iline)) < 1) then
-      !      print*, "Some close points, slowing down"
-      !      h0 = h0/2
-      !      exit main
-      !    endif
-      !  enddo
-      !enddo main
-
       !$OMP PARALLEL DO private(r,h)
       do iline = 1, nlines !loop over all points in ring (in parallel do)
 
@@ -232,14 +221,6 @@ program ssfind
         call edgecheck(r, out)
         if (out) then !counter to see how many points on ring have reached outer boundary
           endpoints(iline) = 1
-          if (iline /= 1) then
-            break(iline-1) = 1
-          else
-            break(nlines) = 1
-          endif
-          if (iline == 1) then
-            if (dist(line2(:,1),line2(:,nlines)) > maxdist) break(nlines) = 1
-          endif
         else
           endpoints(iline) = 0
         endif
@@ -276,13 +257,6 @@ program ssfind
       nulldist = 1.4d0*h0*slowdown !0.6
       mindist = maxdist/3
       print*, iring, h0, nulldist, maxdist, mindist, nlines
-if (1==0) then
-      do iline = 1, nlines-1
-        if (dist(line1(:,iline),line1(:,iline)) > 3*maxdist) then
-          break(iline) = 1
-        endif
-      enddo
-endif
 
       call remove_points(nlines,iring) !remove points from ring if necessary
       call add_points(nlines,iring) !add points to ring if necessary

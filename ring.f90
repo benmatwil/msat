@@ -47,7 +47,7 @@ contains
         if (dist(line2(:,iline),line2(:,nxtline)) > maxdist0) then !if two adjacent points too far away
           add1(:,iline) = line1(:,iline) + 0.5d0*(line2(:,nxtline)-line2(:,iline)) !add point half way between two points
           add2(:,iline) = line2(:,iline) + 0.5d0*(line2(:,nxtline)-line2(:,iline))
-          !if (outedge(add2(:,iline))) print*, 'adding point out'
+          !if (outedge(add1(:,iline)) .or. outedge(add2(:,iline))) print*, 'adding point out'
         else
           add1(:,iline) = 0d0 !don't add anything
           add2(:,iline) = 0d0
@@ -89,8 +89,19 @@ contains
     implicit none
 
     integer :: nlines
-    integer :: iline, nxtline, prevline
+    integer :: iline, nxtline!, prevline
     integer, intent(in) :: iteration
+
+    do iline = 1, nlines
+      if (endpoints(iline) == 1) then !remove points that have left the simulation
+        remove(iline) = 1
+        if (iline /= 1) then
+          break(iline-1) = 1
+        else
+          break(nlines) = 1
+        endif
+      endif
+    enddo
 
     !check for too tightly spaced points, flag points to be removed
     do iline = 1, nlines !loop over all points
@@ -102,14 +113,6 @@ contains
         endif
         if (iline /= 1) then
           if (dist(line2(:,iline),line2(:,nxtline)) < mindist .and. remove(iline-1) == 0) remove(iline) = 1 !if iline and iline+1 are too near
-        endif
-      endif
-      if (endpoints(iline) == 1) then !remove points that have left the simulation
-        remove(iline) = 1
-        if (iline /= 1) then
-          break(iline-1) = 1
-        else
-          break(nlines) = 1
         endif
       endif
     enddo
@@ -130,21 +133,16 @@ contains
     !  endif
     !enddo
     !print*, sum(remove), sum(break), iteration
-    do iline = 1, nlines
-      if (iline == 1) then
-        prevline = nlines
-      else
-        prevline = iline-1
-      endif
-      if (remove(iline) == 1 .and. break(iline) == 1 .and. break(prevline) /= 1) then
-        print*, remove(iline), break(iline), break(prevline)
-      endif
-    enddo
-if (1 == 0) then
-    do iline = 1, nlines-1
-      if (dist(line1(:,iline),line1(:,iline+1)) > 3*maxdist) break(iline) = 1
-    enddo
-endif
+    !do iline = 1, nlines
+    !  if (iline == 1) then
+    !    prevline = nlines
+    !  else
+    !    prevline = iline-1
+    !  endif
+    !  if (remove(iline) == 1 .and. break(iline) == 1 .and. break(prevline) /= 1) then
+    !    print*, remove(iline), break(iline), break(prevline)
+    !  endif
+    !enddo
 
     !remove points
     iline = 1
