@@ -58,11 +58,12 @@ contains
         call add_vector(line2,add2(:,iline),iadd)
         call add_element(break,0,iadd)
         if (iline /= nlines) then
-          call add_element(association,association(iline),iadd)
+          call add_element(association,association(iadd-1),iadd)
         else
           call add_element(association,1,iadd)
         endif
         nadd = nadd + 1
+        !print*, 'add', iadd, nadd, size(line1,2), nlines
       endif
     enddo
 
@@ -122,6 +123,7 @@ contains
           call remove_element(association,iremove)
           call remove_element(break,iremove)
           nremove = nremove + 1
+          !print*, 'remove', iline, iremove, nremove, size(line1, 2), nlines
         endif
       enddo
     endif
