@@ -5,3 +5,11 @@ nf $1
 sf_converge $1
 ssf $1
 readin
+
+#foreach x ...
+#  x=(printf "%04d\n" $x)
+#  make
+#  nf $1
+#  sf_converge $1
+#  ssf $1
+#  readin
