@@ -1,6 +1,6 @@
 retall
 
-datafile='data/newmag.dat'
+datafile='data/magfield.dat'
 
 .r visualise/read_separators
 .r visualise/trilinear_3D 
