@@ -146,15 +146,14 @@ program ssfind
     allocate(xs(nlines), ys(nlines), zs(nlines))
     call get_startpoints(theta,phi, xs,ys,zs)
 
-    allocate(line1(3,nlines), line2(3,nlines), add1(3,nlines), add2(3,nlines))
-    allocate(association(nlines), break(nlines), remove(nlines), endpoints(nlines), nearnull(nlines))
+    allocate(line1(3,nlines), line2(3,nlines))
+    allocate(break(nlines))
 
     !add start points to first ring relative to null
     do iline = 1, nlines !Go through each start point
       line1(1,iline) = r(1) + xs(iline)
       line1(2,iline) = r(2) + ys(iline)
       line1(3,iline) = r(3) + zs(iline)
-      association(iline) = iline
     enddo
     line2 = line1
 
@@ -171,7 +170,7 @@ program ssfind
 
     write(20) nrings, 0, ringsmax+1
     write(20) nperring
-    write(20) association, break, line1
+    write(20) [(iline,iline=1,nlines)], break, line1
 
     exitcondition = .false.
 
@@ -181,11 +180,8 @@ program ssfind
         exit
       endif
 
+      allocate(endpoints(nlines), association(nlines))
       endpoints = 0
-      add1 = 0d0
-      add2 = 0d0
-      remove = 0
-      nearnull = 0
 
       if (iring < 50) then
         h0 = 5d-2/slowdown
@@ -240,11 +236,13 @@ program ssfind
       endif
       nulldist = 1.4d0*h0*slowdown !0.6
       mindist = maxdist/3
-      print*, iring, h0, nulldist, maxdist, mindist, nlines
+      !print*, iring, h0, nulldist, maxdist, mindist, nlines
 
       !remove points from ring if necessary
       call remove_points(nlines,iring)
 
+      allocate(nearnull(nlines))
+      nearnull = 0
       slowdown = 1d0
       do iline = 1, nlines
         do inullchk = 1, nnulls
@@ -262,12 +260,16 @@ program ssfind
       endif
       !add points to ring if necessary
       call add_points(nlines,iring)
+      deallocate(nearnull)
 
       !determine if any lines are separators
       call sep_detect(nlines,inull,iring)
 
       nperring(iring) = nlines
+      !Write ring and data to file separator????.dat
       write(20) association, break, line1
+
+      deallocate(endpoints, association)
 
       if (exitcondition) then
         nrings = iring
@@ -288,7 +290,7 @@ program ssfind
     close(20)
 
     deallocate(xs, ys, zs)
-    deallocate(line1,line2, remove,add1,add2, endpoints,association,break,nearnull)
+    deallocate(line1, line2, break)
 
   enddo
 
