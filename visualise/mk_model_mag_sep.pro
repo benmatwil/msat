@@ -2,7 +2,7 @@ pro model_add_sepsurf,oModel,frame,rake=rake
   
   print,'Separatrix surface rings'
   get_nulls,nnulls,signs,r,spine,nulls
-nnulls=1
+;nnulls=1
   for i=0,nnulls-1 do begin
     if keyword_set(rake) then colour=[0,255,0] $
     else begin
@@ -108,19 +108,21 @@ pro model_add_fanlines,oModel,frame,bgrid,xx,yy,zz
     
     get_lun,fan
     openr,fan,file,/f77_unformatted
-    nrings = -1
+    nrings = -1L
     readu,fan,nrings
 
-    n=-1
+    n=-1L
     
-    fring = nrings/5.
+    fring = nrings/5
     print,i,nrings,fring
     for iring=1,fring do begin
       readu,fan,n
+      print, 'n', n
       xf=dblarr(n)
       yf=dblarr(n)
       zf=dblarr(n)
-      readu,fan,xf,yf,zf
+      brk=lonarr(n)
+      readu,fan,xf,yf,zf,brk
      endfor      
      close,fan
 
@@ -161,7 +163,7 @@ pro model_add_separators,oModel,frame
   print,'plot separators'
    
     get_nulls,nnulls,signs,r,spine,nulls
-    nnulls=1
+;    nnulls=1
     for null=1,nnulls do begin
 ;    null = 1
     seps=read_separators('output/sep'+string(null,'(I4.4)')+'.dat')

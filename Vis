@@ -1,6 +1,6 @@
 retall
 
-datafile='data/magfield.dat'
+datafile='data/data.dat'
 
 .r visualise/read_separators
 .r visualise/trilinear_3D 
@@ -12,6 +12,7 @@ datafile='data/magfield.dat'
 
 ;o=mk_model_mag_sep(datafile,/box,/nulls,/sepsurf,/spines)
 ;o=mk_model_mag_sep(datafile,/box,/nulls,/separators,/spines)
-o=mk_model_mag_sep(datafile,/box,/nulls,/sepsurf,/separators,/spines)
+;o=mk_model_mag_sep(datafile,/box,/nulls,/sepsurf,/separators,/spines)
 ;o=mk_model_mag_sep(datafile,/box,/nulls,/separators,/fanlines,/spines)
+o=mk_model_mag_sep(datafile,/box,/nulls,/fanlines)
 xobjview,o 
