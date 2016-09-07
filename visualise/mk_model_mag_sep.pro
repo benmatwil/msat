@@ -112,12 +112,11 @@ pro model_add_fanlines,oModel,frame,bgrid,xx,yy,zz
     readu,fan,nrings
 
     n=-1L
-    
+   
     fring = nrings/5
     print,i,nrings,fring
     for iring=1,fring do begin
       readu,fan,n
-      print, 'n', n
       xf=dblarr(n)
       yf=dblarr(n)
       zf=dblarr(n)
