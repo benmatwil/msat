@@ -120,7 +120,7 @@ end program
 
 !characterise each null
 subroutine get_properties(sign,spine,fan,warning,savedata)
-  use sfmod_converge
+  use sf_converge_mod
 
   implicit none
   integer :: itheta, iphi, itry, ifan, idense
@@ -281,10 +281,10 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
         sign = -1
       else ! not sure how to to decide in this case, haven't found a case like this yet...
         print*, "Uh oh, can't decide, error!"
-        open(unit=10, file='spinedata.dat', access='stream')
+        open(unit=10, file='output/spinedata.dat', access='stream')
           write(10) size(rconvergefw,2), rconvergefw
         close(10)
-        open(unit=10, file='fandata.dat', access='stream')
+        open(unit=10, file='output/fandata.dat', access='stream')
           write(10) size(rconvergebw,2), rconvergebw
         close(10)
         sign = 0 ! check to make sure it isn't flagging any proper nulls
@@ -381,10 +381,10 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
 
   ! Save data if there is a problematic null for inspection by map.pro
   if (savedata == 1) then
-    open(unit=10, file='spinedata.dat', access='stream')
+    open(unit=10, file='output/spinedata.dat', access='stream')
     write(10) size(rspine,2), rspine, spine
     close(10)
-    open(unit=10, file='fandata.dat', access='stream')
+    open(unit=10, file='output/fandata.dat', access='stream')
     write(10) size(rfan,2), rfan, maxvec, minvec
     if (allocated(crossfan)) write(10) size(crossfan,2), crossfan
     close(10)

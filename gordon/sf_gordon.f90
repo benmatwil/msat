@@ -91,7 +91,7 @@ end program
 
 !characterise each null
 subroutine get_properties(sign,spine,fan,spiral,warning)
-use sfmod
+use sf_gordon_mod
 
 implicit none
 integer :: i, j
