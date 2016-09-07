@@ -1,6 +1,6 @@
 FC = gfortran
 FFLAGS = -O3
-MODULES = "-Jmod"
+MODULES = -Jmod
 
 all: writedata writedata_ws writedata_ws_gen nf sf ssf readin sf_gordon
 

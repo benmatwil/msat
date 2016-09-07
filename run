@@ -1,9 +1,15 @@
 #!/usr/bin/env tcsh
 
+if ( $1 == "" ) then
+  set a1 = ""
+else
+  set a1 = "data=$1"
+endif
+
 make
-nf $1
-sf_converge $1
-ssf $1
+nf $a1
+sf $a1
+ssf $a1
 readin
 
 #foreach x ...
