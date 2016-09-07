@@ -17,6 +17,11 @@ program sf_converge
   double precision, dimension(3) :: spine, fan
 
   integer :: i
+  
+  print*,'#######################################################################'
+  print*,'#                             Spinefinder                             #'
+  print*,'#                      (Written by B M Williams)                      #'
+  print*,'#######################################################################'
 
   !Read in 'null.dat'
   open (unit=10,file='output/null.dat',form='unformatted')
