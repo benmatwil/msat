@@ -1,5 +1,5 @@
 !spine finder
-program sf
+program sf_gordon
 use params
 use sfmod
 
