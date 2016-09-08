@@ -26,5 +26,5 @@ writedata_ws : params.f90 writedata_ws.f90
 writedata_ws_gen : params.f90 writedata_ws_gen.f90
 	$(FC) $(FFLAGS) $(MODULES) params.f90 writedata_ws_gen.f90 -o writedata_ws_gen
 
-sf_gordon : params.f90 gordon/sf_gordon_mod.f90 gordon/sf_gordon.f90
-	$(FC) $(FFLAGS) $(MODULES) params.f90 gordon/sf_gordon_mod.f90 gordon/sf_gordon.f90 -o gordon/sf_gordon
+#sf_gordon : params.f90 gordon/sf_gordon_mod.f90 gordon/sf_gordon.f90
+#	$(FC) $(FFLAGS) $(MODULES) params.f90 gordon/sf_gordon_mod.f90 gordon/sf_gordon.f90 -o gordon/sf_gordon
