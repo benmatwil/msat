@@ -8,10 +8,6 @@ use trace
 !ring drawing parameters
 integer, parameter :: nstart = 100 !number of startpoints in ring
 
-!nulldist decoupled from maxdist1 and moved into params.f90
-!double precision, parameter :: nulldist=maxdist1*4. !maximum distance a ring point can be  for it to be treated as being 'at' a null
-
-!double precision, parameter :: mindist1 = maxdist1/4d0 !minimum distance between points in a ring (defined as 1/3 of the maximum distance)
 double precision :: maxdist, mindist, nulldist
 
 double precision, allocatable, dimension(:,:) :: line1, line2, add1, add2
@@ -24,9 +20,11 @@ contains
     implicit none
     
     integer :: nlines
-    integer :: iline, nxtline
+    integer :: iline, nxtline, iadd, nadd
     integer, intent(in) :: iteration
     double precision :: b(3), maxdist0
+
+    allocate(add1(3,nlines), add2(3,nlines))
 
     !test for gaps. Where gaps need to be filled, put this info into 'add'
     add1 = 0d0
@@ -40,14 +38,9 @@ contains
           nxtline = 1
         endif
         if (nearnull(iline) == 1 .or. nearnull(nxtline) == 1) maxdist0 = maxdist/2d0
-        if (dist(line2(:,iline),line2(:,nxtline)) > maxdist0*5 .and. (nearnull(iline) == 0 .or. nearnull(nxtline) == 0)) then
-          !print*, 'Points very far away', dist(line2(:,iline),line2(:,nxtline))
-        endif
-        !if (iteration >= 1636) print*, maxdist, maxdist0 
         if (dist(line2(:,iline),line2(:,nxtline)) > maxdist0) then !if two adjacent points too far away
           add1(:,iline) = line1(:,iline) + 0.5d0*(line2(:,nxtline)-line2(:,iline)) !add point half way between two points
           add2(:,iline) = line2(:,iline) + 0.5d0*(line2(:,nxtline)-line2(:,iline))
-          !if (outedge(add1(:,iline)) .or. outedge(add2(:,iline))) print*, 'adding point out'
         else
           add1(:,iline) = 0d0 !don't add anything
           add2(:,iline) = 0d0
@@ -57,29 +50,27 @@ contains
       
     !add new points
     !where the 'add' array has a point to be added, add this point
-    iline = 0
-    b = [0d0,0d0,0d0]
-    do while (iline < nlines)
-      iline = iline+1
-      if (modulus(add1(:,iline)) > 1d-4) then !if add(:,iline) is not zero..
-        !print*, 'point has to be added to',iline
-        call add_vector(line1,add1(:,iline),iline+1) !add elements to every array
-        call add_vector(line2,add2(:,iline),iline+1)
-        call add_vector(add1,b,iline+1)
-        call add_vector(add2,b,iline+1)
-        call add_element(endpoints,0,iline+1)
-        call add_element(remove,0,iline+1)
-        call add_element(break,0,iline+1)
-        call add_element(nearnull,0,iline+1)
+    nadd = 1
+    do iline = 1, nlines
+      if (modulus(add1(:,iline)) > 1d-4) then !if |add(:,iline)| is not zero, all points > (1,1,1)
+        iadd = iline + nadd
+        call add_vector(line1,add1(:,iline),iadd) !add elements to every array
+        call add_vector(line2,add2(:,iline),iadd)
+        call add_element(break,0,iadd)
         if (iline /= nlines) then
-          call add_element(association,association(iline),iline+1)
+          call add_element(association,association(iadd-1),iadd)
         else
-          call add_element(association,1,iline+1)
+          call add_element(association,1,iadd)
         endif
-        iline = iline+1
-        nlines = nlines+1
+        nadd = nadd + 1
+        !print*, 'add', iadd, nadd, size(line1,2), nlines
       endif
     enddo
+
+    nlines = size(line1, 2)
+
+    deallocate(add1, add2)
+    
   end subroutine
 
   !********************************************************************************
@@ -89,8 +80,11 @@ contains
     implicit none
 
     integer :: nlines
-    integer :: iline, nxtline!, prevline
+    integer :: iline, nxtline, iremove, nremove!, prevline
     integer, intent(in) :: iteration
+
+    allocate(remove(nlines))
+    remove = 0
 
     do iline = 1, nlines
       if (endpoints(iline) == 1) then !remove points that have left the simulation
@@ -117,54 +111,26 @@ contains
       endif
     enddo
 
-    !do iline = 1, nlines
-    !  if (iline == 1) then !if not end point
-    !    nxtline = nlines
-    !  else
-    !    nxtline = iline-1
-    !  endif
-    !  if (remove(iline) == 1 .and. break(iline) == 1 .and. break(nxtline) == 0) then
-    !    if (iline /= 1) then
-    !      break(iline-1) = 1
-    !    else
-    !      break(nlines) = 1
-    !    endif
-    !    print*, 'going to remove bad point', iteration, iline, nxtline
-    !  endif
-    !enddo
-    !print*, sum(remove), sum(break), iteration
-    !do iline = 1, nlines
-    !  if (iline == 1) then
-    !    prevline = nlines
-    !  else
-    !    prevline = iline-1
-    !  endif
-    !  if (remove(iline) == 1 .and. break(iline) == 1 .and. break(prevline) /= 1) then
-    !    print*, remove(iline), break(iline), break(prevline)
-    !  endif
-    !enddo
-
     !remove points
-    iline = 1
+    nremove = 0
     if (nlines > nstart .or. sum(endpoints) /= 0) then !if the number of points isn't too small...
-      do while (iline <= nlines)
+      do iline = 1, nlines
         if (nlines <= nstart .and. sum(endpoints) == 0) exit
-        if (remove(iline) >= 1) then !if point is flagged to be removed, then remove
-          call remove_vector(line1,iline)
-          call remove_vector(line2,iline)
-          call remove_vector(add1,iline)
-          call remove_vector(add2,iline)
-          call remove_element(endpoints,iline)
-          call remove_element(remove,iline)
-          call remove_element(association,iline)
-          call remove_element(break,iline)
-          call remove_element(nearnull,iline)
-          nlines = nlines-1
-        else
-          iline = iline+1
+        if (remove(iline) == 1) then !if point is flagged to be removed, then remove
+          iremove = iline - nremove
+          call remove_vector(line1,iremove)
+          call remove_vector(line2,iremove)
+          call remove_element(association,iremove)
+          call remove_element(break,iremove)
+          nremove = nremove + 1
+          !print*, 'remove', iline, iremove, nremove, size(line1, 2), nlines
         endif
       enddo
     endif
+
+    nlines = size(line1, 2)
+
+    deallocate(remove)
 
   end subroutine
 
@@ -271,7 +237,7 @@ contains
               !if theres a change in sign, theres the separator
               if (index /= 1) then
                 if (signof(index-1)*signof(index) == -1 .and. break(rmap(index-1)) /= 1) then
-                  print*, 'Found a separator', nring
+                  print*, 'Found a separator', nring, rmap(index-1)
                   break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
                   nseps = nseps + 1
 

@@ -63,7 +63,6 @@ contains
 
     !get rk values k1--k6
     rtest = r0
-    call edgecheck(rtest)
     k1 = hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k21*k1
     call edgecheck(rtest)
@@ -93,7 +92,6 @@ contains
     if (s > 1) s = 1d0
 
     rtest = r0
-    call edgecheck(rtest)
     k1 = s*hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k21*k1
     call edgecheck(rtest)

@@ -10,7 +10,6 @@ sf
 ssf
 readin
 writedata*
-tritest
-sf_converge
+sf_gordon
 *.dat
 *.png
