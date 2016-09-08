@@ -2,7 +2,7 @@ FC = gfortran
 FFLAGS = -O3
 MODULES = -Jmod
 
-all: writedata writedata_ws writedata_ws_gen nf sf ssf readin sf_gordon
+all: writedata writedata_ws writedata_ws_gen nf sf ssf readin #sf_gordon
 
 nf : params.f90 nf_mod.f90 nf.f90
 	$(FC) $(FFLAGS) $(MODULES) params.f90 nf_mod.f90 nf.f90 -o nf
