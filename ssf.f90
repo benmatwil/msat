@@ -37,7 +37,6 @@ program ssfind
 
   print*,'#######################################################################'
   print*,'#                      Separatrix Surface Finder                      #'
-  print*,'#                      (Written by B M Williams)                      #'
   print*,'#######################################################################'
 
   call omp_set_num_threads(8) !have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)

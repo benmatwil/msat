@@ -20,7 +20,6 @@ program sf_converge
   
   print*,'#######################################################################'
   print*,'#                             Spinefinder                             #'
-  print*,'#                      (Written by B M Williams)                      #'
   print*,'#######################################################################'
 
   !Read in 'null.dat'
@@ -196,7 +195,8 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
           count = count + 1
         enddo
         if (count < 100 .or. count == maxcount) then
-          angle = angle + 1
+          if (angle >= 4d0) stop
+          angle = angle + 1d0
           print*, 'Adjusting the initial points and starting again'
           cycle main
         endif
