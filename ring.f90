@@ -51,7 +51,7 @@ contains
     !add new points
     !where the 'add' array has a point to be added, add this point
     nadd = 1
-    !$OMP PARALLEL default(shared) private(iadd, nadd, iline)
+    !$OMP PARALLEL default(shared) firstprivate(iadd, nadd, iline)
     do iline = 1, nlines
       if (modulus(add1(:,iline)) > 1d-4) then !if |add(:,iline)| is not zero, all points > (1,1,1)
         iadd = iline + nadd
@@ -122,7 +122,7 @@ contains
     !remove points
     nremove = 0
     if (nlines > nstart .or. sum(endpoints) /= 0) then !if the number of points isn't too small...
-      !$OMP PARALLEL default(shared) private(iremove, nremove, iline)
+      !$OMP PARALLEL default(shared) firstprivate(iremove, nremove, iline)
       do iline = 1, nlines
         if (nlines <= nstart .and. sum(endpoints) == 0) exit
         if (remove(iline) == 1) then !if point is flagged to be removed, then remove
