@@ -51,29 +51,29 @@ contains
     !add new points
     !where the 'add' array has a point to be added, add this point
     nadd = 1
-    !$OMP PARALLEL default(shared) firstprivate(iadd, nadd, iline)
+!    !$OMP PARALLEL default(shared) firstprivate(iadd, nadd, iline)
     do iline = 1, nlines
       if (modulus(add1(:,iline)) > 1d-4) then !if |add(:,iline)| is not zero, all points > (1,1,1)
         iadd = iline + nadd
-        !$OMP SECTIONS
-        !$OMP SECTION
+!        !$OMP SECTIONS
+!        !$OMP SECTION
         call add_vector(line1,add1(:,iline),iadd) !add elements to every array
-        !$OMP SECTION
+!        !$OMP SECTION
         call add_vector(line2,add2(:,iline),iadd)
-        !$OMP SECTION
+!        !$OMP SECTION
         call add_element(break,0,iadd)
-        !$OMP SECTION
+!        !$OMP SECTION
         if (iline /= nlines) then
           call add_element(association,association(iadd-1),iadd)
         else
           call add_element(association,1,iadd)
         endif
-        !$OMP END SECTIONS
+!        !$OMP END SECTIONS
         nadd = nadd + 1
         !print*, 'add', iadd, nadd, size(line1,2), nlines
       endif
     enddo
-    !$OMP END PARALLEL
+!    !$OMP END PARALLEL
 
     nlines = size(line1, 2)
 
@@ -122,26 +122,26 @@ contains
     !remove points
     nremove = 0
     if (nlines > nstart .or. sum(endpoints) /= 0) then !if the number of points isn't too small...
-      !$OMP PARALLEL default(shared) firstprivate(iremove, nremove, iline)
+!      !$OMP PARALLEL default(shared) firstprivate(iremove, nremove, iline)
       do iline = 1, nlines
         if (nlines <= nstart .and. sum(endpoints) == 0) exit
         if (remove(iline) == 1) then !if point is flagged to be removed, then remove
           iremove = iline - nremove
-          !$OMP SECTIONS
-          !$OMP SECTION
+!          !$OMP SECTIONS
+!          !$OMP SECTION
           call remove_vector(line1,iremove)
-          !$OMP SECTION
+!          !$OMP SECTION
           call remove_vector(line2,iremove)
-          !$OMP SECTION
+!          !$OMP SECTION
           call remove_element(association,iremove)
-          !$OMP SECTION
+!          !$OMP SECTION
           call remove_element(break,iremove)
-          !$OMP END SECTIONS
+!          !$OMP END SECTIONS
           nremove = nremove + 1
           !print*, 'remove', iline, iremove, nremove, size(line1, 2), nlines
         endif
       enddo
-      !$OMP END PARALLEL
+!      !$OMP END PARALLEL
     endif
 
     nlines = size(line1, 2)
