@@ -1,11 +1,11 @@
 pro model_add_sepsurf,oModel,frame
   
   print, 'Adding Separatrix surface rings'
-  get_nulls,nnulls,signs,r,spine,nulls
+  nulls = getnulls()
 
-  for i = 0, nnulls-1 do begin
-    if signs[i] gt 0 then colour = [255,128,128] else begin
-      if signs[i] lt 0 then colour = [128,128,255] else colour = [128,255,128]
+  for i = 0, n_elements(nulls)-1 do begin
+    if nulls[i].sign gt 0 then colour = [255,128,128] else begin
+      if nulls[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
     endelse
     
     file = 'output/ringidl' + string(i+1,'(I4.4)') + '.dat'
@@ -44,6 +44,7 @@ pro model_add_sepsurf,oModel,frame
 end
 
 pro model_add_spines, oModel, frame, bgrid, xx, yy, zz
+
   print, 'Adding Spines'
   dx = abs(xx[1]-xx[0])
   h = 0.01*dx
@@ -53,12 +54,13 @@ pro model_add_spines, oModel, frame, bgrid, xx, yy, zz
   mxline = 2000
   ro = 0.1*dx
 
-  get_nulls, nnulls, signs, r, spines, nulls
-  for i = 0, nnulls-1 do begin
-    spine = (spines(*,i))
-    posi = r(*,i)
+  nulls = getnulls()
+
+  for i = 0, n_elements(nulls)-1 do begin
+    spine = nulls[i].spine
+    posi = nulls[i].gridpos
     print, spine
-    ds = signs(i)/abs(signs(i))
+    ds = nulls[i].sign/abs(nulls[i].sign)
     if ds gt 0 then col = [250,0,0] else col = [0,0,250]
   startpt = posi + ro*spine
   print, startpt
@@ -85,16 +87,14 @@ pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
   mxline = 2000
   ro = 0.1*dx   
 
-  get_nulls, nnulls, signs, r, spine, nulls
+  nulls = getnulls()
 
-  pp = where(signs ge 0,npp)
-  nn = where(signs le 0,nnn)
+  pp = where(nulls.sign ge 0, npp)
+  nn = where(nulls.sign le 0, nnn)
 
-  for i = 0, nnulls-1 do begin
-    if keyword_set(rake) then colour=[0,255,0] else begin
-      if signs[i] gt 0 then colour = [255,128,128] else begin
-        if signs[i] lt 0 then colour = [128,128,255] else colour = [128,255,128]
-      endelse
+  for i = 0, n_elements(nulls)-1 do begin
+    if nulls[i].sign gt 0 then colour = [255,128,128] else begin
+      if nulls[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
     endelse
 
     file = 'output/ringidl' + string(i+1,'(I4.4)') + '.dat'
@@ -130,23 +130,23 @@ pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
       linef = tracefield_3D(startpt,bgrid,xx,yy,zz,h,hmin,hmax,epsilon,mxline)
       jj = where(linef[0,*] gt -8000)
       linef = linef[*,jj] 
-      if (signs(i) gt 0) then begin
-        dist = sqrt((linef[0,*]-r[0,i])^2.+(linef[1,*]-r[1,i])^2.+(linef[2,*]-r[2,i])^2.)
+      if nulls[i].sign gt 0 then begin
+        dist = sqrt((linef[0,*]-nulls[i].gridpos[0])^2.+(linef[1,*]-nulls[i].gridpos[1])^2.+(linef[2,*]-nulls[i].gridpos[2])^2.)
         ll = where(abs(dist) eq min(abs(dist)))
-        linef = linef[*,0:ll[0]] 
+        linef = linef[*,0:ll[0]]
       endif
-      oModel->add,obj_new("IDLgrPolyline",linef[0,*],linef[1,*], $
+      oModel -> add,obj_new("IDLgrPolyline",linef[0,*],linef[1,*], $
           linef[2,*],color=colour,thick=2)
 
       linef = tracefield_3D(startpt,bgrid,xx,yy,zz,-h,hmin,hmax,epsilon,mxline)
       jj = where(linef[0,*] gt -8000)
       linef = linef[*,jj] 
-      if (signs(i) lt 0) then begin
-        dist = sqrt((linef[0,*]-r[0,i])^2.+(linef[1,*]-r[1,i])^2.+(linef[2,*]-r[2,i])^2.)
+      if nulls[i].sign lt 0 then begin
+        dist = sqrt((linef[0,*]-nulls[i].gridpos[0])^2.+(linef[1,*]-nulls[i].gridpos[1])^2.+(linef[2,*]-nulls[i].gridpos[2])^2.)
         ll = where(abs(dist) eq min(abs(dist)))
         linef = linef[*,0:ll[0]] 
       endif
-      oModel->add,obj_new("IDLgrPolyline",linef[0,*],linef[1,*], $
+      oModel -> add,obj_new("IDLgrPolyline",linef[0,*],linef[1,*], $
           linef[2,*],color=colour,thick=2)
     endfor
   endfor
@@ -156,13 +156,14 @@ end
 
 pro model_add_separators,oModel,frame
 
-  print,'plot separators'
+  print, 'Adding separators'
    
-  get_nulls,nnulls,signs,r,spine,nulls
-  for null=1,nnulls do begin
+  nulls = getnulls()
+
+  for null = 1, n_elements(nulls) do begin
     seps = read_separators('output/sep' + string(null,'(I4.4)') + '.dat')
     
-    if keyword_set(seps) then begin
+    if seps ne !null then begin
       for j = 0, (size(seps))[1]-1 do begin
         col = [0,160,60] 
         oModel -> add,obj_new("IDLgrPolyline",seps[j,*,0],seps[j,*,1],seps[j,*,2],$
@@ -175,26 +176,22 @@ end
 pro model_add_nulls,oModel,frame
 
   radius = 0.8
-  get_nulls,nnulls,signs,r,spine,nulls
+  nulls = getnulls()
   
-  print,nnulls
-  print,signs
-  print,r
-  
-  for i = 0, nnulls-1 do begin
-    mesh_obj,4,vert,poly,replicate(radius,21,21)
-    for j = 0, 2 do vert[j,*]=vert[j,*]+r(j,i)
-    if signs(i) gt 0 then colour = [255,0,0] else begin
-      if signs(i) lt 0 then colour = [0,0,255] else colour = [0,255,0]
+  for i = 0, n_elements(nulls)-1 do begin
+    mesh_obj, 4, vert, poly, replicate(radius,21,21)
+    for j = 0, 2 do vert[j,*] = vert[j,*] + nulls[i].gridpos[j]
+    if nulls[i].sign gt 0 then colour = [255,0,0] else begin
+      if nulls[i].sign lt 0 then colour = [0,0,255] else colour = [0,255,0]
     endelse
-    oModel -> add, obj_new("IDLgrPolygon",data=vert,polygons=poly,color=colour, $
-      /shading)
+    oModel -> add, obj_new("IDLgrPolygon",data=vert,polygons=poly,color=colour,/shading)
   endfor
   
 end
 
 pro model_add_box,oModel,box
-  ; add the box
+  #
+  print, "Adding box"
   line = transpose([[0,0,0],[1,0,0],[1,0,1],[1,0,0],[1,1,0],[1,1,1],[1,1,0], $
     [0,1,0],[0,1,1],[0,1,0],[0,0,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1],[0,0,1.]])
   
@@ -247,9 +244,9 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
    box[*,0] = [min(xx),min(yy),min(zz)] 
    box[*,1] = [max(xx),max(yy),max(zz)]
    
-   print,nx,ny,nz
+   print, nx, ny, nz
 
-  oModel=obj_new("IDLgrModel")
+  oModel = obj_new("IDLgrModel")
   if keyword_set(box)        then model_add_box,oModel,box
   if keyword_set(nulls)      then model_add_nulls,oModel,frame
   if keyword_set(fanlines)   then model_add_fanlines,oModel,frame,bgrid,xx,yy,zz
@@ -257,5 +254,5 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
   if keyword_set(sepsurf)    then model_add_sepsurf,oModel,frame
   if keyword_set(separators) then model_add_separators,oModel,frame
   
-  return,oModel
+  return, oModel
 end
