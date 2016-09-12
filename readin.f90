@@ -59,6 +59,10 @@ program readin
   character (len=8), parameter :: fmt='(I4.4)'
   character (len=5) :: fname
 
+  print*,'#######################################################################'
+  print*,'#                      Data Read-in and Process                       #'
+  print*,'#######################################################################'
+
   open(unit=10,file='output/null.dat',form='unformatted')
     read(10) nnulls
     print*,'num nulls',nnulls

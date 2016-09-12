@@ -109,8 +109,6 @@ pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
    
     fring = nrings/5
     print, fring, nrings/5
-    print, i, nrings, fring
-    print, fring, long(1.2*fring)
     for iring = 1, fring do begin
       readu, fan, n
       xf = dblarr(n)
@@ -123,7 +121,6 @@ pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
     close, fan
 
     if n le 150 then skip = 2 else skip = fix((n-2)/150.)
-    print, i, n, skip
 
     for k = 0, n-2, skip do begin
       startpt = [xf[k],yf[k],zf[k]]
@@ -190,7 +187,7 @@ pro model_add_nulls,oModel,frame
 end
 
 pro model_add_box,oModel,box
-  #
+  
   print, "Adding box"
   line = transpose([[0,0,0],[1,0,0],[1,0,1],[1,0,0],[1,1,0],[1,1,1],[1,1,0], $
     [0,1,0],[0,1,1],[0,1,0],[0,0,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1],[0,0,1.]])
