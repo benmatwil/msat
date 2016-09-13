@@ -10,7 +10,7 @@ double precision, parameter :: k51 = 439d0/216d0, k52 = -8d0, k53 = 3680d0/513d0
 double precision, parameter :: k61 = -8d0/27d0, k62 = 2d0, k63 = -3544d0/2565d0, k64 = 1859d0/4104d0, k65 = -11d0/40d0
 
 double precision, parameter :: y1 = 25d0/216d0, y3 = 1408d0/2565d0, y4 = 2197d0/4101d0, y5 = -1d0/5d0
-double precision, parameter :: z1 = 16d0/135d0, z3 = 6656d0/12825d0, z4 = 28561d0/56430d0,z5 = -9d0/50d0,z6 = 2d0/55d0
+double precision, parameter :: z1 = 16d0/135d0, z3 = 6656d0/12825d0, z4 = 28561d0/56430d0, z5 = -9d0/50d0,z6 = 2d0/55d0
 
 contains
 
