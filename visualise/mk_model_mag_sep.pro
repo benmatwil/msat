@@ -47,32 +47,24 @@ pro model_add_spines, oModel, frame, bgrid, xx, yy, zz
 
   print, 'Adding Spines'
   dx = abs(xx[1]-xx[0])
-  h = 0.01*dx
-  hmin = 0.001*dx
-  hmax = 0.5*dx
-  epsilon = 1.0d-5
-  mxline = 2000
   ro = 0.1*dx
 
   nulls = getnulls()
-
   for i = 0, n_elements(nulls)-1 do begin
-    spine = nulls[i].spine
-    posi = nulls[i].gridpos
-    print, spine
-    ds = nulls[i].sign/abs(nulls[i].sign)
-    if ds gt 0 then col = [250,0,0] else col = [0,0,250]
-  startpt = posi + ro*spine
-  print, startpt
-  linef = tracefield_3D(startpt,bgrid,xx,yy,zz,ds*h,hmin,hmax,epsilon,mxline)
-  ii = where(linef[0,*] gt -8000)
-  if (ii[0] gt -1) then oModel -> add,obj_new("IDLgrPolyline", $
-      linef[0,ii],linef[1,ii],linef[2,ii],color=col,thick=4)
-  startpt = posi - ro*spine
-  print, startpt
-  linef = tracefield_3D(startpt,bgrid,xx,yy,zz,ds*h,hmin,hmax,epsilon,mxline)
-  ii = where(linef[0,*] gt -8000)
-  if ii[0] gt -1 then oModel -> add,obj_new("IDLgrPolyline",linef[0,ii],linef[1,ii],linef[2,ii],color=col,thick=4)
+    if nulls[i].sign gt 0 then col = [250,0,0] else col = [0,0,250]
+    foreach dir, [1, -1] do begin
+      
+      h = 0.01*dx
+      hmin = 0.001*dx
+      hmax = 0.5*dx
+      epsilon = 1.0d-5
+
+      startpt = nulls[i].gridpos + dir*ro*nulls[i].spine
+      print, "Starting spine line at", startpt
+      line = fieldline3d(startpt,bgrid,xx,yy,zz,nulls[i].sign*h,hmin,hmax,epsilon,/oneway)
+
+      oModel -> add, obj_new("IDLgrPolyline",line[0,*],line[1,*],line[2,*],color=col,thick=4)
+    endforeach
   endfor
 end
 
@@ -80,10 +72,6 @@ pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
 
   print, 'Adding Separatrix surface field lines'
   dx = abs(xx[1]-xx[0])
-  h = 0.01*dx
-  hmin = 0.001*dx
-  hmax = 0.5*dx
-  epsilon = 1.0d-5
   mxline = 2000
   ro = 0.1*dx   
 
@@ -107,9 +95,7 @@ pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
 
     n = -1L
    
-    fring = nrings/5
-    print, fring, nrings/5
-    for iring = 1, fring do begin
+    for iring = 1, nrings/5 do begin
       readu, fan, n
       xf = dblarr(n)
       yf = dblarr(n)
@@ -124,27 +110,18 @@ pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
 
     for k = 0, n-2, skip do begin
       startpt = [xf[k],yf[k],zf[k]]
-      linef = tracefield_3D(startpt,bgrid,xx,yy,zz,h,hmin,hmax,epsilon,mxline)
-      jj = where(linef[0,*] gt -8000)
-      linef = linef[*,jj] 
-      if nulls[i].sign gt 0 then begin
-        dist = sqrt((linef[0,*]-nulls[i].gridpos[0])^2.+(linef[1,*]-nulls[i].gridpos[1])^2.+(linef[2,*]-nulls[i].gridpos[2])^2.)
-        ll = where(abs(dist) eq min(abs(dist)))
-        linef = linef[*,0:ll[0]]
-      endif
-      oModel -> add,obj_new("IDLgrPolyline",linef[0,*],linef[1,*], $
-          linef[2,*],color=colour,thick=2)
 
-      linef = tracefield_3D(startpt,bgrid,xx,yy,zz,-h,hmin,hmax,epsilon,mxline)
-      jj = where(linef[0,*] gt -8000)
-      linef = linef[*,jj] 
-      if nulls[i].sign lt 0 then begin
-        dist = sqrt((linef[0,*]-nulls[i].gridpos[0])^2.+(linef[1,*]-nulls[i].gridpos[1])^2.+(linef[2,*]-nulls[i].gridpos[2])^2.)
-        ll = where(abs(dist) eq min(abs(dist)))
-        linef = linef[*,0:ll[0]] 
-      endif
-      oModel -> add,obj_new("IDLgrPolyline",linef[0,*],linef[1,*], $
-          linef[2,*],color=colour,thick=2)
+      h = 0.01*dx
+      hmin = 0.001*dx
+      hmax = 0.5*dx
+      epsilon = 1.0d-5
+
+      line = fieldline3d(startpt,bgrid,xx,yy,zz,h,hmin,hmax,epsilon)
+
+      !null = min((line[0,*]-nulls[i].gridpos[0])^2+(line[1,*]-nulls[i].gridpos[1])^2+(line[2,*]-nulls[i].gridpos[2])^2, minloc)
+      if nulls[i].sign gt 0 then line = line[*, 0:minloc] else line = line[*, minloc:-1]
+
+      oModel -> add, obj_new("IDLgrPolyline",line[0,*],line[1,*],line[2,*],color=colour,thick=2)
     endfor
   endfor
 
@@ -163,16 +140,15 @@ pro model_add_separators,oModel,frame
     if seps ne !null then begin
       for j = 0, (size(seps))[1]-1 do begin
         col = [0,160,60] 
-        oModel -> add,obj_new("IDLgrPolyline",seps[j,*,0],seps[j,*,1],seps[j,*,2],$
-          color=col,thick=4)  
+        oModel -> add,obj_new("IDLgrPolyline",seps[j,*,0],seps[j,*,1],seps[j,*,2],color=col,thick=4)
       endfor
     endif
   endfor
 end
 
-pro model_add_nulls,oModel,frame
+pro model_add_nulls,oModel,frame,xx,yy,zz
 
-  radius = 0.8
+  radius = min([xx[-1]-xx[0],yy[-1]-yy[0],zz[-1]-zz[0]])/40
   nulls = getnulls()
   
   for i = 0, n_elements(nulls)-1 do begin
@@ -205,37 +181,32 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
 
    get_lun, lun
    
-   nx = 0l
-   ny = 0l
-   nz = 0l
-   
+   nx = 0L
+   ny = 0L
+   nz = 0L
    openr, lun, fname
    readu, lun, nx, ny, nz
-   
    
    xx = dblarr(nx,ny,nz)
    yy = dblarr(nx,ny,nz)
    zz = dblarr(nx,ny,nz)
-   
    readu, lun, xx, yy, zz
    bgrid = dblarr(nx,ny,nz,3)
    bgrid[*,*,*,0] = xx
    bgrid[*,*,*,1] = yy
    bgrid[*,*,*,2] = zz
+
    xx = dblarr(nx)
    yy = dblarr(ny)
    zz = dblarr(nz)
-  
    readu, lun, xx, yy, zz
    close, lun
    free_lun, lun
-   
    
    print,'NOTE: HARDWIRED TO USE GRIDCELL COORDINATES'
    xx = dindgen(nx)+1
    yy = dindgen(ny)+1
    zz = dindgen(nz)+1
-   
    
    box = dblarr(3,2)
    box[*,0] = [min(xx),min(yy),min(zz)] 
@@ -245,7 +216,7 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
 
   oModel = obj_new("IDLgrModel")
   if keyword_set(box)        then model_add_box,oModel,box
-  if keyword_set(nulls)      then model_add_nulls,oModel,frame
+  if keyword_set(nulls)      then model_add_nulls,oModel,frame,xx,yy,zz
   if keyword_set(fanlines)   then model_add_fanlines,oModel,frame,bgrid,xx,yy,zz
   if keyword_set(spines)     then model_add_spines,oModel,frame,bgrid,xx,yy,zz
   if keyword_set(sepsurf)    then model_add_sepsurf,oModel,frame
