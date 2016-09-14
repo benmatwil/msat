@@ -14,7 +14,6 @@ module params
 
   !spinefinder parameters
   double precision, parameter :: rsphere = 1d-4 !radius of sphere which the dot products are calculated on
-  double precision, parameter :: rtraceto = 1d-1 !the radius the field line tracer traces lines to (should be larger than rsphere)
 
   !ssfind parameters
   integer, parameter :: ringsmax = 6000 !maximum # of rings
