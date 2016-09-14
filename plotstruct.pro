@@ -14,7 +14,7 @@ end
 
 pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
   
-  openr,10,'data/newmag.dat'
+  openr,10,'data/data.dat'
   nx = 0l
   ny = 0l
   nz = 0l
@@ -46,14 +46,15 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
     spine = dblarr(3)
     maxvec = spine
     minvec = spine
+    fname = 'output/'+['fandata.dat', 'spinedata.dat']
 
-    foreach name, ['fandata.dat', 'spinedata.dat'] do begin
+    foreach name, fname do begin
       openr,10,name
       readu,10,ny
       r = dblarr(3,ny)
       readu,10,r
       help,r
-      if name eq 'fandata.dat' then begin
+      if name eq fname[0] then begin
         r = transpose(r)
         r = r * rsphere
         for i = 0, 2 do r[*,i] = r[*,i] + npos[i]
@@ -90,7 +91,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
           endif
         endif
       endif
-      if name eq 'spinedata.dat' then begin
+      if name eq fname[1] then begin
         r = transpose(r)
         r = r * rsphere
         for i = 0,2 do r[*,i] = r[*,i] + npos[i]
