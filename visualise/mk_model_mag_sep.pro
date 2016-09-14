@@ -179,40 +179,40 @@ end
 function mk_model_mag_sep,fname,nulls=nulls,separators=separators,$
 sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
 
-   get_lun, lun
-   
-   nx = 0L
-   ny = 0L
-   nz = 0L
-   openr, lun, fname
-   readu, lun, nx, ny, nz
-   
-   xx = dblarr(nx,ny,nz)
-   yy = dblarr(nx,ny,nz)
-   zz = dblarr(nx,ny,nz)
-   readu, lun, xx, yy, zz
-   bgrid = dblarr(nx,ny,nz,3)
-   bgrid[*,*,*,0] = xx
-   bgrid[*,*,*,1] = yy
-   bgrid[*,*,*,2] = zz
+  get_lun, lun
+  
+  nx = 0L
+  ny = 0L
+  nz = 0L
+  openr, lun, fname
+  readu, lun, nx, ny, nz
+  
+  xx = dblarr(nx,ny,nz)
+  yy = dblarr(nx,ny,nz)
+  zz = dblarr(nx,ny,nz)
+  readu, lun, xx, yy, zz
+  bgrid = dblarr(nx,ny,nz,3)
+  bgrid[*,*,*,0] = xx
+  bgrid[*,*,*,1] = yy
+  bgrid[*,*,*,2] = zz
 
-   xx = dblarr(nx)
-   yy = dblarr(ny)
-   zz = dblarr(nz)
-   readu, lun, xx, yy, zz
-   close, lun
-   free_lun, lun
-   
-   print,'NOTE: HARDWIRED TO USE GRIDCELL COORDINATES'
-   xx = dindgen(nx)+1
-   yy = dindgen(ny)+1
-   zz = dindgen(nz)+1
-   
-   box = dblarr(3,2)
-   box[*,0] = [min(xx),min(yy),min(zz)] 
-   box[*,1] = [max(xx),max(yy),max(zz)]
-   
-   print, nx, ny, nz
+  xx = dblarr(nx)
+  yy = dblarr(ny)
+  zz = dblarr(nz)
+  readu, lun, xx, yy, zz
+  close, lun
+  free_lun, lun
+  
+  print,'NOTE: HARDWIRED TO USE GRIDCELL COORDINATES'
+  xx = dindgen(nx)+1
+  yy = dindgen(ny)+1
+  zz = dindgen(nz)+1
+  
+  box = dblarr(3,2)
+  box[*,0] = [min(xx),min(yy),min(zz)] 
+  box[*,1] = [max(xx),max(yy),max(zz)]
+  
+  print, nx, ny, nz
 
   oModel = obj_new("IDLgrModel")
   if keyword_set(box)        then model_add_box,oModel,box
