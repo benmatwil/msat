@@ -8,7 +8,7 @@ nf : params.f90 nf_mod.f90 nf.f90
 	$(FC) $(FFLAGS) $(MODULES) params.f90 nf_mod.f90 nf.f90 -o nf
 
 sf : params.f90 sf_mod.f90 sf.f90
-	$(FC) $(FFLAGS) $(MODULES) -g -fcheck=all -fbounds-check -Wall params.f90 sf_mod.f90 sf.f90 -o sf
+	$(FC) $(FFLAGS) $(MODULES) params.f90 sf_mod.f90 sf.f90 -o sf
 
 ssf : params.f90 common.f90 trace.f90 ring.f90 ssf.f90
 	$(FC) $(FFLAGS) $(MODULES) -fopenmp params.f90 common.f90 trace.f90 ring.f90 ssf.f90 -o ssf
