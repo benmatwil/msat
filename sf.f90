@@ -128,23 +128,23 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
 
   implicit none
   integer :: itheta, iphi, itry, ifan, idense
-  integer :: count, iconv, imin, nfw, nbw, nspine, nfan, maxcount
-  double precision :: r(3), b(3)
+  integer :: count, iconv, imin, nfw, nbw, maxcount
+  integer :: flagfw, flagbw, savedata, angleflag
 
   double precision :: dphi, dtheta, angle
-  double precision, dimension(:), allocatable :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
-  integer :: flagfw, flagbw, savedata, angleflag
-  double precision :: fact, acc, fwvalue, bwvalue
+  double precision, dimension(3) :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
+  double precision, dimension(3) :: rold, rnew, bnew
+  double precision :: fact, acc, accconv, fwvalue, bwvalue
+
+  double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rmin
+  double precision, dimension(:,:), allocatable :: rspine, rfan
+  double precision, dimension(:,:), allocatable :: rfanperp, crossfan
+  integer, dimension(:,:), allocatable :: densepos, denseposfw, denseposbw
 
   double precision :: mindot, dotprod
   integer :: sign, warning, signguess
 
   double precision, dimension(3) :: spine, fan, maxvec, minvec
-  
-  double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw
-  double precision, dimension(:,:), allocatable :: rspine, rfan
-  double precision, dimension(:,:), allocatable :: rfanperp, crossfan
-  integer, allocatable, dimension(:,:) :: densepos, denseposfw, denseposbw
 
   print*, 'Null position:'
   print*, rnull
@@ -152,8 +152,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   print*, trilinear(rnull, bgrid)
   print*, '-----------------------------------------------------------------------------'
 
-  allocate(rconvergefw(3,nphi*ntheta), rconvergebw(3,nphi*ntheta))
-  allocate(roldfw(3), rnewfw(3), bnewfw(3), roldbw(3), rnewbw(3), bnewbw(3))
+  allocate(rconvergefw(3,nphi*ntheta), rconvergebw(3,nphi*ntheta), rmin(3,nphi*ntheta))
 
   !set up theta and phi for sphere around null
   dphi = 360.d0/dble(nphi)
@@ -173,23 +172,21 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     
     ! Working on a sphere of size rsphere
     fact = 1d-2*rsphere
-    acc = 1d-10*rsphere
+    accconv = 1d-10*rsphere
     flagfw = 0
     flagbw = 0
+    maxcount = 5000
     ! loop over each point to find converged point
     do itheta = 1, ntheta
       do iphi = 1, nphi
         count = 0
-        maxcount = 5000
-        r = sphere2cart(rsphere,thetas(itheta),phis(iphi))
-        b = trilinear(r+rnull, bgrid)
-        rnewfw = r
-        rnewbw = r
-        bnewfw = b
-        bnewbw = b
+        rnewfw = sphere2cart(rsphere,thetas(itheta),phis(iphi))
+        rnewbw = rnewfw
+        bnewfw = trilinear(rnewfw+rnull, bgrid)
+        bnewbw = bnewfw
         roldfw = [0,0,0]
         roldbw = [0,0,0]
-        do while (modulus(rnewfw-roldfw) > acc .and. modulus(rnewbw-roldbw) > acc .and. count < maxcount) ! do enough times for spine to converge
+        do while (modulus(rnewfw-roldfw) > accconv .and. modulus(rnewbw-roldbw) > accconv .and. count < maxcount) ! do enough times for spine to converge
           call it_conv(roldfw,rnewfw,bnewfw,fact,1)
           call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
           count = count + 1
@@ -200,8 +197,8 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
           print*, 'Adjusting the initial points and starting again'
           cycle main
         endif
-        if (modulus(rnewfw-roldfw) < acc) flagfw = flagfw + 1
-        if (modulus(rnewbw-roldbw) < acc) flagbw = flagbw + 1
+        if (modulus(rnewfw-roldfw) < accconv) flagfw = flagfw + 1
+        if (modulus(rnewbw-roldbw) < accconv) flagbw = flagbw + 1
         iconv = iphi+(itheta-1)*nphi
         rconvergefw(:,iconv) = normalise(rnewfw)
         rconvergebw(:,iconv) = normalise(rnewbw)
@@ -216,8 +213,10 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   print*, '    ', 'backwards:', flagbw
   if (flagfw < flagbw) then
     signguess = 1
+    print*, "Spine is backwards"
   else if (flagfw > flagbw) then
     signguess = -1
+    print*, "Spine is forwards"
   else
     signguess = 0
   endif
@@ -229,6 +228,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   sign = 0
   do itry = 4, 2, -1
     acc = 1d1**(-itry)
+    print*, 'Removing to accuracy', acc
     call remove_duplicates(rconvergefw, acc, denseposfw)
     call remove_duplicates(rconvergebw, acc, denseposbw)
     nfw = size(rconvergefw,2)
@@ -259,9 +259,11 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
       if (sign == 1) then
         rspine = rconvergebw
         rfan = rconvergefw
+        densepos = denseposfw
       else
         rspine = rconvergefw
         rfan = rconvergebw
+        densepos = denseposbw
       endif
       spine = rspine(:,1)
       exit
@@ -278,11 +280,13 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
         spine = rconvergebw(:,maxval(maxloc(denseposbw)))
         rfan = rconvergefw
         rspine = rconvergebw
+        densepos = denseposfw
         sign = 1
       else if (2*nbw < nfw) then
         spine = rconvergefw(:,maxval(maxloc(denseposfw)))
         rfan = rconvergebw
         rspine = rconvergefw
+        densepos = denseposbw
         sign = -1
       else ! not sure how to to decide in this case, haven't found a case like this yet...
         print*, "Uh oh, can't decide, error!"
@@ -305,23 +309,23 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   if (size(rfan,2) == 2) then
     maxvec = rfan(:,1)
   else
-    call remove_duplicates(rfan, 1d-2, densepos)
+    !call remove_duplicates(rfan, 1d-2, densepos)
     maxvec = rfan(:,maxval(maxloc(densepos)))
-    deallocate(densepos)
   endif
+  deallocate(densepos)
   
   if (sign /= signguess) then
     sign = 0
     print*, 'The two checks do not agree, needs looking into'
+    stop
   endif
   
   print*, 'Final number of converged'
   print*, '    ','spines:', size(rspine,2)
   print*, '    ','fans:  ', size(rfan,2)
-  
-  ! now determine the fan
-  nfan = size(rfan,2)
-  if (nfan == 2) then
+if (1 == 0) then  
+  ! now determine the fan 
+  if (size(rfan,2) == 2) then
     print*, 'Only have two fan points'
     minvec = normalise(cross(spine,maxvec))
   else
@@ -349,7 +353,10 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
       print*, 'We have a ring'
       angleflag = 0
       do ifan = 1, size(rfan,2)
-        if (acos(dot(rfan(:,ifan), maxvec))/dtor > 30) angleflag = 1
+        if (acos(dot(rfan(:,ifan), maxvec))/dtor > 30) then
+          print*, acos(dot(rfan(:,ifan), maxvec))/dtor
+          angleflag = 1
+        endif
       enddo
       if (angleflag == 1) then
         print*, 'Picking the most perpendicular point'
@@ -383,6 +390,27 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
       minvec = rfanperp(:,maxval(maxloc(densepos)))
     endif
   endif
+endif
+
+  ! Working on a sphere of size rsphere
+  accconv = accconv*2
+  ! loop over each point to find converged point
+  do itheta = 1, ntheta
+    do iphi = 1, nphi
+      count = 0
+      rnew = sphere2cart(rsphere,thetas(itheta),phis(iphi))
+      bnew = trilinear(rnew+rnull, bgrid)
+      rold = [0,0,0]
+      do while (modulus(rnew-rold) > accconv .and. count < maxcount) ! do enough times for spine to converge
+        bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
+        call it_conv(rold,rnew,bnew,fact,sign)
+        count = count + 1
+      enddo
+      rmin(:,iphi+(itheta-1)*nphi) = normalise(rnew)
+    enddo
+  enddo
+  call remove_duplicates(rmin, acc, densepos)
+  minvec = rmin(:,maxval(maxloc(densepos)))
 
   ! Save data if there is a problematic null for inspection by map.pro
   if (savedata == 1) then
@@ -390,7 +418,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     write(10) size(rspine,2), rspine, spine
     close(10)
     open(unit=10, file='output/fandata.dat', access='stream')
-    write(10) size(rfan,2), rfan, maxvec, minvec
+    write(10) size(rmin,2), rmin, maxvec, minvec
     if (allocated(crossfan)) write(10) size(crossfan,2), crossfan
     close(10)
   endif

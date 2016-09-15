@@ -221,7 +221,7 @@ module sf_converge_mod
     
     implicit none
     
-    double precision, allocatable, dimension(:) :: rold, rnew, bnew
+    double precision, dimension(3) :: rold, rnew, bnew
     double precision :: fact
     integer :: dir
     
