@@ -12,9 +12,10 @@ function convert, gridcoord, x, y, z, check=check
 
 end
 
-pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
+pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=file
   
-  openr,10,'data/data.dat'
+  if not keyword_set(file) then file = 'data/magfield.dat'
+  openr,10,file
   nx = 0l
   ny = 0l
   nz = 0l
@@ -31,7 +32,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
   ygc = indgen(sizebg[2])
   zgc = indgen(sizebg[3])
 
-  nulls = getnullsgordon(/me)
+  nulls = getnulls()
   npos = nulls[n-1].gridpos-1 ; -1 translation from fortran to idl grid spacing
 
   ;xyznpos = convert(npos,x,y,z)
@@ -174,5 +175,18 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere
   plt.xtitle = "x"
   plt.ytitle = "y"
   plt.ztitle = "z"
+  
+  print, "----------------------------------------"
+  print, "Key:
+  print, "----"
+  print, "Spine - Dark blue cross"
+  print, "Maxvec - Cyan cross"
+  print, "Minvec - Green cross"
+  print, "Null - Red cross"
+  print, "Converged fan - Small black crosses"
+  print, "Converged spine - Small red crosses"
+  print, "Lines traced forwards - Red lines"
+  print, "Lines traced backwards - Orange Lines"
+  print, "----------------------------------------"
     
 end
