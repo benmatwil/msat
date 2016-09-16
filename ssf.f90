@@ -259,7 +259,7 @@ program ssfind
         enddo
       enddo
       if (sum(nearnull) > 0) then
-        print*, 'slowing down, adding points near null'
+        !print*, 'slowing down, adding points near null'
         slowdown = 2d0
       endif
       !add points to ring if necessary
