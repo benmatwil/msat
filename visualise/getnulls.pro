@@ -32,8 +32,6 @@ function getnulls
 
     close, null
     free_lun, null
-    
-    print, 'NOTE: HARDWIRED TO USE GRIDCELL COORDINATES'
 
     nulls = {nulldata,pos:dblarr(3),gridpos:dblarr(3),spine:dblarr(3),fan:dblarr(3),sign:long(0)}
     nulls = replicate({nulldata},nnulls)
