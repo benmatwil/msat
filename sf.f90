@@ -191,13 +191,13 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
           call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
           count = count + 1
         enddo
-        if (count < 100 .or. count == maxcount) then
-          if (angle >= 4d0) stop
+        if (count < 100) then
+          if (angle >= 4d0) goto 101
           angle = angle + 1d0
           print*, 'Adjusting the initial points and starting again'
           cycle main
         endif
-        if (modulus(rnewfw-roldfw) < accconv) flagfw = flagfw + 1
+101        if (modulus(rnewfw-roldfw) < accconv) flagfw = flagfw + 1
         if (modulus(rnewbw-roldbw) < accconv) flagbw = flagbw + 1
         iconv = iphi+(itheta-1)*nphi
         rconvergefw(:,iconv) = normalise(rnewfw)
@@ -235,16 +235,19 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     nbw = size(rconvergebw,2)
     ! first determine the spine and which is which
     if (nfw == 2 .or. nbw == 2) then ! if one of the reductions only has two vectors, can guarantee one is spine
+      print*, "Using converged to choose"
       if (nfw < nbw) then ! if nfw is smaller then it's the spine, spine going out of null
         sign = -1
       else if (nfw > nbw) then ! if nbw is smaller then it's the spine, spine going into null
         sign = 1
       else if (nfw == nbw) then ! both are equal (i.e. 2=2) so check which converged first and then use eigenvalues as last resort
+        print*, "Using stopped to choose"
         if (flagfw < flagbw) then ! backwards converged points stopped first
           sign = 1
         else if (flagfw > flagbw) then ! forwards converged points stopped first
           sign = -1
         else ! still don't know, check the eigenvalues as a last resort - not ideal but rare
+          print*, "Using eigenvalues to choose"
           bwvalue = dot(trilinear(rsphere*rconvergebw(:,1) + rnull, bgrid), rconvergebw(:,1))
           fwvalue = dot(trilinear(rsphere*rconvergefw(:,1) + rnull, bgrid), rconvergefw(:,1))
           print*, 'Eigenvalue on backward vector:', bwvalue
@@ -268,36 +271,52 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
       spine = rspine(:,1)
       exit
     else if (itry == 2 .and. sign == 0) then 
-      ! if still no reduction leaves two
-      ! try using that the spine should be the densest accumulation of points
-      ! also likely we have a source or a sink so div(B) is non-zero
-      nfw = maxval(denseposfw)
-      nbw = maxval(denseposbw)
-      print*, 'Density of densest points'
-      print*, '    ', 'Forwards ', maxloc(denseposfw), nfw
-      print*, '    ', 'Backwards', maxloc(denseposbw), nbw
-      if (2*nfw < nbw) then
+      if (nfw > 50*nbw) then
         spine = rconvergebw(:,maxval(maxloc(denseposbw)))
-        rfan = rconvergefw
         rspine = rconvergebw
+        rfan = rconvergefw
         densepos = denseposfw
         sign = 1
-      else if (2*nbw < nfw) then
+      elseif (nbw > 50*nfw) then
         spine = rconvergefw(:,maxval(maxloc(denseposfw)))
-        rfan = rconvergebw
         rspine = rconvergefw
+        rfan = rconvergebw
         densepos = denseposbw
         sign = -1
-      else ! not sure how to to decide in this case, haven't found a case like this yet...
-        print*, "Uh oh, can't decide, error!"
-        open(unit=10, file='output/spinedata.dat', access='stream')
-          write(10) size(rconvergefw,2), rconvergefw
-        close(10)
-        open(unit=10, file='output/fandata.dat', access='stream')
-          write(10) size(rconvergebw,2), rconvergebw
-        close(10)
-        sign = 0 ! check to make sure it isn't flagging any proper nulls
-        stop
+      else
+        ! if still no reduction leaves two
+        ! try using that the spine should be the densest accumulation of points
+        ! also likely we have a source or a sink so div(B) is non-zero
+        nfw = maxval(denseposfw)
+        nbw = maxval(denseposbw)
+        print*, 'Density of densest points'
+        print*, '    ', 'Forwards ', maxloc(denseposfw), nfw
+        print*, '    ', 'Backwards', maxloc(denseposbw), nbw
+        if (2*nfw < nbw) then
+          spine = rconvergebw(:,maxval(maxloc(denseposbw)))
+          rfan = rconvergefw
+          rspine = rconvergebw
+          densepos = denseposfw
+          sign = 1
+          goto 100
+        else if (2*nbw < nfw) then
+          spine = rconvergefw(:,maxval(maxloc(denseposfw)))
+          rfan = rconvergebw
+          rspine = rconvergefw
+          densepos = denseposbw
+          sign = -1
+          goto 100
+        else ! not sure how to to decide in this case, haven't found a case like this yet...
+          print*, "Uh oh, can't decide, error!"
+          open(unit=10, file='output/spinedata.dat', access='stream')
+            write(10) size(rconvergefw,2), rconvergefw
+          close(10)
+          open(unit=10, file='output/fandata.dat', access='stream')
+            write(10) size(rconvergebw,2), rconvergebw
+          close(10)
+          sign = 0 ! check to make sure it isn't flagging any proper nulls
+          stop
+        endif
       endif
     endif
   deallocate(denseposfw, denseposbw)
@@ -317,80 +336,80 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   if (sign /= signguess) then
     sign = 0
     print*, 'The two checks do not agree, needs looking into'
-    stop
+    !stop
   endif
   
   print*, 'Final number of converged'
   print*, '    ','spines:', size(rspine,2)
   print*, '    ','fans:  ', size(rfan,2)
-if (1 == 0) then  
-  ! now determine the fan 
-  if (size(rfan,2) == 2) then
-    print*, 'Only have two fan points'
-    minvec = normalise(cross(spine,maxvec))
-  else
-    ! Check whether we have a ball or all points in a ring
-    crossfan = rfan
-    call remove_duplicates(crossfan, 1d-1, densepos)
-    idense = maxval(maxloc(densepos))
-    deallocate(densepos)
-    do ifan = 1, size(crossfan,2)
-      crossfan(:,ifan) = cross(maxvec,crossfan(:,ifan))
-    enddo
-    call remove_vector(crossfan, idense)
-    ifan = 1
-    do while (ifan <= size(crossfan,2))
-      if (modulus(crossfan(:,ifan)) < 2d-1) then
-        call remove_vector(crossfan, ifan)
-      else
-        crossfan(:,ifan) = normalise(crossfan(:,ifan))
-        ifan = ifan+1
-      endif
-    enddo
-    call remove_duplicates(crossfan,2d-1)
-    print*, 'Size of crossfan', size(crossfan,2)
-    if (size(crossfan,2) <= 4) then ! we have a ring, pick minvec to be vector most perpendicular
-      print*, 'We have a ring'
-      angleflag = 0
-      do ifan = 1, size(rfan,2)
-        if (acos(dot(rfan(:,ifan), maxvec))/dtor > 30) then
-          print*, acos(dot(rfan(:,ifan), maxvec))/dtor
-          angleflag = 1
-        endif
-      enddo
-      if (angleflag == 1) then
-        print*, 'Picking the most perpendicular point'
-        mindot = 1
-        do ifan = 1, size(rfan,2)
-          dotprod = abs(dot(maxvec,rfan(:,ifan)))
-          if (dotprod < mindot) then
-            mindot = dotprod
-            imin = ifan
-          endif
-        enddo
-        minvec = rfan(:,imin)
-        print*, 'Perp vec is at ', imin, 'out of a total of ', size(rfan,2)
-      else
-        print*, 'Taking cross product for minvec'
-        minvec = normalise(cross(spine, maxvec))
-      endif
-    else ! we have a ball
-      ifan = 1
-      rfanperp = rfan
-      do while (ifan <= size(rfanperp,2))
-        dotprod = abs(dot(maxvec,rfanperp(:,ifan)))
-        if (dotprod > 2d-1) then
-          call remove_vector(rfanperp, ifan)
-        else
-          ifan = ifan + 1
-        endif
-      enddo
-      if (allocated(densepos)) deallocate(densepos)
-      call remove_duplicates(rfanperp, 5d-2, densepos)
-      minvec = rfanperp(:,maxval(maxloc(densepos)))
-    endif
-  endif
-endif
+ 
+!   ! now determine the fan 
+!   if (size(rfan,2) == 2) then
+!     print*, 'Only have two fan points'
+!     minvec = normalise(cross(spine,maxvec))
+!   else
+!     ! Check whether we have a ball or all points in a ring
+!     crossfan = rfan
+!     call remove_duplicates(crossfan, 1d-1, densepos)
+!     idense = maxval(maxloc(densepos))
+!     deallocate(densepos)
+!     do ifan = 1, size(crossfan,2)
+!       crossfan(:,ifan) = cross(maxvec,crossfan(:,ifan))
+!     enddo
+!     call remove_vector(crossfan, idense)
+!     ifan = 1
+!     do while (ifan <= size(crossfan,2))
+!       if (modulus(crossfan(:,ifan)) < 2d-1) then
+!         call remove_vector(crossfan, ifan)
+!       else
+!         crossfan(:,ifan) = normalise(crossfan(:,ifan))
+!         ifan = ifan+1
+!       endif
+!     enddo
+!     call remove_duplicates(crossfan,2d-1)
+!     print*, 'Size of crossfan', size(crossfan,2)
+!     if (size(crossfan,2) <= 4) then ! we have a ring, pick minvec to be vector most perpendicular
+!       print*, 'We have a ring'
+!       angleflag = 0
+!       do ifan = 1, size(rfan,2)
+!         if (acos(dot(rfan(:,ifan), maxvec))/dtor > 30) then
+!           print*, acos(dot(rfan(:,ifan), maxvec))/dtor
+!           angleflag = 1
+!         endif
+!       enddo
+!       if (angleflag == 1) then
+!         print*, 'Picking the most perpendicular point'
+!         mindot = 1
+!         do ifan = 1, size(rfan,2)
+!           dotprod = abs(dot(maxvec,rfan(:,ifan)))
+!           if (dotprod < mindot) then
+!             mindot = dotprod
+!             imin = ifan
+!           endif
+!         enddo
+!         minvec = rfan(:,imin)
+!         print*, 'Perp vec is at ', imin, 'out of a total of ', size(rfan,2)
+!       else
+!         print*, 'Taking cross product for minvec'
+!         minvec = normalise(cross(spine, maxvec))
+!       endif
+!     else ! we have a ball
+!       ifan = 1
+!       rfanperp = rfan
+!       do while (ifan <= size(rfanperp,2))
+!         dotprod = abs(dot(maxvec,rfanperp(:,ifan)))
+!         if (dotprod > 2d-1) then
+!           call remove_vector(rfanperp, ifan)
+!         else
+!           ifan = ifan + 1
+!         endif
+!       enddo
+!       if (allocated(densepos)) deallocate(densepos)
+!       call remove_duplicates(rfanperp, 5d-2, densepos)
+!       minvec = rfanperp(:,maxval(maxloc(densepos)))
+!     endif
+!   endif
+! endif
 
   ! Working on a sphere of size rsphere
   accconv = accconv*2
@@ -413,12 +432,12 @@ endif
   minvec = rmin(:,maxval(maxloc(densepos)))
 
   ! Save data if there is a problematic null for inspection by map.pro
-  if (savedata == 1) then
+100  if (savedata == 1) then
     open(unit=10, file='output/spinedata.dat', access='stream')
     write(10) size(rspine,2), rspine, spine
     close(10)
     open(unit=10, file='output/fandata.dat', access='stream')
-    write(10) size(rmin,2), rmin, maxvec, minvec
+    write(10) size(rfan,2), rfan, maxvec, minvec
     if (allocated(crossfan)) write(10) size(crossfan,2), crossfan
     close(10)
   endif
