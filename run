@@ -7,10 +7,13 @@ else
 endif
 
 make
-nf $a1
-sf $a1
-ssf $a1
-readin
+
+if ($? == 0) then
+  nf $a1
+  sf $a1
+  ssf $a1
+  readin
+endif
 
 #foreach x ...
 #  x=(printf "%04d\n" $x)
