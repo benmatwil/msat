@@ -5,7 +5,6 @@ module sf_converge_mod
 
   integer :: nx, ny, nz
   double precision, allocatable, dimension(:) :: x, y, z
-  double precision :: dx, dy, dz
 
   double precision, allocatable :: bgrid(:,:,:,:)
 

@@ -65,10 +65,6 @@ program sf_converge
     read(10) x, y, z
   close(10)
 
-  dx = (x(nx)-x(1))/nx
-  dy = (y(ny)-y(1))/ny
-  dz = (z(nz)-z(1))/nz
-
   print*, 'There are ', nnulls,' nulls to analyse'
   print*, '-----------------------------------------------------------------------------'
 
@@ -116,7 +112,8 @@ program sf_converge
   print*, 'Negative', ncount
   print*, 'Unknown', ucount
   print*, 'Warning', sum(warnings)
-  print*, pcount+ncount+ucount, nnulls
+  print*, 'All nulls have data, should be equal', pcount+ncount+ucount, nnulls
+  print*, 'Done!'
 
 end program
 
