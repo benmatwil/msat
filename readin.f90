@@ -1,4 +1,4 @@
-!This code reads in the output from ssfind and writes every 'skip' rings to file to be plotted by the idl routines. It also trace the separators found, and writes them to file for readin by the IDL routine
+! This code reads in the output from ssfind and writes every 'skip' rings to file to be plotted by the idl routines. It also trace the separators found, and writes them to file for readin by the IDL routine
 module readin_mod
 
 integer, parameter :: skip = 30 !number of rings to skip
@@ -20,9 +20,10 @@ integer :: nring, index
 
 contains
 
-  !gets the position numbers in the file for ring number 'nring' and point number 'index' within that ring. The position numbers are:
-  !a - the association number (which point in ring (index-1) the point in ring (nring) came from
-  !p - the position of the ring vector
+  ! gets the position numbers in the file for ring number 'nring' and point number 'index' within that ring. The position numbers are:
+  ! a - the association number (which point in ring (index-1) the point in ring (nring) came from)
+  ! b - the break number (which point in ring (index-1) the point in the ring (nring) came from)
+  ! p - the position of the ring vector
   subroutine position(nring,index,a,b,p)
     integer*8 :: a, b, p
     integer :: uptoring

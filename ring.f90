@@ -162,13 +162,17 @@ contains
     integer :: inull, iline, k
     integer :: nring
 
-    double precision :: h
+    double precision :: h, h0, tracedist, checkdist
 
     double precision, allocatable :: r(:,:)
     integer, allocatable :: rmap(:)
     integer :: near(nlines), notnear(nlines), endgap, gapsize
     integer :: index, count, nr, nnc, nextra, n1, n2
     integer, allocatable :: signof(:)
+
+    h0 = 1d-2
+    tracedist = 3*nulldist
+    checkdist = tracedist + 3*h0
 
     !$OMP PARALLEL DO default(shared) private(near, notnear, nnc, k, gapsize, endgap, nr, r, rmap, signof, index, count, h)
     do inull = 1, size(rnulls,2)
@@ -236,8 +240,8 @@ contains
           do index = 1, nr
             !extrapolate points along fieldlines
             count = 0
-            do while (dist(r(:,index),rnulls(:,inull)) < 3*nulldist .and. count < 1000)
-              h = 1d-2
+            do while (dist(r(:,index),rnulls(:,inull)) < tracedist .and. count < 1000)
+              h = h0
               call trace_line(r(:,index),signs(nullnum),h)
               call edgecheck(r(:,index))
               count = count+1
@@ -254,9 +258,9 @@ contains
               !if theres a change in sign, theres the separator
               if (index /= 1) then
                 if (signof(index-1)*signof(index) == -1 .and. break(rmap(index-1)) /= 1 &
-                  .and. dist(rnulls(:,inull), r(:,index)) < 4*nulldist &
-                  .and. dist(rnulls(:,inull), r(:,index-1)) < 4*nulldist) then
-                  print*, 'Found a separator', nring, rmap(index-1)
+                  .and. dist(rnulls(:,inull), r(:,index)) < checkdist &
+                  .and. dist(rnulls(:,inull), r(:,index-1)) < checkdist) then
+                  print*, 'Found a separator', nring, nlines
                   break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
                   nseps = nseps + 1
                   ! print*, nr, nulldist, nlines

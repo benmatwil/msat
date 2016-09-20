@@ -15,7 +15,7 @@ double precision, parameter :: z1 = 16d0/135d0, z3 = 6656d0/12825d0, z4 = 28561d
 contains
 
   subroutine trace_line(r,sign,h)
-  !traces a line from 'r' for 'nsteps' integration steps in the direction along the line as specified by 'sign'. Each step is of length h
+  ! traces a line from 'r' for 'nsteps' integration steps in the direction along the line as specified by 'sign'. Each step is of length h
     double precision :: r(3), r0(3)
     integer :: sign
     double precision :: h, hdum, stepdist
@@ -58,7 +58,8 @@ contains
     !(so h for each direction is the same physical length, equal to mindist)
     !hvec = h*dl
     hvec = mindist/dl
-    
+    ! hvec = abs(h)*normalise(hvec)
+
     r0 = r
 
     !get rk values k1--k6
@@ -122,10 +123,10 @@ contains
   function getdl(r)
     !outputs length of one gridcell in 'physical' length units (essentially (dx,dy,dz))
     double precision :: r(3), rcheck(3) !grid cell number
-    double precision :: dx1, dy1, dz1
+    double precision :: dx, dy, dz
     double precision :: getdl(3)
     integer :: i, j, k
-    double precision :: xh, yh, zh !x, y and z at the midpoint of the cell
+    double precision :: xc, yc, zc !x, y and z at the midpoint of the cell
 
     rcheck = r
     call edgecheck(rcheck)
@@ -134,29 +135,29 @@ contains
     j = floor(rcheck(2))
     k = floor(rcheck(3))
     
-    dx1 = x(i+1)-x(i)
-    dy1 = y(j+1)-y(j)
-    dz1 = z(k+1)-z(k)
+    dx = x(i+1)-x(i)
+    dy = y(j+1)-y(j)
+    dz = z(k+1)-z(k)
     
-    xh = x(i) + dx1/2
-    yh = y(j) + dy1/2
-    zh = z(k) + dz1/2
+    xc = x(i) + dx/2
+    yc = y(j) + dy/2
+    zc = z(k) + dz/2
 
     if (coord_type == 1) then
       !cartesian coordinates
-      getdl(1) = dx1
-      getdl(2) = dy1
-      getdl(3) = dz1
+      getdl(1) = dx
+      getdl(2) = dy
+      getdl(3) = dz
     else if (coord_type == 2) then
       !spherical coordinates
-      getdl(1) = dx1 ! dr
-      getdl(2) = xh*dy1 ! r d(theta)
-      getdl(3) = xh*sin(yh)*dz1 ! r sin(theta) d(phi)
+      getdl(1) = dx ! dr
+      getdl(2) = xc*dy ! r d(theta)
+      getdl(3) = xc*sin(yc)*dz ! r sin(theta) d(phi)
     else if (coord_type == 3) then
       !cylindrical coordinates
-      getdl(1) = dx1 ! dR
-      getdl(2) = xh*dy1 ! R d(phi)
-      getdl(3) = dz1 ! dz
+      getdl(1) = dx ! dR
+      getdl(2) = xc*dy ! R d(phi)
+      getdl(3) = dz ! dz
     else
       print*, 'No coordinate system selected.'
       print*, 'Please select a valid one in params.f90'

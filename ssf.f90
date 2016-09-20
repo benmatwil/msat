@@ -15,20 +15,19 @@ program ssfind
   integer*8 :: tstart, tstop, count_rate !to time program
   integer :: nx, ny, nz !size of grid
 
-  !position vector of null (and saved backup)
+  ! position vector of null
   double precision :: r(3)
   double precision :: h, h0
   double precision :: slowdown
 
   integer :: iring, iline, inull, i, inullchk
 
-  !null parameters
+  ! null parameters
   integer :: sign
   double precision, dimension(3) :: fan, spine
   double precision :: theta, phi
   double precision, allocatable, dimension(:) :: xs, ys, zs
 
-  !number of lines
   integer :: nlines
   integer :: nrings, npoints
   integer :: nperring(0:ringsmax)
@@ -39,7 +38,7 @@ program ssfind
   print*,'#                      Separatrix Surface Finder                      #'
   print*,'#######################################################################'
 
-  call omp_set_num_threads(4) !have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
+  call omp_set_num_threads(4) ! have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
 
   filename = defaultfilename
   if (command_argument_count() > 0) then
@@ -70,11 +69,11 @@ program ssfind
   zmax = nz
   print*, "Data read in, grid dimensions are", nx, ny, nz
 
-  call system_clock(tstart,count_rate) !to time how long it takes
+  call system_clock(tstart,count_rate) ! to time how long it takes
 
   !read in null data
 
-  open (unit=10,file='output/nulls.dat',form='unformatted')
+  open(unit=10,file='output/nulls.dat',form='unformatted')
     read(10) nnulls
     allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
     read(10) signs
@@ -84,30 +83,30 @@ program ssfind
   rnullsalt = rnulls
   
   if (coord_type == 2) then
-    !for sphericals 
+    ! for sphericals 
     do inull = 1, nnulls
-      !check whether null is at the lower phi boundary
+      ! check whether null is at the lower phi boundary
       if (rnullsalt(3,inull) < zmin + 1) then
         rnullsalt(3,inull) = rnullsalt(3,inull) - 1
         call edgecheck(rnullsalt(:,inull))
         rnullsalt(3,inull) = rnullsalt(3,inull) + 1
       endif
       
-      !check whether null is at the upper phi boundary
+      ! check whether null is at the upper phi boundary
       if (rnullsalt(3,inull) > zmax - 1) then
         rnullsalt(3,inull) = rnullsalt(3,inull) + 1
         call edgecheck(rnullsalt(:,inull))
         rnullsalt(3,inull) = rnullsalt(3,inull) - 1
       endif
       
-      !check whether null is at the lower theta boundary
+      ! check whether null is at the lower theta boundary
       if (rnullsalt(2,inull) < ymin + 1) then
         rnullsalt(2,inull) = rnullsalt(2,inull) - 1
         call edgecheck(rnullsalt(:,inull))
         rnullsalt(2,inull) = rnullsalt(2,inull) - 1
       endif
       
-      !check whether null is at the upper theta boundary
+      ! check whether null is at the upper theta boundary
       if (rnullsalt(2,inull) > ymax - 1) then
         rnullsalt(2,inull) = rnullsalt(2,inull) + 1
         call edgecheck(rnullsalt(:,inull))
@@ -115,7 +114,7 @@ program ssfind
       endif
     enddo
   elseif (coord_type == 3) then
-    !for cylindricals
+    ! for cylindricals
     do inull = 1, nnulls
       ! check whether null is at lower phi boundary
       if (rnullsalt(2,inull) < ymin + 1) then
@@ -133,7 +132,7 @@ program ssfind
     enddo
   endif
   
-  do inull = 1, nnulls!loop over all nulls
+  do inull = 1, nnulls ! loop over all nulls
     print*, ''
     print*, 'Null number', inull, 'of', nnulls
 
@@ -142,7 +141,7 @@ program ssfind
     fan = fans(:, inull)
     sign = signs(inull)
 
-    !get start points
+    ! get number of start points
     nlines = nstart
 
     theta = acos(fan(3))
@@ -153,7 +152,7 @@ program ssfind
     allocate(line1(3,nlines), line2(3,nlines))
     allocate(break(nlines))
 
-    !add start points to first ring relative to null
+    ! add start points to first ring relative to null
     do iline = 1, nlines !Go through each start point
       line1(1,iline) = r(1) + xs(iline)
       line1(2,iline) = r(2) + ys(iline)
@@ -178,8 +177,8 @@ program ssfind
 
     exitcondition = .false.
 
-    do iring = 1, ringsmax !loop over number of rings we want
-      if (sign .eq. 0) then !skip null which is uncharacterised
+    do iring = 1, ringsmax ! loop over number of rings we want
+      if (sign .eq. 0) then ! skip null which is uncharacterised
         print*,'Null has zero sign'
         exit
       endif
@@ -194,7 +193,7 @@ program ssfind
       endif
 
       !$OMP PARALLEL DO private(r,h)
-      do iline = 1, nlines !loop over all points in ring (in parallel do)
+      do iline = 1, nlines ! loop over all points in ring (in parallel do)
 
         r(:) = line1(:,iline)
         h = h0
@@ -203,7 +202,8 @@ program ssfind
 
         line2(:,iline) = line2(:,iline) + r(:) - line1(:,iline)
         call edgecheck(r, out)
-        if (out) then !counter to see how many points on ring have reached outer boundary
+        ! counter to see how many points on ring have reached outer boundary
+        if (out) then
           endpoints(iline) = 1
         else
           endpoints(iline) = 0
@@ -216,13 +216,15 @@ program ssfind
       !$OMP END PARALLEL DO
 
       if (nlines > pointsmax) then
+      ! exit if too many points on ring 
         print*, 'Too many points on ring', nlines, iring
-        exitcondition = .true. !exit if too many points on ring
+        exitcondition = .true.
       endif
 
       if (sum(endpoints)/nlines == 1) then
+        ! exit if all points have reached outer boundary (left box)
         print*, 'All fan points have reached the outer boundary', iring
-        exitcondition = .true. !exit if all points have reached outer boundary (left box)
+        exitcondition = .true.
       endif
       
       if (ierror == 1) then
@@ -230,7 +232,7 @@ program ssfind
         exitcondition = .true.
       endif
       
-      !print*,'Checking at null', iring, nlines, inull
+      ! print*,'Checking at null', iring, nlines, inull
       if (iring < 50) then
         maxdist = 0.1d0*h0*slowdown!0.0075d0
       elseif (iring < 100) then
@@ -240,9 +242,9 @@ program ssfind
       endif
       nulldist = 1.4d0*h0*slowdown !0.6
       mindist = maxdist/3
-      !print*, iring, h0, nulldist, maxdist, mindist, nlines
+      ! print*, iring, h0, nulldist, maxdist, mindist, nlines
 
-      !remove points from ring if necessary
+      ! remove points from ring if necessary
       call remove_points(nlines,iring)
 
       allocate(nearnull(nlines))
@@ -251,7 +253,7 @@ program ssfind
       do iline = 1, nlines
         do inullchk = 1, nnulls
           if (signs(inullchk) == signs(inull)) cycle
-          if (dist(rnulls(:,inullchk), line1(:, iline)) < 0.75) then
+          if (dist(rnulls(:,inullchk), line1(:, iline)) < 2.5*nulldist) then
             !print*, 'close to null'
             nearnull(iline) = 1
             exit
@@ -259,7 +261,7 @@ program ssfind
         enddo
       enddo
       if (sum(nearnull) > 0) then
-        !print*, 'slowing down, adding points near null'
+        ! print*, 'slowing down, adding points near null'
         slowdown = 2d0
       endif
       !add points to ring if necessary
@@ -299,6 +301,7 @@ program ssfind
   enddo
 
   call system_clock(tstop, count_rate)
-  print*, 'TIME = ', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)" 
+  print*, 'TIME = ', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"
+  print*, 'Done!' 
 
 end program
