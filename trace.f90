@@ -46,18 +46,18 @@ contains
   !determines the optimal step length with which to integrate the function by.
     double precision :: h, hvec(3), mindist, s
     double precision, dimension(3) :: k1, k2, k3, k4, k5, k6
-    double precision, dimension(3) :: r, r0, rtest, y, z, dl
+    double precision, dimension(3) :: r, r0, rtest, y, z, dr
     
     !minimum physical distance corresponding to fraction of gridcell (h)
     !dl = sign(dble([1,1,1]),getdl(r))
     !print*, 'getdl', r
-    dl = getdl(r)
-    mindist = minval(dl)*h
+    dr = getdr(r)
+    mindist = minval(dr)*h
     
     !vector containing the grid's h for each direction
     !(so h for each direction is the same physical length, equal to mindist)
     !hvec = h*dl
-    hvec = mindist/dl
+    hvec = mindist/dr
     ! hvec = abs(h)*normalise(hvec)
 
     r0 = r
@@ -120,11 +120,11 @@ contains
 
   !********************************************************************************
 
-  function getdl(r)
+  function getdr(r)
     !outputs length of one gridcell in 'physical' length units (essentially (dx,dy,dz))
     double precision :: r(3), rcheck(3) !grid cell number
     double precision :: dx, dy, dz
-    double precision :: getdl(3)
+    double precision :: getdr(3)
     integer :: i, j, k
     double precision :: xc, yc, zc !x, y and z at the midpoint of the cell
 
@@ -145,19 +145,22 @@ contains
 
     if (coord_type == 1) then
       !cartesian coordinates
-      getdl(1) = dx
-      getdl(2) = dy
-      getdl(3) = dz
+      getdr = [dx, dy, dz]
+      ! getdl(1) = dx
+      ! getdl(2) = dy
+      ! getdl(3) = dz
     else if (coord_type == 2) then
       !spherical coordinates
-      getdl(1) = dx ! dr
-      getdl(2) = xc*dy ! r d(theta)
-      getdl(3) = xc*sin(yc)*dz ! r sin(theta) d(phi)
+      getdr = [dx, xc*dy, xc*sin(yc)*dz]
+      ! getdl(1) = dx ! dr
+      ! getdl(2) = xc*dy ! r d(theta)
+      ! getdl(3) = xc*sin(yc)*dz ! r sin(theta) d(phi)
     else if (coord_type == 3) then
       !cylindrical coordinates
-      getdl(1) = dx ! dR
-      getdl(2) = xc*dy ! R d(phi)
-      getdl(3) = dz ! dz
+      getdr = [dx, xc*dy, dz]
+      ! getdl(1) = dx ! dR
+      ! getdl(2) = xc*dy ! R d(phi)
+      ! getdl(3) = dz ! dz
     else
       print*, 'No coordinate system selected.'
       print*, 'Please select a valid one in params.f90'
