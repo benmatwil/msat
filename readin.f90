@@ -40,6 +40,16 @@ contains
 
   end subroutine
 
+  function gtr(r, g)
+    double precision :: r
+    double precision, allocatable :: g(:)
+    integer :: ig
+
+    ig = floor(r)
+    gtr = g(ig) + (r - ig)*(g(ig+1) - g(ig))
+
+  end function
+
 end module
 
 !********************************************************************************
@@ -49,8 +59,11 @@ program readin
   use params
   implicit none
 
-  integer*8 :: a, b, p
-  integer :: iring, inull, nrcount
+  integer*8 :: a, b, p, g
+  integer :: iring, inull, iline, nrcount
+  
+  integer :: nx, ny, nz
+  double precision, allocatable :: xg(:), yg(:), zg(:)
 
   integer :: nnulls, nullnum_f, nullnum_t
 
@@ -75,6 +88,13 @@ program readin
       print*, 'null position', inull, rnulls(:,inull)
     enddo
   close(10)
+
+  open(unit=9,file=defaultfilename,access='stream')
+    read(9), nx, ny, nz !number of vertices
+    allocate(xg(nx), yg(ny), zg(nz))
+    g = 3*4 + 3*nx*ny*nz*8 + 1
+    read(9, pos=g) xg, yg, zg
+  close(9)
 
   do inull = 1, nnulls
     write(fname,fmt) inull
@@ -116,17 +136,17 @@ program readin
         read(10, pos=a) association !read association for point number index in ring 1
         read(10, pos=p) r !read position of point index on ring iring
         if (iring == nring) then 
-          x(nring+1) = rnulls(1,nullnum_t)
-          y(nring+1) = rnulls(2,nullnum_t)
-          z(nring+1) = rnulls(3,nullnum_t)
+          x(nring+1) = gtr(rnulls(1,nullnum_t), xg)
+          y(nring+1) = gtr(rnulls(2,nullnum_t), yg)
+          z(nring+1) = gtr(rnulls(3,nullnum_t), zg)
           print*, 'End null, last point and start of separator'
           print*, x(nring+1), y(nring+1), z(nring+1)
           print*, r
         endif
         !write ring position vector into x, y and z
-        x(iring) = r(1)
-        y(iring) = r(2)
-        z(iring) = r(3)
+        x(iring) = gtr(r(1), xg)
+        y(iring) = gtr(r(2), yg)
+        z(iring) = gtr(r(3), zg)
         index = association
 
         if (iring == 1) print*, r
@@ -163,9 +183,11 @@ program readin
       read(10, pos=b) brk
       read(10, pos=p) ring
       
-      x = ring(1,:)
-      y = ring(2,:)
-      z = ring(3,:)
+      do iline = 1, nperring(iring)
+        x(iline) = gtr(ring(1,iline), xg)
+        y(iline) = gtr(ring(2,iline), yg)
+        z(iline) = gtr(ring(3,iline), zg)
+      enddo
 
       write(11) nperring(iring)
       write(11) x, y, z
