@@ -47,7 +47,7 @@ pro model_add_spines, oModel, frame, bgrid, xx, yy, zz
 
   print, 'Adding Spines'
   dx = abs(xx[1]-xx[0])
-  ro = 0.1*dx
+  ro = 1d-2*dx
 
   nulls = getnulls()
   for i = 0, n_elements(nulls)-1 do begin
@@ -59,7 +59,7 @@ pro model_add_spines, oModel, frame, bgrid, xx, yy, zz
       hmax = 0.5*dx
       epsilon = 1.0d-5
 
-      startpt = nulls[i].gridpos + dir*ro*nulls[i].spine
+      startpt = nulls[i].pos + dir*ro*nulls[i].spine
       print, "Starting spine line at", startpt
       line = fieldline3d(startpt,bgrid,xx,yy,zz,nulls[i].sign*h,hmin,hmax,epsilon,/oneway)
 
@@ -117,10 +117,17 @@ pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
       epsilon = 1.0d-5
 
       line = fieldline3d(startpt,bgrid,xx,yy,zz,h,hmin,hmax,epsilon)
-
-      !null = min((line[0,*]-nulls[i].gridpos[0])^2+(line[1,*]-nulls[i].gridpos[1])^2+(line[2,*]-nulls[i].gridpos[2])^2, minloc)
-      if nulls[i].sign gt 0 then line = line[*, 0:minloc] else line = line[*, minloc:-1]
-
+     
+      dist = (line[0,*]-nulls[i].pos[0])^2+(line[1,*]-nulls[i].pos[1])^2+(line[2,*]-nulls[i].pos[2])^2
+      imin = where(dist eq min(dist))
+      if nulls[i].sign gt 0 then begin
+        minloc = min(imin)
+        line = line[*, 0:minloc]
+      endif else begin
+        minloc = max(imin)
+        line = line[*, minloc:-1]
+      endelse
+      
       oModel -> add, obj_new("IDLgrPolyline",line[0,*],line[1,*],line[2,*],color=colour,thick=2)
     endfor
   endfor
@@ -134,7 +141,7 @@ pro model_add_separators,oModel,frame
    
   nulls = getnulls()
 
-  for null = 1, n_elements(nulls) do begin
+  for null = 1, 1 do begin
     seps = read_separators('output/sep' + string(null,'(I4.4)') + '.dat')
     
     if seps ne !null then begin
@@ -153,7 +160,7 @@ pro model_add_nulls,oModel,frame,xx,yy,zz
   
   for i = 0, n_elements(nulls)-1 do begin
     mesh_obj, 4, vert, poly, replicate(radius,21,21)
-    for j = 0, 2 do vert[j,*] = vert[j,*] + nulls[i].gridpos[j]
+    for j = 0, 2 do vert[j,*] = vert[j,*] + nulls[i].pos[j]
     if nulls[i].sign gt 0 then colour = [255,0,0] else begin
       if nulls[i].sign lt 0 then colour = [0,0,255] else colour = [0,255,0]
     endelse
@@ -172,8 +179,7 @@ pro model_add_box,oModel,box
   line[*,1] = line[*,1]*(box[1,1] - box[1,0]) + box[1,0]
   line[*,2] = line[*,2]*(box[2,1] - box[2,0]) + box[2,0]
   
-  oModel -> add,obj_new('IDLgrPolyline',line[*,0],line[*,1],line[*,2], $
-    color=[0,0,0])
+  oModel -> add,obj_new('IDLgrPolyline',line[*,0],line[*,1],line[*,2],color=[0,0,0])
 end
 
 function mk_model_mag_sep,fname,nulls=nulls,separators=separators,$
@@ -202,11 +208,6 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
   readu, lun, xx, yy, zz
   close, lun
   free_lun, lun
-  
-  print,'NOTE: HARDWIRED TO USE GRIDCELL COORDINATES'
-  xx = dindgen(nx)+1
-  yy = dindgen(ny)+1
-  zz = dindgen(nz)+1
   
   box = dblarr(3,2)
   box[*,0] = [min(xx),min(yy),min(zz)] 
