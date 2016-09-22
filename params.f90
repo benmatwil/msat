@@ -7,6 +7,7 @@ module params
   !data file containing the magnetic field data
   character (len=100), parameter :: defaultfilename = 'data/magfield.dat'
   character (len=100) :: filename, arg
+  integer :: icommand
 
   !nullfinder parameters
   double precision, parameter :: zero = 1.d-10 !what the code treats as zero
@@ -16,7 +17,7 @@ module params
   double precision, parameter :: rsphere = 1d-4 !radius of sphere which the dot products are calculated on
 
   !ssfind parameters
-  integer, parameter :: ringsmax = 6000 !maximum # of rings
+  integer, parameter :: ringsmax = 10000 !maximum # of rings
   integer, parameter :: pointsmax = 100000 !maximum number of points in ring
   double precision, parameter :: tol = 1.d-5 !tolerance of rkf45 scheme
   double precision, parameter :: stepmin = 0.0003 !minimum step length

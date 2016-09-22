@@ -20,7 +20,7 @@ program ssfind
   double precision :: h, h0
   double precision :: slowdown
 
-  integer :: iring, iline, inull, i, inullchk
+  integer :: iring, iline, inull, inullchk
 
   ! null parameters
   integer :: sign
@@ -42,8 +42,8 @@ program ssfind
 
   filename = defaultfilename
   if (command_argument_count() > 0) then
-    do i = 1, command_argument_count()
-      call get_command_argument(i,arg)
+    do icommand = 1, command_argument_count()
+      call get_command_argument(icommand,arg)
       if (arg(1:5) == 'data=') then
         filename = trim(arg(6:))
       endif

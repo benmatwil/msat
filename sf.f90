@@ -16,7 +16,7 @@ program sf_converge
   integer :: sign, warning
   double precision, dimension(3) :: spine, fan
 
-  integer :: i
+  integer :: inull
   
   print*,'#######################################################################'
   print*,'#                             Spinefinder                             #'
@@ -28,16 +28,16 @@ program sf_converge
   read(10) nnulls
     allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),warnings(nnulls))
 
-    do i = 1,nnulls
-      read(10) rnulls(:,i)
+    do inull = 1,nnulls
+      read(10) rnulls(:,inull)
     enddo
   close(10)
 
   nullstart = 1
   nullend = nnulls
   if (command_argument_count() > 0) then 
-    do i = 1, command_argument_count()
-      call get_command_argument(i,arg)
+    do icommand = 1, command_argument_count()
+      call get_command_argument(icommand,arg)
       if (arg(1:2) == 'n=') then
         arg = arg(3:)
         read(arg,*) nullstart
@@ -49,8 +49,8 @@ program sf_converge
 
   filename = defaultfilename
   if (command_argument_count() > 0) then
-    do i = 1, command_argument_count()
-      call get_command_argument(i,arg)
+    do icommand = 1, command_argument_count()
+      call get_command_argument(icommand,arg)
       if (arg(1:5) == 'data=') then
         filename = trim(arg(6:))
       endif
@@ -69,16 +69,16 @@ program sf_converge
   print*, '-----------------------------------------------------------------------------'
 
   !now loop over each null and characterise
-  do i = nullstart, nullend!1, nnulls
-    print*, 'Evaluating null', i,' of', nnulls
-    rnull = rnulls(:,i)
+  do inull = nullstart, nullend!1, nnulls
+    print*, 'Evaluating null', inull,' of', nnulls
+    rnull = rnulls(:,inull)
     
     call get_properties(sign,spine,fan,warning,savedata)
     
-    signs(i) = sign
-    spines(:,i) = spine
-    fans(:,i) = fan
-    warnings(i) = warning
+    signs(inull) = sign
+    spines(:,inull) = spine
+    fans(:,inull) = fan
+    warnings(inull) = warning
     
     print*, ''
     print*, '-----------------------------------------------------------------------------'
@@ -100,11 +100,11 @@ program sf_converge
   pcount = 0
   ucount = 0
   ncount = 0
-  do i = 1, nnulls
-    print*, i, signs(i), warnings(i)
-    if (signs(i) .eq. 1) pcount = pcount+1
-    if (signs(i) .eq. -1) ncount = ncount+1
-    if (signs(i) .eq. 0) ucount = ucount+1
+  do inull = 1, nnulls
+    print*, inull, signs(inull), warnings(inull)
+    if (signs(inull) .eq. 1) pcount = pcount+1
+    if (signs(inull) .eq. -1) ncount = ncount+1
+    if (signs(inull) .eq. 0) ucount = ucount+1
   enddo
 
   print*, 'Total number of nulls:', nnulls
