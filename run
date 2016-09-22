@@ -12,7 +12,7 @@ if ($? == 0) then
   nf $a1
   sf $a1
   ssf $a1
-  readin
+  readin $a1
 endif
 
 #foreach x ...

@@ -89,12 +89,23 @@ program readin
     enddo
   close(10)
 
-  open(unit=9,file=defaultfilename,access='stream')
+  filename = defaultfilename
+  if (command_argument_count() > 0) then
+    do icommand = 1, command_argument_count()
+      call get_command_argument(icommand,arg)
+      if (arg(1:5) == 'data=') then
+        filename = trim(arg(6:))
+      endif
+    enddo
+  endif
+
+  open(unit=9,file=filename,access='stream')
     read(9), nx, ny, nz !number of vertices
     allocate(xg(nx), yg(ny), zg(nz))
-    g = 3*4 + 3*nx*ny*nz*8 + 1
+    g = int8(3)*int8(4) + int8(3)*int8(nx)*int8(ny)*int8(nz)*int8(8) + int8(1)
     read(9, pos=g) xg, yg, zg
   close(9)
+  print*, filename
 
   do inull = 1, nnulls
     write(fname,fmt) inull
@@ -135,7 +146,16 @@ program readin
 
         read(10, pos=a) association !read association for point number index in ring 1
         read(10, pos=p) r !read position of point index on ring iring
-        if (iring == nring) then 
+        if (iring == nring) then
+          print*, rnulls(:,nullnum_t)
+          print*, shape(xg), shape(yg), shape(zg)
+          print*, g
+          ! print*, xg
+          ! print*, '----'
+          ! print*, yg
+          ! print*, '----'
+          ! print*, zg
+          ! stop
           x(nring+1) = gtr(rnulls(1,nullnum_t), xg)
           y(nring+1) = gtr(rnulls(2,nullnum_t), yg)
           z(nring+1) = gtr(rnulls(3,nullnum_t), zg)
