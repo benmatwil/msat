@@ -1,4 +1,4 @@
-function getnulls
+function read_nulls
 
   openr, null, 'output/null.dat', /f77_unformatted, /get_lun
   nnulls = 0L

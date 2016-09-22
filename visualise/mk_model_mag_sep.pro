@@ -1,7 +1,7 @@
 pro model_add_sepsurf,oModel,frame
   
   print, 'Adding Separatrix surface rings'
-  nulls = getnulls()
+  nulls = read_nulls()
 
   for i = 0, n_elements(nulls)-1 do begin
     if nulls[i].sign gt 0 then colour = [255,128,128] else begin
@@ -49,7 +49,7 @@ pro model_add_spines, oModel, frame, bgrid, xx, yy, zz
   dx = abs(xx[1]-xx[0])
   ro = 1d-2*dx
 
-  nulls = getnulls()
+  nulls = read_nulls()
   for i = 0, n_elements(nulls)-1 do begin
     if nulls[i].sign gt 0 then col = [250,0,0] else col = [0,0,250]
     foreach dir, [1, -1] do begin
@@ -75,7 +75,7 @@ pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
   mxline = 2000
   ro = 0.1*dx   
 
-  nulls = getnulls()
+  nulls = read_nulls()
 
   pp = where(nulls.sign ge 0, npp)
   nn = where(nulls.sign le 0, nnn)
@@ -139,7 +139,7 @@ pro model_add_separators,oModel,frame
 
   print, 'Adding separators'
    
-  nulls = getnulls()
+  nulls = read_nulls()
 
   for null = 1, 1 do begin
     seps = read_separators('output/sep' + string(null,'(I4.4)') + '.dat')
@@ -156,7 +156,7 @@ end
 pro model_add_nulls,oModel,frame,xx,yy,zz
 
   radius = min([xx[-1]-xx[0],yy[-1]-yy[0],zz[-1]-zz[0]])/40
-  nulls = getnulls()
+  nulls = read_nulls()
   
   for i = 0, n_elements(nulls)-1 do begin
     mesh_obj, 4, vert, poly, replicate(radius,21,21)
