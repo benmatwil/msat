@@ -111,10 +111,10 @@ contains
 
     h = h*s
 
-    !if (modulus(r-r0) < 0.1d0*h) then
-      !print*, 'trace failure',modulus(r-r0),h
-      !stop
-    !endif
+    ! if (modulus(r-r0) < 0.1d0*h .and. .not. outedge(r)) then
+    !   print*, 'trace failure',modulus(r-r0),h
+    !   stop
+    ! endif
 
   end subroutine
 
