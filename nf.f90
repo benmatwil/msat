@@ -71,6 +71,8 @@ program nullfinder
 
   close(10)
 
+  print*, zgrid(501)-zgrid(500), zgrid(500), zgrid(501)
+
   print*, 'Done!'
   print*, ''
   print*, '-----------------------------------------------------------------------'

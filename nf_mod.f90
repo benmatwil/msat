@@ -1,8 +1,8 @@
 !module for nullfinder
 module nf_mod
-use params
+  use params
 
-contains
+  contains
 
   subroutine bilin_test(cbx,cby,cbz,inull)
     !tests surface of cube using bilinear method
@@ -24,11 +24,11 @@ contains
     integer, dimension(3) :: test3
     !test is an array where the first index refers to the face number (1:6) and the second index is follows:
     !1- x-y intersection (1/0)
-    !2- sign of z at this intersection (-1/1 /10 if null on face)
+    !2- sign of z at this intersection (-1/1 /100 if null on face)
     !3- xz intersection (1/0)
-    !4- sign of y on this intersection (-1/1 /10 if null on face)
+    !4- sign of y on this intersection (-1/1 /100 if null on face)
     !5- yz intersection (1/0)
-    !6- sign on x on this inersection (-1/1 /10 if null on face)
+    !6- sign on x on this inersection (-1/1 /100 if null on face)
 
     inull = 0 !integer variable defining null. 1=null, 0=no null
     test = 0 !set test array to zero
@@ -157,7 +157,7 @@ contains
     if (sum(test3) == 3) inull = 1 !we have a null (in the cell)
 
     ! check for null on surface of cell
-    if (sum(test(:,2)) > 50 .or. sum(test(:,4)) > 50 .or. sum(test(:,6)) > 50) then
+    if (sum(test(:,2)) > 10 .or. sum(test(:,4)) > 10 .or. sum(test(:,6)) > 10) then
       !print*, 'NULL ON SURFACE'
       inull = 1
     endif
@@ -169,7 +169,17 @@ contains
       inull = 1
     endif
 
+    print*, 'test1'
+    print*, test
+    print*, 'test2'
+    print*, test2
+    print*, 'test3'
+    print*, test3
+
+
   end
+
+  !********************************************************************************
 
   logical function zeropoint(a,b)
     !Checks if there is the possibility that there is a zero on the faces a and b. If not, then there cannot be a crossing of zeroes on these faces.
@@ -209,6 +219,7 @@ contains
 
   end
 
+  !********************************************************************************
 
   function blankface(a,b,c)
     !determines if the faces a, b and c are all zero. If so, return .false.
@@ -229,6 +240,7 @@ contains
 
   end
 
+  !********************************************************************************
 
   logical function check(x,y)
     !checks of x and y are between 0 and 1
@@ -237,21 +249,20 @@ contains
     check = (x >= 0.) .and. (x <= 1.) .and. (y >= 0.) .and. (y <= 1.)
   end
 
-
-
+  !********************************************************************************
 
   subroutine face_solve(facex,facey,facez,cross,sign)
     !tests if the zeroes on facex and facey cross, and if so, what the sign of facez is at the crossing point.
     !Uses the Method described in Haynes et al. 2007
 
     implicit none
-    double precision, dimension(2,2) :: facex,facey,facez
+    double precision, dimension(2,2) :: facex, facey, facez
     integer :: cross, sign
     double precision :: a1, b1, c1, d1 !bilinear coefficients (facex)
     double precision :: a2, b2, c2, d2 !bilinear coefficients (facey)
-    double precision :: a,b,c !quadratic coefficients ax^2+bx+c=0
+    double precision :: a, b, c !quadratic coefficients ax^2+bx+c=0
 
-    double precision :: x1,x2,y1,y2
+    double precision :: x1, x2, y1, y2
     double precision :: det
 
     double precision :: zcomp
@@ -275,36 +286,36 @@ contains
       c = a1*c2 - a2*c1
 
     !determinant of quadratic
-      det = b*b - 4.d0*a*c
-
-      if (det >= 0.) then !there is a solution
+      det = b**2 - 4d0*a*c
+print*, det, a, b
+      if (det >= 0) then !there is a solution
         if (abs(a) < zero) then !have to solve linear
-          if (b == 0.) then !no solution exists
-            x1 = -1.
-            y1 = -1.
+          if (b == 0d0) then !no solution exists
+            x1 = -1d0
+            y1 = -1d0
           else !solution exists
             x1 = -c/b
-            y1 = -1.*(a1 + b1*x1)/(c1 + d1*x1)
-            x2 = -1.
-            y2= - 1.
+            y1 = -1d0*(a1 + b1*x1)/(c1 + d1*x1)
+            x2 = -1d0
+            y2 = -1d0
           endif
         else !have to solve quadratic
-          if (det == 0.) then !one solution
-            x1 = -b/(2.*a)
-            y1 = -1.*(a1 + b1*x1)/(c1 + d1*x1)
-            x2 = -1.
-            y2 = -1.
+          if (det == 0d0) then !one solution
+            x1 = -b/(2d0*a)
+            y1 = -1d0*(a1 + b1*x1)/(c1 + d1*x1)
+            x2 = -1d0
+            y2 = -1d0
           else !two solutions
-            x1 = -b/(2*a) + sqrt(det)/(2.*a)
-            y1 = -1.*(a1 + b1*x1)/(c1 + d1*x1)
+            x1 = -b/(2d0*a) + sqrt(det)/(2d0*a)
+            y1 = -1d0*(a1 + b1*x1)/(c1 + d1*x1)
 
-            x2 = -b/(2*a) - sqrt(det)/(2.*a)
-            y2 = -1.*(a1 + b1*x2)/(c1 + d1*x2)
+            x2 = -b/(2d0*a) - sqrt(det)/(2d0*a)
+            y2 = -1d0*(a1 + b1*x2)/(c1 + d1*x2)
           endif
         endif
 
-        sign=0
-        cross=0
+        sign = 0
+        cross = 0
 
         if (check(x1, y1)) then !if x and y are on face (between 0 and 1)
           cross = cross + 1
@@ -342,7 +353,7 @@ contains
 
   end subroutine
 
-
+  !********************************************************************************
 
   integer function edge_check(facex,facey,facez)
     !check for null along edges of a cell face
@@ -381,6 +392,7 @@ contains
 
   end
 
+  !********************************************************************************
 
   integer function line_check(linex,liney,linez)
     !checks if null lies on an edge
@@ -408,6 +420,7 @@ contains
 
   end
 
+  !********************************************************************************
 
   double precision function linear(x,line)
     !linear interpolation of two values
@@ -417,6 +430,7 @@ contains
 
   end
 
+  !********************************************************************************
 
   double precision function bilinear_cell(x,y,square)
     implicit none
@@ -438,6 +452,7 @@ contains
     bilinear_cell = y1*(1-y) + y2*y
   end
 
+  !********************************************************************************
 
   double precision function trilinear_cell(x, y ,z, cube)
     implicit none
@@ -464,6 +479,8 @@ contains
 
     trilinear_cell = (1-z)*f1 + z*f2
   end
+
+  !********************************************************************************
 
   subroutine newton_raphson(cubex,cubey,cubez,x,y,z,ierror)
     !attempts to find null within cell using Newton-Raphson
@@ -519,6 +536,7 @@ contains
     enddo
   end
 
+  !********************************************************************************
 
   integer function switch(cube)
     !determines whether all the vertices of the cube have the same sign or not
@@ -554,6 +572,7 @@ contains
 
   end function
 
+  !********************************************************************************
 
   subroutine subgrid(bx,by,bz,dx,x,y,z,ierror)
     !Finds null within gridcell by subdividing it into smaller cells, and using the bilinear method on these cells. This is repeated until the required accuracy is achieved
@@ -639,8 +658,7 @@ contains
     enddo outer
   end
 
-
-
+  !********************************************************************************
 
   subroutine brute_force(bx,by,bz,x,y,z)
   !finds a null in a cell by brite force. Namely it subdivides the cell into 10x10x10 subcells, and finds the subcell with the minimum value of |B|. This is continued until the required accuracy (sig_figs) is achieved.
@@ -723,6 +741,7 @@ contains
 
   end
 
+  !********************************************************************************
 
   subroutine remove_element(x,index)
     !removes element number index from an array
@@ -746,6 +765,7 @@ contains
 
   end
 
+  !********************************************************************************
 
   subroutine normalise(a,b,c)
     double precision, dimension(2,2,2) :: a, b, c
@@ -772,6 +792,7 @@ contains
     div = bbx(2) - bbx(1) + bby(2) - bby(1) + bbz(2) - bbz(1)
   end
 
+  !********************************************************************************
 
   subroutine remove_duplicates(x,y,z,n,xp,yp,zp)
     !removes duplicate nulls (nulls closer than 0.01 gridcells)
