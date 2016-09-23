@@ -1,11 +1,13 @@
-pro model_add_sepsurf,oModel,frame
-  
-  print, 'Adding Separatrix surface rings'
-  nulls = read_nulls()
+common shared_var, bgrid, xx, yy, zz, oModel, frame, null, ds
 
-  for i = 0, n_elements(nulls)-1 do begin
-    if nulls[i].sign gt 0 then colour = [255,128,128] else begin
-      if nulls[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
+pro model_add_sepsurf
+  common shared_var
+
+  print, 'Adding Separatrix surface rings'
+
+  for i = 0, n_elements(null)-1 do begin
+    if null[i].sign gt 0 then colour = [255,128,128] else begin
+      if null[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
     endelse
     
     file = 'output/ringidl' + string(i+1,'(I4.4)') + '.dat'
@@ -37,52 +39,49 @@ pro model_add_sepsurf,oModel,frame
     endwhile
      
     close,fan
+    free_lun,fan
     
   endfor
-  
-  free_lun,fan
+
 end
 
-pro model_add_spines, oModel, frame, bgrid, xx, yy, zz
+pro model_add_spines
+  common shared_var
 
   print, 'Adding Spines'
-  dx = abs(xx[1]-xx[0])
-  ro = 1d-2*dx
+  ro = 1d-2*ds
 
-  nulls = read_nulls()
-  for i = 0, n_elements(nulls)-1 do begin
-    if nulls[i].sign gt 0 then col = [250,0,0] else col = [0,0,250]
+  for i = 0, n_elements(null)-1 do begin
+    if null[i].sign gt 0 then col = [250,0,0] else col = [0,0,250]
     foreach dir, [1, -1] do begin
       
-      h = 0.01*dx
-      hmin = 0.001*dx
-      hmax = 0.5*dx
+      h = 0.01*ds
+      hmin = 0.001*ds
+      hmax = 0.5*ds
       epsilon = 1.0d-5
 
-      startpt = nulls[i].pos + dir*ro*nulls[i].spine
+      startpt = null[i].pos + dir*ro*null[i].spine
       print, "Starting spine line at", startpt
-      line = fieldline3d(startpt,bgrid,xx,yy,zz,nulls[i].sign*h,hmin,hmax,epsilon,/oneway)
+      line = fieldline3d(startpt,bgrid,xx,yy,zz,null[i].sign*h,hmin,hmax,epsilon,/oneway)
 
       oModel -> add, obj_new("IDLgrPolyline",line[0,*],line[1,*],line[2,*],color=col,thick=4)
     endforeach
   endfor
 end
 
-pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
+pro model_add_fanlines
+  common shared_var
 
   print, 'Adding Separatrix surface field lines'
-  dx = abs(xx[1]-xx[0])
   mxline = 2000
-  ro = 0.1*dx   
+  ro = 0.1*ds
 
-  nulls = read_nulls()
+  pp = where(null.sign ge 0, npp)
+  nn = where(null.sign le 0, nnn)
 
-  pp = where(nulls.sign ge 0, npp)
-  nn = where(nulls.sign le 0, nnn)
-
-  for i = 0, n_elements(nulls)-1 do begin
-    if nulls[i].sign gt 0 then colour = [255,128,128] else begin
-      if nulls[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
+  for i = 0, n_elements(null)-1 do begin
+    if null[i].sign gt 0 then colour = [255,128,128] else begin
+      if null[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
     endelse
 
     file = 'output/ringidl' + string(i+1,'(I4.4)') + '.dat'
@@ -111,16 +110,16 @@ pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
     for k = 0, n-2, skip do begin
       startpt = [xf[k],yf[k],zf[k]]
 
-      h = 0.01*dx
-      hmin = 0.001*dx
-      hmax = 0.5*dx
+      h = 0.01*ds
+      hmin = 0.001*ds
+      hmax = 0.5*ds
       epsilon = 1.0d-5
 
       line = fieldline3d(startpt,bgrid,xx,yy,zz,h,hmin,hmax,epsilon)
      
-      dist = (line[0,*]-nulls[i].pos[0])^2+(line[1,*]-nulls[i].pos[1])^2+(line[2,*]-nulls[i].pos[2])^2
+      dist = (line[0,*]-null[i].pos[0])^2+(line[1,*]-null[i].pos[1])^2+(line[2,*]-null[i].pos[2])^2
       imin = where(dist eq min(dist))
-      if nulls[i].sign gt 0 then begin
+      if null[i].sign gt 0 then begin
         minloc = min(imin)
         line = line[*, 0:minloc]
       endif else begin
@@ -135,12 +134,11 @@ pro model_add_fanlines, oModel, frame, bgrid, xx, yy, zz
   free_lun,fan
 end
 
-pro model_add_separators,oModel,frame
+pro model_add_separators
+  common shared_var
 
   print, 'Adding separators'
    
-  nulls = read_nulls()
-
   for null = 1, 1 do begin
     seps = read_separators('output/sep' + string(null,'(I4.4)') + '.dat')
     
@@ -153,37 +151,47 @@ pro model_add_separators,oModel,frame
   endfor
 end
 
-pro model_add_nulls,oModel,frame,xx,yy,zz
+pro model_add_nulls
+  common shared_var
 
   radius = min([xx[-1]-xx[0],yy[-1]-yy[0],zz[-1]-zz[0]])/40
-  nulls = read_nulls()
   
-  for i = 0, n_elements(nulls)-1 do begin
+  for i = 0, n_elements(null)-1 do begin
     mesh_obj, 4, vert, poly, replicate(radius,21,21)
-    for j = 0, 2 do vert[j,*] = vert[j,*] + nulls[i].pos[j]
-    if nulls[i].sign gt 0 then colour = [255,0,0] else begin
-      if nulls[i].sign lt 0 then colour = [0,0,255] else colour = [0,255,0]
+    for j = 0, 2 do vert[j,*] = vert[j,*] + null[i].pos[j]
+    if null[i].sign gt 0 then colour = [255,0,0] else begin
+      if null[i].sign lt 0 then colour = [0,0,255] else colour = [0,255,0]
     endelse
     oModel -> add, obj_new("IDLgrPolygon",data=vert,polygons=poly,color=colour,/shading)
   endfor
   
 end
 
-pro model_add_box,oModel,box
+pro model_add_box
+  common shared_var
   
   print, "Adding box"
-  line = transpose([[0,0,0],[1,0,0],[1,0,1],[1,0,0],[1,1,0],[1,1,1],[1,1,0], $
-    [0,1,0],[0,1,1],[0,1,0],[0,0,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1],[0,0,1.]])
+  box = dblarr(3,2)
+  box[*,0] = [min(xx),min(yy),min(zz)] 
+  box[*,1] = [max(xx),max(yy),max(zz)]
+  line = double(transpose([[0,0,0],[1,0,0],[1,0,1],[1,0,0],[1,1,0],[1,1,1],[1,1,0], $
+    [0,1,0],[0,1,1],[0,1,0],[0,0,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1],[0,0,1]]))
   
   line[*,0] = line[*,0]*(box[0,1] - box[0,0]) + box[0,0]
   line[*,1] = line[*,1]*(box[1,1] - box[1,0]) + box[1,0]
   line[*,2] = line[*,2]*(box[2,1] - box[2,0]) + box[2,0]
+
+  dist = min([n_elements(xx), n_elements(yy), n_elements(zz)])*ds/5
+  oModel -> add, obj_new('idlgrtext', 'x', locations=[box[0,0]+dist,box[1,0],box[2,0]], /onglass)
+  oModel -> add, obj_new('idlgrtext', 'y', locations=[box[0,0],box[1,0]+dist,box[2,0]], /onglass)
+  oModel -> add, obj_new('idlgrtext', 'z', locations=[box[0,0],box[1,0],box[2,0]+dist], /onglass)
   
-  oModel -> add,obj_new('IDLgrPolyline',line[*,0],line[*,1],line[*,2],color=[0,0,0])
+  oModel -> add, obj_new('IDLgrPolyline',line[*,0],line[*,1],line[*,2],color=[0,0,0])
 end
 
 function mk_model_mag_sep,fname,nulls=nulls,separators=separators,$
 sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
+  common shared_var
 
   get_lun, lun
   
@@ -208,20 +216,18 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
   readu, lun, xx, yy, zz
   close, lun
   free_lun, lun
+
+  ds = min([min(xx[1:-1]-xx[0:-2]), min(yy[1:-1]-yy[0:-2]), min(zz[1:-1]-zz[0:-2])])
   
-  box = dblarr(3,2)
-  box[*,0] = [min(xx),min(yy),min(zz)] 
-  box[*,1] = [max(xx),max(yy),max(zz)]
-  
-  print, nx, ny, nz
+  null = read_nulls()
 
   oModel = obj_new("IDLgrModel")
-  if keyword_set(box)        then model_add_box,oModel,box
-  if keyword_set(nulls)      then model_add_nulls,oModel,frame,xx,yy,zz
-  if keyword_set(fanlines)   then model_add_fanlines,oModel,frame,bgrid,xx,yy,zz
-  if keyword_set(spines)     then model_add_spines,oModel,frame,bgrid,xx,yy,zz
-  if keyword_set(sepsurf)    then model_add_sepsurf,oModel,frame
-  if keyword_set(separators) then model_add_separators,oModel,frame
+  if keyword_set(box)        then model_add_box
+  if keyword_set(nulls)      then model_add_nulls
+  if keyword_set(fanlines)   then model_add_fanlines
+  if keyword_set(spines)     then model_add_spines
+  if keyword_set(sepsurf)    then model_add_sepsurf
+  if keyword_set(separators) then model_add_separators
   
   return, oModel
 end
