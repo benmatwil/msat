@@ -138,8 +138,8 @@ pro model_add_separators
   common shared_var
 
   print, 'Adding separators'
-   
-  for null = 1, 1 do begin
+
+  for null = 0, n_elements(null)-1 do begin
     seps = read_separators('output/sep' + string(null,'(I4.4)') + '.dat')
     
     if seps ne !null then begin
@@ -154,7 +154,7 @@ end
 pro model_add_nulls
   common shared_var
 
-  radius = min([xx[-1]-xx[0],yy[-1]-yy[0],zz[-1]-zz[0]])/40
+  radius = min([xx[-1]-xx[0],yy[-1]-yy[0],zz[-1]-zz[0]])/200
   
   for i = 0, n_elements(null)-1 do begin
     mesh_obj, 4, vert, poly, replicate(radius,21,21)
