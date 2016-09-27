@@ -11,7 +11,7 @@ module params
 
   !nullfinder parameters
   double precision, parameter :: zero = 1.d-10 !what the code treats as zero
-  integer, parameter :: sig_figs = 6 !the number of significant figures of accuracy required for the null
+  integer, parameter :: sig_figs = 8 !the number of significant figures of accuracy required for the null
 
   !spinefinder parameters
   double precision, parameter :: rsphere = 1d-4 !radius of sphere which the dot products are calculated on

@@ -35,13 +35,6 @@ program nullfinder
   print*,'#                      (Written by G P S Gibb)                        #'
   print*,'#######################################################################'
 
-  !open file
-  !file contains:
-  ! nx, ny, nz (integers)
-  ! bx(nx,ny,nz) (double precision)
-  ! by(nx,ny,nz) (double precision)
-  ! bz(nx,ny,nz) (double precision)
-
   filename = defaultfilename
   if (command_argument_count() > 0) then
     do icommand = 1, command_argument_count()
@@ -178,9 +171,9 @@ program nullfinder
 
           call normalise(cbx, cby, cbz)
 
-          x = 0.
-          y = 0.
-          z = 0.
+          x = 0d0
+          y = 0d0
+          z = 0d0
 
           dx = 1.
           !Print*, 'Attempting to use trilinear method within cell...'
@@ -194,42 +187,31 @@ program nullfinder
             x = x + 5.*dx
             y = y + 5.*dx
             z = z + 5.*dx
-          else
-            !print*,'Success!'
-            write(*,dblfmt) 'Null at ', i+x, j+y, k+z, ' in gridcell coordinates'
-            !print*,'Gridcell Coordinates'
-          endif
+            ! print*, 'Attemptig to use Newton Raphson...'
+            ! call newton_raphson(cbx, cby, cbz, x, y, z,ierror)
+            ! if (ierror .eq. 0) then
+            !   Print*, 'Success!'
+            !   print*, 'Null at',i+x,j+y,k+z
+            ! endif
 
-  !        if (ierror .eq. 1) then
-  !          print*, 'Attemptig to use Newton Raphson...'
-  !          call newton_raphson(cbx, cby, cbz, x, y, z,ierror)
-  !          if (ierror .eq. 0) then
-  !            Print*, 'Success!'
-  !            print*, 'Null at',i+x,j+y,k+z
-  !          endif
-  !        endif
-
-          if (ierror == 1) then
             print*, "Don't believe this null. Removing from list"
             nnulls = nnulls-1
 
-            !print*, 'Attempting to use brute force...'
-            !call brute_force(cbx,cby,cbz,x,y,z)
-            !write(*,dblfmt)'Null at ',i+x,j+y,k+z,' in gridcell coordinates'
+            ! print*, 'Attempting to use brute force...'
+            ! call brute_force(cbx,cby,cbz,x,y,z)
+            ! write(*,dblfmt)'Null at ',i+x,j+y,k+z,' in gridcell coordinates'
           else
+            write(*,dblfmt) 'Null at ', i+x, j+y, k+z, ' in gridcell coordinates'
+            write(*,dblfmt) 'Null at ', linear(x, xgrid(i:i+1)), linear(y, ygrid(j:j+1)), linear(z, zgrid(k:k+1)), ' in real units'
 
             !add this null to the list of nulls (in gridcell coordinates)
             call add_element(xs, x+i)
             call add_element(ys, y+j)
             call add_element(zs, z+k)
-
-            write(*,dblfmt) 'Null at ', linear(x, xgrid(i:i+1)), linear(y, ygrid(j:j+1)), linear(z, zgrid(k:k+1)), ' in real units'
-
             !add this null to the lost of nulls (in 'real' units)
             call add_element(xp, linear(x, xgrid(i:i+1)))
             call add_element(yp, linear(y, ygrid(j:j+1)))
             call add_element(zp, linear(z, zgrid(k:k+1)))
-
 
             cbx = bx(i:i+1, j:j+1, k:k+1)
             cby = by(i:i+1, j:j+1, k:k+1)
