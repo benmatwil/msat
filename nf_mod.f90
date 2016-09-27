@@ -119,7 +119,6 @@ module nf_mod
 
     edge = edge + edge_check(facex, facey, facez)
 
-
     !face 6: top face
     facex = cbx(:,:,2)
     facey = cby(:,:,2)
@@ -169,12 +168,12 @@ module nf_mod
       inull = 1
     endif
 
-    print*, 'test1'
-    print*, test
-    print*, 'test2'
-    print*, test2
-    print*, 'test3'
-    print*, test3
+    ! print*, 'test1'
+    ! print*, test
+    ! print*, 'test2'
+    ! print*, test2
+    ! print*, 'test3'
+    ! print*, test3
 
 
   end
@@ -227,15 +226,15 @@ module nf_mod
     double precision :: atot, btot,ctot
     logical :: blankface
 
-    atot=sum(abs(a))
-    btot=sum(abs(b))
-    ctot=sum(abs(c))
+    atot = sum(abs(a))
+    btot = sum(abs(b))
+    ctot = sum(abs(c))
 
     blankface = .true.
 
     if (atot + btot + ctot <= zero*12.d0) then
       !print*, 'BLANK FACE'
-      blankface =.false.
+      blankface = .false.
     endif
 
   end
@@ -246,7 +245,7 @@ module nf_mod
     !checks of x and y are between 0 and 1
     double precision :: x, y
 
-    check = (x >= 0.) .and. (x <= 1.) .and. (y >= 0.) .and. (y <= 1.)
+    check = (x >= 0d0) .and. (x <= 1d0) .and. (y >= 0d0) .and. (y <= 1d0)
   end
 
   !********************************************************************************
@@ -257,12 +256,12 @@ module nf_mod
 
     implicit none
     double precision, dimension(2,2) :: facex, facey, facez
-    integer :: cross, sign
+    integer :: cross, sign, i, nsol = 0
     double precision :: a1, b1, c1, d1 !bilinear coefficients (facex)
     double precision :: a2, b2, c2, d2 !bilinear coefficients (facey)
     double precision :: a, b, c !quadratic coefficients ax^2+bx+c=0
 
-    double precision :: x1, x2, y1, y2
+    double precision :: x1 = -1d0, x2 = -1d0, y1 = -1d0, y2 = -1d0
     double precision :: det
 
     double precision :: zcomp
@@ -285,35 +284,46 @@ module nf_mod
       b = (a1*d2 - a2*d1) + (b1*c2 - c1*b2)
       c = a1*c2 - a2*c1
 
-    !determinant of quadratic
+      !determinant of quadratic
       det = b**2 - 4d0*a*c
-print*, det, a, b
+
       if (det >= 0) then !there is a solution
         if (abs(a) < zero) then !have to solve linear
-          if (b == 0d0) then !no solution exists
-            x1 = -1d0
-            y1 = -1d0
-          else !solution exists
-            x1 = -c/b
-            y1 = -1d0*(a1 + b1*x1)/(c1 + d1*x1)
-            x2 = -1d0
-            y2 = -1d0
-          endif
+          if (b /= 0d0) x1 = -c/b !solution exists
         else !have to solve quadratic
           if (det == 0d0) then !one solution
             x1 = -b/(2d0*a)
-            y1 = -1d0*(a1 + b1*x1)/(c1 + d1*x1)
-            x2 = -1d0
-            y2 = -1d0
           else !two solutions
             x1 = -b/(2d0*a) + sqrt(det)/(2d0*a)
-            y1 = -1d0*(a1 + b1*x1)/(c1 + d1*x1)
-
             x2 = -b/(2d0*a) - sqrt(det)/(2d0*a)
-            y2 = -1d0*(a1 + b1*x2)/(c1 + d1*x2)
           endif
         endif
+        if ((c1 == 0d0 .and. d1 == 0d0) .or. c1 + d1*x1 == 0d0) then
+          y1 = -(a2 + b2*x1)/(c2 + d2*x1)
+          if (x2 >= 0d0) y2 = -(a2 + b2*x2)/(c2 + d2*x2)
+        else
+          y1 = -(a1 + b1*x1)/(c1 + d1*x1)
+          if (x2 >= 0d0) y2 = -(a1 + b1*x2)/(c1 + d1*x2)
+        endif
+if (c1 == 0d0 .and. c2 == 0d0 .and. d1 == 0d0 .and. d2 == 0d0 .and. a /= 0d0 .and. b /= 0d0 .and. c /= 0d0) then
+print*, '--------------------------------------------------------------'
+  do i = 1, 2
+    print*, facex(:,i)
+  enddo
+  do i = 1, 2
+    print*, facey(:,i)
+  enddo
 
+  print*, ''
+  print*, det, a, b, c
+  print*, ''
+  print*, a1, b1, c1, d1
+  print*, a2, b2, c2, d2
+  print*, 'x1                        ', 'y1                          ', 'x2                         ', 'y2        '
+  print*, x1, y1, x2, y2
+  print*, 'c2 + d2*x1               ', 'c2 + d2*x2                 ', 'c1 + d1*x1                   ', 'c1 + d1*x2    '
+  print*, c2 + d2*x1, c2 + d2*x2, c1 + d1*x1, c1 + d1*x2
+endif
         sign = 0
         cross = 0
 
@@ -439,7 +449,6 @@ print*, det, a, b
     double precision :: y1, y2
 
     if (.not. check(x, y)) print*, 'bilinear error!'
-
 
     if (x > 1.) x = 1.
     if (x < 0.) x = 0.
