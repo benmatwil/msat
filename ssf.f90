@@ -197,7 +197,7 @@ program ssfind
       else
         h0 = 25d-2/slowdown
       endif
-      !OMP END SINGLE
+      !$OMP END SINGLE
 
       !$OMP DO private(r, h, out)
       do iline = 1, nlines ! loop over all points in ring (in parallel do)
