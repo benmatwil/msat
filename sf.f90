@@ -188,13 +188,12 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
           call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
           count = count + 1
         enddo
-        if (count < 100) then
-          if (angle >= 4d0) goto 101
+        if (count < 100 .and. angle < 4d0) then
           angle = angle + 1d0
           print*, 'Adjusting the initial points and starting again'
           cycle main
         endif
-101        if (modulus(rnewfw-roldfw) < accconv) flagfw = flagfw + 1
+        if (modulus(rnewfw-roldfw) < accconv) flagfw = flagfw + 1
         if (modulus(rnewbw-roldbw) < accconv) flagbw = flagbw + 1
         iconv = iphi+(itheta-1)*nphi
         rconvergefw(:,iconv) = normalise(rnewfw)
