@@ -131,7 +131,7 @@ program ssfind
     enddo
   endif
   
-  !$OMP PARALLEL private(iring, iline, inull, inullchk)
+  !$OMP PARALLEL private(iring, iline, inull)
 
   do inull = 1, nnulls ! loop over all nulls
     !$OMP SINGLE
@@ -188,8 +188,8 @@ program ssfind
         exit
       endif
 
+      !$OMP SINGLE
       allocate(endpoints(nlines), association(nlines))
-      STOP
       endpoints = 0
 
       if (iring < 50) then
@@ -197,8 +197,9 @@ program ssfind
       else
         h0 = 25d-2/slowdown
       endif
+      !OMP END SINGLE
 
-      !$OMP PARALLEL DO private(r,h)
+      !$OMP DO private(r, h, out)
       do iline = 1, nlines ! loop over all points in ring (in parallel do)
 
         r(:) = line1(:,iline)
@@ -219,7 +220,9 @@ program ssfind
         association(iline) = iline
 
       enddo
-      !$OMP END PARALLEL DO
+      !$OMP END DO
+
+      !$OMP SINGLE
 
       if (nlines > pointsmax) then
       ! exit if too many points on ring 
@@ -250,12 +253,20 @@ program ssfind
       mindist = maxdist/3
       ! print*, iring, h0, nulldist, maxdist, mindist, nlines
 
+      !$OMP END SINGLE
+      
       ! remove points from ring if necessary
       call remove_points(nlines,iring)
+
+      !$OMP SINGLE
 
       allocate(nearnull(nlines))
       nearnull = 0
       slowdown = 1d0
+
+      !$OMP END SINGLE
+
+      !$OMP DO private(inullchk)
       do iline = 1, nlines
         do inullchk = 1, nnulls
           if (signs(inullchk) == signs(inull)) cycle
@@ -266,16 +277,30 @@ program ssfind
           endif
         enddo
       enddo
+      !$OMP END DO
+
+      !$OMP SINGLE
+
       if (sum(nearnull) > 0) then
         ! print*, 'slowing down, adding points near null'
         slowdown = 2d0
       endif
+
+      !$OMP END SINGLE
+
       !add points to ring if necessary
       call add_points(nlines,iring)
+
+      !$OMP SINGLE
+      
       deallocate(nearnull)
+      
+      !$OMP END SINGLE
 
       !determine if any lines are separators
       call sep_detect(nlines,inull,iring)
+
+      !$OMP SINGLE
 
       nperring(iring) = nlines
       !Write ring and data to file separator????.dat
@@ -283,12 +308,16 @@ program ssfind
 
       deallocate(endpoints, association)
 
+      !$OMP END SINGLE
+
       if (exitcondition) then
         nrings = iring
         exit
       endif
 
     enddo
+
+    !$OMP SINGLE
 
     if (nrings == ringsmax) print*, "Reached maximum number of rings"
     
@@ -303,6 +332,8 @@ program ssfind
 
     deallocate(xs, ys, zs)
     deallocate(line1, line2, break)
+
+    !$OMP END SINGLE
 
   enddo
 
