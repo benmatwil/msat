@@ -170,6 +170,7 @@ program ssfind
     nperring = 0
     nperring(0) = nlines
     slowdown = 1d0
+    terror = 0
 
     write(20) nrings, 0, ringsmax+1
     write(20) nperring
@@ -227,7 +228,7 @@ program ssfind
         exitcondition = .true.
       endif
       
-      if (ierror == 1) then
+      if (terror == 1) then
         print*, 'Tracing has failed', iring
         exitcondition = .true.
       endif

@@ -14,8 +14,6 @@ double precision, allocatable, dimension(:,:) :: rnulls, rnullsalt, spines, fans
 integer , allocatable, dimension(:) :: signs
 integer :: nseps
 
-integer :: ierror
-
 contains
 
   function trilinear(r,b)

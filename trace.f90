@@ -12,6 +12,8 @@ double precision, parameter :: k61 = -8d0/27d0, k62 = 2d0, k63 = -3544d0/2565d0,
 double precision, parameter :: y1 = 25d0/216d0, y3 = 1408d0/2565d0, y4 = 2197d0/4101d0, y5 = -1d0/5d0
 double precision, parameter :: z1 = 16d0/135d0, z3 = 6656d0/12825d0, z4 = 28561d0/56430d0, z5 = -9d0/50d0,z6 = 2d0/55d0
 
+integer :: terror
+
 contains
 
   subroutine trace_line(r,sign,h)
@@ -31,9 +33,9 @@ contains
     enddo
     
     if (modulus(r-r0) < 0.1d0*stepdist .and. .not. outedge(r)) then
-      !print *,'field line not tracin',modulus(r-r0),stepdist, sign
-      !print*, r
-      ierror = 1
+      print *,'field line not tracin',modulus(r-r0),stepdist, sign
+      print*, r
+      terror = 1
     endif
 
   end
