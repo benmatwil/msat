@@ -15,7 +15,6 @@ program ssfind
   integer*8 :: tstart, tstop, count_rate !to time program
   integer :: nx, ny, nz !size of grid
 
-  ! position vector of null
   double precision :: r(3)
   double precision :: h, h0
   double precision :: slowdown
@@ -29,7 +28,7 @@ program ssfind
   double precision, allocatable, dimension(:) :: xs, ys, zs
 
   integer :: nlines
-  integer :: nrings, npoints
+  integer :: nrings
   integer :: nperring(0:ringsmax)
 
   logical :: exitcondition, out
@@ -132,7 +131,10 @@ program ssfind
     enddo
   endif
   
+  !$OMP PARALLEL private(iring, iline, inull, inullchk)
+
   do inull = 1, nnulls ! loop over all nulls
+    !$OMP SINGLE
     print*, ''
     print*, 'Null number', inull, 'of', nnulls
 
@@ -178,6 +180,8 @@ program ssfind
 
     exitcondition = .false.
 
+    !$OMP END SINGLE
+
     do iring = 1, ringsmax ! loop over number of rings we want
       if (sign .eq. 0) then ! skip null which is uncharacterised
         print*,'Null has zero sign'
@@ -185,6 +189,7 @@ program ssfind
       endif
 
       allocate(endpoints(nlines), association(nlines))
+      STOP
       endpoints = 0
 
       if (iring < 50) then
@@ -300,6 +305,8 @@ program ssfind
     deallocate(line1, line2, break)
 
   enddo
+
+  !$OMP END PARALLEL
 
   call system_clock(tstop, count_rate)
   print*, 'TIME = ', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"
