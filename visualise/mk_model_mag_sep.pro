@@ -1,11 +1,11 @@
-common shared_var, bgrid, xx, yy, zz, oModel, frame, null, ds
+common shared_var, bgrid, xx, yy, zz, oModel, frame, null, inull, ds
 
 pro model_add_sepsurf
   common shared_var
 
   print, 'Adding Separatrix surface rings'
 
-  for i = 0, n_elements(null)-1 do begin
+  foreach i, inull do begin
     if null[i].sign gt 0 then colour = [255,128,128] else begin
       if null[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
     endelse
@@ -41,7 +41,7 @@ pro model_add_sepsurf
     close,fan
     free_lun,fan
     
-  endfor
+  endforeach
 
 end
 
@@ -51,7 +51,7 @@ pro model_add_spines
   print, 'Adding Spines'
   ro = 1d-2*ds
 
-  for i = 0, n_elements(null)-1 do begin
+  foreach i, inull do begin
     if null[i].sign gt 0 then col = [250,0,0] else col = [0,0,250]
     foreach dir, [1, -1] do begin
       
@@ -66,7 +66,7 @@ pro model_add_spines
 
       oModel -> add, obj_new("IDLgrPolyline",line[0,*],line[1,*],line[2,*],color=col,thick=4)
     endforeach
-  endfor
+  endforeach
 end
 
 pro model_add_fanlines
@@ -79,7 +79,7 @@ pro model_add_fanlines
   pp = where(null.sign ge 0, npp)
   nn = where(null.sign le 0, nnn)
 
-  for i = 0, n_elements(null)-1 do begin
+  foreach i, inull do begin
     if null[i].sign gt 0 then colour = [255,128,128] else begin
       if null[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
     endelse
@@ -129,7 +129,7 @@ pro model_add_fanlines
       
       oModel -> add, obj_new("IDLgrPolyline",line[0,*],line[1,*],line[2,*],color=colour,thick=2)
     endfor
-  endfor
+  endforeach
 
   free_lun,fan
 end
@@ -139,8 +139,8 @@ pro model_add_separators
 
   print, 'Adding separators'
 
-  for null = 0, n_elements(null)-1 do begin
-    seps = read_separators('output/sep' + string(null,'(I4.4)') + '.dat')
+  foreach i, inull do begin
+    seps = read_separators('output/sep' + string(i+1,'(I4.4)') + '.dat')
     
     if seps ne !null then begin
       for j = 0, (size(seps))[1]-1 do begin
@@ -148,7 +148,7 @@ pro model_add_separators
         oModel -> add,obj_new("IDLgrPolyline",seps[j,*,0],seps[j,*,1],seps[j,*,2],color=col,thick=4)
       endfor
     endif
-  endfor
+  endforeach
 end
 
 pro model_add_nulls
@@ -156,14 +156,14 @@ pro model_add_nulls
 
   radius = min([xx[-1]-xx[0],yy[-1]-yy[0],zz[-1]-zz[0]])/200
   
-  for i = 0, n_elements(null)-1 do begin
+  foreach i, inull do begin
     mesh_obj, 4, vert, poly, replicate(radius,21,21)
     for j = 0, 2 do vert[j,*] = vert[j,*] + null[i].pos[j]
     if null[i].sign gt 0 then colour = [255,0,0] else begin
       if null[i].sign lt 0 then colour = [0,0,255] else colour = [0,255,0]
     endelse
     oModel -> add, obj_new("IDLgrPolygon",data=vert,polygons=poly,color=colour,/shading)
-  endfor
+  endforeach
   
 end
 
@@ -220,6 +220,7 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
   ds = min([min(xx[1:-1]-xx[0:-2]), min(yy[1:-1]-yy[0:-2]), min(zz[1:-1]-zz[0:-2])])
   
   null = read_nulls()
+  inull = indgen(n_elements(null))
 
   oModel = obj_new("IDLgrModel")
   if keyword_set(box)        then model_add_box
