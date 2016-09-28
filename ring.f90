@@ -15,20 +15,25 @@ integer, allocatable, dimension(:) :: break, association, remove, endpoints, nea
 
 contains
 
-  subroutine add_points(nlines,iteration)
+  subroutine add_points(nlines)
     !adds points to rings if required
     implicit none
     
     integer :: nlines
     integer :: iline, nxtline, iadd, nadd
-    integer, intent(in) :: iteration
     double precision :: b(3), maxdist0
 
+    !$OMP SINGLE
     allocate(add1(3,nlines), add2(3,nlines))
-
-    !test for gaps. Where gaps need to be filled, put this info into 'add'
+    !$OMP END SINGLE
+    
+    !$OMP WORKSHARE
     add1 = 0d0
     add2 = 0d0
+    !$OMP END WORKSHARE
+
+    ! test for gaps. Where gaps need to be filled, put this info into add1, add2
+    !$OMP DO
     do iline = 1, nlines !loop over each point in ring
       maxdist0 = maxdist
       if (break(iline) == 0) then
@@ -41,59 +46,64 @@ contains
         if (dist(line2(:,iline),line2(:,nxtline)) > maxdist0) then !if two adjacent points too far away
           add1(:,iline) = line1(:,iline) + 0.5d0*(line2(:,nxtline)-line2(:,iline)) !add point half way between two points
           add2(:,iline) = line2(:,iline) + 0.5d0*(line2(:,nxtline)-line2(:,iline))
-        else
-          add1(:,iline) = 0d0 !don't add anything
-          add2(:,iline) = 0d0
         endif
       endif
     enddo
+    !$OMP END DO
       
     !add new points
     !where the 'add' array has a point to be added, add this point
     nadd = 1
-!    !$OMP PARALLEL default(shared) firstprivate(iadd, nadd, iline)
     do iline = 1, nlines
       if (modulus(add1(:,iline)) > 1d-4) then !if |add(:,iline)| is not zero, all points > (1,1,1)
         iadd = iline + nadd
-!        !$OMP SECTIONS
-!        !$OMP SECTION
+        !$OMP SECTIONS
+        !$OMP SECTION
         call add_vector(line1,add1(:,iline),iadd) !add elements to every array
-!        !$OMP SECTION
+        !$OMP SECTION
         call add_vector(line2,add2(:,iline),iadd)
-!        !$OMP SECTION
+        !$OMP SECTION
         call add_element(break,0,iadd)
-!        !$OMP SECTION
+        !$OMP SECTION
         if (iline /= nlines) then
           call add_element(association,association(iadd-1),iadd)
         else
           call add_element(association,1,iadd)
         endif
-!        !$OMP END SECTIONS
+        !$OMP END SECTIONS
         nadd = nadd + 1
-        !print*, 'add', iadd, nadd, size(line1,2), nlines
       endif
     enddo
-!    !$OMP END PARALLEL
+
+    !$OMP BARRIER
+    !$OMP SINGLE
 
     nlines = size(line1, 2)
 
     deallocate(add1, add2)
+
+    !$OMP END SINGLE
     
   end subroutine
 
   !********************************************************************************
 
-  subroutine remove_points(nlines,iteration)
+  subroutine remove_points(nlines, iteration)
     !removes points from rings as required
     implicit none
 
-    integer :: nlines
-    integer :: iline, nxtline, iremove, nremove!, prevline
-    integer, intent(in) :: iteration
+    integer :: nlines, iteration
+    integer :: iline, nxtline, iremove, nremove
 
+    !$OMP SINGLE
     allocate(remove(nlines))
-    remove = 0
+    !$OMP END SINGLE
 
+    !$OMP WORKSHARE
+    remove = 0
+    !$OMP END WORKSHARE
+
+    !$OMP DO
     do iline = 1, nlines
       if (endpoints(iline) == 1) then !remove points that have left the simulation
         remove(iline) = 1
@@ -104,8 +114,10 @@ contains
         endif
       endif
     enddo
+    !$OMP END DO
 
     !check for too tightly spaced points, flag points to be removed
+    !$OMP DO
     do iline = 1, nlines !loop over all points
       if (break(iline) == 0) then
         if (iline < nlines) then !if not end point
@@ -118,35 +130,38 @@ contains
         endif
       endif
     enddo
+    !$OMP END DO
 
     !remove points
     nremove = 0
     if (nlines > nstart .or. sum(endpoints) /= 0) then !if the number of points isn't too small...
-!      !$OMP PARALLEL default(shared) firstprivate(iremove, nremove, iline)
       do iline = 1, nlines
         if (nlines <= nstart .and. sum(endpoints) == 0) exit
         if (remove(iline) == 1) then !if point is flagged to be removed, then remove
           iremove = iline - nremove
-!          !$OMP SECTIONS
-!          !$OMP SECTION
+          !$OMP SECTIONS
+          !$OMP SECTION
           call remove_vector(line1,iremove)
-!          !$OMP SECTION
+          !$OMP SECTION
           call remove_vector(line2,iremove)
-!          !$OMP SECTION
+          !$OMP SECTION
           call remove_element(association,iremove)
-!          !$OMP SECTION
+          !$OMP SECTION
           call remove_element(break,iremove)
-!          !$OMP END SECTIONS
+          !$OMP END SECTIONS
           nremove = nremove + 1
-          !print*, 'remove', iline, iremove, nremove, size(line1, 2), nlines
         endif
       enddo
-!      !$OMP END PARALLEL
     endif
+
+    !$OMP BARRIER
+    !$OMP SINGLE
 
     nlines = size(line1, 2)
 
     deallocate(remove)
+
+    !$OMP END SINGLE
 
   end subroutine
 
@@ -174,7 +189,7 @@ contains
     tracedist = 3*nulldist
     checkdist = tracedist + 3*h0
 
-    !$OMP PARALLEL DO default(shared) private(near, notnear, nnc, k, gapsize, endgap, nr, r, rmap, signof, index, count, h)
+    !$OMP DO ! private(near, notnear, nnc, k, gapsize, endgap, nr, r, rmap, signof, index, count, h)
     do inull = 1, size(rnulls,2)
       if (inull == nullnum) cycle !ignore the null the points belong to
       if (signs(inull)*signs(nullnum) /= 1) then !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
@@ -291,7 +306,7 @@ contains
         endif      
       endif
     enddo
-    !$OMP END PARALLEL DO
+    !$OMP END DO
 
   end subroutine
 

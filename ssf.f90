@@ -22,7 +22,7 @@ program ssfind
   integer :: iring, iline, inull, inullchk
 
   ! null parameters
-  integer :: sign
+  integer :: sign, nearflag
   double precision, dimension(3) :: fan, spine
   double precision :: theta, phi
   double precision, allocatable, dimension(:) :: xs, ys, zs
@@ -37,7 +37,7 @@ program ssfind
   print*,'#                      Separatrix Surface Finder                      #'
   print*,'#######################################################################'
 
-  call omp_set_num_threads(4) ! have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
+  call omp_set_num_threads(2) ! have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
 
   filename = defaultfilename
   if (command_argument_count() > 0) then
@@ -190,8 +190,13 @@ program ssfind
 
       !$OMP SINGLE
       allocate(endpoints(nlines), association(nlines))
-      endpoints = 0
+      !$OMP END SINGLE
 
+      !$OMP WORKSHARE
+      endpoints = 0
+      !$OMP END WORKSHARE
+
+      !$OMP SINGLE
       if (iring < 50) then
         h0 = 5d-2/slowdown
       else
@@ -256,21 +261,23 @@ program ssfind
       !$OMP END SINGLE
       
       ! remove points from ring if necessary
-      call remove_points(nlines,iring)
+      call remove_points(nlines, iring)
 
       !$OMP SINGLE
-
       allocate(nearnull(nlines))
-      nearnull = 0
       slowdown = 1d0
-
       !$OMP END SINGLE
+
+      !$OMP WORKSHARE
+      nearnull = 0
+      !$OMP END WORKSHARE
 
       !$OMP DO private(inullchk)
       do iline = 1, nlines
         do inullchk = 1, nnulls
           if (signs(inullchk) == signs(inull)) cycle
-          if (dist(rnulls(:,inullchk), line1(:, iline)) < 2.5*nulldist) then
+          if (dist(rnulls(:,inullchk), line1(:, iline)) < 2.5*nulldist .or. &
+            dist(rnullsalt(:,inullchk), line1(:, iline)) < 2.5*nulldist) then
             !print*, 'close to null'
             nearnull(iline) = 1
             exit
@@ -281,7 +288,8 @@ program ssfind
 
       !$OMP SINGLE
 
-      if (sum(nearnull) > 0) then
+      nearflag = sum(nearnull)
+      if (nearflag > 0) then
         ! print*, 'slowing down, adding points near null'
         slowdown = 2d0
       endif
@@ -289,7 +297,7 @@ program ssfind
       !$OMP END SINGLE
 
       !add points to ring if necessary
-      call add_points(nlines,iring)
+      call add_points(nlines)
 
       !$OMP SINGLE
       
@@ -298,7 +306,7 @@ program ssfind
       !$OMP END SINGLE
 
       !determine if any lines are separators
-      call sep_detect(nlines,inull,iring)
+      if (nearflag > 0) call sep_detect(nlines,inull,iring)
 
       !$OMP SINGLE
 
