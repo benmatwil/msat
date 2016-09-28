@@ -1,7 +1,6 @@
 function read_separators,fname
 
-  get_lun, sep
-  openr, sep, fname
+  openr, sep, fname, /get_lun
 
   opt = 0l
   ringsmax = 0l
@@ -31,6 +30,9 @@ function read_separators,fname
     
     readu, sep, opt
   endwhile
+  
+  close, sep
+  free_lun, sep
 
   return,seps
 
