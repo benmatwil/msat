@@ -105,7 +105,6 @@ program readin
     g = int8(3)*int8(4) + int8(3)*int8(nx)*int8(ny)*int8(nz)*int8(8) + int8(1)
     read(9, pos=g) xg, yg, zg
   close(9)
-  print*, filename
 
   do inull = 1, nnulls
     write(fname,fmt) inull
@@ -137,6 +136,10 @@ program readin
 
       allocate(x(0:nring+1), y(0:nring+1), z(0:nring+1))
 
+      x(nring+1) = gtr(rnulls(1,nullnum_t), xg)
+      y(nring+1) = gtr(rnulls(2,nullnum_t), yg)
+      z(nring+1) = gtr(rnulls(3,nullnum_t), zg)
+
       print*, 'Tracing Separator...'
       print*, 'Start ring is', nring
 
@@ -146,30 +149,20 @@ program readin
 
         read(10, pos=a) association !read association for point number index in ring 1
         read(10, pos=p) r !read position of point index on ring iring
-        if (iring == nring) then
-          print*, rnulls(:,nullnum_t)
-          print*, shape(xg), shape(yg), shape(zg)
-          print*, g
-          ! print*, xg
-          ! print*, '----'
-          ! print*, yg
-          ! print*, '----'
-          ! print*, zg
-          ! stop
-          x(nring+1) = gtr(rnulls(1,nullnum_t), xg)
-          y(nring+1) = gtr(rnulls(2,nullnum_t), yg)
-          z(nring+1) = gtr(rnulls(3,nullnum_t), zg)
-          print*, 'End null, last point and start of separator'
-          print*, x(nring+1), y(nring+1), z(nring+1)
-          print*, r
-        endif
+        
         !write ring position vector into x, y and z
         x(iring) = gtr(r(1), xg)
         y(iring) = gtr(r(2), yg)
         z(iring) = gtr(r(3), zg)
         index = association
 
-        if (iring == 1) print*, r
+        if (iring == nring) then
+          print*, 'End null, last point and start of separator'
+          print*, x(nring+1), y(nring+1), z(nring+1)
+          print*, x(nring), y(nring), z(nring)
+        endif
+
+        if (iring == 1) print*, x(1), y(1), z(1)
 
       enddo
 
