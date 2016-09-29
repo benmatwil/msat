@@ -33,7 +33,8 @@ contains
     enddo
     
     if (modulus(r-r0) < 0.1d0*stepdist .and. .not. outedge(r)) then
-      print *,'field line not tracin',modulus(r-r0),stepdist, sign
+      print*, 'field line not tracin', modulus(r-r0), stepdist, sign
+      print*, xmin, xmax, ymin, ymax, zmin, zmax
       print*, r
       terror = 1
     endif

@@ -275,7 +275,7 @@ contains
                 if (signof(index-1)*signof(index) == -1 .and. break(rmap(index-1)) /= 1 &
                   .and. dist(rnulls(:,inull), r(:,index)) < checkdist &
                   .and. dist(rnulls(:,inull), r(:,index-1)) < checkdist) then
-                  print*, 'Found a separator', nring, nlines, nullnum, inull
+                  print*, 'Found a separator', nring, rmap(index-1), nlines, nullnum, inull
                   break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
                   nseps = nseps + 1
                   ! print*, nr, nulldist, nlines
