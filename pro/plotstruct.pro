@@ -32,7 +32,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
   ygc = indgen(sizebg[2])
   zgc = indgen(sizebg[3])
 
-  nulls = getnulls()
+  nulls = read_nulls()
   npos = nulls[n-1].gridpos-1 ; -1 translation from fortran to idl grid spacing
 
   ;xyznpos = convert(npos,x,y,z)
@@ -142,14 +142,16 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
   if keyword_set(ball) or keyword_set(fan) then begin
     for i = 0, 2 do startpts[i,*] = startpts[i,*] + npos[i]
     
+    h0 = rsphere*1d-3
     for j = 0, n_elements(startpts)/3-1 do begin
-      h = rsphere*2d-2
-      line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway)
+      h = h0
+      line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway, /gridcoord)
       line = transpose(line)
       ;for i = 0, n_elements(line)/3-1 do line[i,*] = convert(line[i,*],x,y,z)
       plt = plot3d(line[*,0],line[*,1],line[*,2],'red',/overplot,/aspect_ratio,/perspective)
       
-      line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, -h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway)
+      h = h0
+      line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, -h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway, /gridcoord)
       line = transpose(line)
       ;for i = 0, n_elements(line)/3-1 do line[i,*] = convert(line[i,*],x,y,z)
       plt = plot3d(line[*,0],line[*,1],line[*,2],'orange',/overplot,/aspect_ratio)
