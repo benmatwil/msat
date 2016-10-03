@@ -18,7 +18,7 @@ contains
   subroutine add_points(nlines)
     !adds points to rings if required
     implicit none
-    
+
     integer :: nlines
     integer :: iline, nxtline, iadd, nadd
     double precision :: b(3), maxdist0
@@ -26,7 +26,7 @@ contains
     !$OMP SINGLE
     allocate(add1(3,nlines), add2(3,nlines))
     !$OMP END SINGLE
-    
+
     !$OMP WORKSHARE
     add1 = 0d0
     add2 = 0d0
@@ -50,7 +50,7 @@ contains
       endif
     enddo
     !$OMP END DO
-      
+
     !add new points
     !where the 'add' array has a point to be added, add this point
     nadd = 1
@@ -83,7 +83,7 @@ contains
     deallocate(add1, add2)
 
     !$OMP END SINGLE
-    
+
   end subroutine
 
   !********************************************************************************
@@ -251,7 +251,7 @@ contains
 
           allocate(signof(nr))
           signof = 0
-          
+
           do index = 1, nr
             !extrapolate points along fieldlines
             count = 0
@@ -262,14 +262,14 @@ contains
               count = count+1
             enddo
 
-            if (signs(inull)*signs(nullnum) == -1) then              
+            if (signs(inull)*signs(nullnum) == -1) then
               !check which side of the null the points end out on
               if (dot(spines(:,inull),r(:,index)-rnulls(:,inull)) > 0) then
                 signof(index) = 1
               else
                 signof(index) = -1
               endif
-              
+
               !if theres a change in sign, theres the separator
               if (index /= 1) then
                 if (signof(index-1)*signof(index) == -1 .and. break(rmap(index-1)) /= 1 &
@@ -292,7 +292,7 @@ contains
             endif
           enddo
           deallocate(r, signof, rmap)
-        endif      
+        endif
       endif
     enddo
     !$OMP END DO
