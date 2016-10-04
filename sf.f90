@@ -125,12 +125,12 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
 
   implicit none
   integer :: itheta, iphi, itry, ifan, idense
-  integer :: count, iconv, imin, nfw, nbw, maxcount
+  integer :: count, iconv, imin, nfw, nbw, maxcount, mincount
   integer :: flagfw, flagbw, savedata, angleflag
 
-  double precision :: dphi, dtheta, angle
+  double precision :: dphi, dtheta, angle, minmove
   double precision, dimension(3) :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
-  double precision, dimension(3) :: rold, rnew, bnew
+  double precision, dimension(3) :: rold, rnew, bnew, rfw1, rbw1
   double precision :: fact, acc, accconv, fwvalue, bwvalue
 
   double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rmin
@@ -154,6 +154,9 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   !set up theta and phi for sphere around null
   dphi = 360.d0/dble(nphi)
   dtheta = 180.d0/dble(ntheta-1)
+
+  minmove = 2*pi*rsphere/nphi/10
+  mincount = 750
   
   angle = 0
   main: do
@@ -179,16 +182,23 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
         count = 0
         rnewfw = sphere2cart(rsphere,thetas(itheta),phis(iphi))
         rnewbw = rnewfw
+        rfw1 = rnewfw
+        rbw1 = rnewbw
         bnewfw = trilinear(rnewfw+rnull, bgrid)
         bnewbw = bnewfw
         roldfw = [0,0,0]
         roldbw = [0,0,0]
-        do while (modulus(rnewfw-roldfw) > accconv .and. modulus(rnewbw-roldbw) > accconv .and. count < maxcount) ! do enough times for spine to converge
+        do count = 1, maxcount
           call it_conv(roldfw,rnewfw,bnewfw,fact,1)
           call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
-          count = count + 1
+          if ((modulus(rnewfw-roldfw) < accconv .or. modulus(rnewbw-roldbw) < accconv) .and. count >= mincount) exit
         enddo
-        if (count < 100 .and. angle < 4d0) then
+        ! do while (modulus(rnewfw-roldfw) > accconv .and. modulus(rnewbw-roldbw) > accconv .and. count < maxcount) ! do enough times for spine to converge
+        !   call it_conv(roldfw,rnewfw,bnewfw,fact,1)
+        !   call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
+        !   count = count + 1
+        ! enddo
+        if ((modulus(rfw1-rnewfw) < minmove .or. modulus(rbw1-rnewbw) < minmove) .and. angle < 4d0) then
           angle = angle + 1d0
           print*, 'Adjusting the initial points and starting again'
           cycle main
@@ -416,11 +426,16 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
       rnew = sphere2cart(rsphere,thetas(itheta),phis(iphi))
       bnew = trilinear(rnew+rnull, bgrid)
       rold = [0,0,0]
-      do while (modulus(rnew-rold) > accconv .and. count < maxcount) ! do enough times for spine to converge
+      do count = 1, maxcount
         bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
         call it_conv(rold,rnew,bnew,fact,sign)
-        count = count + 1
+        if (modulus(rnew-rold) < accconv .and. count >= mincount) exit
       enddo
+      ! do while (modulus(rnew-rold) > accconv .and. count < maxcount) ! do enough times for spine to converge
+      !   bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
+      !   call it_conv(rold,rnew,bnew,fact,sign)
+      !   count = count + 1
+      ! enddo
       rmin(:,iphi+(itheta-1)*nphi) = normalise(rnew)
     enddo
   enddo
@@ -429,12 +444,15 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
 
   ! Save data if there is a problematic null for inspection by map.pro
 100  if (savedata == 1) then
-    open(unit=10, file='output/spinedata.dat', access='stream')
-    write(10) size(rspine,2), rspine, spine
+    open(unit=10, file='output/spine.dat', access='stream')
+      write(10) size(rspine,2), rspine, spine
     close(10)
-    open(unit=10, file='output/fandata.dat', access='stream')
-    write(10) size(rfan,2), rfan, maxvec, minvec
-    if (allocated(crossfan)) write(10) size(crossfan,2), crossfan
+    open(unit=10, file='output/maxvec.dat', access='stream')
+      write(10) size(rfan,2), rfan, maxvec
+      if (allocated(crossfan)) write(10) size(crossfan,2), crossfan
+    close(10)
+    open(unit=10, file='output/minvec.dat', access='stream')
+      write(10) size(rmin,2), rmin, minvec
     close(10)
   endif
   !stop
