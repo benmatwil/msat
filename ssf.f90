@@ -37,7 +37,7 @@ program ssfind
   print*,'#                      Separatrix Surface Finder                      #'
   print*,'#######################################################################'
 
-  call omp_set_num_threads(2) ! have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
+  call omp_set_num_threads(nproc) ! have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
 
   filename = defaultfilename
   if (command_argument_count() > 0) then
