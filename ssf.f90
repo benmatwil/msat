@@ -49,9 +49,9 @@ program ssfind
     enddo
   endif
   
-  !read in data
+  ! read in data
   open(unit=10,file=filename,access='stream')
-    read(10), nx, ny, nz !number of vertices
+    read(10), nx, ny, nz ! number of vertices
     allocate(bgrid(nx,ny,nz,3))
     allocate(x(nx), y(ny), z(nz))
     read(10), bgrid(:,:,:,1)
@@ -70,7 +70,7 @@ program ssfind
 
   call system_clock(tstart,count_rate) ! to time how long it takes
 
-  !read in null data
+  ! read in null data
 
   open(unit=10,file='output/nulls.dat',form='unformatted')
     read(10) nnulls
@@ -179,7 +179,6 @@ program ssfind
     write(20) [(iline,iline=1,nlines)], break, line1
 
     exitcondition = .false.
-
     !$OMP END SINGLE
 
     do iring = 1, ringsmax ! loop over number of rings we want
@@ -228,7 +227,6 @@ program ssfind
       !$OMP END DO
 
       !$OMP SINGLE
-
       if (nlines > pointsmax) then
       ! exit if too many points on ring 
         print*, 'Too many points on ring', nlines, iring
@@ -257,7 +255,6 @@ program ssfind
       nulldist = 1.4d0*h0*slowdown !0.6
       mindist = maxdist/3
       ! print*, iring, h0, nulldist, maxdist, mindist, nlines
-
       !$OMP END SINGLE
       
       ! remove points from ring if necessary
@@ -278,7 +275,6 @@ program ssfind
           if (signs(inullchk) == signs(inull)) cycle
           if (dist(rnulls(:,inullchk), line1(:, iline)) < 2.5*nulldist .or. &
             dist(rnullsalt(:,inullchk), line1(:, iline)) < 2.5*nulldist) then
-            !print*, 'close to null'
             nearnull(iline) = 1
             exit
           endif
@@ -287,35 +283,29 @@ program ssfind
       !$OMP END DO
 
       !$OMP SINGLE
-
       nearflag = sum(nearnull)
       if (nearflag > 0) then
         ! print*, 'slowing down, adding points near null'
         slowdown = 2d0
       endif
-
       !$OMP END SINGLE
 
-      !add points to ring if necessary
+      ! add points to ring if necessary
       call add_points(nlines)
 
       !$OMP SINGLE
-      
       deallocate(nearnull)
-      
       !$OMP END SINGLE
 
-      !determine if any lines are separators
+      ! determine if any lines are separators
       if (nearflag > 0) call sep_detect(nlines,inull,iring)
 
       !$OMP SINGLE
-
       nperring(iring) = nlines
-      !Write ring and data to file separator????.dat
+      ! Write ring and data to file separator????.dat
       write(20) association, break, line1
 
       deallocate(endpoints, association)
-
       !$OMP END SINGLE
 
       if (exitcondition) then
@@ -326,7 +316,6 @@ program ssfind
     enddo
 
     !$OMP SINGLE
-
     if (nrings == ringsmax) print*, "Reached maximum number of rings"
     
     print*, 'number of separators=', nseps, 'number of rings', nrings
@@ -340,7 +329,6 @@ program ssfind
 
     deallocate(xs, ys, zs)
     deallocate(line1, line2, break)
-
     !$OMP END SINGLE
 
   enddo
