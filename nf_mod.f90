@@ -256,15 +256,18 @@ module nf_mod
 
     implicit none
     double precision, dimension(2,2) :: facex, facey, facez
-    integer :: cross, sign, i, nsol = 0
+    integer :: cross, sign, i
     double precision :: a1, b1, c1, d1 !bilinear coefficients (facex)
     double precision :: a2, b2, c2, d2 !bilinear coefficients (facey)
     double precision :: a, b, c !quadratic coefficients ax^2+bx+c=0
 
-    double precision :: x1 = -1d0, x2 = -1d0, y1 = -1d0, y2 = -1d0
+    double precision :: x1, x2, y1, y2
     double precision :: det
 
     double precision :: zcomp
+
+    x2 = -1d0
+    y2 = -1d0
 
     ! if there could be an intersection of the zeroes on facex and face y, or if the faces are not completely zero...
     if (zeropoint(facex,facey) .or. blankface(facex,facey,facez)) then
