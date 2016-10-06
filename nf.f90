@@ -64,8 +64,6 @@ program nullfinder
 
   close(10)
 
-  print*, zgrid(501)-zgrid(500), zgrid(500), zgrid(501)
-
   print*, 'Done!'
   print*, ''
   print*, '-----------------------------------------------------------------------'
@@ -126,6 +124,7 @@ program nullfinder
     do j = 1, ny1
       do i = 1, nx1
         if (candidates(i,j,k) == 1) then
+        print*, i, j, k
           cbx = bx(i:i+1 ,j:j+1, k:k+1) !bx cell
           cby = by(i:i+1 ,j:j+1, k:k+1) !by cell
           cbz = bz(i:i+1 ,j:j+1, k:k+1) !bz cell
