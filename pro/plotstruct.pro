@@ -47,7 +47,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
     spine = dblarr(3)
     maxvec = spine
     minvec = spine
-    fname = 'output/'+['fandata.dat', 'spinedata.dat']
+    fname = 'output/'+['maxvec.dat', 'minvec.dat', 'spine.dat']
 
     foreach name, fname do begin
       openr,10,name
@@ -62,17 +62,12 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
         ;for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
         p = plot3d(r[*,0],r[*,1],r[*,2],lines=' ',sym='x', aspect_ratio=1,/overplot)
         
-        readu,10,maxvec,minvec
+        readu,10,maxvec
         max1 = maxvec
-        min1 = minvec
         maxvec = maxvec*rsphere
-        minvec = minvec*rsphere
         maxvec = maxvec + npos
-        minvec = minvec + npos
         ;maxvec = convert(maxvec,x,y,z)
-        ;minvec = convert(minvec,x,y,z)
         p = plot3d([maxvec[0]],[maxvec[1]],[maxvec[2]],'cyan',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
-        p = plot3d([minvec[0]],[minvec[1]],[minvec[2]],'g',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
         if 1 eq 0 then begin
           if not eof(10) then begin
             readu, 10, n & crossfan = dblarr(3,n) & readu, 10, crossfan & help, crossfan
@@ -93,6 +88,20 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
         endif
       endif
       if name eq fname[1] then begin
+        r = transpose(r)
+        r = r * rsphere
+        for i = 0, 2 do r[*,i] = r[*,i] + npos[i]
+        ;for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
+        p = plot3d(r[*,0],r[*,1],r[*,2],'g',lines=' ',sym='x', aspect_ratio=1,/overplot)
+        
+        readu,10,minvec
+        min1 = minvec
+        minvec = minvec*rsphere
+        minvec = minvec + npos
+        ;minvec = convert(minvec,x,y,z)
+        p = plot3d([minvec[0]],[minvec[1]],[minvec[2]],'g',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
+      endif
+      if name eq fname[2] then begin
         r = transpose(r)
         r = r * rsphere
         for i = 0,2 do r[*,i] = r[*,i] + npos[i]
