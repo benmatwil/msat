@@ -23,7 +23,7 @@ program sf_converge
   print*,'#######################################################################'
 
   !Read in 'null.dat'
-  open (unit=10,file='output/null.dat',form='unformatted')
+  open(unit=10,file='output/null.dat',form='unformatted')
 
   read(10) nnulls
     allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),warnings(nnulls))
