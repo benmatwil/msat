@@ -16,14 +16,16 @@ program sf_converge
   integer :: sign, warning
   double precision, dimension(3) :: spine, fan
 
-  integer :: inull
+  integer :: inull, iarg
   
   print*,'#######################################################################'
   print*,'#                             Spinefinder                             #'
   print*,'#######################################################################'
 
+  call filenames
+
   !Read in 'null.dat'
-  open (unit=10,file='output/null.dat',form='unformatted')
+  open (unit=10,file='output/'//trim(fileout)//'-nullpos.dat',form='unformatted')
 
   read(10) nnulls
     allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),warnings(nnulls))
@@ -36,8 +38,8 @@ program sf_converge
   nullstart = 1
   nullend = nnulls
   if (command_argument_count() > 0) then 
-    do icommand = 1, command_argument_count()
-      call get_command_argument(icommand,arg)
+    do iarg = 1, command_argument_count()
+      call get_command_argument(iarg,arg)
       if (arg(1:2) == 'n=') then
         arg = arg(3:)
         read(arg,*) nullstart
@@ -47,18 +49,8 @@ program sf_converge
     enddo
   endif
 
-  filename = defaultfilename
-  if (command_argument_count() > 0) then
-    do icommand = 1, command_argument_count()
-      call get_command_argument(icommand,arg)
-      if (arg(1:5) == 'data=') then
-        filename = trim(arg(6:))
-      endif
-    enddo
-  endif
-
   !read in bgrid
-  open(unit=10,file=filename,access='stream')
+  open(unit=10,file=filein,access='stream')
     read(10) nx, ny, nz
     allocate(bgrid(nx,ny,nz,3), x(nx), y(ny), z(nz))
     read(10) bgrid
@@ -88,10 +80,10 @@ program sf_converge
   if (nullend - nullstart /= nnulls - 1) stop
   
   !now write data to nulls.dat
-  open(unit=10,file='output/nulls.dat',form='unformatted')
+  open(unit=10,file='output/'//trim(fileout)//'-nulldata.dat',form='unformatted')
     write(10) nnulls
-    write(10) signs
-    write(10) rnulls,spines,fans
+    write(10) rnulls
+    write(10) signs, spines, fans
   close(10)
 
   print*, 'Summary:'

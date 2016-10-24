@@ -89,17 +89,9 @@ program readin
     enddo
   close(10)
 
-  filename = defaultfilename
-  if (command_argument_count() > 0) then
-    do icommand = 1, command_argument_count()
-      call get_command_argument(icommand,arg)
-      if (arg(1:5) == 'data=') then
-        filename = trim(arg(6:))
-      endif
-    enddo
-  endif
+  call filenames
 
-  open(unit=9,file=filename,access='stream')
+  open(unit=9,file=filein,access='stream')
     read(9), nx, ny, nz !number of vertices
     allocate(xg(nx), yg(ny), zg(nz))
     g = int8(3)*int8(4) + int8(3)*int8(nx)*int8(ny)*int8(nz)*int8(8) + int8(1)
@@ -109,14 +101,14 @@ program readin
   do inull = 1, nnulls
     write(fname,fmt) inull
 
-    open(unit=12,file='output/separator'//trim(fname)//'.dat',access='stream')
-    open(unit=10,file='output/everything'//trim(fname)//'.dat',access='stream')
+    open(unit=12,file='output/'//trim(fileout)//'-separator'//trim(fname)//'.dat',access='stream')
+    open(unit=10,file='output/'//trim(fileout)//'-everything'//trim(fname)//'.dat',access='stream')
 
     read(10) nrings, npoints, nringsmax
     allocate(nperring(0:nringsmax-1))
     read(10) nperring
 
-    open(unit=11,file='output/sep'//trim(fname)//'.dat',access='stream')
+    open(unit=11,file='output/'//trim(fileout)//'-sep'//trim(fname)//'.dat',access='stream')
 
     print*, 'nrings, npoints, nringsmax'
     print*, nrings, npoints, nringsmax-1
@@ -181,7 +173,7 @@ program readin
     ! Just writes a selection of rings to file i.e. every "skip"ped number of rings
     print*, 'writing rings to file'
 
-    open(unit=11, file='output/ringidl'//trim(fname)//'.dat', form='unformatted')
+    open(unit=11, file='output/'//fileout//'-ringidl'//trim(fname)//'.dat', form='unformatted')
     print*, 'nrings=', nrings
     nrcount = 0
     do iring = 1, nrings-2, skip

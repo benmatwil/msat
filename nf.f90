@@ -35,20 +35,12 @@ program nullfinder
   print*,'#                      (Written by G P S Gibb)                        #'
   print*,'#######################################################################'
 
-  filename = defaultfilename
-  if (command_argument_count() > 0) then
-    do icommand = 1, command_argument_count()
-      call get_command_argument(icommand,arg)
-      if (arg(1:5) == 'data=') then
-        filename = trim(arg(6:))
-      endif
-    enddo
-  endif
+  call filenames
 
-  open(unit=10, file=filename, access='stream')
+  open(unit=10, file=filein, access='stream')
 
     print*, ''
-    print*, "Reading in data from: '", trim(filename), "'..."
+    print*, "Reading in data from: '", trim(filein), "'..."
 
     read(10), nx, ny, nz !number of vertices
     print*, ''
@@ -102,7 +94,7 @@ program nullfinder
         if (itestz == 0) cycle
 
         cube(:,:,:) = bx(i:i+1, j:j+1, k:k+1)**2 + by(i:i+1, j:j+1, k:k+1)**2 + bz(i:i+1, j:j+1, k:k+1)**2
-        if (sum(cube) < 8*zero) cycle
+        if (sum(sqrt(cube)) < 8*zero) cycle
 
         candidates(i,j,k) = 1
         nnulls = nnulls+1
@@ -124,11 +116,10 @@ program nullfinder
     do j = 1, ny1
       do i = 1, nx1
         if (candidates(i,j,k) == 1) then
-        print*, i, j, k
           cbx = bx(i:i+1 ,j:j+1, k:k+1) !bx cell
           cby = by(i:i+1 ,j:j+1, k:k+1) !by cell
           cbz = bz(i:i+1 ,j:j+1, k:k+1) !bz cell
-
+          
           call normalise(cbx, cby, cbz)
 
           call bilin_test(cbx, cby, cbz, itest) !check for null within (or on face/corner/edge of) cell
@@ -141,7 +132,7 @@ program nullfinder
           !print *, ''
         endif
       enddo
-    enddo
+    enddo     
   enddo
 
   print*, ''
@@ -161,9 +152,7 @@ program nullfinder
     do j = 1, ny1
       do i = 1, nx1
         if (candidates(i,j,k) == 1) then
-          print*, ''
-          print*, ''
-          write(*,intfmt) 'Null in gridcell ', i, j, k, ':'
+
           cbx = bx(i:i+1, j:j+1, k:k+1)
           cby = by(i:i+1, j:j+1, k:k+1)
           cbz = bz(i:i+1, j:j+1, k:k+1)
@@ -193,6 +182,7 @@ program nullfinder
             !   print*, 'Null at',i+x,j+y,k+z
             ! endif
 
+            print*, i, j, k
             print*, "Don't believe this null. Removing from list"
             nnulls = nnulls-1
 
@@ -200,8 +190,8 @@ program nullfinder
             ! call brute_force(cbx,cby,cbz,x,y,z)
             ! write(*,dblfmt)'Null at ',i+x,j+y,k+z,' in gridcell coordinates'
           else
-            write(*,dblfmt) 'Null at ', i+x, j+y, k+z, ' in gridcell coordinates'
-            write(*,dblfmt) 'Null at ', linear(x, xgrid(i:i+1)), linear(y, ygrid(j:j+1)), linear(z, zgrid(k:k+1)), ' in real units'
+            ! write(*,dblfmt) 'Null at ', i+x, j+y, k+z, ' in gridcell coordinates'
+            ! write(*,dblfmt) 'Null at ', linear(x, xgrid(i:i+1)), linear(y, ygrid(j:j+1)), linear(z, zgrid(k:k+1)), ' in real units'
 
             !add this null to the list of nulls (in gridcell coordinates)
             call add_element(xs, x+i)
@@ -217,8 +207,8 @@ program nullfinder
             cbz = bz(i:i+1, j:j+1, k:k+1)
 
             !print*, 'Sanity check:'
-            write(*,"(a,ES10.3)"), '|B| at point is', sqrt(trilinear_cell(x, y, z, cbx)**2 + &
-            trilinear_cell(x, y, z, cby)**2+trilinear_cell(x, y, z, cbz)**2)
+            ! write(*,"(a,ES10.3)"), '|B| at point is', sqrt(trilinear_cell(x, y, z, cbx)**2 + &
+            ! trilinear_cell(x, y, z, cby)**2+trilinear_cell(x, y, z, cbz)**2)
 
           endif
         endif
@@ -264,9 +254,9 @@ program nullfinder
   print*, 'Final number of nulls=', nnulls
   print*, 'Is this the same?', size(xp,1)
 
-  print*, "Now writing null positions to 'null.dat'"
+  print*, "Now writing null positions to "trim(fileout)//"nullpos.dat"
 
-  open(unit=10, file='output/null.dat', form='unformatted')
+  open(unit=10, file='output/'//trim(fileout)//'-nullpos.dat',form='unformatted')
     write(10) nnulls
 
     do i = 1, nnulls

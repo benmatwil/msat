@@ -39,18 +39,10 @@ program ssfind
 
   call omp_set_num_threads(nproc) ! have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
 
-  filename = defaultfilename
-  if (command_argument_count() > 0) then
-    do icommand = 1, command_argument_count()
-      call get_command_argument(icommand,arg)
-      if (arg(1:5) == 'data=') then
-        filename = trim(arg(6:))
-      endif
-    enddo
-  endif
+  call filenames
   
   ! read in data
-  open(unit=10,file=filename,access='stream')
+  open(unit=10,file=filein,access='stream')
     read(10), nx, ny, nz ! number of vertices
     allocate(bgrid(nx,ny,nz,3))
     allocate(x(nx), y(ny), z(nz))
@@ -72,11 +64,11 @@ program ssfind
 
   ! read in null data
 
-  open(unit=10,file='output/nulls.dat',form='unformatted')
+  open(unit=10,file='output/'//trim(fileout)//'-nulldata.dat',form='unformatted')
     read(10) nnulls
     allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
-    read(10) signs
-    read(10) rnulls, spines, fans
+    read(10) rnulls
+    read(10) signs, spines, fans
   close(10)
   
   rnullsalt = rnulls
@@ -163,8 +155,9 @@ program ssfind
     line2 = line1
 
     write(fname,fmt) inull
-    open(unit=12,file='output/separator'//trim(fname)//'.dat',form='unformatted',access='stream',status='replace')
-    open(unit=20,file='output/everything'//trim(fname)//'.dat',access='stream',status='replace')
+    open(unit=12,file='output/'//trim(fileout)//'-separator'//trim(fname)//'.dat', &
+      form='unformatted',access='stream',status='replace')
+    open(unit=20,file='output/'//trim(fileout)//'-everything'//trim(fname)//'.dat',access='stream',status='replace')
 
     break = 0
     nseps = 0
