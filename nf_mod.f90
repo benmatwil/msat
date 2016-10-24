@@ -60,6 +60,13 @@ module nf_mod
     test(2,1) = cross
     test(2,2) = sign
     call face_solve(facey, facez, facex, cross, sign)
+    !print*, 'faces'
+    !print*, facey(:,1)
+    !print*, facey(:,2)
+    !print*, facez(:,1)
+    !print*, facez(:,2)
+    !print*, facex(:,1)
+    !print*, facex(:,2)
     test(2,3) = cross
     test(2,4) = sign
     call face_solve(facex, facez, facey, cross, sign)
@@ -138,15 +145,16 @@ module nf_mod
 
     !print out test array for checking
     !do i=1,6
-      !print*,test(i,:)
+    !  print*,test(i,:)
     !enddo
+    !stop
 
     !check for nulls within cell
 
     !total of each column in 'test'
-    test2=sum(test,1)
+    test2 = sum(test,1)
 
-    test3=0
+    test3 = 0
     do i = 1, 3
       if (test2(2*i-1) >= 0) then !if there is a crossing
         if (abs(test2(2*i)) < test2(2*i-1)) test3(i) = 1
@@ -167,13 +175,16 @@ module nf_mod
       !print*, 'NULL ON EDGE WITH SPINE ALONG CELL EDGE  :)'
       inull = 1
     endif
-
+    ! if (inull == 1) then
     ! print*, 'test1'
-    ! print*, test
+    ! do i = 1, 6
+    ! print*, test(i,:)
+    ! enddo
     ! print*, 'test2'
     ! print*, test2
     ! print*, 'test3'
     ! print*, test3
+    ! endif
 
 
   end
@@ -266,12 +277,17 @@ module nf_mod
 
     double precision :: zcomp
 
+    x1 = -1d0
+    y1 = -1d0
     x2 = -1d0
     y2 = -1d0
 
+    sign = 0
+    cross = 0
+
     ! if there could be an intersection of the zeroes on facex and face y, or if the faces are not completely zero...
     if (zeropoint(facex,facey) .or. blankface(facex,facey,facez)) then
-      !get bilinear coefficients
+      ! get bilinear coefficients
       a1 = facex(1,1)
       b1 = facex(2,1) - facex(1,1)
       c1 = facex(1,2) - facex(1,1)
@@ -282,51 +298,59 @@ module nf_mod
       c2 = facey(1,2) - facey(1,1)
       d2 = facey(2,2) - facey(2,1) - facey(1,2) + facey(1,1)
 
-      !get quadratic coefficients (ax^2 + bx + c = 0)
+      ! get quadratic coefficients (ax^2 + bx + c = 0)
       a = b1*d2 - b2*d1
       b = (a1*d2 - a2*d1) + (b1*c2 - c1*b2)
       c = a1*c2 - a2*c1
 
-      !determinant of quadratic
+      ! determinant of quadratic
       det = b**2 - 4d0*a*c
 
       if (det >= 0) then !there is a solution
         if (abs(a) < zero) then !have to solve linear
-          if (b /= 0d0) x1 = -c/b !solution exists
+          if (b /= 0d0) then
+            x1 = -c/b !solution exists
+          endif
         else !have to solve quadratic
           if (det == 0d0) then !one solution
             x1 = -b/(2d0*a)
           else !two solutions
-            x1 = -b/(2d0*a) + sqrt(det)/(2d0*a)
-            x2 = -b/(2d0*a) - sqrt(det)/(2d0*a)
+            x1 = (-b + sqrt(det))/(2d0*a)
+            x2 = (-b - sqrt(det))/(2d0*a)
           endif
         endif
-        if ((c1 == 0d0 .and. d1 == 0d0) .or. c1 + d1*x1 == 0d0) then
-          y1 = -(a2 + b2*x1)/(c2 + d2*x1)
-          if (x2 >= 0d0) y2 = -(a2 + b2*x2)/(c2 + d2*x2)
+        if (x1 /= -1d0) then
+          if ((c1 == 0d0 .and. d1 == 0d0) .or. abs(c1 + d1*x1) < zero) then
+            y1 = -(a2 + b2*x1)/(c2 + d2*x1)
+            if (x2 >= 0d0) y2 = -(a2 + b2*x2)/(c2 + d2*x2)
+          else
+            y1 = -(a1 + b1*x1)/(c1 + d1*x1)
+            if (x2 >= 0d0) y2 = -(a1 + b1*x2)/(c1 + d1*x2)
+          endif
         else
-          y1 = -(a1 + b1*x1)/(c1 + d1*x1)
-          if (x2 >= 0d0) y2 = -(a1 + b1*x2)/(c1 + d1*x2)
+          y1 = -1d0
         endif
-if (c1 == 0d0 .and. c2 == 0d0 .and. d1 == 0d0 .and. d2 == 0d0 .and. a /= 0d0 .and. b /= 0d0 .and. c /= 0d0) then
-print*, '--------------------------------------------------------------'
-  do i = 1, 2
-    print*, facex(:,i)
-  enddo
-  do i = 1, 2
-    print*, facey(:,i)
-  enddo
 
-  print*, ''
-  print*, det, a, b, c
-  print*, ''
-  print*, a1, b1, c1, d1
-  print*, a2, b2, c2, d2
-  print*, 'x1                        ', 'y1                          ', 'x2                         ', 'y2        '
-  print*, x1, y1, x2, y2
-  print*, 'c2 + d2*x1               ', 'c2 + d2*x2                 ', 'c1 + d1*x1                   ', 'c1 + d1*x2    '
-  print*, c2 + d2*x1, c2 + d2*x2, c1 + d1*x1, c1 + d1*x2
-endif
+        if (c1 == 0d0 .and. c2 == 0d0 .and. d1 == 0d0 .and. d2 == 0d0 .and. a /= 0d0 .and. b /= 0d0 .and. c /= 0d0) then
+        print*, '--------------------------------------------------------------'
+          do i = 1, 2
+            print*, facex(:,i)
+          enddo
+          do i = 1, 2
+            print*, facey(:,i)
+          enddo
+
+          print*, ''
+          print*, det, a, b, c
+          print*, ''
+          print*, a1, b1, c1, d1
+          print*, a2, b2, c2, d2
+          print*, 'x1                        ', 'y1                          ', 'x2                         ', 'y2        '
+          print*, x1, y1, x2, y2
+          print*, 'c2 + d2*x1               ', 'c2 + d2*x2                 ', 'c1 + d1*x1                   ', 'c1 + d1*x2    '
+          print*, c2 + d2*x1, c2 + d2*x2, c1 + d1*x1, c1 + d1*x2
+        endif
+
         sign = 0
         cross = 0
 
@@ -494,70 +518,14 @@ endif
 
   !********************************************************************************
 
-  subroutine newton_raphson(cubex,cubey,cubez,x,y,z,ierror)
-    !attempts to find null within cell using Newton-Raphson
-    implicit none
-    double precision, dimension(2,2,2) :: cubex, cubey, cubez
-    double precision :: x, y, z
-    double precision, parameter :: dx=1.e-5
-    double precision :: bx, by, bz
-    double precision :: divbx, divby, divbz
-    double precision :: xold, yold, zold
-    integer :: ierror
-    double precision :: b,diff
-    integer :: icounter
-
-    ! print*, 'In Newton',x,y,z
-    ierror=0
-    !x=0.5
-    !y=0.5
-    !z=0.5
-
-    diff = 1
-    b=10.
-
-    icounter=0
-
-    do while (b > 1.e-4 .or. diff < 1.e-4)
-      icounter = icounter + 1
-      xold = x
-      yold = y
-      zold = z
-
-      bx = trilinear_cell(x,y,z,cubex)
-      by = trilinear_cell(x,y,z,cubey)
-      bz = trilinear_cell(x,y,z,cubez)
-
-      b = sqrt(bx*bx + by*by + bz*bz)
-
-      divbx = (trilinear_cell(x + dx/2.,y,z, cubex) - trilinear_cell(x - dx/2.,y,z, cubex))/dx
-      divby = (trilinear_cell(x,y + dx/2.,z, cubey) - trilinear_cell(x,y - dx/2.,z, cubey))/dx
-      divbz = (trilinear_cell(x,y,z + dx/2., cubez) - trilinear_cell(x,y,z - dx/2., cubez))/dx
-
-      x = xold - bx/divbx
-      y = yold - by/divby
-      z = zold - bz/divbz
-
-      diff = sqrt((x-xold)**2 + (y-yold)**2 + (z-zold)**2)
-
-      if (icounter > 100000) then
-        print *, 'Newton-Raphson did not converge!'
-        ierror=1
-        exit
-      endif
-    enddo
-  end
-
-  !********************************************************************************
-
   integer function switch(cube)
     !determines whether all the vertices of the cube have the same sign or not
     implicit none
-    integer :: i,j,k,icount
+    integer :: i, j, k, icount
     double precision :: cube(2,2,2)
     integer ::itest
 
-    icount=0
+    icount = 0
 
     do k = 1, 2
       do j = 1, 2
@@ -575,9 +543,9 @@ endif
     enddo
 
     if (abs(icount) < 8) then !don't all have same sign
-      itest=1
+      itest = 1
     else !all have same sign
-      itest=0
+      itest = 0
     endif
 
     switch = itest
@@ -601,19 +569,11 @@ endif
     double precision, dimension(11,11,11) ::  cubex, cubey,cubez
     double precision :: xs,ys,zs
 
-    !x=0.
-    !y=0.
-    !z=0.
-
     xs = x
     ys = y
     zs = z
 
-    !print*,'dx=',dx
-    !print*,'in subgrid',x,y,z
-
     ierror = 0
-    !print*,x,y,z,'subgrid start'
 
     do k = 1, 11
       z = zs + (k-1)*dx
@@ -624,7 +584,6 @@ endif
           cubex(i,j,k) = trilinear_cell(x, y, z, bx)
           cubey(i,j,k) = trilinear_cell(x, y, z, by)
           cubez(i,j,k) = trilinear_cell(x, y, z, bz)
-          !if (k == 1 .and. j == 1) print*,x,y,z
         enddo
       enddo
     enddo
@@ -665,72 +624,11 @@ endif
         print*,'NO NULL FOUND - ERROR :('
         ierror=1
       endif
-      !print*,k,j,i
 
     enddo outer
   end
 
   !********************************************************************************
-
-  subroutine brute_force(bx,by,bz,x,y,z)
-  !finds a null in a cell by brite force. Namely it subdivides the cell into 10x10x10 subcells, and finds the subcell with the minimum value of |B|. This is continued until the required accuracy (sig_figs) is achieved.
-    implicit none
-    double precision, dimension(2,2,2) :: bx, by,bz
-    double precision :: x, y, z
-    integer :: i,j,k
-
-    double precision :: dx, xs, ys,zs
-    double precision :: minx, miny,minz,min
-    double precision :: bbx,bby,bbz
-    double precision :: b
-    double precision :: range
-
-    xs = 0.
-    ys = 0.
-    zs = 0.
-
-    min = 100.
-
-    dx = 1.
-    range = 5.
-
-    do while (range > 10.**(-sig_figs)) !num=1,sig_figs
-      range = range/5.
-      dx = range/10
-      do k = 0, 10
-      !print*,k
-      z = zs + k*dx
-        do j = 0, 10
-          y = ys + j*dx
-          do i = 0, 10
-            x = xs + i*dx
-            bbx = trilinear_cell(x, y, z, bx)
-            bby = trilinear_cell(x, y, z, by)
-            bbz = trilinear_cell(x, y, z, bz)
-            b = bbx*bbx + bby*bby + bbz*bbz
-            if (b < min) then
-              min = b
-              minx = x
-              miny = y
-              minz = z
-            endif
-          enddo
-        enddo
-      enddo
-
-      !range=range/5.
-
-      xs = minx - range/10.
-      ys = miny - range/10.
-      zs = minz - range/10.
-    enddo
-    !print*,minx,miny,minz,min
-    x = minx
-    y = miny
-    z = minz
-
-  end subroutine
-
 
   subroutine add_element(x,element)
     !adds an element to the end of an array
