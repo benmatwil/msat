@@ -1,6 +1,6 @@
 module params
 
-  !implicit none
+  implicit none
 
   ! basic parameters/constants
   double precision, parameter :: pi = 4.d0*atan(1.d0)
@@ -8,13 +8,15 @@ module params
 
   ! data file containing the magnetic field data
   character(100), parameter :: defaultfilename = 'magfield.dat'
-  character(100) :: filein, fileout, arg
+  character(100), parameter :: datadir = 'data'
+  character(100), parameter :: outputdir = 'output'
+  character(100) :: filein, fileout
 
   ! Number of threads to be used by OpenMP
   integer, parameter :: nproc = 2
 
   ! nullfinder parameters
-  double precision, parameter :: zero = 1.d-10 !what the code treats as zero
+  double precision, parameter :: zero = 1d-10 !what the code treats as zero
   integer, parameter :: sig_figs = 6 !the number of significant figures of accuracy required for the null
 
   ! spinefinder parameters
@@ -23,8 +25,8 @@ module params
   ! ssfind parameters
   integer, parameter :: ringsmax = 10000 !maximum # of rings
   integer, parameter :: pointsmax = 100000 !maximum number of points in ring
-  double precision, parameter :: tol = 1.d-5 !tolerance of rkf45 scheme
-  double precision, parameter :: stepmin = 0.0003 !minimum step length
+  double precision, parameter :: tol = 1d-5 !tolerance of rkf45 scheme
+  double precision, parameter :: stepmin = 3d-4 !minimum step length
 
   ! coordinate type
   ! (1) = Cartesian (x,y,z)
@@ -36,6 +38,7 @@ module params
   
     subroutine filenames
 
+      character(100) :: arg
       integer :: iarg, ichar
 
       fileout = defaultfilename

@@ -16,7 +16,10 @@ program sf_converge
   integer :: sign, warning
   double precision, dimension(3) :: spine, fan
 
-  integer :: inull, iarg
+  integer :: inull
+
+  character(20) :: arg1
+  integer :: iarg
   
   print*,'#######################################################################'
   print*,'#                             Spinefinder                             #'
@@ -25,7 +28,7 @@ program sf_converge
   call filenames
 
   !Read in 'null.dat'
-  open (unit=10,file='output/'//trim(fileout)//'-nullpos.dat',form='unformatted')
+  open(unit=10,file='output/'//trim(fileout)//'-nullpos.dat',form='unformatted')
 
   read(10) nnulls
     allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),warnings(nnulls))
@@ -39,10 +42,10 @@ program sf_converge
   nullend = nnulls
   if (command_argument_count() > 0) then 
     do iarg = 1, command_argument_count()
-      call get_command_argument(iarg,arg)
-      if (arg(1:2) == 'n=') then
-        arg = arg(3:)
-        read(arg,*) nullstart
+      call get_command_argument(iarg,arg1)
+      if (arg1(1:2) == 'n=') then
+        arg1 = arg1(3:)
+        read(arg1,*) nullstart
         nullend = nullstart
         savedata = 1
       endif
