@@ -254,7 +254,7 @@ program nullfinder
   print*, 'Final number of nulls=', nnulls
   print*, 'Is this the same?', size(xp,1)
 
-  print*, "Now writing null positions to "trim(fileout)//"nullpos.dat"
+  print*, "Now writing null positions to "//trim(fileout)//"-nullpos.dat"
 
   open(unit=10, file='output/'//trim(fileout)//'-nullpos.dat',form='unformatted')
     write(10) nnulls
