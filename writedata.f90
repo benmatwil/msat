@@ -54,7 +54,9 @@ enddo
 
 print*,'Mag field data',a,b,c,aa,bb,cc,dd,tt
 
-open (unit=10,file=filename,access='stream')
+call filenames
+
+open (unit=10,file=filein,access='stream')
 write(10) nnx, nny, nnz
 write(10) bx,by,bz
 write(10) x, y, z
