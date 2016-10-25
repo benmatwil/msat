@@ -1,24 +1,30 @@
 #!/usr/bin/env tcsh
 
-if ( $1 == "" ) then
-  set a1 = ""
-else
-  set a1 = "data=$1"
-endif
+# Several examples for running code
 
-make
+# if ( $1 == "" ) then
+#   set a1 = ""
+# else
+#   set a1 = "data=$1"
+# endif
 
-if ($? == 0) then
-  nf $a1
-  sf $a1
-  ssf $a1
-  readin $a1
-endif
+# make
 
-#foreach x ...
-#  x=(printf "%04d\n" $x)
-#  make
-#  nf $1
-#  sf_converge $1
-#  ssf $1
-#  readin
+# if ($? == 0) then
+#   nf $a1
+#   sf $a1
+#   ssf $a1
+#   readin $a1
+# endif
+
+# foreach x ...
+#   x=(printf "%04d\n" $x)
+#   make
+#   nf $1
+#   sf_converge $1
+#   ssf $1
+#   readin
+
+foreach file (`find data/ -type f -name "*.dat" | awk -F/ '{print $2}'`)
+  nf data=$file
+end
