@@ -1,6 +1,8 @@
-function read_nulls
+function read_nulls, file, simple=simple
 
-  openr, null, 'output/null.dat', /f77_unformatted, /get_lun
+  file1 = strmid(file, strlen('data/'), strlen(file))
+  file1 = strmid(file1, 0, strlen(file1)-strlen('.dat'))
+  openr, null, 'output/'+file1+'-nullpos.dat', /get_lun
   nnulls = 0L
   readu, null, nnulls
   if nnulls gt 0 then begin
@@ -18,20 +20,22 @@ function read_nulls
     close,null
     free_lun, null
 
-    openr, null, 'output/nulls.dat', /f77_unformatted, /get_lun
-    nnulls = 0L
-    readu, null, nnulls
+    if not keyword_set(simple) then begin
+      openr, null, 'output/'+file1+'-nulldata.dat', /get_lun
+      nnulls = 0L
+      readu, null, nnulls
 
-    signs = lonarr(nnulls)
-    r = dblarr(3,nnulls)
-    spine = dblarr(3,nnulls)
-    fan = spine
-    readu,null,signs
-    readu,null,r,spine,fan
-    signs = -signs
+      signs = lonarr(nnulls)
+      r = dblarr(3,nnulls)
+      spine = dblarr(3,nnulls)
+      fan = spine
+      readu,null,r
+      readu,null,signs,spine,fan
+      signs = -signs
 
-    close, null
-    free_lun, null
+      close, null
+      free_lun, null
+    endif
 
     nulls = {nulldata,pos:dblarr(3),gridpos:dblarr(3),spine:dblarr(3),fan:dblarr(3),sign:long(0)}
     nulls = replicate({nulldata},nnulls)
@@ -39,9 +43,11 @@ function read_nulls
     for i = 0, nnulls-1 do begin
       nulls[i].pos = realpos[*,i]
       nulls[i].gridpos = pos[*,i]
-      nulls[i].spine = spine[*,i]
-      nulls[i].fan = fan[*,i]
-      nulls[i].sign = signs[i]
+      if not keyword_set(simple) then begin
+        nulls[i].spine = spine[*,i]
+        nulls[i].fan = fan[*,i]
+        nulls[i].sign = signs[i]
+      endif
     endfor
   endif
 

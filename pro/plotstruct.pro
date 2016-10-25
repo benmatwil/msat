@@ -14,7 +14,7 @@ end
 
 pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=file
   
-  if not keyword_set(file) then file = 'data/magfield.dat'
+  if not keyword_set(file) then file = 'data/magfield.dat' else file = 'data/' + file
   openr,10,file
   nx = 0l
   ny = 0l
@@ -32,7 +32,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
   ygc = indgen(sizebg[2])
   zgc = indgen(sizebg[3])
 
-  nulls = read_nulls()
+  nulls = read_nulls(file, /simple)
   npos = nulls[n-1].gridpos-1 ; -1 translation from fortran to idl grid spacing
 
   ;xyznpos = convert(npos,x,y,z)
@@ -62,12 +62,14 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
         ;for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
         p = plot3d(r[*,0],r[*,1],r[*,2],lines=' ',sym='x', aspect_ratio=1,/overplot)
         
-        readu,10,maxvec
-        max1 = maxvec
-        maxvec = maxvec*rsphere
-        maxvec = maxvec + npos
-        ;maxvec = convert(maxvec,x,y,z)
-        p = plot3d([maxvec[0]],[maxvec[1]],[maxvec[2]],'cyan',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
+        if not eof(10) then begin
+          readu,10,maxvec
+          max1 = maxvec
+          maxvec = maxvec*rsphere
+          maxvec = maxvec + npos
+          ;maxvec = convert(maxvec,x,y,z)
+          p = plot3d([maxvec[0]],[maxvec[1]],[maxvec[2]],'cyan',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
+        endif
         if 1 eq 0 then begin
           if not eof(10) then begin
             readu, 10, n & crossfan = dblarr(3,n) & readu, 10, crossfan & help, crossfan
@@ -94,12 +96,14 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
         ;for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
         p = plot3d(r[*,0],r[*,1],r[*,2],'g',lines=' ',sym='x', aspect_ratio=1,/overplot)
         
-        readu,10,minvec
-        min1 = minvec
-        minvec = minvec*rsphere
-        minvec = minvec + npos
-        ;minvec = convert(minvec,x,y,z)
-        p = plot3d([minvec[0]],[minvec[1]],[minvec[2]],'g',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
+        if not eof(10) then begin
+          readu,10,minvec
+          min1 = minvec
+          minvec = minvec*rsphere
+          minvec = minvec + npos
+          ;minvec = convert(minvec,x,y,z)
+          p = plot3d([minvec[0]],[minvec[1]],[minvec[2]],'g',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
+        endif
       endif
       if name eq fname[2] then begin
         r = transpose(r)
@@ -108,11 +112,13 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
         ;for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
         p = plot3d(r[*,0],r[*,1],r[*,2],'r',lines=' ',sym='x',/overplot,/aspect_ratio)
         
-        readu, 10, spine
-        spine = spine*rsphere
-        spine = spine + npos
-        ;spine = convert(spine,x,y,z)
-        p = plot3d([spine[0]],[spine[1]],[spine[2]],'blue',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
+        if not eof(10) then begin
+          readu, 10, spine
+          spine = spine*rsphere
+          spine = spine + npos
+          ;spine = convert(spine,x,y,z)
+          p = plot3d([spine[0]],[spine[1]],[spine[2]],'blue',lines=' ',sym='x',/overplot, sym_thick=6, sym_size=3,/aspect_ratio)
+        endif
       endif
       close,10
     endforeach

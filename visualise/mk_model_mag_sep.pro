@@ -1,4 +1,4 @@
-common shared_var, bgrid, xx, yy, zz, oModel, frame, null, inull, ds
+common shared_var, bgrid, xx, yy, zz, oModel, null, inull, ds
 
 pro model_add_sepsurf
   common shared_var
