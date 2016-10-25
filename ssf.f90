@@ -42,7 +42,7 @@ program ssfind
   call filenames
   
   ! read in data
-  open(unit=10,file=filein,access='stream')
+  open(unit=10, file=filein, access='stream', status='old')
     read(10), nx, ny, nz ! number of vertices
     allocate(bgrid(nx,ny,nz,3))
     allocate(x(nx), y(ny), z(nz))
@@ -64,7 +64,7 @@ program ssfind
 
   ! read in null data
 
-  open(unit=10,file='output/'//trim(fileout)//'-nulldata.dat',form='unformatted')
+  open(unit=10, file='output/'//trim(fileout)//'-nulldata.dat', access='stream', status='old')
     read(10) nnulls
     allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
     read(10) rnulls
@@ -155,9 +155,8 @@ program ssfind
     line2 = line1
 
     write(fname,fmt) inull
-    open(unit=12,file='output/'//trim(fileout)//'-separator'//trim(fname)//'.dat', &
-      form='unformatted',access='stream',status='replace')
-    open(unit=20,file='output/'//trim(fileout)//'-everything'//trim(fname)//'.dat',access='stream',status='replace')
+    open(unit=12, file='output/'//trim(fileout)//'-separator'//trim(fname)//'.dat' ,access='stream', status='replace')
+    open(unit=20, file='output/'//trim(fileout)//'-everything'//trim(fname)//'.dat', access='stream', status='replace')
 
     break = 0
     nseps = 0
