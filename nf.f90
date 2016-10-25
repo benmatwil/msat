@@ -37,7 +37,7 @@ program nullfinder
 
   call filenames
 
-  open(unit=10, file=filein, access='stream')
+  open(unit=10, file=filein, access='stream', status='old')
 
     print*, ''
     print*, "Reading in data from: '", trim(filein), "'..."
@@ -116,6 +116,7 @@ program nullfinder
     do j = 1, ny1
       do i = 1, nx1
         if (candidates(i,j,k) == 1) then
+
           cbx = bx(i:i+1 ,j:j+1, k:k+1) !bx cell
           cby = by(i:i+1 ,j:j+1, k:k+1) !by cell
           cbz = bz(i:i+1 ,j:j+1, k:k+1) !bz cell
@@ -126,10 +127,8 @@ program nullfinder
 
           if (itest == 0) then
             candidates(i,j,k) = 0 !if no null found remove this candidate
-          else
-        !    print*,'Null!'
           endif
-          !print *, ''
+
         endif
       enddo
     enddo     
@@ -145,7 +144,7 @@ program nullfinder
   nnulls = sum(candidates)
 
   !find coordinates of null
-  write(*,"(a,i5)"), ' Number of confirmed nulls=', sum(candidates)
+  write(*,"(a,i5)"), 'Number of confirmed nulls = ', sum(candidates)
   print*, ''
   print*, "Now determining each null's location to sub-gridcell accuracy:"
   do k = 1, nz1
@@ -216,8 +215,7 @@ program nullfinder
     enddo
   enddo
 
-  print*, ''
-  print*, 'found', nnulls, 'nulls'
+  print*, 'Found', nnulls, 'nulls'
 
   print*, ''
   print*, '-----------------------------------------------------------------------'
@@ -256,7 +254,7 @@ program nullfinder
 
   print*, "Now writing null positions to "//trim(fileout)//"-nullpos.dat"
 
-  open(unit=10, file='output/'//trim(fileout)//'-nullpos.dat',form='unformatted')
+  open(unit=10, file='output/'//trim(fileout)//'-nullpos.dat', access='stream')
     write(10) nnulls
 
     do i = 1, nnulls
