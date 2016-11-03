@@ -267,7 +267,7 @@ module nf_mod
 
     implicit none
     double precision, dimension(2,2) :: facex, facey, facez
-    integer :: cross, sign, i
+    integer :: cross, sign, i, nsol
     double precision :: a1, b1, c1, d1 !bilinear coefficients (facex)
     double precision :: a2, b2, c2, d2 !bilinear coefficients (facey)
     double precision :: a, b, c !quadratic coefficients ax^2+bx+c=0
@@ -310,82 +310,112 @@ module nf_mod
         if (abs(a) < zero) then !have to solve linear
           if (b /= 0d0) then
             x1 = -c/b !solution exists
+            nsol = 1
           endif
         else !have to solve quadratic
           if (det == 0d0) then !one solution
             x1 = -b/(2d0*a)
+            nsol = 1
           else !two solutions
             x1 = (-b + sqrt(det))/(2d0*a)
             x2 = (-b - sqrt(det))/(2d0*a)
+            nsol = 2
           endif
         endif
-        if (x1 /= -1d0) then
-          if ((c1 == 0d0 .and. d1 == 0d0) .or. abs(c1 + d1*x1) < zero) then
-            y1 = -(a2 + b2*x1)/(c2 + d2*x1)
-            if (x2 >= 0d0) y2 = -(a2 + b2*x2)/(c2 + d2*x2)
-          else
-            y1 = -(a1 + b1*x1)/(c1 + d1*x1)
-            if (x2 >= 0d0) y2 = -(a1 + b1*x2)/(c1 + d1*x2)
-          endif
-        else
-          y1 = -1d0
-        endif
-
-        if (c1 == 0d0 .and. c2 == 0d0 .and. d1 == 0d0 .and. d2 == 0d0 .and. a /= 0d0 .and. b /= 0d0 .and. c /= 0d0) then
-        print*, '--------------------------------------------------------------'
-          do i = 1, 2
-            print*, facex(:,i)
-          enddo
-          do i = 1, 2
-            print*, facey(:,i)
-          enddo
-
-          print*, ''
-          print*, det, a, b, c
-          print*, ''
-          print*, a1, b1, c1, d1
-          print*, a2, b2, c2, d2
-          print*, 'x1                        ', 'y1                          ', 'x2                         ', 'y2        '
-          print*, x1, y1, x2, y2
-          print*, 'c2 + d2*x1               ', 'c2 + d2*x2                 ', 'c1 + d1*x1                   ', 'c1 + d1*x2    '
-          print*, c2 + d2*x1, c2 + d2*x2, c1 + d1*x1, c1 + d1*x2
-        endif
-
-        sign = 0
-        cross = 0
-
-        if (check(x1, y1)) then !if x and y are on face (between 0 and 1)
-          cross = cross + 1
-
-          zcomp = bilinear_cell(x1, y1, facez) !'z' component of field at crossing point
-          if (zcomp > zero) then
-            sign = sign + 1
-          else if (zcomp < -zero) then
-            sign = sign - 1
-          else
-            sign = sign + 100
-          endif
-        endif
-
-        if (check(x2, y2)) then
-          cross = cross + 1
-
-          zcomp = bilinear_cell(x2, y2, facez)
-          if (zcomp > zero) then
-            sign = sign + 1
-          else if (zcomp < -zero) then
-            sign = sign - 1
-          else
-            sign = sign + 100
-          endif
-        endif
-      else !b^2-4ac less than zero - no intersection
-        sign = 0
-        cross = 0
       endif
-    else !no intersection or faces have no field on them
-      cross = 0
-      sign = 0
+      if (nsol > 0) then
+        if ((c1 == 0d0 .and. d1 == 0d0) .or. abs(c1 + d1*x1) < zero) then
+          y1 = -(a2 + b2*x1)/(c2 + d2*x1)
+          if (nsol == 2) y2 = -(a2 + b2*x2)/(c2 + d2*x2)
+        else
+          y1 = -(a1 + b1*x1)/(c1 + d1*x1)
+          if (nsol == 2) y2 = -(a1 + b1*x2)/(c1 + d1*x2)
+        endif
+      else
+        ! if the x equation isn't solvable then try the y equation
+        ! get quadratic coefficients (ay^2 + by + c = 0)
+        a = c1*d2 - c2*d1
+        b = (a1*d2 - a2*d1) - (b1*c2 - c1*b2)
+        c = a1*b2 - a2*b1
+
+        det = b**2 - 4d0*a*c
+
+        if (det >= 0) then !there is a solution
+          if (abs(a) < zero) then !have to solve linear
+            if (b /= 0d0) then
+              y1 = -c/b !solution exists
+              nsol = 1
+            endif
+          else !have to solve quadratic
+            if (det == 0d0) then !one solution
+              y1 = -b/(2d0*a)
+              nsol = 1
+            else !two solutions
+              y1 = (-b + sqrt(det))/(2d0*a)
+              y2 = (-b - sqrt(det))/(2d0*a)
+              nsol = 2
+            endif
+          endif
+          if (nsol > 0) then
+            if ((b1 == 0d0 .and. d1 == 0d0) .or. abs(b1 + d1*y1) < zero) then
+              x1 = -(a2 + c2*y1)/(b2 + d2*y1)
+              if (nsol == 2) x2 = -(a2 + c2*y2)/(b2 + d2*y2)
+              ! y1 = -(a2 + b2*x1)/(c2 + d2*x1)
+              ! if (x2 >= 0d0) y2 = -(a2 + b2*x2)/(c2 + d2*x2)
+            else
+              x1 = -(a1 + c1*y1)/(b1 + d1*y1)
+              if (nsol == 2) x2 = -(a1 + c1*y2)/(b1 + d1*y2)
+              ! y1 = -(a1 + b1*x1)/(c1 + d1*x1)
+              ! if (x2 >= 0d0) y2 = -(a1 + b1*x2)/(c1 + d1*x2)
+            endif
+          endif
+        endif
+        ! if (c1 == 0d0 .and. c2 == 0d0 .and. d1 == 0d0 .and. d2 == 0d0 .and. a /= 0d0 .and. b /= 0d0 .and. c /= 0d0) then
+        ! print*, '--------------------------------------------------------------'
+        !   do i = 1, 2
+        !     print*, facex(:,i)
+        !   enddo
+        !   do i = 1, 2
+        !     print*, facey(:,i)
+        !   enddo
+
+        !   print*, ''
+        !   print*, det, a, b, c
+        !   print*, ''
+        !   print*, a1, b1, c1, d1
+        !   print*, a2, b2, c2, d2
+        !   print*, 'x1                        ', 'y1                          ', 'x2                         ', 'y2        '
+        !   print*, x1, y1, x2, y2
+        !   print*, 'c2 + d2*x1               ', 'c2 + d2*x2                 ', 'c1 + d1*x1                   ', 'c1 + d1*x2    '
+        !   print*, c2 + d2*x1, c2 + d2*x2, c1 + d1*x1, c1 + d1*x2
+        ! endif
+      endif
+
+      if (check(x1, y1)) then !if x and y are on face (between 0 and 1)
+        cross = cross + 1
+
+        zcomp = bilinear_cell(x1, y1, facez) !'z' component of field at crossing point
+        if (zcomp > zero) then
+          sign = sign + 1
+        else if (zcomp < -zero) then
+          sign = sign - 1
+        else
+          sign = sign + 100
+        endif
+      endif
+
+      if (check(x2, y2)) then
+        cross = cross + 1
+
+        zcomp = bilinear_cell(x2, y2, facez)
+        if (zcomp > zero) then
+          sign = sign + 1
+        else if (zcomp < -zero) then
+          sign = sign - 1
+        else
+          sign = sign + 100
+        endif
+      endif
     endif
 
   end subroutine
@@ -445,12 +475,12 @@ module nf_mod
     z1 = linez(1)
     z2 = linez(2)
 
-    if ((x1 == 0. .and. x2 == 0.) .and. (y1 == 0. .and. y2 == 0.)) then
-      if (z1*z2 <= 0.) line_check = 1
-    else if ((x1 == 0. .and. x2 == 0.) .and. (z1 == 0. .and. z2 == 0.)) then
-      if (y1*y2 <= 0.) line_check = 1
-    else if ((z1 == 0. .and. z2 == 0.) .and. (y1 == 0. .and. y2 == 0.)) then
-      if (x1*x2 <= 0.) line_check = 1
+    if ((x1 == 0d0 .and. x2 == 0d0) .and. (y1 == 0d0 .and. y2 == 0d0)) then
+      if (z1*z2 <= 0d0) line_check = 1
+    else if ((x1 == 0d0 .and. x2 == 0d0) .and. (z1 == 0d0 .and. z2 == 0d0)) then
+      if (y1*y2 <= 0d0) line_check = 1
+    else if ((z1 == 0d0 .and. z2 == 0d0) .and. (y1 == 0d0 .and. y2 == 0d0)) then
+      if (x1*x2 <= 0d0) line_check = 1
     else
       line_check = 0
     endif
@@ -477,10 +507,10 @@ module nf_mod
 
     if (.not. check(x, y)) print*, 'bilinear error!'
 
-    if (x > 1.) x = 1.
-    if (x < 0.) x = 0.
-    if (y > 1.) y = 1.
-    if (y < 0.) y = 0.
+    if (x > 1) x = 1
+    if (x < 0d0) x = 0d0
+    if (y > 1) y = 1
+    if (y < 0d0) y = 0d0
 
     y1 = (1-x)*square(1,1) + x*square(2,1)
     y2 = (1-x)*square(1,2) + x*square(2,2)
@@ -498,12 +528,12 @@ module nf_mod
     double precision :: f11, f12, f21, f22
     double precision :: f1, f2
 
-    if (x > 1.) x = 1.
-    if (x < 0.) x = 0.
-    if (y > 1.) y = 1.
-    if (y < 0.) y = 0.
-    if (z > 1.) z = 1.
-    if (z < 0.) z = 0.
+    if (x > 1) x = 1
+    if (x < 0d0) x = 0d0
+    if (y > 1) y = 1
+    if (y < 0d0) y = 0d0
+    if (z > 1) z = 1
+    if (z < 0d0) z = 0d0
 
     f11 = (1-x)*cube(1,1,1) + x*cube(2,1,1)
     f12 = (1-x)*cube(1,1,2) + x*cube(2,1,2)
@@ -523,7 +553,7 @@ module nf_mod
     implicit none
     integer :: i, j, k, icount
     double precision :: cube(2,2,2)
-    integer ::itest
+    integer :: itest
 
     icount = 0
 
@@ -689,19 +719,6 @@ module nf_mod
 
   end
 
-
-  double precision function div(bx,by,bz)
-    !calculates div b in a cell (not used)
-    double precision, dimension (2,2,2) :: bx, by,bz
-    double precision, dimension(2) :: bbx, bby, bbz
-
-    bbx(:) = 0.25*(bx(:,1,1) + bx(:,1,2) + bx(:,2,1) + bx(:,2,2))
-    bby(:) = 0.25*(by(1,:,1) + by(1,:,2) + by(2,:,1) + by(2,:,2))
-    bbz(:) = 0.25*(bz(1,1,:) + bz(1,2,:) + bz(2,1,:) + bx(2,2,:))
-
-    div = bbx(2) - bbx(1) + bby(2) - bby(1) + bbz(2) - bbz(1)
-  end
-
   !********************************************************************************
 
   subroutine remove_duplicates(x,y,z,n,xp,yp,zp)
@@ -757,7 +774,7 @@ module nf_mod
       counter = 0
       do j = 1, n
         do i = j+1, n
-          if (distances(i,j) < 1.0) then
+          if (distances(i,j) < 1) then
             print *, i, j, distances(i,j)
             counter = counter + 1
           endif
