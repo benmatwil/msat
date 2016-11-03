@@ -1,12 +1,9 @@
 module ring
-!this module contains parameters involved in tracing rings, and subroutines to add points or remove points from rings. Also included is the subroutine (at_null) which determines if a point on the ring has reached a null.
+! this module contains parameters involved in tracing rings, and subroutines to add points or remove points from rings. Also included is the subroutine (at_null) which determines if a point on the ring has reached a null.
 
 use params
 use common
 use trace
-
-!ring drawing parameters
-integer, parameter :: nstart = 100 !number of startpoints in ring
 
 double precision :: maxdist, mindist, nulldist
 
@@ -16,7 +13,7 @@ integer, allocatable, dimension(:) :: break, association, remove, endpoints, nea
 contains
 
   subroutine add_points(nlines)
-    !adds points to rings if required
+    ! adds points to rings if required
     implicit none
 
     integer :: nlines
@@ -51,8 +48,8 @@ contains
     enddo
     !$OMP END DO
 
-    !add new points
-    !where the 'add' array has a point to be added, add this point
+    ! add new points
+    ! where the 'add' array has a point to be added, add this point
     nadd = 1
     do iline = 1, nlines
       if (modulus(add1(:,iline)) > 1d-4) then !if |add(:,iline)| is not zero, all points > (1,1,1)
@@ -89,7 +86,7 @@ contains
   !********************************************************************************
 
   subroutine remove_points(nlines, iteration)
-    !removes points from rings as required
+    ! removes points from rings as required
     implicit none
 
     integer :: nlines, iteration
@@ -105,7 +102,7 @@ contains
 
     !$OMP DO
     do iline = 1, nlines
-      if (endpoints(iline) == 1) then !remove points that have left the simulation
+      if (endpoints(iline) == 1) then ! remove points that have left the simulation
         remove(iline) = 1
         if (iline /= 1) then
           break(iline-1) = 1
@@ -116,28 +113,28 @@ contains
     enddo
     !$OMP END DO
 
-    !check for too tightly spaced points, flag points to be removed
+    ! check for too tightly spaced points, flag points to be removed
     !$OMP DO
-    do iline = 1, nlines !loop over all points
+    do iline = 1, nlines ! loop over all points
       if (break(iline) == 0) then
-        if (iline < nlines) then !if not end point
+        if (iline < nlines) then ! if not end point
           nxtline = iline+1
         else
           nxtline = 1
         endif
         if (iline /= 1) then
-          if (dist(line2(:,iline),line2(:,nxtline)) < mindist .and. remove(iline-1) == 0) remove(iline) = 1 !if iline and iline+1 are too near
+          if (dist(line2(:,iline),line2(:,nxtline)) < mindist .and. remove(iline-1) == 0) remove(iline) = 1 ! if iline and iline+1 are too near
         endif
       endif
     enddo
     !$OMP END DO
 
-    !remove points
+    ! remove points
     nremove = 0
-    if (nlines > nstart .or. sum(endpoints) /= 0) then !if the number of points isn't too small...
+    if (nlines > nstart .or. sum(endpoints) /= 0) then ! if the number of points isn't too small...
       do iline = 1, nlines
         if (nlines <= nstart .and. sum(endpoints) == 0) exit
-        if (remove(iline) == 1) then !if point is flagged to be removed, then remove
+        if (remove(iline) == 1) then ! if point is flagged to be removed, then remove
           iremove = iline - nremove
           !$OMP SECTIONS
           !$OMP SECTION
@@ -168,12 +165,12 @@ contains
   !********************************************************************************
 
   subroutine sep_detect(nlines,nullnum,nring)
-  !Determine whether a point in a ring is 'near' a null
-  !If so, integrate it and its neighbours forward to see if any of them diverge around the null (i.e. a separator)
+  ! Determine whether a point in a ring is 'near' a null
+  ! If so, integrate it and its neighbours forward to see if any of them diverge around the null (i.e. a separator)
 
     implicit none
     integer :: nlines
-    integer :: nullnum !the null the fan is being drawn from
+    integer :: nullnum ! the null the fan is being drawn from
     integer :: inull, iline, k
     integer :: nring
 
@@ -191,7 +188,7 @@ contains
 
     !$OMP DO ! private(near, notnear, nnc, k, gapsize, endgap, nr, r, rmap, signof, index, count, h)
     do inull = 1, size(rnulls,2)
-      if (inull == nullnum) cycle !ignore the null the points belong to
+      if (inull == nullnum) cycle ! ignore the null the points belong to
       if (signs(inull)*signs(nullnum) /= 1) then !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
         near = 0
         notnear = 0
@@ -202,7 +199,7 @@ contains
             .or. dist(line1(:,iline),rnullsalt(:,inull)) < nulldist) near(iline) = iline !point lies within nulldist
         enddo
 
-        if (maxval(near) > 0) then !if there are any points that lie within this distance
+        if (maxval(near) > 0) then ! if there are any points that lie within this distance
           ! find the longest consectutive number of points not near to the null (should be more not near another null)
           nnc = 0
           do iline = 1, nlines
@@ -225,15 +222,15 @@ contains
 
           endgap = maxloc(notnear,1) ! location of last non-near point
           gapsize = notnear(endgap) ! number of points in biggest gap not near null
-          nextra = 10 !number of points to test either side of test points
-          nr = nlines - gapsize + 2*nextra !total number to test (nlines-gapsize near null)
+          nextra = 10 ! number of points to test either side of test points
+          nr = nlines - gapsize + 2*nextra ! total number to test (nlines-gapsize near null)
 
           if (gapsize == 0 .or. nr >= nlines) then
             n1 = 1
             n2 = nlines
             nr = nlines
           else
-            !select all points not in this longest chain to be tested for change in side of the fan
+            ! select all points not in this longest chain to be tested for change in side of the fan
             n1 = modulo(endgap + 1 - nextra - 1, nlines) + 1
             n2 = modulo(nlines + endgap - gapsize + nextra - 1, nlines) + 1
           endif
@@ -253,7 +250,7 @@ contains
           signof = 0
 
           do index = 1, nr
-            !extrapolate points along fieldlines
+            ! extrapolate points along fieldlines
             count = 0
             do while (dist(r(:,index),rnulls(:,inull)) < tracedist .and. count < 1000)
               h = h0
@@ -263,7 +260,7 @@ contains
             enddo
 
             if (signs(inull)*signs(nullnum) == -1) then
-              !check which side of the null the points end out on
+              ! check which side of the null the points end out on
               if (dot(spines(:,inull),r(:,index)-rnulls(:,inull)) > 0) then
                 signof(index) = 1
               else
@@ -276,9 +273,9 @@ contains
                   .and. dist(rnulls(:,inull), r(:,index)) < checkdist &
                   .and. dist(rnulls(:,inull), r(:,index-1)) < checkdist) then
                   print*, 'Found a separator', nring, rmap(index-1), nlines, nullnum, inull
-                  break(rmap(index-1)) = 1 !disassociate points so that new points don't get added between them as they diverge around the null
+                  break(rmap(index-1)) = 1 ! disassociate points so that new points don't get added between them as they diverge around the null
                   nseps = nseps + 1
-                  !write the point's information to the separator file
+                  ! write the point's information to the separator file
                   write(12) 1
                   write(12) nullnum, inull
                   write(12) nring, rmap(index-1)
@@ -286,7 +283,7 @@ contains
               endif
             endif
             if (count == 1000) then !then we want to remove points as they appear to be stuck at the null
-              remove(rmap(index)) = 1
+              ! remove(rmap(index)) = 1
               break(rmap(index-1)) = 1
               cycle
             endif

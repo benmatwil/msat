@@ -23,6 +23,7 @@ module params
   double precision, parameter :: rsphere = 1d-4 !radius of sphere which the dot products are calculated on
 
   ! ssfind parameters
+  integer, parameter :: nstart = 100 ! number of startpoints in ring
   integer, parameter :: ringsmax = 10000 !maximum # of rings
   integer, parameter :: pointsmax = 100000 !maximum number of points in ring
   double precision, parameter :: tol = 1d-5 !tolerance of rkf45 scheme
@@ -51,7 +52,7 @@ module params
         enddo
       endif
 
-      filein = 'data/'//fileout
+      filein = 'data/'//trim(fileout)
       ichar = index(fileout, '.dat')
       fileout = fileout(1:ichar-1)
 
