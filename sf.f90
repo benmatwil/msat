@@ -87,7 +87,6 @@ program sf_converge
     write(10) nnulls
     write(10) rnulls
     write(10) signs, spines, fans
-    write(10) warning
   close(10)
 
   print*, 'Summary:'
@@ -107,7 +106,7 @@ program sf_converge
   print*, 'Positive', pcount
   print*, 'Negative', ncount
   print*, 'Unknown', ucount
-  print*, 'Warning', sum(warnings)
+  print*, 'Warning', count(warnings > 0)
   print*, 'All nulls have data, should be equal', pcount+ncount+ucount, nnulls
   print*, 'Done!'
 
@@ -236,7 +235,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     nfw = size(rconvergefw,2)
     nbw = size(rconvergebw,2)
     ! first determine the spine and which is which
-    if (nfw == 2 .or. nbw == 2) then ! if one of the reductions only has two vectors, can guarantee one is spine
+    if (nfw <= 2 .or. nbw <= 2) then ! if one of the reductions only has two vectors, can guarantee one is spine
       print*, "Using converged to choose"
       if (nfw < nbw) then ! if nfw is smaller then it's the spine, spine going out of null
         sign = -1
@@ -292,13 +291,13 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
           rspine = rconvergebw
           rfan = rconvergefw
           densepos = denseposfw
-          sign = 1
+          sign = 0
         elseif (nbw > 5*nfw) then
           spine = rconvergefw(:,maxval(maxloc(denseposfw)))
           rspine = rconvergefw
           rfan = rconvergebw
           densepos = denseposbw
-          sign = -1
+          sign = 0
         else
           ! if still no reduction leaves two
           ! try using that the spine should be the densest accumulation of points
@@ -313,14 +312,14 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
             rfan = rconvergefw
             rspine = rconvergebw
             densepos = denseposfw
-            sign = 1
+            sign = 0
             ! goto 100
           else if (nbw < nfw) then
             spine = rconvergefw(:,maxval(maxloc(denseposfw)))
             rfan = rconvergebw
             rspine = rconvergefw
             densepos = denseposbw
-            sign = -1
+            sign = 0
             ! goto 100
           else ! not sure how to to decide in this case, haven't found a case like this yet...
             print*, "Uh oh, can't decide, error!"
@@ -330,79 +329,87 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
             open(unit=10, file='output/maxvec.dat', access='stream', status='replace')
               write(10) size(rconvergebw,2), rconvergebw
             close(10)
+            sign = -2
           endif
         endif
       endif
     endif
-  deallocate(denseposfw, denseposbw)
+    deallocate(denseposfw, denseposbw)
   enddo
   ! We have picked rspine and rfan so can get rid of rconverges
   deallocate(rconvergebw, rconvergefw)
   print*, 'Picked a spine'
 
-  if (size(rfan,2) == 2) then
-    maxvec = rfan(:,1)
-  else
-    !call remove_duplicates(rfan, 1d-2, densepos)
-    maxvec = rfan(:,maxval(maxloc(densepos)))
-  endif
-  deallocate(densepos)
-  
   if (sign /= signguess) then
-    warning = 1
-    print*, 'The two checks do not agree, needs looking into'
+    warning = 3
+    warningmessage = 'The two checks do not agree, needs looking into'
   endif
+
+  if (sign /= -2) then
+    if (size(rfan,2) == 2) then
+      maxvec = rfan(:,1)
+    else
+      !call remove_duplicates(rfan, 1d-2, densepos)
+      maxvec = rfan(:,maxval(maxloc(densepos)))
+    endif
+    deallocate(densepos)
+    
+    print*, 'Final number of converged'
+    print*, '    ','spines:', size(rspine,2)
+    print*, '    ','fans:  ', size(rfan,2)
   
-  print*, 'Final number of converged'
-  print*, '    ','spines:', size(rspine,2)
-  print*, '    ','fans:  ', size(rfan,2)
- 
-  ! Working on a sphere of size rsphere
-  accconv = accconv*2
-  ! loop over each point to find converged point
-  do itheta = 1, ntheta
-    do iphi = 1, nphi
-      count = 0
-      rnew = sphere2cart(rsphere,thetas(itheta),phis(iphi))
-      bnew = trilinear(rnew+rnull, bgrid)
-      rold = [0,0,0]
-      do count = 1, maxcount
-        bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
-        call it_conv(rold,rnew,bnew,fact,sign)
-        if (modulus(rnew-rold) < accconv .and. count >= mincount) exit
+    ! Working on a sphere of size rsphere
+    accconv = accconv*2
+    ! loop over each point to find converged point
+    do itheta = 1, ntheta
+      do iphi = 1, nphi
+        count = 0
+        rnew = sphere2cart(rsphere,thetas(itheta),phis(iphi))
+        bnew = trilinear(rnew+rnull, bgrid)
+        rold = [0,0,0]
+        do count = 1, maxcount
+          bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
+          call it_conv(rold,rnew,bnew,fact,sign)
+          if (modulus(rnew-rold) < accconv .and. count >= mincount) exit
+        enddo
+        rmin(:,iphi+(itheta-1)*nphi) = normalise(rnew)
       enddo
-      rmin(:,iphi+(itheta-1)*nphi) = normalise(rnew)
     enddo
-  enddo
-  call remove_duplicates(rmin, acc, densepos)
-  minvec = rmin(:,maxval(maxloc(densepos)))
+    call remove_duplicates(rmin, acc, densepos)
+    minvec = rmin(:,maxval(maxloc(densepos)))
 
-  ! Save data if there is a problematic null for inspection by map.pro
-  if (savedata == 1) then
-    open(unit=10, file='output/spine.dat', access='stream', status='replace')
-      write(10) size(rspine,2), rspine, spine
-    close(10)
-    open(unit=10, file='output/maxvec.dat', access='stream', status='replace')
-      write(10) size(rfan,2), rfan, maxvec
-      if (allocated(crossfan)) write(10) size(crossfan,2), crossfan
-    close(10)
-    open(unit=10, file='output/minvec.dat', access='stream', status='replace')
-      write(10) size(rmin,2), rmin, minvec
-    close(10)
+    print*, 'Maxvec is:'
+    print*, maxvec
+    print*, 'Minvec is:'
+    print*, minvec
+
+    print*, '-----------------------------------------------------------------------------'
+    print*, 'Final dot products are'
+    print*, '        min/max           ', '        max/spine       ', '        min/spine          '
+    print*, dot(minvec,maxvec), dot(maxvec,spine), dot(minvec,spine)
+    print*, '-----------------------------------------------------------------------------'
+
+    fan = normalise(cross(minvec,maxvec)) ! fan vector is perp to fan plane
+
+    ! Save data if there is a problematic null for inspection by map.pro
+    if (savedata == 1) then
+      open(unit=10, file='output/spine.dat', access='stream', status='replace')
+        write(10) size(rspine,2), rspine, spine
+      close(10)
+      open(unit=10, file='output/maxvec.dat', access='stream', status='replace')
+        write(10) size(rfan,2), rfan, maxvec
+        if (allocated(crossfan)) write(10) size(crossfan,2), crossfan
+      close(10)
+      open(unit=10, file='output/minvec.dat', access='stream', status='replace')
+        write(10) size(rmin,2), rmin, minvec
+      close(10)
+    endif
+
+  else
+    sign = 0
+    spine = [1,0,0]
+    fan = [1,0,0]
   endif
-
-  print*, 'Maxvec is:'
-  print*, maxvec
-  print*, 'Minvec is:'
-  print*, minvec
-
-  print*, '-----------------------------------------------------------------------------'
-  print*, 'Final dot products are'
-  print*, '        min/max           ', '        max/spine       ', '        min/spine          '
-  print*, dot(minvec,maxvec), dot(maxvec,spine), dot(minvec,spine)
-  print*, '-----------------------------------------------------------------------------'
-
-  fan = normalise(cross(minvec,maxvec)) ! fan vector is perp to fan plane
 
   if (warning == 1) warningmessage = 'WARNING, NULL LIKELY A SOURCE OR SINK'
   if (abs(90-acos(dot(fan,spine))/dtor) < 1d1) then
