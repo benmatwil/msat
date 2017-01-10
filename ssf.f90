@@ -43,12 +43,12 @@ program ssfind
   
   ! read in data
   open(unit=10, file=filein, access='stream', status='old')
-    read(10), nx, ny, nz ! number of vertices
+    read(10) nx, ny, nz ! number of vertices
     allocate(bgrid(nx,ny,nz,3))
     allocate(x(nx), y(ny), z(nz))
-    read(10), bgrid(:,:,:,1)
-    read(10), bgrid(:,:,:,2)
-    read(10), bgrid(:,:,:,3)
+    read(10) bgrid(:,:,:,1)
+    read(10) bgrid(:,:,:,2)
+    read(10) bgrid(:,:,:,3)
     read(10) x, y, z
   close(10)
   
