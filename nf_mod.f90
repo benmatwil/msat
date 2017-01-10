@@ -284,6 +284,7 @@ module nf_mod
 
     sign = 0
     cross = 0
+    nsol = 0
 
     ! if there could be an intersection of the zeroes on facex and face y, or if the faces are not completely zero...
     if (zeropoint(facex,facey) .or. blankface(facex,facey,facez)) then
