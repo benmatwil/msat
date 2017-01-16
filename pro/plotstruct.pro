@@ -13,8 +13,10 @@ function convert, gridcoord, x, y, z, check=check
 end
 
 pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=file
+
+  !except = 0
   
-  if not keyword_set(file) then file = 'data/magfield.dat' else file = 'data/' + file
+  if not keyword_set(file) then file = 'data/magfield.dat'; else file = 'data/' + file
   openr,10,file
   nx = 0l
   ny = 0l
