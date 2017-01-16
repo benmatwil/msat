@@ -40,7 +40,7 @@ program nullfinder
   open(unit=10, file=filein, access='stream', status='old')
 
     print*, ''
-    print*, "Reading in data from: '", trim(filein), "'..."
+    print*, 'Reading in data from: '//trim(filein)
 
     read(10), nx, ny, nz !number of vertices
     print*, ''
@@ -104,7 +104,7 @@ program nullfinder
   enddo
 
   print*, ''
-  write(*,"(a,i5)"), ' Number of candidate nulls found = ', nnulls
+  print*, ' Number of candidate nulls found = ', nnulls
 
   print*, ''
   print*, '-----------------------------------------------------------------------'
@@ -254,7 +254,7 @@ program nullfinder
 
   print*, "Now writing null positions to "//trim(fileout)//"-nullpos.dat"
 
-  open(unit=10, file='output/'//trim(fileout)//'-nullpos.dat', access='stream')
+  open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream')
     write(10) nnulls
 
     do i = 1, nnulls

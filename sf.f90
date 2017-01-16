@@ -18,7 +18,7 @@ program sf_converge
 
   integer :: inull
 
-  character(20) :: arg1
+  character(20) :: arg
   integer :: iarg
   
   print*,'#######################################################################'
@@ -28,7 +28,7 @@ program sf_converge
   call filenames
 
   !Read in 'null.dat'
-  open(unit=10, file='output/'//trim(fileout)//'-nullpos.dat', access='stream', status='old')
+  open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
 
   read(10) nnulls
     allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),warnings(nnulls))
@@ -42,10 +42,10 @@ program sf_converge
   nullend = nnulls
   if (command_argument_count() > 0) then 
     do iarg = 1, command_argument_count()
-      call get_command_argument(iarg,arg1)
-      if (arg1(1:2) == 'n=') then
-        arg1 = arg1(3:)
-        read(arg1,*) nullstart
+      call get_command_argument(iarg,arg)
+      if (trim(arg) == '-n') then
+        call get_command_argument(iarg+1,arg)
+        read(arg,*) nullstart
         nullend = nullstart
         savedata = 1
       endif
@@ -83,7 +83,7 @@ program sf_converge
   if (nullend - nullstart /= nnulls - 1) stop
   
   !now write data to nulls.dat
-  open(unit=10, file='output/'//trim(fileout)//'-nulldata.dat', access='stream')
+  open(unit=10, file=trim(fileout)//'-nulldata.dat', access='stream')
     write(10) nnulls
     write(10) rnulls
     write(10) signs, spines, fans
@@ -323,10 +323,10 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
             ! goto 100
           else ! not sure how to to decide in this case, haven't found a case like this yet...
             print*, "Uh oh, can't decide, error!"
-            open(unit=10, file='output/spine.dat', access='stream', status='replace')
+            open(unit=10, file=fileout(1:index(fileout, '/', .true.))//'spine.dat', access='stream', status='replace')
               write(10) size(rconvergefw,2), rconvergefw
             close(10)
-            open(unit=10, file='output/maxvec.dat', access='stream', status='replace')
+            open(unit=10, file=fileout(1:index(fileout, '/', .true.))//'maxvec.dat', access='stream', status='replace')
               write(10) size(rconvergebw,2), rconvergebw
             close(10)
             sign = -2
@@ -361,9 +361,9 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     ! Working on a sphere of size rsphere
     accconv = accconv*2
     ! loop over each point to find converged point
+    ! Why does this not work for source/sinks
     do itheta = 1, ntheta
       do iphi = 1, nphi
-        count = 0
         rnew = sphere2cart(rsphere,thetas(itheta),phis(iphi))
         bnew = trilinear(rnew+rnull, bgrid)
         rold = [0,0,0]
