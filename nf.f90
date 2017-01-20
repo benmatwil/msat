@@ -14,6 +14,7 @@ program nullfinder
 
   integer, dimension(:,:,:), allocatable :: candidates !array containing coords of candidate cells (1 if candidate, 0 if not)
   double precision, dimension(2,2,2) :: cube, cbx, cby, cbz !arrays containing vertices surrounding a cell
+  integer :: mincube(3)
   double precision :: x, y, z !coordinates of a null
   double precision, allocatable, dimension(:) :: xgrid, ygrid, zgrid
 
@@ -22,6 +23,7 @@ program nullfinder
 
   integer :: i, j, k
   integer :: ii, jj, kk
+  integer :: ix, iy, iz
 
   integer :: nnulls, nvert
   integer :: itestx, itesty, itestz, itest
@@ -162,32 +164,38 @@ program nullfinder
           y = 0d0
           z = 0d0
 
-          dx = 1.
-          !Print*, 'Attempting to use trilinear method within cell...'
+          dx = 1d0
           do ii = 1, sig_figs
-            dx = dx/10.000
-            call subgrid(cbx, cby, cbz, dx, x, y, z, ierror) !chop cell into 10x10x10 subcells, and check for nulls in each subcell
+            dx = dx/10d0
+            call subgrid(cbx, cby, cbz, dx, x, y, z, ierror) ! chop cell into 10x10x10 subcells, and check for nulls in each subcell
             if (ierror == 1) exit
           enddo
+
+          do iz = 1, 2
+            do iy = 1, 2
+              do ix = 1, 2
+                cube(ix,iy,iz) = trilinear_cell(x+(ix-1)*dx,y+(iy-1)*dx,z+(iz-1)*dx,cbx)**2 + &
+                  trilinear_cell(x+(ix-1)*dx,y+(iy-1)*dx,z+(iz-1)*dx,cby)**2 + &
+                  trilinear_cell(x+(ix-1)*dx,y+(iy-1)*dx,z+(iz-1)*dx,cbz)**2
+              enddo
+            enddo
+          enddo
+
+          mincube = minloc(cube)
+
+          x = x + (mincube(1) - 1)*dx
+          y = y + (mincube(2) - 1)*dx
+          z = z + (mincube(3) - 1)*dx          
 
           if (ierror == 1) then
             x = x + 5.*dx
             y = y + 5.*dx
             z = z + 5.*dx
-            ! print*, 'Attemptig to use Newton Raphson...'
-            ! call newton_raphson(cbx, cby, cbz, x, y, z,ierror)
-            ! if (ierror .eq. 0) then
-            !   Print*, 'Success!'
-            !   print*, 'Null at',i+x,j+y,k+z
-            ! endif
 
             print*, i, j, k
             print*, "Don't believe this null. Removing from list"
             nnulls = nnulls-1
 
-            ! print*, 'Attempting to use brute force...'
-            ! call brute_force(cbx,cby,cbz,x,y,z)
-            ! write(*,dblfmt)'Null at ',i+x,j+y,k+z,' in gridcell coordinates'
           else
             ! write(*,dblfmt) 'Null at ', i+x, j+y, k+z, ' in gridcell coordinates'
             ! write(*,dblfmt) 'Null at ', linear(x, xgrid(i:i+1)), linear(y, ygrid(j:j+1)), linear(z, zgrid(k:k+1)), ' in real units'
@@ -247,6 +255,28 @@ program nullfinder
 
   print*, 'Now checking for duplicate nulls:'
   call remove_duplicates(xs, ys, zs, nnulls, xp, yp, zp)
+
+  print*, ''
+  print*, '-----------------------------------------------------------------------'
+  print*, ''
+
+  print*, 'Now checking for nulls right on the edge'
+  if (nnulls >= 1) then
+    i = 1
+    do while (i <= nnulls)
+      if (xs(i) < 1 + 1d-1**sig_figs .or. xs(i) > size(xgrid,1) - 1d-1**sig_figs) then
+        call remove_element(xs, i)
+        call remove_element(ys, i)
+        call remove_element(zs, i)
+        call remove_element(xp, i)
+        call remove_element(yp, i)
+        call remove_element(zp, i)
+        nnulls = nnulls - 1
+      else
+        i = i + 1
+      endif
+    enddo
+  endif
 
   print*, ''
   print*, 'Final number of nulls=', nnulls
