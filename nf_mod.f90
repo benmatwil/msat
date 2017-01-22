@@ -15,9 +15,9 @@ module nf_mod
     integer :: cross, sign
     integer :: edge
 
-    double precision, dimension(2,2,2) :: cbx,cby,cbz
+    real(np), dimension(2,2,2) :: cbx,cby,cbz
 
-    double precision, dimension(2,2) :: facex, facey, facez
+    real(np), dimension(2,2) :: facex, facey, facez
 
     integer, dimension(6,6) :: test
     integer, dimension(6) :: test2
@@ -194,9 +194,9 @@ module nf_mod
   logical function zeropoint(a,b)
     !Checks if there is the possibility that there is a zero on the faces a and b. If not, then there cannot be a crossing of zeroes on these faces.
     implicit none
-    double precision, dimension(2,2) :: a, b
+    real(np), dimension(2,2) :: a, b
     integer :: totala, totalb
-    integer :: i,j
+    integer :: i, j
 
     totala = 0
     totalb = 0
@@ -233,8 +233,8 @@ module nf_mod
 
   function blankface(a,b,c)
     !determines if the faces a, b and c are all zero. If so, return .false.
-    double precision, dimension(2,2) :: a, b, c
-    double precision :: atot, btot,ctot
+    real(np), dimension(2,2) :: a, b, c
+    real(np) :: atot, btot,ctot
     logical :: blankface
 
     atot = sum(abs(a))
@@ -243,7 +243,7 @@ module nf_mod
 
     blankface = .true.
 
-    if (atot + btot + ctot <= zero*12.d0) then
+    if (atot + btot + ctot <= zero*12.0_np) then
       !print*, 'BLANK FACE'
       blankface = .false.
     endif
@@ -254,9 +254,9 @@ module nf_mod
 
   logical function check(x,y)
     !checks of x and y are between 0 and 1
-    double precision :: x, y
+    real(np) :: x, y
 
-    check = (x >= 0d0) .and. (x <= 1d0) .and. (y >= 0d0) .and. (y <= 1d0)
+    check = (x >= 0.0_np) .and. (x <= 1.0_np) .and. (y >= 0.0_np) .and. (y <= 1.0_np)
   end
 
   !********************************************************************************
@@ -266,21 +266,21 @@ module nf_mod
     !Uses the Method described in Haynes et al. 2007
 
     implicit none
-    double precision, dimension(2,2) :: facex, facey, facez
+    real(np), dimension(2,2) :: facex, facey, facez
     integer :: cross, sign, i, nsol
-    double precision :: a1, b1, c1, d1 !bilinear coefficients (facex)
-    double precision :: a2, b2, c2, d2 !bilinear coefficients (facey)
-    double precision :: a, b, c !quadratic coefficients ax^2+bx+c=0
+    real(np) :: a1, b1, c1, d1 !bilinear coefficients (facex)
+    real(np) :: a2, b2, c2, d2 !bilinear coefficients (facey)
+    real(np) :: a, b, c !quadratic coefficients ax^2+bx+c=0
 
-    double precision :: x1, x2, y1, y2
-    double precision :: det
+    real(np) :: x1, x2, y1, y2
+    real(np) :: det
 
-    double precision :: zcomp
+    real(np) :: zcomp
 
-    x1 = -1d0
-    y1 = -1d0
-    x2 = -1d0
-    y2 = -1d0
+    x1 = -1
+    y1 = -1
+    x2 = -1
+    y2 = -1
 
     sign = 0
     cross = 0
@@ -305,27 +305,27 @@ module nf_mod
       c = a1*c2 - a2*c1
 
       ! determinant of quadratic
-      det = b**2 - 4d0*a*c
+      det = b**2 - 4*a*c
 
-      if (det >= 0) then !there is a solution
+      if (det >= 0) then ! there is a solution
         if (abs(a) < zero) then !have to solve linear
-          if (b /= 0d0) then
-            x1 = -c/b !solution exists
+          if (b /= 0.0_np) then
+            x1 = -c/b ! solution exists
             nsol = 1
           endif
-        else !have to solve quadratic
-          if (det == 0d0) then !one solution
-            x1 = -b/(2d0*a)
+        else ! have to solve quadratic
+          if (det == 0.0_np) then ! one solution
+            x1 = -b/(2*a)
             nsol = 1
-          else !two solutions
-            x1 = (-b + sqrt(det))/(2d0*a)
-            x2 = (-b - sqrt(det))/(2d0*a)
+          else ! two solutions
+            x1 = (-b + sqrt(det))/(2*a)
+            x2 = (-b - sqrt(det))/(2*a)
             nsol = 2
           endif
         endif
       endif
       if (nsol > 0) then
-        if ((c1 == 0d0 .and. d1 == 0d0) .or. abs(c1 + d1*x1) < zero) then
+        if ((c1 == 0.0_np .and. d1 == 0.0_np) .or. abs(c1 + d1*x1) < zero) then
           y1 = -(a2 + b2*x1)/(c2 + d2*x1)
           if (nsol == 2) y2 = -(a2 + b2*x2)/(c2 + d2*x2)
         else
@@ -339,39 +339,39 @@ module nf_mod
         b = (a1*d2 - a2*d1) - (b1*c2 - c1*b2)
         c = a1*b2 - a2*b1
 
-        det = b**2 - 4d0*a*c
+        det = b**2 - 4*a*c
 
         if (det >= 0) then !there is a solution
           if (abs(a) < zero) then !have to solve linear
-            if (b /= 0d0) then
+            if (b /= 0.0_np) then
               y1 = -c/b !solution exists
               nsol = 1
             endif
           else !have to solve quadratic
-            if (det == 0d0) then !one solution
-              y1 = -b/(2d0*a)
+            if (det == 0.0_np) then !one solution
+              y1 = -b/(2*a)
               nsol = 1
             else !two solutions
-              y1 = (-b + sqrt(det))/(2d0*a)
-              y2 = (-b - sqrt(det))/(2d0*a)
+              y1 = (-b + sqrt(det))/(2*a)
+              y2 = (-b - sqrt(det))/(2*a)
               nsol = 2
             endif
           endif
           if (nsol > 0) then
-            if ((b1 == 0d0 .and. d1 == 0d0) .or. abs(b1 + d1*y1) < zero) then
+            if ((b1 == 0.0_np .and. d1 == 0.0_np) .or. abs(b1 + d1*y1) < zero) then
               x1 = -(a2 + c2*y1)/(b2 + d2*y1)
               if (nsol == 2) x2 = -(a2 + c2*y2)/(b2 + d2*y2)
               ! y1 = -(a2 + b2*x1)/(c2 + d2*x1)
-              ! if (x2 >= 0d0) y2 = -(a2 + b2*x2)/(c2 + d2*x2)
+              ! if (x2 >= 0.0_np) y2 = -(a2 + b2*x2)/(c2 + d2*x2)
             else
               x1 = -(a1 + c1*y1)/(b1 + d1*y1)
               if (nsol == 2) x2 = -(a1 + c1*y2)/(b1 + d1*y2)
               ! y1 = -(a1 + b1*x1)/(c1 + d1*x1)
-              ! if (x2 >= 0d0) y2 = -(a1 + b1*x2)/(c1 + d1*x2)
+              ! if (x2 >= 0.0_np) y2 = -(a1 + b1*x2)/(c1 + d1*x2)
             endif
           endif
         endif
-        ! if (c1 == 0d0 .and. c2 == 0d0 .and. d1 == 0d0 .and. d2 == 0d0 .and. a /= 0d0 .and. b /= 0d0 .and. c /= 0d0) then
+        ! if (c1 == 0.0_np .and. c2 == 0.0_np .and. d1 == 0.0_np .and. d2 == 0.0_np .and. a /= 0.0_np .and. b /= 0.0_np .and. c /= 0.0_np) then
         ! print*, '--------------------------------------------------------------'
         !   do i = 1, 2
         !     print*, facex(:,i)
@@ -426,9 +426,9 @@ module nf_mod
   integer function edge_check(facex,facey,facez)
     !check for null along edges of a cell face
     implicit none
-    double precision, dimension(2,2) :: facex,facey,facez
-    double precision, dimension(2) :: linex, liney , linez
-    !double precision :: x,y,z
+    real(np), dimension(2,2) :: facex,facey,facez
+    real(np), dimension(2) :: linex, liney , linez
+    !real(np) :: x,y,z
 
     edge_check = 0
 
@@ -465,9 +465,9 @@ module nf_mod
   integer function line_check(linex,liney,linez)
     !checks if null lies on an edge
     implicit none
-    double precision, dimension(2) :: linex, liney, linez
-    !double precision :: x, y, z
-    double precision :: x1, x2, y1, y2, z1, z2
+    real(np), dimension(2) :: linex, liney, linez
+    !real(np) :: x, y, z
+    real(np) :: x1, x2, y1, y2, z1, z2
 
     x1 = linex(1)
     x2 = linex(2)
@@ -476,12 +476,12 @@ module nf_mod
     z1 = linez(1)
     z2 = linez(2)
 
-    if ((x1 == 0d0 .and. x2 == 0d0) .and. (y1 == 0d0 .and. y2 == 0d0)) then
-      if (z1*z2 <= 0d0) line_check = 1
-    else if ((x1 == 0d0 .and. x2 == 0d0) .and. (z1 == 0d0 .and. z2 == 0d0)) then
-      if (y1*y2 <= 0d0) line_check = 1
-    else if ((z1 == 0d0 .and. z2 == 0d0) .and. (y1 == 0d0 .and. y2 == 0d0)) then
-      if (x1*x2 <= 0d0) line_check = 1
+    if ((x1 == 0.0_np .and. x2 == 0.0_np) .and. (y1 == 0.0_np .and. y2 == 0.0_np)) then
+      if (z1*z2 <= 0.0_np) line_check = 1
+    else if ((x1 == 0.0_np .and. x2 == 0.0_np) .and. (z1 == 0.0_np .and. z2 == 0.0_np)) then
+      if (y1*y2 <= 0.0_np) line_check = 1
+    else if ((z1 == 0.0_np .and. z2 == 0.0_np) .and. (y1 == 0.0_np .and. y2 == 0.0_np)) then
+      if (x1*x2 <= 0.0_np) line_check = 1
     else
       line_check = 0
     endif
@@ -490,9 +490,9 @@ module nf_mod
 
   !********************************************************************************
 
-  double precision function linear(x,line)
+  real(np) function linear(x,line)
     !linear interpolation of two values
-    double precision :: line(2), x
+    real(np) :: line(2), x
 
     linear = (1-x)*line(1) + x*line(2)
 
@@ -500,18 +500,18 @@ module nf_mod
 
   !********************************************************************************
 
-  double precision function bilinear_cell(x,y,square)
+  real(np) function bilinear_cell(x,y,square)
     implicit none
     !interpolate the value of a function at (x,y) from the 4 corner values
-    double precision :: x, y, square(2,2)
-    double precision :: y1, y2
+    real(np) :: x, y, square(2,2)
+    real(np) :: y1, y2
 
     if (.not. check(x, y)) print*, 'bilinear error!'
 
-    if (x > 1) x = 1
-    if (x < 0d0) x = 0d0
-    if (y > 1) y = 1
-    if (y < 0d0) y = 0d0
+    if (x > 1.0_np) x = 1
+    if (x < 0.0_np) x = 0
+    if (y > 1.0_np) y = 1
+    if (y < 0.0_np) y = 0
 
     y1 = (1-x)*square(1,1) + x*square(2,1)
     y2 = (1-x)*square(1,2) + x*square(2,2)
@@ -521,20 +521,20 @@ module nf_mod
 
   !********************************************************************************
 
-  double precision function trilinear_cell(x, y ,z, cube)
+  real(np) function trilinear_cell(x, y ,z, cube)
     implicit none
     !find the value of a function at (x,y,z) in a cell using the 8 vertices
-    double precision :: cube(2,2,2)
-    double precision :: x, y, z
-    double precision :: f11, f12, f21, f22
-    double precision :: f1, f2
+    real(np) :: cube(2,2,2)
+    real(np) :: x, y, z
+    real(np) :: f11, f12, f21, f22
+    real(np) :: f1, f2
 
-    if (x > 1) x = 1
-    if (x < 0d0) x = 0d0
-    if (y > 1) y = 1
-    if (y < 0d0) y = 0d0
-    if (z > 1) z = 1
-    if (z < 0d0) z = 0d0
+    if (x > 1.0_np) x = 1
+    if (x < 0.0_np) x = 0
+    if (y > 1.0_np) y = 1
+    if (y < 0.0_np) y = 0
+    if (z > 1.0_np) z = 1
+    if (z < 0.0_np) z = 0
 
     f11 = (1-x)*cube(1,1,1) + x*cube(2,1,1)
     f12 = (1-x)*cube(1,1,2) + x*cube(2,1,2)
@@ -553,7 +553,7 @@ module nf_mod
     !determines whether all the vertices of the cube have the same sign or not
     implicit none
     integer :: i, j, k, icount
-    double precision :: cube(2,2,2)
+    real(np) :: cube(2,2,2)
     integer :: itest
 
     icount = 0
@@ -567,15 +567,14 @@ module nf_mod
             icount = icount - 1
           else
             icount = icount + 0
-            !print *, 'ZERO'
           endif
         enddo
       enddo
     enddo
 
-    if (abs(icount) < 8) then !don't all have same sign
+    if (abs(icount) < 8) then ! don't all have same sign
       itest = 1
-    else !all have same sign
+    else ! all have same sign
       itest = 0
     endif
 
@@ -588,17 +587,17 @@ module nf_mod
   subroutine subgrid(bx,by,bz,dx,x,y,z,ierror)
     !Finds null within gridcell by subdividing it into smaller cells, and using the bilinear method on these cells. This is repeated until the required accuracy is achieved
     implicit none
-    double precision, dimension(2,2,2) :: bx, by, bz
-    double precision :: x, y, z
-    double precision :: dx
+    real(np), dimension(2,2,2) :: bx, by, bz
+    real(np) :: x, y, z
+    real(np) :: dx
     integer :: ierror
 
     integer :: i, j, k
     integer :: itestx,itesty,itestz, itest
 
-    double precision, dimension(2,2,2) :: cbx,cby,cbz
-    double precision, dimension(11,11,11) ::  cubex, cubey,cubez
-    double precision :: xs,ys,zs
+    real(np), dimension(2,2,2) :: cbx,cby,cbz
+    real(np), dimension(11,11,11) ::  cubex, cubey,cubez
+    real(np) :: xs,ys,zs
 
     xs = x
     ys = y
@@ -639,10 +638,9 @@ module nf_mod
           itestz = switch(cbz)
           if (itestz == 0) cycle
 
-          call bilin_test(cbx,cby,cbz,itest) !check for null within (or on face/corner/edge of) cell
+          call bilin_test(cbx,cby,cbz,itest) ! check for null within (or on face/corner/edge of) cell
 
           if (itest == 1) then
-            ! print*, 'Null!',xs+dx*(i-1),ys+dx*(j-1),zs+dx*(k-1)
             x = xs + dx*(i-1)
             y = ys + dx*(j-1)
             z = zs + dx*(k-1)
@@ -653,7 +651,7 @@ module nf_mod
 
       if (k == 10 .and. j == 11 .and. i == 11) then
         print*,'NO NULL FOUND - ERROR :('
-        ierror=1
+        ierror = 1
       endif
 
     enddo outer
@@ -662,10 +660,10 @@ module nf_mod
   !********************************************************************************
 
   subroutine add_element(x,element)
-    !adds an element to the end of an array
+    ! adds an element to the end of an array
     implicit none
-    double precision, allocatable :: x(:), dummy(:)
-    double precision :: element
+    real(np), allocatable :: x(:), dummy(:)
+    real(np) :: element
     integer :: isize
 
     isize = size(x)
@@ -685,8 +683,8 @@ module nf_mod
   !********************************************************************************
 
   subroutine remove_element(x,index)
-    !removes element number index from an array
-    double precision, allocatable :: x(:), dummy(:)
+    ! removes element number index from an array
+    real(np), allocatable :: x(:), dummy(:)
     integer :: index
     integer :: isize
 
@@ -709,8 +707,9 @@ module nf_mod
   !********************************************************************************
 
   subroutine normalise(a,b,c)
-    double precision, dimension(2,2,2) :: a, b, c
-    double precision :: scale
+    
+    real(np), dimension(2,2,2) :: a, b, c
+    real(np) :: scale
 
     scale = max(maxval(abs(a)), maxval(abs(b)), maxval(abs(c)))
 
@@ -723,15 +722,15 @@ module nf_mod
   !********************************************************************************
 
   subroutine remove_duplicates(x,y,z,n,xp,yp,zp)
-    !removes duplicate nulls (nulls closer than 0.01 gridcells)
+    ! removes duplicate nulls (nulls closer than 0.01 gridcells)
     implicit none
-    double precision, allocatable :: x(:), y(:), z(:)
-    double precision, allocatable :: xp(:), yp(:), zp(:)
-    double precision, allocatable :: distances(:,:)
+    real(np), allocatable :: x(:), y(:), z(:)
+    real(np), allocatable :: xp(:), yp(:), zp(:)
+    real(np), allocatable :: distances(:,:)
     integer :: n
     integer :: i,j
     integer :: counter
-    double precision :: sep
+    real(np) :: sep
     integer :: exitcondition
 
     if (n > 1) then
@@ -760,10 +759,9 @@ module nf_mod
 
       allocate(distances(n,n))
 
-      distances = 1000000.
+      distances = 1e6_np
       do j = 1, n
         do i = j+1, n
-          !print*,nnulls,i,j
           distances(i,j) = (x(i) - x(j))**2 + (y(i) - y(j))**2 + (z(i) - z(j))**2
         enddo
       enddo
