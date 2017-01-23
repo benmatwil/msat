@@ -45,17 +45,17 @@ program nullfinder
     print*, ''
     print*, 'Reading in data from: '//trim(filein)
 
-    read(10), nx, ny, nz ! number of vertices
+    read(10) nx, ny, nz ! number of vertices
     print*, ''
-    write(*, intfmt), 'Number of points in grid: (nx,ny,nz) = ', nx, ny, nz, ''
+    write(*, intfmt) 'Number of points in grid: (nx,ny,nz) = ', nx, ny, nz, ''
 
     allocate(bx(nx,ny,nz), by(nx,ny,nz), bz(nx,ny,nz))
     allocate(xgrid(nx), ygrid(ny), zgrid(nz))
 
-    read(10), bx
-    read(10), by
-    read(10), bz
-    read(10), xgrid, ygrid, zgrid
+    read(10) bx
+    read(10) by
+    read(10) bz
+    read(10) xgrid, ygrid, zgrid
 
   close(10)
 
@@ -128,9 +128,7 @@ program nullfinder
 
           call bilin_test(cbx, cby, cbz, itest) ! check for null within (or on face/corner/edge of) cell
 
-          if (itest == 0) then
-            candidates(i,j,k) = 0 ! if no null found remove this candidate
-          endif
+          if (itest == 0) candidates(i,j,k) = 0 ! if no null found remove this candidate
 
         endif
       enddo
@@ -147,7 +145,7 @@ program nullfinder
   nnulls = sum(candidates)
 
   ! find coordinates of null
-  write(*,"(a,i5)"), 'Number of confirmed nulls = ', sum(candidates)
+  write(*,"(a,i5)") 'Number of confirmed nulls = ', sum(candidates)
   print*, ''
   print*, "Now determining each null's location to sub-gridcell accuracy:"
   do k = 1, nz1
