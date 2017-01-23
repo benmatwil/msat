@@ -186,7 +186,7 @@ program nullfinder
           y = y + (mincube(2) - 1)*dx
           z = z + (mincube(3) - 1)*dx
 
-          if (xs(i) < 1 + 0.1_np**sig_figs .or. xs(i) > size(xgrid,1) - 0.1_np**sig_figs) ierror = 1
+          if (x+i < 1 + 0.1_np**sig_figs .or. x+i > size(xgrid,1) - 0.1_np**sig_figs) ierror = 1
 
           if (ierror == 1) then
 
