@@ -1,4 +1,4 @@
-!spine finder with convergence method
+! spine finder with convergence method
 program sf_converge
 
   use params
@@ -342,7 +342,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
 
   if (sign /= signguess) then
     warning = 3
-    warningmessage = 'The two checks do not agree, needs looking into'
+    warningmessage = 'WARNING: THE TWO CHECKS DO NOT AGREE, NEEDS LOOKING INTO'
   endif
 
   if (sign /= -2) then
@@ -411,7 +411,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     fan = [1,0,0]
   endif
 
-  if (warning == 1) warningmessage = 'WARNING, NULL LIKELY A SOURCE OR SINK'
+  if (warning == 1) warningmessage = 'WARNING: NULL LIKELY A SOURCE OR SINK'
   if (abs(90-acos(dot(fan,spine))/dtor) < 1d1) then
     warningmessage = 'WARNING: SPINE AND FAN STRONGLY INCLINED'
     if (warning /= 1) warning = 2
