@@ -64,6 +64,8 @@ module params
           endif
         enddo
       endif
+
+      if (ic == 0) stop 'No input file provided'
       
       if (oc == 0) then
         fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
