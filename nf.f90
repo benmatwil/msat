@@ -33,10 +33,10 @@ program nullfinder
   real(np) :: dx
   real(np), allocatable, dimension(:,:) :: distances
 
-  print*,'#######################################################################'
-  print*,'#                         Null Finding Code                           #'
-  print*,'#                      (Written by G P S Gibb)                        #'
-  print*,'#######################################################################'
+  print*, '#######################################################################'
+  print*, '#                         Null Finding Code                           #'
+  print*, '#                      (Written by G P S Gibb)                        #'
+  print*, '#######################################################################'
 
   call filenames
 
