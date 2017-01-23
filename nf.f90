@@ -1,4 +1,5 @@
 program nullfinder
+
   use params 
   use nf_mod
 
@@ -7,16 +8,16 @@ program nullfinder
   character(len=30) :: intfmt = "(a,'(',i4,',',i4,',',i4')',a)"
   character(len=40) :: dblfmt= "(a,'(',f9.5,',',f9.5,',',f9.5,')',a)"
 
-  double precision, allocatable, dimension(:) :: xs, ys, zs !x,y and z coordinates of confirmed nulls
-  double precision, allocatable, dimension(:) :: xp, yp, zp
+  real(np), allocatable, dimension(:) :: xs, ys, zs !x,y and z coordinates of confirmed nulls
+  real(np), allocatable, dimension(:) :: xp, yp, zp
   
-  double precision, dimension(:,:,:), allocatable :: bx, by, bz
+  real(np), dimension(:,:,:), allocatable :: bx, by, bz
 
   integer, dimension(:,:,:), allocatable :: candidates !array containing coords of candidate cells (1 if candidate, 0 if not)
-  double precision, dimension(2,2,2) :: cube, cbx, cby, cbz !arrays containing vertices surrounding a cell
+  real(np), dimension(2,2,2) :: cube, cbx, cby, cbz !arrays containing vertices surrounding a cell
   integer :: mincube(3)
-  double precision :: x, y, z !coordinates of a null
-  double precision, allocatable, dimension(:) :: xgrid, ygrid, zgrid
+  real(np) :: x, y, z !coordinates of a null
+  real(np), allocatable, dimension(:) :: xgrid, ygrid, zgrid
 
   integer :: nx, ny, nz !number of vertices
   integer :: nx1, ny1, nz1 !number of cells
@@ -29,8 +30,8 @@ program nullfinder
   integer :: itestx, itesty, itestz, itest
 
   integer :: ierror
-  double precision :: dx
-  double precision, allocatable, dimension(:,:) :: distances
+  real(np) :: dx
+  real(np), allocatable, dimension(:,:) :: distances
 
   print*,'#######################################################################'
   print*,'#                         Null Finding Code                           #'
@@ -119,9 +120,9 @@ program nullfinder
       do i = 1, nx1
         if (candidates(i,j,k) == 1) then
 
-          cbx = bx(i:i+1 ,j:j+1, k:k+1) !bx cell
-          cby = by(i:i+1 ,j:j+1, k:k+1) !by cell
-          cbz = bz(i:i+1 ,j:j+1, k:k+1) !bz cell
+          cbx = bx(i:i+1, j:j+1, k:k+1) !bx cell
+          cby = by(i:i+1, j:j+1, k:k+1) !by cell
+          cbz = bz(i:i+1, j:j+1, k:k+1) !bz cell
           
           call normalise(cbx, cby, cbz)
 
@@ -160,13 +161,13 @@ program nullfinder
 
           call normalise(cbx, cby, cbz)
 
-          x = 0d0
-          y = 0d0
-          z = 0d0
+          x = 0.0_np
+          y = 0.0_np
+          z = 0.0_np
 
-          dx = 1d0
+          dx = 1.0_np
           do ii = 1, sig_figs
-            dx = dx/10d0
+            dx = dx/10.0_np
             call subgrid(cbx, cby, cbz, dx, x, y, z, ierror) ! chop cell into 10x10x10 subcells, and check for nulls in each subcell
             if (ierror == 1) exit
           enddo
@@ -174,9 +175,9 @@ program nullfinder
           do iz = 1, 2
             do iy = 1, 2
               do ix = 1, 2
-                cube(ix,iy,iz) = trilinear_cell(x+(ix-1)*dx,y+(iy-1)*dx,z+(iz-1)*dx,cbx)**2 + &
-                  trilinear_cell(x+(ix-1)*dx,y+(iy-1)*dx,z+(iz-1)*dx,cby)**2 + &
-                  trilinear_cell(x+(ix-1)*dx,y+(iy-1)*dx,z+(iz-1)*dx,cbz)**2
+                cube(ix,iy,iz) = trilinear_cell(x+(ix-1)*dx, y+(iy-1)*dx, z+(iz-1)*dx, cbx)**2 + &
+                  trilinear_cell(x+(ix-1)*dx, y+(iy-1)*dx, z+(iz-1)*dx, cby)**2 + &
+                  trilinear_cell(x+(ix-1)*dx, y+(iy-1)*dx, z+(iz-1)*dx, cbz)**2
               enddo
             enddo
           enddo
@@ -185,12 +186,11 @@ program nullfinder
 
           x = x + (mincube(1) - 1)*dx
           y = y + (mincube(2) - 1)*dx
-          z = z + (mincube(3) - 1)*dx          
+          z = z + (mincube(3) - 1)*dx
+
+          if (xs(i) < 1 + 0.1_np**sig_figs .or. xs(i) > size(xgrid,1) - 0.1_np**sig_figs) ierror = 1
 
           if (ierror == 1) then
-            x = x + 5.*dx
-            y = y + 5.*dx
-            z = z + 5.*dx
 
             print*, i, j, k
             print*, "Don't believe this null. Removing from list"
@@ -234,7 +234,7 @@ program nullfinder
   do k = 1, nz
     do j = 1, ny
       do i = 1, nx
-        if (sqrt(bx(i,j,k)**2 + by(i,j,k)**2 + bz(i,j,k)**2) == 0) then ! 0 or zero?
+        if (sqrt(bx(i,j,k)**2 + by(i,j,k)**2 + bz(i,j,k)**2) < zero) then ! 0 or zero?
           call add_element(xs, dble(i))
           call add_element(ys, dble(j))
           call add_element(zs, dble(k))
@@ -260,23 +260,23 @@ program nullfinder
   print*, '-----------------------------------------------------------------------'
   print*, ''
 
-  print*, 'Now checking for nulls right on the edge'
-  if (nnulls >= 1) then
-    i = 1
-    do while (i <= nnulls)
-      if (xs(i) < 1 + 1d-1**sig_figs .or. xs(i) > size(xgrid,1) - 1d-1**sig_figs) then
-        call remove_element(xs, i)
-        call remove_element(ys, i)
-        call remove_element(zs, i)
-        call remove_element(xp, i)
-        call remove_element(yp, i)
-        call remove_element(zp, i)
-        nnulls = nnulls - 1
-      else
-        i = i + 1
-      endif
-    enddo
-  endif
+  ! print*, 'Now checking for nulls right on the edge'
+  ! if (nnulls >= 1) then
+  !   i = 1
+  !   do while (i <= nnulls)
+  !     if (xs(i) < 1 + 0.1_np**sig_figs .or. xs(i) > size(xgrid,1) - 0.1_np**sig_figs) then
+  !       call remove_element(xs, i)
+  !       call remove_element(ys, i)
+  !       call remove_element(zs, i)
+  !       call remove_element(xp, i)
+  !       call remove_element(yp, i)
+  !       call remove_element(zp, i)
+  !       nnulls = nnulls - 1
+  !     else
+  !       i = i + 1
+  !     endif
+  !   enddo
+  ! endif
 
   print*, ''
   print*, 'Final number of nulls=', nnulls
