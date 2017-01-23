@@ -8,19 +8,19 @@ program nullfinder
   character(len=30) :: intfmt = "(a,'(',i4,',',i4,',',i4')',a)"
   character(len=40) :: dblfmt= "(a,'(',f9.5,',',f9.5,',',f9.5,')',a)"
 
-  real(np), allocatable, dimension(:) :: xs, ys, zs !x,y and z coordinates of confirmed nulls
+  real(np), allocatable, dimension(:) :: xs, ys, zs ! x,y and z coordinates of confirmed nulls
   real(np), allocatable, dimension(:) :: xp, yp, zp
   
   real(np), dimension(:,:,:), allocatable :: bx, by, bz
 
-  integer, dimension(:,:,:), allocatable :: candidates !array containing coords of candidate cells (1 if candidate, 0 if not)
-  real(np), dimension(2,2,2) :: cube, cbx, cby, cbz !arrays containing vertices surrounding a cell
+  integer, dimension(:,:,:), allocatable :: candidates ! array containing coords of candidate cells (1 if candidate, 0 if not)
+  real(np), dimension(2,2,2) :: cube, cbx, cby, cbz ! arrays containing vertices surrounding a cell
   integer :: mincube(3)
-  real(np) :: x, y, z !coordinates of a null
+  real(np) :: x, y, z ! coordinates of a null
   real(np), allocatable, dimension(:) :: xgrid, ygrid, zgrid
 
-  integer :: nx, ny, nz !number of vertices
-  integer :: nx1, ny1, nz1 !number of cells
+  integer :: nx, ny, nz ! number of vertices
+  integer :: nx1, ny1, nz1 ! number of cells
 
   integer :: i, j, k
   integer :: ii, jj, kk
@@ -45,7 +45,7 @@ program nullfinder
     print*, ''
     print*, 'Reading in data from: '//trim(filein)
 
-    read(10), nx, ny, nz !number of vertices
+    read(10), nx, ny, nz ! number of vertices
     print*, ''
     write(*, intfmt), 'Number of points in grid: (nx,ny,nz) = ', nx, ny, nz, ''
 
@@ -64,7 +64,7 @@ program nullfinder
   print*, '-----------------------------------------------------------------------'
   print*,  ''
 
-  nx1 = nx-1 !number of cells (not vertices)
+  nx1 = nx-1 ! number of cells (not vertices)
   ny1 = ny-1
   nz1 = nz-1
 
@@ -74,24 +74,24 @@ program nullfinder
 
   print*, 'Checking for candidate nulls...'
 
-  !loop over each cell checking if bx, by and bz switch sign
+  ! loop over each cell checking if bx, by and bz switch sign
   do k = 1, nz1
     do j = 1, ny1
       do i = 1, nx1
 
         candidates(i,j,k) = 0
 
-        !check if bx changes sign
+        ! check if bx changes sign
         cube(:,:,:) = bx(i:i+1, j:j+1, k:k+1)
         itestx = switch(cube)
         if (itestx == 0) cycle
 
-        !check by changes sign
+        ! check by changes sign
         cube(:,:,:) = by(i:i+1, j:j+1, k:k+1)
         itesty = switch(cube)
         if (itesty == 0) cycle
 
-        !check bz changes sign
+        ! check bz changes sign
         cube(:,:,:) = bz(i:i+1, j:j+1, k:k+1)
         itestz = switch(cube)
         if (itestz == 0) cycle
@@ -114,7 +114,7 @@ program nullfinder
   print*, ''
 
   print*, 'Now looping over all candidate nulls...'
-  !now loop over candidates and test for nulls using bilinear method on faces
+  ! now loop over candidates and test for nulls using bilinear method on faces
   do k = 1, nz1
     do j = 1, ny1
       do i = 1, nx1
@@ -126,10 +126,10 @@ program nullfinder
           
           call normalise(cbx, cby, cbz)
 
-          call bilin_test(cbx, cby, cbz, itest) !check for null within (or on face/corner/edge of) cell
+          call bilin_test(cbx, cby, cbz, itest) ! check for null within (or on face/corner/edge of) cell
 
           if (itest == 0) then
-            candidates(i,j,k) = 0 !if no null found remove this candidate
+            candidates(i,j,k) = 0 ! if no null found remove this candidate
           endif
 
         endif
@@ -146,7 +146,7 @@ program nullfinder
 
   nnulls = sum(candidates)
 
-  !find coordinates of null
+  ! find coordinates of null
   write(*,"(a,i5)"), 'Number of confirmed nulls = ', sum(candidates)
   print*, ''
   print*, "Now determining each null's location to sub-gridcell accuracy:"
@@ -200,11 +200,11 @@ program nullfinder
             ! write(*,dblfmt) 'Null at ', i+x, j+y, k+z, ' in gridcell coordinates'
             ! write(*,dblfmt) 'Null at ', linear(x, xgrid(i:i+1)), linear(y, ygrid(j:j+1)), linear(z, zgrid(k:k+1)), ' in real units'
 
-            !add this null to the list of nulls (in gridcell coordinates)
+            ! add this null to the list of nulls (in gridcell coordinates)
             call add_element(xs, x+i)
             call add_element(ys, y+j)
             call add_element(zs, z+k)
-            !add this null to the lost of nulls (in 'real' units)
+            ! add this null to the lost of nulls (in 'real' units)
             call add_element(xp, linear(x, xgrid(i:i+1)))
             call add_element(yp, linear(y, ygrid(j:j+1)))
             call add_element(zp, linear(z, zgrid(k:k+1)))
@@ -213,7 +213,7 @@ program nullfinder
             cby = by(i:i+1, j:j+1, k:k+1)
             cbz = bz(i:i+1, j:j+1, k:k+1)
 
-            !print*, 'Sanity check:'
+            ! print*, 'Sanity check:'
             ! write(*,"(a,ES10.3)"), '|B| at point is', sqrt(trilinear_cell(x, y, z, cbx)**2 + &
             ! trilinear_cell(x, y, z, cby)**2+trilinear_cell(x, y, z, cbz)**2)
 
