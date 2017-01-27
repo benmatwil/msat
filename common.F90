@@ -32,7 +32,7 @@ contains
     xp = r(1)
     yp = r(2)
     zp = r(3)
-if (zp < 1) print*, zp
+
     nx = floor(xp)
     ny = floor(yp)
     nz = floor(zp)
@@ -43,37 +43,37 @@ if (zp < 1) print*, zp
       ! first coordinate needs checking in all coordinate systems
       if (xp < xmin) then
         xp = xmin
-        nx = floor(xp)
+        nx = nint(xp)
       elseif (xp > xmax) then
         xp = xmax
-        nx = floor(xp)-1
+        nx = nint(xp)-1
       endif
 #if CARTESIAN
       ! if (coord_type == 1) then
         ! for cartesians
         if (yp < ymin) then
           yp = ymin
-          ny = floor(yp)
+          ny = nint(yp)
         elseif (yp > ymax) then
           yp = ymax
-          ny = floor(yp)-1
+          ny = nint(yp)-1
         endif
         if (zp < zmin) then
           zp = zmin
-          nz = floor(zp)
+          nz = nint(zp)
         elseif (zp > zmax) then
           zp = zmax
-          nz = floor(zp)-1
+          nz = nint(zp)-1
         endif
 #elif CYLINDRICAL
       ! elseif (coord_type == 3) then
         ! for cylindricals
         if (zp < zmin) then
           zp = zmin
-          nz = floor(zp)
+          nz = nint(zp)
         elseif (zp > zmax) then
           zp = zmax
-          nz = floor(zp)-1
+          nz = nint(zp)-1
         endif
 #endif
       ! endif
