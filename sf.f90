@@ -87,6 +87,7 @@ program sf_converge
     write(10) nnulls
     write(10) rnulls
     write(10) signs, spines, fans
+    write(10) warnings
   close(10)
 
   print*, 'Summary:'
@@ -123,6 +124,8 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   integer :: count, iconv, imin, nfw, nbw, maxcount, mincount
   integer :: flagfw, flagbw, savedata, angleflag
 
+  double precision, allocatable :: thetas(:), phis(:)
+  integer, parameter :: nphi1 = nphi/3, ntheta1 = ntheta/3
   double precision :: dphi, dtheta, angle, minmove
   double precision, dimension(3) :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
   double precision, dimension(3) :: rold, rnew, bnew, rfw1, rbw1
@@ -134,7 +137,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   integer, dimension(:,:), allocatable :: densepos, denseposfw, denseposbw
 
   double precision :: mindot, dotprod
-  integer :: sign, warning, signguess
+  integer :: sign, warning, signguess, possign
 
   double precision, dimension(3) :: spine, fan, maxvec, minvec
 
@@ -149,7 +152,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   print*, trilinear(rnull, bgrid)
   print*, '-----------------------------------------------------------------------------'
 
-  allocate(rconvergefw(3,nphi*ntheta), rconvergebw(3,nphi*ntheta), rmin(3,nphi*ntheta))
+  allocate(rconvergefw(3,nphi*ntheta), rconvergebw(3,nphi*ntheta))
 
   !set up theta and phi for sphere around null
   dphi = 360d0/nphi
@@ -157,7 +160,11 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
 
   minmove = 2*pi*rsphere/nphi/10
   mincount = 750
+  maxcount = 5000
+  fact = 1d-2*rsphere
+  accconv = 1d-10*rsphere
   
+  allocate(thetas(ntheta), phis(nphi))
   angle = 0
   main: do
     do iphi = 1, nphi
@@ -171,11 +178,9 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     thetas = thetas*dtor
     
     ! Working on a sphere of size rsphere
-    fact = 1d-2*rsphere
-    accconv = 1d-10*rsphere
     flagfw = 0
     flagbw = 0
-    maxcount = 5000
+    
     ! loop over each point to find converged point
     do itheta = 1, ntheta
       do iphi = 1, nphi
@@ -208,6 +213,8 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     print*, '-----------------------------------------------------------------------------'
     exit
   enddo main
+
+  deallocate(thetas, phis)
 
   print*, 'Number of points which stop convergence'
   print*, '    ', 'forwards: ', flagfw
@@ -292,12 +299,14 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
           rfan = rconvergefw
           densepos = denseposfw
           sign = 0
+          possign = 1
         elseif (nbw > 5*nfw) then
           spine = rconvergefw(:,maxval(maxloc(denseposfw)))
           rspine = rconvergefw
           rfan = rconvergebw
           densepos = denseposbw
           sign = 0
+          possign = -1
         else
           ! if still no reduction leaves two
           ! try using that the spine should be the densest accumulation of points
@@ -313,14 +322,14 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
             rspine = rconvergebw
             densepos = denseposfw
             sign = 0
-            ! goto 100
+            possign = 1
           else if (nbw < nfw) then
             spine = rconvergefw(:,maxval(maxloc(denseposfw)))
             rfan = rconvergebw
             rspine = rconvergefw
             densepos = denseposbw
             sign = 0
-            ! goto 100
+            possign = -1
           else ! not sure how to to decide in this case, haven't found a case like this yet...
             print*, "Uh oh, can't decide, error!"
             open(unit=10, file=fileout(1:index(fileout, '/', .true.))//'spine.dat', access='stream', status='replace')
@@ -329,6 +338,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
             open(unit=10, file=fileout(1:index(fileout, '/', .true.))//'maxvec.dat', access='stream', status='replace')
               write(10) size(rconvergebw,2), rconvergebw
             close(10)
+            possign = 0
             sign = -2
           endif
         endif
@@ -338,9 +348,10 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   enddo
   ! We have picked rspine and rfan so can get rid of rconverges
   deallocate(rconvergebw, rconvergefw)
+  if (possign == 0) possign = sign
   print*, 'Picked a spine'
 
-  if (sign /= signguess) then
+  if (sign /= signguess .and. sign /= 0) then
     warning = 3
     warningmessage = 'WARNING: THE TWO CHECKS DO NOT AGREE, NEEDS LOOKING INTO'
   endif
@@ -362,21 +373,39 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     accconv = accconv*2
     ! loop over each point to find converged point
     ! Why does this not work for source/sinks
-    do itheta = 1, ntheta
-      do iphi = 1, nphi
+
+    allocate(thetas(ntheta1), phis(nphi1), rmin(3,nphi1*ntheta1))
+
+    dphi = 360d0/nphi1
+    dtheta = 180d0/ntheta1
+
+    do iphi = 1, nphi1
+      phis(iphi) = (iphi-1)*dphi + angle
+    enddo
+    do itheta = 1, ntheta1
+      thetas(itheta) = (itheta-0.5d0)*dtheta + angle
+    enddo
+
+    phis = phis*dtor
+    thetas = thetas*dtor
+
+    do itheta = 1, ntheta1
+      do iphi = 1, nphi1
         rnew = sphere2cart(rsphere,thetas(itheta),phis(iphi))
         bnew = trilinear(rnew+rnull, bgrid)
         rold = [0,0,0]
         do count = 1, maxcount
           bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
-          call it_conv(rold,rnew,bnew,fact,sign)
+          call it_conv(rold,rnew,bnew,fact,possign)
           if (modulus(rnew-rold) < accconv .and. count >= mincount) exit
         enddo
-        rmin(:,iphi+(itheta-1)*nphi) = normalise(rnew)
+        rmin(:,iphi+(itheta-1)*nphi1) = normalise(rnew)
       enddo
     enddo
     call remove_duplicates(rmin, acc, densepos)
     minvec = rmin(:,maxval(maxloc(densepos)))
+
+    deallocate(thetas, phis)
 
     print*, 'Maxvec is:'
     print*, maxvec

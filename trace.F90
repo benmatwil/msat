@@ -28,6 +28,7 @@ contains
 
     do while (hdum < stepdist .and. .not. outedge(r))
       h = sign*(stepdist-hdum)
+      call edgecheck(r)
       call rk45(r,h)
       hdum = hdum + abs(h)
     enddo
@@ -146,29 +147,32 @@ contains
     yc = y(j) + dy/2
     zc = z(k) + dz/2
 
-    if (coord_type == 1) then
+#if CARTESIAN
+    ! if (coord_type == 1) then
       !cartesian coordinates
       getdr = [dx, dy, dz]
       ! getdl(1) = dx
       ! getdl(2) = dy
       ! getdl(3) = dz
-    else if (coord_type == 2) then
+#elif SPHERICAL
+    ! else if (coord_type == 2) then
       !spherical coordinates
       getdr = [dx, xc*dy, xc*sin(yc)*dz]
       ! getdl(1) = dx ! dr
       ! getdl(2) = xc*dy ! r d(theta)
       ! getdl(3) = xc*sin(yc)*dz ! r sin(theta) d(phi)
-    else if (coord_type == 3) then
+#elif CYLINDRICAL
+    ! else if (coord_type == 3) then
       !cylindrical coordinates
       getdr = [dx, xc*dy, dz]
       ! getdl(1) = dx ! dR
       ! getdl(2) = xc*dy ! R d(phi)
       ! getdl(3) = dz ! dz
-    else
-      print*, 'No coordinate system selected.'
-      print*, 'Please select a valid one in params.f90'
-      stop
-    endif
+#else
+    ! else
+      stop 'No coordinate system selected. Please select a valid one in when compiling'
+#endif
+    ! endif
     
   end function
 

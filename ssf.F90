@@ -51,7 +51,7 @@ program ssfind
     read(10) bgrid(:,:,:,3)
     read(10) x, y, z
   close(10)
-  
+
   xmin = 1
   xmax = nx
   ymin = 1
@@ -64,7 +64,7 @@ program ssfind
 
   ! read in null data
 
-  open(unit=10, file='output/'//trim(fileout)//'-nulldata.dat', access='stream', status='old')
+  open(unit=10, file=trim(fileout)//'-nulldata.dat', access='stream', status='old')
     read(10) nnulls
     allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
     read(10) rnulls
@@ -73,7 +73,8 @@ program ssfind
   
   rnullsalt = rnulls
   
-  if (coord_type == 2) then
+#if SPHERICAL
+  ! if (coord_type == 2) then
     ! for sphericals 
     do inull = 1, nnulls
       ! check whether null is at the lower phi boundary
@@ -104,7 +105,8 @@ program ssfind
         rnullsalt(2,inull) = rnullsalt(2,inull) + 1
       endif
     enddo
-  elseif (coord_type == 3) then
+#elif CYLINDRICAL  
+  ! elseif (coord_type == 3) then
     ! for cylindricals
     do inull = 1, nnulls
       ! check whether null is at lower phi boundary
@@ -121,10 +123,10 @@ program ssfind
         rnullsalt(2,inull) = rnullsalt(2,inull) - 1
       endif
     enddo
-  endif
+#endif
+  ! endif
   
   !$OMP PARALLEL private(iring, iline, inull)
-
   do inull = 1, nnulls ! loop over all nulls
     !$OMP SINGLE
     print*, ''
@@ -155,8 +157,8 @@ program ssfind
     line2 = line1
 
     write(fname,fmt) inull
-    open(unit=12, file='output/'//trim(fileout)//'-separator'//trim(fname)//'.dat' ,access='stream', status='replace')
-    open(unit=20, file='output/'//trim(fileout)//'-everything'//trim(fname)//'.dat', access='stream', status='replace')
+    open(unit=12, file=trim(fileout)//'-separator'//trim(fname)//'.dat' ,access='stream', status='replace')
+    open(unit=20, file=trim(fileout)//'-everything'//trim(fname)//'.dat', access='stream', status='replace')
 
     break = 0
     nseps = 0
@@ -174,6 +176,10 @@ program ssfind
     !$OMP END SINGLE
 
     do iring = 1, ringsmax ! loop over number of rings we want
+      !$OMP SINGLE
+      print*, iring, nlines
+      !$OMP END SINGLE
+
       if (sign .eq. 0) then ! skip null which is uncharacterised
         print*,'Null has zero sign'
         exit
@@ -238,13 +244,13 @@ program ssfind
       
       ! print*,'Checking at null', iring, nlines, inull
       if (iring < 50) then
-        maxdist = 0.1d0*h0*slowdown!0.0075d0
+        maxdist = 0.1d0*h0*slowdown ! 0.0075d0
       elseif (iring < 100) then
-        maxdist = 0.08d0*h0*slowdown!0.0075d0=0.15*0.05
+        maxdist = 0.08d0*h0*slowdown ! 0.0075d0=0.15*0.05
       else
-        maxdist = 0.6d0*h0*slowdown!0.15
+        maxdist = 0.6d0*h0*slowdown ! 0.15
       endif
-      nulldist = 1.4d0*h0*slowdown !0.6
+      nulldist = 1.4d0*h0*slowdown ! 0.6
       mindist = maxdist/3
       ! print*, iring, h0, nulldist, maxdist, mindist, nlines
       !$OMP END SINGLE

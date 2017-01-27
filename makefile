@@ -1,21 +1,27 @@
 FC = gfortran
 FFLAGS = -O3
 MODULES = -Jmod
+DEFINE = -D$(COORD)
+DEBUG = -g -fbounds-check
+
+NF = params.F90 nf_mod.f90 nf.f90
+SF = params.F90 sf_mod.f90 sf.f90
+SSF = params.F90 common.F90 trace.F90 ring.f90 ssf.F90
+RI = params.F90 readin.f90
 
 all: nf sf ssf readin #nfnew #sf_gordon
 
-nf : params.f90 nf_mod.f90 nf.f90
-	$(FC) $(FFLAGS) $(MODULES) params.f90 nf_mod.f90 nf.f90 -o nf
+nf : $(NF)
+	$(FC) $(FFLAGS) $(MODULES) $(NF) -o nf
 
-sf : params.f90 sf_mod.f90 sf.f90
-	$(FC) $(FFLAGS) $(MODULES) params.f90 sf_mod.f90 sf.f90 -o sf
+sf : $(SF)
+	$(FC) $(FFLAGS) $(MODULES) -g $(SF) -o sf
 
-ssf : params.f90 common.f90 trace.f90 ring.f90 ssf.f90
-	$(FC) $(FFLAGS) $(MODULES) -fopenmp params.f90 common.f90 trace.f90 ring.f90 ssf.f90 -o ssf
-	# $(FC) $(FFLAGS) -fopenmp -g -fcheck=all -fbounds-check -Wall params.f90 common.f90 trace.f90 ring.f90 ssf.f90 -o ssf
+ssf : $(SSF)
+	$(FC) $(MODULES) $(DEFINE) $(SSF) -fopenmp -o ssf
 	
-readin : params.f90 common.f90 readin.f90
-	$(FC) $(FFLAGS) $(MODULES) params.f90 common.f90 readin.f90 -o readin
+readin : $(RI)
+	$(FC) $(FFLAGS) $(MODULES) $(RI) -o readin
 
 writedata : params.f90 writedata.f90
 	$(FC) $(FFLAGS) $(MODULES) params.f90 writedata.f90 -o writedata
@@ -24,10 +30,10 @@ nfnew : params.f90 nfnew_mod.f90 nfnew.f90
 	$(FC) $(FFLAGS) $(MODULES) -g params.f90 nfnew_mod.f90 nfnew.f90 -o nfnew
 
 clean:
-	rm mod/*.mod nf sf ssf readin
+	@rm mod/*.mod nf sf ssf readin
 
 tidy:
-	rm output/*.dat
+	@rm output/*.dat
 
 writedata_ws : params.f90 writedata_ws.f90
 	$(FC) $(FFLAGS) $(MODULES) params.f90 writedata_ws.f90 -o writedata_ws

@@ -8,11 +8,7 @@ module sf_converge_mod
 
   double precision, allocatable :: bgrid(:,:,:,:)
 
-  integer, parameter :: nphi = 90
-  integer, parameter :: ntheta = nphi/2
-
   double precision, dimension(3) :: rnull
-  double precision :: thetas(ntheta), phis(nphi)
 
   integer, allocatable :: maxima(:,:), minima(:,:), saddle(:,:)
 
@@ -185,7 +181,7 @@ module sf_converge_mod
     
     n = size(vecarray,2)
     i = 1
-    
+
     if (present(nclose)) allocate(nclose(1,1))
     
     do while (i < n)

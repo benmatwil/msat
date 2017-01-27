@@ -252,7 +252,7 @@ contains
           do index = 1, nr
             ! extrapolate points along fieldlines
             count = 0
-            do while (dist(r(:,index),rnulls(:,inull)) < tracedist .and. count < 1000)
+            do while (dist(r(:,index),rnulls(:,inull)) < tracedist .and. count < 10000)
               h = h0
               call trace_line(r(:,index),signs(nullnum),h)
               call edgecheck(r(:,index))
@@ -282,9 +282,15 @@ contains
                 endif
               endif
             endif
-            if (count == 1000) then !then we want to remove points as they appear to be stuck at the null
+            if (count == 10000) then !then we want to remove points as they appear to be stuck at the null
               ! remove(rmap(index)) = 1
-              break(rmap(index-1)) = 1
+              ! print*, rmap(index), index, inull, nring
+              if (rmap(index) /= 1) then
+                break(rmap(index)-1) = 1
+              else
+                break(nlines) = 1
+              endif
+              ! break(rmap(index)-1) = 1
               cycle
             endif
           enddo

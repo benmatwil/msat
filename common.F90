@@ -17,7 +17,7 @@ integer :: nseps
 contains
 
   function trilinear(r,b)
-    !find the value of a function, b, at (x,y,z) using the 8 vertices
+    ! find the value of a function, b, at (x,y,z) using the 8 vertices
     double precision, allocatable :: b(:,:,:,:)
     double precision :: r(3)
     double precision :: cube(2,2,2)
@@ -32,15 +32,15 @@ contains
     xp = r(1)
     yp = r(2)
     zp = r(3)
-
+if (zp < 1) print*, zp
     nx = floor(xp)
     ny = floor(yp)
     nz = floor(zp)
     
-    !if point goes out of an edge which is not periodic, set point to be at boundary to trilinear
-    !it will go out and be removed soon
+    ! if point goes out of an edge which is not periodic, set point to be at boundary to trilinear
+    ! it will go out and be removed soon
     if (outedge(r)) then
-      !first coordinate needs checking in all coordinate systems
+      ! first coordinate needs checking in all coordinate systems
       if (xp < xmin) then
         xp = xmin
         nx = floor(xp)
@@ -48,8 +48,9 @@ contains
         xp = xmax
         nx = floor(xp)-1
       endif
-      if (coord_type == 1) then
-        !for cartesians
+#if CARTESIAN
+      ! if (coord_type == 1) then
+        ! for cartesians
         if (yp < ymin) then
           yp = ymin
           ny = floor(yp)
@@ -64,8 +65,9 @@ contains
           zp = zmax
           nz = floor(zp)-1
         endif
-      elseif (coord_type == 3) then
-        !for cylindricals
+#elif CYLINDRICAL
+      ! elseif (coord_type == 3) then
+        ! for cylindricals
         if (zp < zmin) then
           zp = zmin
           nz = floor(zp)
@@ -73,7 +75,8 @@ contains
           zp = zmax
           nz = floor(zp)-1
         endif
-      endif
+#endif
+      ! endif
     endif
 
     x = xp-nx
@@ -98,7 +101,7 @@ contains
 
   !********************************************************************************
 
-  !dot product between a and b
+  ! dot product between a and b
   function dot(a,b)
 
     double precision, dimension(3) :: a, b
@@ -110,7 +113,7 @@ contains
 
   !********************************************************************************
 
-  !cross product between a and b
+  ! cross product between a and b
   function cross(a,b)
 
     double precision, dimension(3) :: a,b
@@ -124,7 +127,7 @@ contains
 
   !********************************************************************************
 
-  !normalises a
+  ! normalises a
   function normalise(a)
 
     double precision, dimension(3) :: a
@@ -136,7 +139,7 @@ contains
 
   !********************************************************************************
 
-  !adds an row (val) to a nx column by ny row array at row number pos
+  ! adds an row (val) to a nx column by ny row array at row number pos
   subroutine add_vector(x,vec,pos)
     implicit none
     
@@ -216,7 +219,7 @@ contains
 
   !********************************************************************************
 
-  !removes row number pos from an array 
+  ! removes row number pos from an array 
   subroutine remove_vector(x,pos)
     implicit none
     
@@ -244,7 +247,7 @@ contains
 
   !********************************************************************************
 
-  !removes row number pos from an array 
+  ! removes row number pos from an array 
   subroutine remove_element(x,pos)
     implicit none
     
@@ -271,7 +274,7 @@ contains
 
   !********************************************************************************
 
-  !finds |a|
+  ! finds |a|
   function modulus(a)
     double precision, dimension(3) :: a
     double precision :: modulus
@@ -288,28 +291,33 @@ contains
     
     outedge = .false.  
     if (r(1) > xmax .or. r(1) < xmin) outedge = .true.
-    if (coord_type == 1) then
+#if CARTESIAN
+    ! if (coord_type == 1) then
       if (r(2) > ymax .or. r(2) < ymin) outedge = .true.
       if (r(3) > zmax .or. r(3) < zmin) outedge = .true.
-    else if (coord_type == 3) then
+#elif CYLINDRICAL
+    ! else if (coord_type == 3) then
       if (r(3) > zmax .or. r(3) < zmin) outedge = .true.
-    endif
+#endif
+    ! endif
     
   end function  
 
   !********************************************************************************
 
-  !determines if the vector r is outwith the computational box
+  ! determines if the vector r is outwith the computational box
   subroutine edgecheck(r, out)
     double precision :: r(3)
     logical, optional :: out
     
     if (present(out)) out = outedge(r)
     
-    if (coord_type == 3) then
+#if CYLINDRICAL
+    ! if (coord_type == 3) then
       if (r(2) < ymin) r(2) = r(2) + ymin - ymax
       if (r(2) > ymin) r(2) = r(2) - (ymin - ymax)
-    else if (coord_type == 2) then
+#elif SPHERICAL
+    ! else if (coord_type == 2) then
       if (r(2) < ymin .or. r(2) > ymax) then
         if (r(2) < ymin) r(2) = 2*ymin - r(2)
         if (r(2) > ymax) r(2) = 2*ymax - r(2)
@@ -321,13 +329,14 @@ contains
       endif
       if (r(3) < zmin) r(3) = r(3) + zmax - zmin
       if (r(3) > zmax) r(3) = r(3) - (zmax - zmin)
-    endif
+#endif
+    ! endif
         
   end subroutine
 
   !********************************************************************************
 
-  !from the theta,phi coordinates of a fan vector, produces ring of points in the fanplane
+  ! from the theta,phi coordinates of a fan vector, produces ring of points in the fanplane
   subroutine get_startpoints(theta,phi,xs,ys,zs)
 
       double precision :: theta, phi
@@ -339,9 +348,9 @@ contains
 
       nlines = size(xs)
 
-      dtheta = 2.*pi/nlines
+      dtheta = 2.0d0*pi/nlines
 
-      !generate nlines start points in ring around equator
+      ! generate nlines start points in ring around equator
       do i = 1, nlines
         r(1) = cos(i*dtheta)
         r(2) = sin(i*dtheta)
@@ -362,7 +371,7 @@ contains
 
   !********************************************************************************
 
-  !rotates a vector (r) by a certain angle about the x-z plane (theta), then by an angle (phi) about the x-y plane
+  ! rotates a vector (r) by a certain angle about the x-z plane (theta), then by an angle (phi) about the x-y plane
   function rotate(r,theta,phi)
       double precision :: r(3)
       double precision :: theta, phi
@@ -396,33 +405,21 @@ contains
       rotz(3,2)=0
       rotz(3,3)=1
 
-      !r=matmul(roty,r)
-      !print*,r
-
-      !r=matmul(rotz,r)
-      !print*,r
-
       rot=matmul(rotz,roty)
       rotate=matmul(rot,r)
-      r=rotate
-      !print*,'r out', r
-      !print*, 'theta, phi out', acos(r(3))/dtor,atan(r(2),r(1))/dtor!+180
-      !rotate=r
 
-      !print*,roty
-      !print*, rotz
+      r=rotate
 
   end
 
   !********************************************************************************
 
   function dist(a,b)
-    !calculates the distance between two points in grid units
+    ! calculates the distance between two points in grid units
     
     double precision :: dist
     double precision, dimension(3) :: a, b
 
-    !dist = sqrt((a(1)-b(1))*(a(1)-b(1)) + (a(2)-b(2))*(a(2)-b(2)) + (a(3)-b(3))*(a(3)-b(3)))
     dist = sqrt((a(1)-b(1))**2 + (a(2)-b(2))**2 + (a(3)-b(3))**2)
 
   end function

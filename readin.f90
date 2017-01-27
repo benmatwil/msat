@@ -77,21 +77,23 @@ program readin
   print*,'#                      Data Read-in and Process                       #'
   print*,'#######################################################################'
 
-  open(unit=10,file='output/null.dat',form='unformatted')
+  call filenames
+
+  open(unit=10,file=trim(fileout)//'-nullpos.dat',access='stream',status='old')
     read(10) nnulls
     print*,'num nulls',nnulls
 
     allocate(rnulls(3,nnulls))
 
     do inull=1,nnulls
-      read (10) rnulls(:,inull)
+      read(10) rnulls(:,inull)
       print*, 'null position', inull, rnulls(:,inull)
     enddo
   close(10)
 
   call filenames
 
-  open(unit=9,file=filein,access='stream')
+  open(unit=9,file=filein,access='stream',status='old')
     read(9), nx, ny, nz !number of vertices
     allocate(xg(nx), yg(ny), zg(nz))
     g = int8(3)*int8(4) + int8(3)*int8(nx)*int8(ny)*int8(nz)*int8(8) + int8(1)
@@ -101,14 +103,14 @@ program readin
   do inull = 1, nnulls
     write(fname,fmt) inull
 
-    open(unit=12,file='output/'//trim(fileout)//'-separator'//trim(fname)//'.dat',access='stream')
-    open(unit=10,file='output/'//trim(fileout)//'-everything'//trim(fname)//'.dat',access='stream')
+    open(unit=12,file=trim(fileout)//'-separator'//trim(fname)//'.dat',access='stream',status='old')
+    open(unit=10,file=trim(fileout)//'-everything'//trim(fname)//'.dat',access='stream',status='old')
 
     read(10) nrings, npoints, nringsmax
     allocate(nperring(0:nringsmax-1))
     read(10) nperring
 
-    open(unit=11,file='output/'//trim(fileout)//'-sep'//trim(fname)//'.dat',access='stream')
+    open(unit=11,file=trim(fileout)//'-sep'//trim(fname)//'.dat',access='stream',status='replace')
 
     print*, 'nrings, npoints, nringsmax'
     print*, nrings, npoints, nringsmax-1
@@ -173,7 +175,7 @@ program readin
     ! Just writes a selection of rings to file i.e. every "skip"ped number of rings
     print*, 'writing rings to file'
 
-    open(unit=11, file='output/'//fileout//'-ringidl'//trim(fname)//'.dat', form='unformatted')
+    open(unit=11, file=trim(fileout)//'-ringidl'//trim(fname)//'.dat', access='stream', status='replace')
     print*, 'nrings=', nrings
     nrcount = 0
     do iring = 1, nrings-2, skip
