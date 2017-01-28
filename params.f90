@@ -9,6 +9,7 @@ module params
   real(np), parameter :: dtor = pi/180.0_np
 
   ! coordinate system type
+  ! now set using the make file
   ! (1) = Cartesian (x,y,z)
   ! (2) = Spherical (r,theta,phi) (theta=polar angle, phi=azimuthal angle)
   ! (3) = Cylindrical (rho,phi,z)
