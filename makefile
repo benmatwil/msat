@@ -4,10 +4,10 @@ MODULES = -Jmod
 DEFINE = -D$(COORD)
 DEBUG = -g -fbounds-check
 
-NF = params.F90 nf_mod.f90 nf.f90
-SF = params.F90 sf_mod.f90 sf.f90
-SSF = params.F90 common.F90 trace.F90 ring.f90 ssf.F90
-RI = params.F90 readin.f90
+NF = params.f90 nf_mod.f90 nf.f90
+SF = params.f90 sf_mod.f90 sf.f90
+SSF = params.f90 common.F90 trace.F90 ring.f90 ssf.F90
+RI = params.f90 readin.f90
 
 all: nf sf ssf readin #nfnew #sf_gordon
 
