@@ -234,6 +234,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   ! spine should be left with 2 vectors
   ! fan left with either 2 vectors (minvec eigenvalue too small), a circle of points or just a mess
   sign = 0
+  possign = 0
   do itry = 4, 2, -1
     acc = 1d-1**itry
     print*, 'Removing to accuracy', acc
@@ -372,7 +373,6 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     ! Working on a sphere of size rsphere
     accconv = accconv*2
     ! loop over each point to find converged point
-    ! Why does this not work for source/sinks
 
     allocate(thetas(ntheta1), phis(nphi1), rmin(3,nphi1*ntheta1))
 
