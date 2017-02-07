@@ -165,17 +165,17 @@ contains
     deallocate(x)
     allocate(x(nx,ny+1))
 
-    if (position == 1) then
-      x(:,1) = vec1
-      x(:,2:ny+1) = dummy
-    elseif (position == ny+1) then
-      x(:,1:ny) = dummy
-      x(:,ny+1) = vec1
-    else
+    ! if (position == 1) then
+    !   x(:,1) = vec1
+    !   x(:,2:ny+1) = dummy
+    ! elseif (position == ny+1) then
+    !   x(:,1:ny) = dummy
+    !   x(:,ny+1) = vec1
+    ! else
       x(:,1:position-1) = dummy(:,1:position-1)
       x(:,position) = vec1
       x(:,position+1:ny+1) = dummy(:,position:ny)
-    endif
+    ! endif
 
   end
 
@@ -203,17 +203,17 @@ contains
     deallocate(x)
     allocate(x(nx+1))
 
-    if (position == 1) then
-      x(1) = flag
-      x(2:nx+1) = dummy
-    elseif (position == nx+1) then
-      x(1:nx) = dummy
-      x(nx+1) = flag
-    else
+    ! if (position == 1) then
+    !   x(1) = flag
+    !   x(2:nx+1) = dummy
+    ! elseif (position == nx+1) then
+    !   x(1:nx) = dummy
+    !   x(nx+1) = flag
+    ! else
       x(1:position-1) = dummy(1:position-1)
       x(position) = flag
       x(position+1:nx+1) = dummy(position:nx)
-    endif
+    ! endif
 
   end
 
@@ -234,14 +234,14 @@ contains
     deallocate(x)
     allocate(x(nx,ny-1))
 
-    if (pos == 1) then
-      x = dummy(:,2:ny)
-    elseif (pos == ny) then
-      x = dummy(:,1:ny-1)
-    else
+    ! if (pos == 1) then
+    !   x = dummy(:,2:ny)
+    ! elseif (pos == ny) then
+    !   x = dummy(:,1:ny-1)
+    ! else
       x(:,1:pos-1) = dummy(:,1:pos-1)
       x(:,pos:ny-1) = dummy(:,pos+1:ny)
-    endif
+    ! endif
     
   end
 
@@ -261,14 +261,14 @@ contains
     deallocate(x)
     allocate(x(nx-1))
 
-    if (pos == 1) then
-      x = dummy(2:nx)
-    elseif (pos == nx) then
-      x = dummy(1:nx-1)
-    else
+    ! if (pos == 1) then
+    !   x = dummy(2:nx)
+    ! elseif (pos == nx) then
+    !   x = dummy(1:nx-1)
+    ! else
       x(1:pos-1) = dummy(1:pos-1)
       x(pos:nx-1) = dummy(pos+1:nx)
-    endif
+    ! endif
     
   end
 

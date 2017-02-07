@@ -176,9 +176,9 @@ program ssfind
     !$OMP END SINGLE
 
     do iring = 1, ringsmax ! loop over number of rings we want
-      !$OMP SINGLE
-      print*, iring, nlines
-      !$OMP END SINGLE
+      ! !$OMP SINGLE
+      ! print*, iring, nlines
+      ! !$OMP END SINGLE
 
       if (sign .eq. 0) then ! skip null which is uncharacterised
         print*,'Null has zero sign'
@@ -223,25 +223,8 @@ program ssfind
 
       enddo
       !$OMP END DO
-
+      
       !$OMP SINGLE
-      if (nlines > pointsmax) then
-      ! exit if too many points on ring 
-        print*, 'Too many points on ring', nlines, iring
-        exitcondition = .true.
-      endif
-
-      if (sum(endpoints)/nlines == 1) then
-        ! exit if all points have reached outer boundary (left box)
-        print*, 'All fan points have reached the outer boundary', iring
-        exitcondition = .true.
-      endif
-      
-      if (terror == 1) then
-        print*, 'Tracing has failed', iring
-        exitcondition = .true.
-      endif
-      
       ! print*,'Checking at null', iring, nlines, inull
       if (iring < 50) then
         maxdist = 0.1d0*h0*slowdown ! 0.0075d0
@@ -297,6 +280,25 @@ program ssfind
 
       ! determine if any lines are separators
       if (nearflag > 0) call sep_detect(nlines,inull,iring)
+
+      !$OMP SINGLE
+      if (nlines > pointsmax) then
+      ! exit if too many points on ring 
+        print*, 'Too many points on ring', nlines, iring
+        exitcondition = .true.
+      endif
+
+      if (nlines == 0) then
+        ! exit if all points have reached outer boundary (left box)
+        print*, 'All fan points have reached the outer boundary', iring
+        exitcondition = .true.
+      endif
+      
+      if (terror == 1) then
+        print*, 'Tracing has failed', iring
+        exitcondition = .true.
+      endif
+      !$OMP END SINGLE
 
       !$OMP SINGLE
       nperring(iring) = nlines
