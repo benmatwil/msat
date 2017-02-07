@@ -53,16 +53,12 @@ contains
     double precision, dimension(3) :: r, r0, rtest, y, z, dr
     
     !minimum physical distance corresponding to fraction of gridcell (h)
-    !dl = sign(dble([1,1,1]),getdl(r))
-    !print*, 'getdl', r
     dr = getdr(r)
     mindist = minval(dr)*h
     
     !vector containing the grid's h for each direction
     !(so h for each direction is the same physical length, equal to mindist)
-    !hvec = h*dl
     hvec = mindist/dr
-    ! hvec = abs(h)*normalise(hvec)
 
     r0 = r
 
@@ -147,32 +143,18 @@ contains
     yc = y(j) + dy/2
     zc = z(k) + dz/2
 
-#if CARTESIAN
-    ! if (coord_type == 1) then
-      !cartesian coordinates
-      getdr = [dx, dy, dz]
-      ! getdl(1) = dx
-      ! getdl(2) = dy
-      ! getdl(3) = dz
-#elif SPHERICAL
-    ! else if (coord_type == 2) then
-      !spherical coordinates
-      getdr = [dx, xc*dy, xc*sin(yc)*dz]
-      ! getdl(1) = dx ! dr
-      ! getdl(2) = xc*dy ! r d(theta)
-      ! getdl(3) = xc*sin(yc)*dz ! r sin(theta) d(phi)
-#elif CYLINDRICAL
-    ! else if (coord_type == 3) then
-      !cylindrical coordinates
-      getdr = [dx, xc*dy, dz]
-      ! getdl(1) = dx ! dR
-      ! getdl(2) = xc*dy ! R d(phi)
-      ! getdl(3) = dz ! dz
+#if cartesian
+    !cartesian coordinates
+    getdr = [dx, dy, dz]
+#elif spherical
+    !spherical coordinates
+    getdr = [dx, xc*dy, xc*sin(yc)*dz]
+#elif cylindrical
+    !cylindrical coordinates
+    getdr = [dx, xc*dy, dz]
 #else
-    ! else
-      stop 'No coordinate system selected. Please select a valid one in when compiling'
+    stop 'No coordinate system selected. Please select a valid one when compiling'
 #endif
-    ! endif
     
   end function
 

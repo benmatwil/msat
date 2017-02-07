@@ -73,58 +73,55 @@ program ssfind
   
   rnullsalt = rnulls
   
-#if SPHERICAL
-  ! if (coord_type == 2) then
-    ! for sphericals 
-    do inull = 1, nnulls
-      ! check whether null is at the lower phi boundary
-      if (rnullsalt(3,inull) < zmin + 1) then
-        rnullsalt(3,inull) = rnullsalt(3,inull) - 1
-        call edgecheck(rnullsalt(:,inull))
-        rnullsalt(3,inull) = rnullsalt(3,inull) + 1
-      endif
-      
-      ! check whether null is at the upper phi boundary
-      if (rnullsalt(3,inull) > zmax - 1) then
-        rnullsalt(3,inull) = rnullsalt(3,inull) + 1
-        call edgecheck(rnullsalt(:,inull))
-        rnullsalt(3,inull) = rnullsalt(3,inull) - 1
-      endif
-      
-      ! check whether null is at the lower theta boundary
-      if (rnullsalt(2,inull) < ymin + 1) then
-        rnullsalt(2,inull) = rnullsalt(2,inull) - 1
-        call edgecheck(rnullsalt(:,inull))
-        rnullsalt(2,inull) = rnullsalt(2,inull) - 1
-      endif
-      
-      ! check whether null is at the upper theta boundary
-      if (rnullsalt(2,inull) > ymax - 1) then
-        rnullsalt(2,inull) = rnullsalt(2,inull) + 1
-        call edgecheck(rnullsalt(:,inull))
-        rnullsalt(2,inull) = rnullsalt(2,inull) + 1
-      endif
-    enddo
-#elif CYLINDRICAL  
-  ! elseif (coord_type == 3) then
-    ! for cylindricals
-    do inull = 1, nnulls
-      ! check whether null is at lower phi boundary
-      if (rnullsalt(2,inull) < ymin + 1) then
-        rnullsalt(2,inull) = rnullsalt(2,inull) - 1
-        call edgecheck(rnullsalt(:,inull))
-        rnullsalt(2,inull) = rnullsalt(2,inull) + 1
-      endif
-      
-      ! check whether null is at upper phi boundary
-      if (rnullsalt(2,inull) > ymax - 1) then
-        rnullsalt(2,inull) = rnullsalt(2,inull) + 1
-        call edgecheck(rnullsalt(:,inull))
-        rnullsalt(2,inull) = rnullsalt(2,inull) - 1
-      endif
-    enddo
+#if spherical
+  ! for sphericals 
+  do inull = 1, nnulls
+    ! check whether null is at the lower phi boundary
+    if (rnullsalt(3,inull) < zmin + 1) then
+      rnullsalt(3,inull) = rnullsalt(3,inull) - 1
+      call edgecheck(rnullsalt(:,inull))
+      rnullsalt(3,inull) = rnullsalt(3,inull) + 1
+    endif
+    
+    ! check whether null is at the upper phi boundary
+    if (rnullsalt(3,inull) > zmax - 1) then
+      rnullsalt(3,inull) = rnullsalt(3,inull) + 1
+      call edgecheck(rnullsalt(:,inull))
+      rnullsalt(3,inull) = rnullsalt(3,inull) - 1
+    endif
+    
+    ! check whether null is at the lower theta boundary
+    if (rnullsalt(2,inull) < ymin + 1) then
+      rnullsalt(2,inull) = rnullsalt(2,inull) - 1
+      call edgecheck(rnullsalt(:,inull))
+      rnullsalt(2,inull) = rnullsalt(2,inull) - 1
+    endif
+    
+    ! check whether null is at the upper theta boundary
+    if (rnullsalt(2,inull) > ymax - 1) then
+      rnullsalt(2,inull) = rnullsalt(2,inull) + 1
+      call edgecheck(rnullsalt(:,inull))
+      rnullsalt(2,inull) = rnullsalt(2,inull) + 1
+    endif
+  enddo
+#elif cylindrical
+  ! for cylindricals
+  do inull = 1, nnulls
+    ! check whether null is at lower phi boundary
+    if (rnullsalt(2,inull) < ymin + 1) then
+      rnullsalt(2,inull) = rnullsalt(2,inull) - 1
+      call edgecheck(rnullsalt(:,inull))
+      rnullsalt(2,inull) = rnullsalt(2,inull) + 1
+    endif
+    
+    ! check whether null is at upper phi boundary
+    if (rnullsalt(2,inull) > ymax - 1) then
+      rnullsalt(2,inull) = rnullsalt(2,inull) + 1
+      call edgecheck(rnullsalt(:,inull))
+      rnullsalt(2,inull) = rnullsalt(2,inull) - 1
+    endif
+  enddo
 #endif
-  ! endif
   
   !$OMP PARALLEL private(iring, iline, inull)
   do inull = 1, nnulls ! loop over all nulls

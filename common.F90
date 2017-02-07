@@ -48,35 +48,32 @@ contains
         xp = xmax
         nx = nint(xp)-1
       endif
-#if CARTESIAN
-      ! if (coord_type == 1) then
-        ! for cartesians
-        if (yp < ymin) then
-          yp = ymin
-          ny = nint(yp)
-        elseif (yp > ymax) then
-          yp = ymax
-          ny = nint(yp)-1
-        endif
-        if (zp < zmin) then
-          zp = zmin
-          nz = nint(zp)
-        elseif (zp > zmax) then
-          zp = zmax
-          nz = nint(zp)-1
-        endif
-#elif CYLINDRICAL
-      ! elseif (coord_type == 3) then
-        ! for cylindricals
-        if (zp < zmin) then
-          zp = zmin
-          nz = nint(zp)
-        elseif (zp > zmax) then
-          zp = zmax
-          nz = nint(zp)-1
-        endif
+#if cartesian
+      ! for cartesians
+      if (yp < ymin) then
+        yp = ymin
+        ny = nint(yp)
+      elseif (yp > ymax) then
+        yp = ymax
+        ny = nint(yp)-1
+      endif
+      if (zp < zmin) then
+        zp = zmin
+        nz = nint(zp)
+      elseif (zp > zmax) then
+        zp = zmax
+        nz = nint(zp)-1
+      endif
+#elif cylindrical
+      ! for cylindricals
+      if (zp < zmin) then
+        zp = zmin
+        nz = nint(zp)
+      elseif (zp > zmax) then
+        zp = zmax
+        nz = nint(zp)-1
+      endif
 #endif
-      ! endif
     endif
 
     x = xp-nx
@@ -291,15 +288,12 @@ contains
     
     outedge = .false.  
     if (r(1) > xmax .or. r(1) < xmin) outedge = .true.
-#if CARTESIAN
-    ! if (coord_type == 1) then
-      if (r(2) > ymax .or. r(2) < ymin) outedge = .true.
-      if (r(3) > zmax .or. r(3) < zmin) outedge = .true.
-#elif CYLINDRICAL
-    ! else if (coord_type == 3) then
-      if (r(3) > zmax .or. r(3) < zmin) outedge = .true.
+#if cartesian
+    if (r(2) > ymax .or. r(2) < ymin) outedge = .true.
+    if (r(3) > zmax .or. r(3) < zmin) outedge = .true.
+#elif cylindrical
+    if (r(3) > zmax .or. r(3) < zmin) outedge = .true.
 #endif
-    ! endif
     
   end function  
 
@@ -312,25 +306,22 @@ contains
     
     if (present(out)) out = outedge(r)
     
-#if CYLINDRICAL
-    ! if (coord_type == 3) then
-      if (r(2) < ymin) r(2) = r(2) + ymin - ymax
-      if (r(2) > ymin) r(2) = r(2) - (ymin - ymax)
-#elif SPHERICAL
-    ! else if (coord_type == 2) then
-      if (r(2) < ymin .or. r(2) > ymax) then
-        if (r(2) < ymin) r(2) = 2*ymin - r(2)
-        if (r(2) > ymax) r(2) = 2*ymax - r(2)
-        if (r(3) < (ymax-ymin)/2) then
-          r(3) = r(3) + (ymax-ymin)/2
-        else
-          r(3) = r(3) - (ymax-ymin)/2
-        endif
+#if cylindrical
+    if (r(2) < ymin) r(2) = r(2) + ymin - ymax
+    if (r(2) > ymin) r(2) = r(2) - (ymin - ymax)
+#elif spherical
+    if (r(2) < ymin .or. r(2) > ymax) then
+      if (r(2) < ymin) r(2) = 2*ymin - r(2)
+      if (r(2) > ymax) r(2) = 2*ymax - r(2)
+      if (r(3) < (ymax-ymin)/2) then
+        r(3) = r(3) + (ymax-ymin)/2
+      else
+        r(3) = r(3) - (ymax-ymin)/2
       endif
-      if (r(3) < zmin) r(3) = r(3) + zmax - zmin
-      if (r(3) > zmax) r(3) = r(3) - (zmax - zmin)
+    endif
+    if (r(3) < zmin) r(3) = r(3) + zmax - zmin
+    if (r(3) > zmax) r(3) = r(3) - (zmax - zmin)
 #endif
-    ! endif
         
   end subroutine
 

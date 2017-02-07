@@ -1,8 +1,18 @@
 FC = gfortran
 FFLAGS = -O3
 MODULES = -Jmod
-DEFINE = -D$(COORD)
-DEBUG = -g -fbounds-check
+
+ifneq ($(strip $(coord))),)
+	DEFINE = -D$(coord)
+else
+	DEFINE = 
+endif
+ifeq ($(strip $(mode)),debug)
+	FFLAGS = -O0 -g -fbounds-check
+endif
+
+# DEFINE = -D$(COORD)
+# DEBUG = -g -fbounds-check
 
 all: nf sf ssf readin #nfnew #sf_gordon
 
@@ -10,7 +20,7 @@ nf : params.f90 nf_mod.f90 nf.f90
 	$(FC) $(FFLAGS) $(MODULES) $^ -o $@
 
 sf : params.f90 sf_mod.f90 sf.f90
-	$(FC) $(FFLAGS) $(MODULES) -g $^ -o $@
+	$(FC) $(FFLAGS) $(MODULES) $^ -o $@
 
 ssf : params.f90 common.F90 trace.F90 ring.f90 ssf.F90
 	$(FC) $(FFLAGS) $(MODULES) $(DEFINE) -fopenmp $^ -o $@
