@@ -4,30 +4,21 @@ MODULES = -Jmod
 DEFINE = -D$(COORD)
 DEBUG = -g -fbounds-check
 
-NF = params.f90 nf_mod.f90 nf.f90
-SF = params.f90 sf_mod.f90 sf.f90
-SSF = params.f90 common.F90 trace.F90 ring.f90 ssf.F90
-RI = params.f90 readin.f90
-
 all: nf sf ssf readin #nfnew #sf_gordon
 
-nf : $(NF)
-	$(FC) $(FFLAGS) $(MODULES) $(NF) -o nf
+nf : params.f90 nf_mod.f90 nf.f90
+	$(FC) $(FFLAGS) $(MODULES) $^ -o $@
 
-sf : $(SF)
-	$(FC) $(FFLAGS) $(MODULES) -g $(SF) -o sf
+sf : params.f90 sf_mod.f90 sf.f90
+	$(FC) $(FFLAGS) $(MODULES) -g $^ -o $@
 
-ssf : $(SSF)
-	$(FC) $(FFLAGS) $(MODULES) $(DEFINE) $(SSF) -fopenmp -o ssf
+ssf : params.f90 common.F90 trace.F90 ring.f90 ssf.F90
+	$(FC) $(FFLAGS) $(MODULES) $(DEFINE) -fopenmp $^ -o $@
 	
-readin : $(RI)
-	$(FC) $(FFLAGS) $(MODULES) $(RI) -o readin
+readin : params.f90 readin.f90
+	$(FC) $(FFLAGS) $(MODULES) $^ -o $@
 
-writedata : params.f90 writedata.f90
-	$(FC) $(FFLAGS) $(MODULES) params.f90 writedata.f90 -o writedata
-
-nfnew : params.f90 nfnew_mod.f90 nfnew.f90
-	$(FC) $(FFLAGS) $(MODULES) -g params.f90 nfnew_mod.f90 nfnew.f90 -o nfnew
+###########################################################
 
 clean:
 	@rm mod/*.mod nf sf ssf readin
@@ -35,8 +26,16 @@ clean:
 tidy:
 	@rm output/*.dat
 
+###########################################################
+
+writedata : params.f90 writedata.f90
+	$(FC) $(FFLAGS) $(MODULES) $^ -o $@
+
+nfnew : params.f90 nfnew_mod.f90 nfnew.f90
+	$(FC) $(FFLAGS) $(MODULES) -g $^ -o $@
+
 writedata_ws : params.f90 writedata_ws.f90
-	$(FC) $(FFLAGS) $(MODULES) params.f90 writedata_ws.f90 -o writedata_ws
+	$(FC) $(FFLAGS) $(MODULES) $^ -o $@
 
 # writedata_ws_em : params.f90 writedata_ws_em.f90
 # 	$(FC) $(FFLAGS) $(MODULES) params.f90 writedata_ws_em.f90 -o writedata_ws_em
