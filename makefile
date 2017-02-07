@@ -18,7 +18,7 @@ sf : $(SF)
 	$(FC) $(FFLAGS) $(MODULES) -g $(SF) -o sf
 
 ssf : $(SSF)
-	$(FC) $(MODULES) $(DEFINE) $(SSF) -fopenmp -o ssf
+	$(FC) $(FFLAGS) $(MODULES) $(DEFINE) $(SSF) -fopenmp -o ssf
 	
 readin : $(RI)
 	$(FC) $(FFLAGS) $(MODULES) $(RI) -o readin
