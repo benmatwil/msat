@@ -5,7 +5,7 @@ module params
   implicit none
 
   ! basic parameters/constants
-  real(np), parameter :: pi = 4.0_np*atan(1.0_np)
+  real(np), parameter :: pi = acos(-1.0_np)
   real(np), parameter :: dtor = pi/180.0_np
 
   ! coordinate system type
