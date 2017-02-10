@@ -10,7 +10,8 @@ real(np), parameter :: k51 = 439.0_np/216.0_np, k52 = -8.0_np, k53 = 3680.0_np/5
 real(np), parameter :: k61 = -8.0_np/27.0_np, k62 = 2.0_np, k63 = -3544.0_np/2565.0_np, k64 = 1859.0_np/4104.0_np, k65 = -11.0_np/40.0_np
 
 real(np), parameter :: y1 = 25.0_np/216.0_np, y3 = 1408.0_np/2565.0_np, y4 = 2197.0_np/4101.0_np, y5 = -1.0_np/5.0_np
-real(np), parameter :: z1 = 16.0_np/135.0_np, z3 = 6656.0_np/12825.0_np, z4 = 28561.0_np/56430.0_np, z5 = -9.0_np/50.0_np,z6 = 2.0_np/55.0_np
+real(np), parameter :: z1 = 16.0_np/135.0_np, z3 = 6656.0_np/12825.0_np, z4 = 28561.0_np/56430.0_np
+real(np), parameter :: z5 = -9.0_np/50.0_np, z6 = 2.0_np/55.0_np
 
 integer :: terror
 
