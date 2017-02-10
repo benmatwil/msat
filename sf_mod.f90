@@ -4,13 +4,9 @@ module sf_converge_mod
   implicit none
 
   integer :: nx, ny, nz
-  double precision, allocatable, dimension(:) :: x, y, z
+  real(np), allocatable :: bgrid(:,:,:,:)
 
-  double precision, allocatable :: bgrid(:,:,:,:)
-
-  double precision, dimension(3) :: rnull
-
-  integer, allocatable :: maxima(:,:), minima(:,:), saddle(:,:)
+  real(np), dimension(:,:), allocatable :: rnulls
 
   contains
 
@@ -19,14 +15,14 @@ module sf_converge_mod
   function trilinear(r,b)
     implicit none
     !find the value of a function, b, at r=(x,y,z) using the 8 vertices
-    double precision :: b(:,:,:,:)
-    double precision :: r(3)
-    double precision :: cube(2,2,2)
-    double precision :: x, y, z
-    double precision :: xp, yp, zp
-    double precision :: f11, f12, f21, f22
-    double precision :: f1, f2
-    double precision :: trilinear(3)
+    real(np) :: b(:,:,:,:)
+    real(np) :: r(3)
+    real(np) :: cube(2,2,2)
+    real(np) :: x, y, z
+    real(np) :: xp, yp, zp
+    real(np) :: f11, f12, f21, f22
+    real(np) :: f1, f2
+    real(np) :: trilinear(3)
     integer :: nx, ny, nz
     integer :: dims
     integer :: nxpoints,nypoints,nzpoints
@@ -67,8 +63,8 @@ module sf_converge_mod
   function dot(a,b)
     implicit none
 
-    double precision, dimension(3) :: a, b
-    double precision :: dot
+    real(np), dimension(3) :: a, b
+    real(np) :: dot
     
     dot = sum(a*b)
   end function
@@ -78,7 +74,7 @@ module sf_converge_mod
   function cross(a,b)
     implicit none
 
-    double precision, dimension(3) :: cross, a, b
+    real(np), dimension(3) :: cross, a, b
     
     cross(1) = a(2)*b(3) - a(3)*b(2)
     cross(2) = a(3)*b(1) - a(1)*b(3)
@@ -90,8 +86,8 @@ module sf_converge_mod
   function modulus(a)
     implicit none
 
-    double precision :: a(3)
-    double precision :: modulus
+    real(np) :: a(3)
+    real(np) :: modulus
 
     modulus = sqrt(dot(a,a))
 
@@ -102,7 +98,7 @@ module sf_converge_mod
   function normalise(a)
     implicit none
 
-    double precision :: normalise(3), a(3)
+    real(np) :: normalise(3), a(3)
 
     normalise = a/modulus(a)
   end
@@ -113,8 +109,8 @@ module sf_converge_mod
   function sphere2cart(r,theta,phi)
     implicit none
 
-    double precision :: theta, phi, r
-    double precision :: sphere2cart(3)
+    real(np) :: theta, phi, r
+    real(np) :: sphere2cart(3)
 
     sphere2cart(1) = r*sin(theta)*cos(phi)
     sphere2cart(2) = r*sin(theta)*sin(phi)
@@ -126,7 +122,7 @@ module sf_converge_mod
   subroutine remove_vector(x,pos)
     implicit none
 
-    double precision, allocatable, dimension(:,:) :: x, dummy
+    real(np), allocatable, dimension(:,:) :: x, dummy
     integer :: pos
     integer :: nx, ny
 
@@ -173,8 +169,8 @@ module sf_converge_mod
     ! removes vectors with accur distance away from another vector to reduce to "unique" vectors
     implicit none
     
-    double precision, allocatable :: vecarray(:,:)
-    double precision :: accur
+    real(np), allocatable :: vecarray(:,:)
+    real(np) :: accur
     integer, allocatable, optional :: nclose(:,:)
     integer, allocatable :: dummy(:,:)
     integer :: i, j, n, nclosei, ny
@@ -212,12 +208,12 @@ module sf_converge_mod
   
   !********************************************************************************
 
-  subroutine it_conv(rold,rnew,bnew,fact,dir)
+  subroutine it_conv(rnull,rold,rnew,bnew,fact,dir)
     
     implicit none
     
-    double precision, dimension(3) :: rold, rnew, bnew
-    double precision :: fact
+    real(np), dimension(3) :: rnull, rold, rnew, bnew
+    real(np) :: fact
     integer :: dir
     
     rold = rnew

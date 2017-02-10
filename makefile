@@ -1,11 +1,11 @@
 FC = gfortran
 
-ifneq ($(strip $(coord))),)
-	DEFINE = -D$(coord)
-else
+ifeq ($(coord),)
 	DEFINE = 
+else
+	DEFINE = -D$(coord)
 endif
-ifeq ($(strip $(mode)),debug)
+ifeq ($(mode),debug)
 	FLAGS = -O0 -g -fbounds-check
 	DEFINE += -D$(mode)
 else
@@ -18,8 +18,8 @@ all: nf sf ssf readin #nfnew #sf_gordon
 nf : params.f90 nf_mod.f90 nf.f90
 	$(FC) $(FLAGS) $^ -o $@
 
-sf : params.f90 sf_mod.f90 sf.f90
-	$(FC) $(FLAGS) $^ -o $@
+sf : params.f90 sf_mod.f90 sf.F90
+	$(FC) $(FLAGS) $(DEFINE) $^ -o $@
 
 ssf : params.f90 common.F90 trace.F90 ring.f90 ssf.F90
 	$(FC) $(FLAGS) $(DEFINE) -fopenmp $^ -o $@

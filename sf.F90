@@ -6,21 +6,21 @@ program sf_converge
 
   implicit none
 
-  double precision, allocatable :: rnulls(:,:), spines(:,:), fans(:,:)
-  integer, allocatable :: signs(:), warnings(:)
-  
+  real(np), dimension(:,:), allocatable :: spines, fans
+  integer, dimension(:), allocatable :: signs, warnings
+
   integer :: nnulls, nullstart, nullend, savedata = 0
 
   integer :: pcount, ncount, ucount
 
   integer :: sign, warning
-  double precision, dimension(3) :: spine, fan
+  real(np), dimension(3) :: spine, fan
 
   integer :: inull
 
   character(20) :: arg
   integer :: iarg
-  
+
   print*,'#######################################################################'
   print*,'#                             Spinefinder                             #'
   print*,'#######################################################################'
@@ -40,7 +40,7 @@ program sf_converge
 
   nullstart = 1
   nullend = nnulls
-  if (command_argument_count() > 0) then 
+  if (command_argument_count() > 0) then
     do iarg = 1, command_argument_count()
       call get_command_argument(iarg,arg)
       if (trim(arg) == '-n') then
@@ -55,39 +55,45 @@ program sf_converge
   !read in bgrid
   open(unit=10, file=filein, access='stream', status='old')
     read(10) nx, ny, nz
-    allocate(bgrid(nx,ny,nz,3), x(nx), y(ny), z(nz))
+    allocate(bgrid(nx,ny,nz,3))
     read(10) bgrid
-    read(10) x, y, z
   close(10)
 
   print*, 'There are ', nnulls,' nulls to analyse'
   print*, '-----------------------------------------------------------------------------'
 
   !now loop over each null and characterise
+  !$omp parallel do private(inull, sign, spine, fan, warning)
   do inull = nullstart, nullend!1, nnulls
+#if debug
     print*, 'Evaluating null', inull,' of', nnulls
-    rnull = rnulls(:,inull)
-    
-    call get_properties(sign,spine,fan,warning,savedata)
-    
+#endif
+
+    call get_properties(inull,sign,spine,fan,warning,savedata)
+
+#if debug
+#else
+  print*, 'Null', inull,' of', nnulls
+  print*, 'Sign:', sign
+  print*, 'Warning:', warning
+#endif
+
     signs(inull) = sign
     spines(:,inull) = spine
     fans(:,inull) = fan
     warnings(inull) = warning
-    
+
     print*, ''
     print*, '-----------------------------------------------------------------------------'
     print*, '-----------------------------------------------------------------------------'
     print*, ''
   enddo
   if (nullend - nullstart /= nnulls - 1) stop
-  
+
   !now write data to nulls.dat
   open(unit=10, file=trim(fileout)//'-nulldata.dat', access='stream')
     write(10) nnulls
-    write(10) rnulls
-    write(10) signs, spines, fans
-    write(10) warnings
+    write(10) signs, spines, fans, warnings
   close(10)
 
   print*, 'Summary:'
@@ -116,7 +122,7 @@ end program
 !********************************************************************************
 
 !characterise each null
-subroutine get_properties(sign,spine,fan,warning,savedata)
+subroutine get_properties(inull,sign,spine,fan,warning,savedata)
   use sf_converge_mod
 
   implicit none
@@ -124,46 +130,51 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   integer :: count, iconv, imin, nfw, nbw, maxcount, mincount
   integer :: flagfw, flagbw, savedata, angleflag
 
-  double precision, allocatable :: thetas(:), phis(:)
+  real(np), allocatable :: thetas(:), phis(:)
   integer, parameter :: nphi1 = nphi/3, ntheta1 = ntheta/3
-  double precision :: dphi, dtheta, angle, minmove
-  double precision, dimension(3) :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
-  double precision, dimension(3) :: rold, rnew, bnew, rfw1, rbw1
-  double precision :: fact, acc, accconv, fwvalue, bwvalue
+  real(np) :: dphi, dtheta, angle, minmove
+  real(np), dimension(3) :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
+  real(np), dimension(3) :: rold, rnew, bnew, rfw1, rbw1
+  real(np) :: fact, acc, accconv, fwvalue, bwvalue
 
-  double precision, dimension(:,:), allocatable :: rconvergefw, rconvergebw, rmin
-  double precision, dimension(:,:), allocatable :: rspine, rfan
-  double precision, dimension(:,:), allocatable :: rfanperp, crossfan
+  real(np), dimension(:,:), allocatable :: rconvergefw, rconvergebw, rmin
+  real(np), dimension(:,:), allocatable :: rspine, rfan
+  real(np), dimension(:,:), allocatable :: rfanperp, crossfan
   integer, dimension(:,:), allocatable :: densepos, denseposfw, denseposbw
 
-  double precision :: mindot, dotprod
+  real(np) :: mindot, dotprod
   integer :: sign, warning, signguess, possign
 
-  double precision, dimension(3) :: spine, fan, maxvec, minvec
+  integer :: inull
+  real(np), dimension(3) :: rnull, spine, fan, maxvec, minvec
 
   character(100) :: warningmessage
 
+  rnull = rnulls(:,inull)
+
   warning = 0
   warningmessage = ''
-
+  
+#if debug
   print*, 'Null position:'
   print*, rnull
   print*, 'B at null'
   print*, trilinear(rnull, bgrid)
   print*, '-----------------------------------------------------------------------------'
+#endif
 
   allocate(rconvergefw(3,nphi*ntheta), rconvergebw(3,nphi*ntheta))
 
   !set up theta and phi for sphere around null
-  dphi = 360d0/nphi
-  dtheta = 180d0/ntheta
+  dphi = 360.0_np/nphi
+  dtheta = 180.0_np/ntheta
 
   minmove = 2*pi*rsphere/nphi/10
   mincount = 750
   maxcount = 5000
-  fact = 1d-2*rsphere
-  accconv = 1d-10*rsphere
-  
+  fact = 1e-2_np*rsphere
+  accconv = 1e-10_np*rsphere
+
   allocate(thetas(ntheta), phis(nphi))
   angle = 0
   main: do
@@ -176,11 +187,11 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
 
     phis = phis*dtor
     thetas = thetas*dtor
-    
+
     ! Working on a sphere of size rsphere
     flagfw = 0
     flagbw = 0
-    
+
     ! loop over each point to find converged point
     do itheta = 1, ntheta
       do iphi = 1, nphi
@@ -194,13 +205,15 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
         roldfw = [0,0,0]
         roldbw = [0,0,0]
         do count = 1, maxcount
-          call it_conv(roldfw,rnewfw,bnewfw,fact,1)
-          call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
+          call it_conv(rnull,roldfw,rnewfw,bnewfw,fact,1)
+          call it_conv(rnull,roldbw,rnewbw,bnewbw,fact,-1)
           if ((modulus(rnewfw-roldfw) < accconv .or. modulus(rnewbw-roldbw) < accconv) .and. count >= mincount) exit
         enddo
         if ((modulus(rfw1-rnewfw) < minmove .or. modulus(rbw1-rnewbw) < minmove) .and. angle < 4d0) then
           angle = angle + 1d0
+#if debug
           print*, 'Adjusting the initial points and starting again'
+#endif
           cycle main
         endif
         if (modulus(rnewfw-roldfw) < accconv) flagfw = flagfw + 1
@@ -210,25 +223,38 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
         rconvergebw(:,iconv) = normalise(rnewbw)
       enddo
     enddo
+#if debug
     print*, '-----------------------------------------------------------------------------'
+#endif
     exit
   enddo main
 
   deallocate(thetas, phis)
 
+#if debug
   print*, 'Number of points which stop convergence'
   print*, '    ', 'forwards: ', flagfw
   print*, '    ', 'backwards:', flagbw
+#endif
+
   if (flagfw < flagbw) then
     signguess = 1
-    print*, "Spine is backwards"
   else if (flagfw > flagbw) then
     signguess = -1
-    print*, "Spine is forwards"
   else
     signguess = 0
   endif
-  
+
+#if debug
+  if (signguess == 1) then
+    print*, "Guess: spine is backwards"
+  elseif (signguess == -1) then
+    print*, "Guess: spine is forwards"
+  else
+    print*, "Guess: not sure on spine"
+  endif
+#endif
+
   ! Now working on a unit sphere of points
   ! remove duplicate vectors which are a distance 1d-4 apart
   ! spine should be left with 2 vectors
@@ -237,30 +263,40 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   possign = 0
   do itry = 4, 2, -1
     acc = 1d-1**itry
+#if debug
     print*, 'Removing to accuracy', acc
+#endif
     call remove_duplicates(rconvergefw, acc, denseposfw)
     call remove_duplicates(rconvergebw, acc, denseposbw)
     nfw = size(rconvergefw,2)
     nbw = size(rconvergebw,2)
     ! first determine the spine and which is which
     if (nfw <= 2 .or. nbw <= 2) then ! if one of the reductions only has two vectors, can guarantee one is spine
+#if debug
       print*, "Using converged to choose"
+#endif
       if (nfw < nbw) then ! if nfw is smaller then it's the spine, spine going out of null
         sign = -1
       else if (nfw > nbw) then ! if nbw is smaller then it's the spine, spine going into null
         sign = 1
       else if (nfw == nbw) then ! both are equal (i.e. 2=2) so check which converged first and then use eigenvalues as last resort
+#if debug
         print*, "Using stopped to choose"
+#endif
         if (flagfw < flagbw) then ! backwards converged points stopped first
           sign = 1
         else if (flagfw > flagbw) then ! forwards converged points stopped first
           sign = -1
         else ! still don't know, check the eigenvalues as a last resort - not ideal but rare
+#if debug
           print*, "Using eigenvalues to choose"
+#endif
           bwvalue = dot(trilinear(rsphere*rconvergebw(:,1) + rnull, bgrid), rconvergebw(:,1))
           fwvalue = dot(trilinear(rsphere*rconvergefw(:,1) + rnull, bgrid), rconvergefw(:,1))
+#if debug
           print*, 'Eigenvalue on backward vector:', bwvalue
           print*, 'Eigenvalue on forward vector: ', fwvalue
+#endif
           if (abs(bwvalue) > abs(fwvalue)) then
             sign = 1
           else
@@ -314,9 +350,11 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
           ! also likely we have a source or a sink so div(B) is non-zero
           nfw = maxval(denseposfw)
           nbw = maxval(denseposbw)
+#if debug
           print*, 'Density of densest points'
           print*, '    ', 'Forwards ', maxloc(denseposfw), nfw
           print*, '    ', 'Backwards', maxloc(denseposbw), nbw
+#endif
           if (nfw < nbw) then
             spine = rconvergebw(:,maxval(maxloc(denseposbw)))
             rfan = rconvergefw
@@ -350,7 +388,10 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   ! We have picked rspine and rfan so can get rid of rconverges
   deallocate(rconvergebw, rconvergefw)
   if (possign == 0) possign = sign
+
+#if debug
   print*, 'Picked a spine'
+#endif
 
   if (sign /= signguess .and. sign /= 0) then
     warning = 3
@@ -365,11 +406,13 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
       maxvec = rfan(:,maxval(maxloc(densepos)))
     endif
     deallocate(densepos)
-    
+
+#if debug
     print*, 'Final number of converged'
     print*, '    ','spines:', size(rspine,2)
     print*, '    ','fans:  ', size(rfan,2)
-  
+#endif
+
     ! Working on a sphere of size rsphere
     accconv = accconv*2
     ! loop over each point to find converged point
@@ -396,7 +439,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
         rold = [0,0,0]
         do count = 1, maxcount
           bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
-          call it_conv(rold,rnew,bnew,fact,possign)
+          call it_conv(rnull,rold,rnew,bnew,fact,possign)
           if (modulus(rnew-rold) < accconv .and. count >= mincount) exit
         enddo
         rmin(:,iphi+(itheta-1)*nphi1) = normalise(rnew)
@@ -407,6 +450,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
 
     deallocate(thetas, phis)
 
+#if debug
     print*, 'Maxvec is:'
     print*, maxvec
     print*, 'Minvec is:'
@@ -417,6 +461,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     print*, '        min/max           ', '        max/spine       ', '        min/spine          '
     print*, dot(minvec,maxvec), dot(maxvec,spine), dot(minvec,spine)
     print*, '-----------------------------------------------------------------------------'
+#endif
 
     fan = normalise(cross(minvec,maxvec)) ! fan vector is perp to fan plane
 
@@ -446,6 +491,7 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
     if (warning /= 1) warning = 2
   endif
 
+#if debug
   print*, ''
   print*, 'Final information for null'
   print*, '--------------------------'
@@ -455,10 +501,11 @@ subroutine get_properties(sign,spine,fan,warning,savedata)
   print*, spine
   print*, 'Fan:'
   print*, fan
-  print*, 'Warning:'
-  print*, warning, warningmessage
   print*, 'Tilt:'
   print*, abs(90-acos(dot(fan,spine))/dtor)
+  print*, 'Warning:'
+  print*, warning, warningmessage
+#endif
 
 end subroutine
 
@@ -477,7 +524,7 @@ end subroutine
 
 
 ! OLD FAN DETERMINING METHOD
-!   ! now determine the fan 
+!   ! now determine the fan
 !   if (size(rfan,2) == 2) then
 !     print*, 'Only have two fan points'
 !     minvec = normalise(cross(spine,maxvec))
