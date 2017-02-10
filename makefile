@@ -1,28 +1,27 @@
 FC = gfortran
 
-ifeq ($(coord),)
-	DEFINE = 
-else
-	DEFINE = -D$(coord)
+ifneq ($(coord),)
+	DEFINECOORD = -D$(coord)
 endif
 ifeq ($(mode),debug)
 	FLAGS = -O0 -g -fbounds-check
-	DEFINE += -D$(mode)
+	DEFINEMODE += -D$(mode)
 else
 	FLAGS = -O3
 endif
 FLAGS += -Jmod
 
 all: nf sf ssf readin #nfnew #sf_gordon
+	@echo "Current number of OpenMP threads: $(OMP_NUM_THREADS)"
 
 nf : params.f90 nf_mod.f90 nf.f90
 	$(FC) $(FLAGS) $^ -o $@
 
 sf : params.f90 sf_mod.f90 sf.F90
-	$(FC) $(FLAGS) $(DEFINE) -fopenmp $^ -o $@
+	$(FC) $(FLAGS) $(DEFINEMODE) -fopenmp $^ -o $@
 
 ssf : params.f90 common.F90 trace.F90 ring.f90 ssf.F90
-	$(FC) $(FLAGS) $(DEFINE) -fopenmp $^ -o $@
+	$(FC) $(FLAGS) $(DEFINECOORD) $(DEFINEMODE) -fopenmp $^ -o $@
 	
 readin : params.f90 readin.f90
 	$(FC) $(FLAGS) $^ -o $@

@@ -29,13 +29,9 @@ program sf_converge
 
   !Read in 'null.dat'
   open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
-
     read(10) nnulls
     allocate(rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls),signs(nnulls),warnings(nnulls))
-
-    do inull = 1,nnulls
-      read(10) rnulls(:,inull)
-    enddo
+    read(10) rnulls!(:,inull)
   close(10)
 
   nullstart = 1

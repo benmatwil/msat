@@ -64,10 +64,14 @@ program ssfind
 
   ! read in null data
 
+  open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
+    read(10) nnulls
+    allocate(rnulls(3,nnulls))
+    read(10) rnulls
+  close(10)
   open(unit=10, file=trim(fileout)//'-nulldata.dat', access='stream', status='old')
     read(10) nnulls
-    allocate(signs(nnulls),rnulls(3,nnulls),spines(3,nnulls),fans(3,nnulls))
-    read(10) rnulls
+    allocate(signs(nnulls),spines(3,nnulls),fans(3,nnulls))
     read(10) signs, spines, fans
   close(10)
   
@@ -173,9 +177,11 @@ program ssfind
     !$OMP END SINGLE
 
     do iring = 1, ringsmax ! loop over number of rings we want
-      ! !$OMP SINGLE
-      ! print*, iring, nlines
-      ! !$OMP END SINGLE
+#if debug
+      !$OMP SINGLE
+      print*, iring, nlines
+      !$OMP END SINGLE
+#endif
 
       if (sign .eq. 0) then ! skip null which is uncharacterised
         print*,'Null has zero sign'
