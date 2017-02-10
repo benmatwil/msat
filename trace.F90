@@ -3,14 +3,14 @@ use params
 use common
 
 !rkf45 parameters
-double precision, parameter :: k21 = 0.25d0
-double precision, parameter :: k31 = 3d0/32d0, k32 = 9d0/32d0
-double precision, parameter :: k41 = 1932d0/2197d0, k42 = -7200d0/2197d0, k43 = 7296d0/2197d0
-double precision, parameter :: k51 = 439d0/216d0, k52 = -8d0, k53 = 3680d0/513d0, k54 = -845d0/4104d0
-double precision, parameter :: k61 = -8d0/27d0, k62 = 2d0, k63 = -3544d0/2565d0, k64 = 1859d0/4104d0, k65 = -11d0/40d0
+real(np), parameter :: k21 = 0.25_np
+real(np), parameter :: k31 = 3.0_np/32.0_np, k32 = 9.0_np/32.0_np
+real(np), parameter :: k41 = 1932.0_np/2197.0_np, k42 = -7200.0_np/2197.0_np, k43 = 7296.0_np/2197.0_np
+real(np), parameter :: k51 = 439.0_np/216.0_np, k52 = -8.0_np, k53 = 3680.0_np/513.0_np, k54 = -845.0_np/4104.0_np
+real(np), parameter :: k61 = -8.0_np/27.0_np, k62 = 2.0_np, k63 = -3544.0_np/2565.0_np, k64 = 1859.0_np/4104.0_np, k65 = -11.0_np/40.0_np
 
-double precision, parameter :: y1 = 25d0/216d0, y3 = 1408d0/2565d0, y4 = 2197d0/4101d0, y5 = -1d0/5d0
-double precision, parameter :: z1 = 16d0/135d0, z3 = 6656d0/12825d0, z4 = 28561d0/56430d0, z5 = -9d0/50d0,z6 = 2d0/55d0
+real(np), parameter :: y1 = 25.0_np/216.0_np, y3 = 1408.0_np/2565.0_np, y4 = 2197.0_np/4101.0_np, y5 = -1.0_np/5.0_np
+real(np), parameter :: z1 = 16.0_np/135.0_np, z3 = 6656.0_np/12825.0_np, z4 = 28561.0_np/56430.0_np, z5 = -9.0_np/50.0_np,z6 = 2.0_np/55.0_np
 
 integer :: terror
 
@@ -18,12 +18,12 @@ contains
 
   subroutine trace_line(r,sign,h)
   ! traces a line from 'r' for 'nsteps' integration steps in the direction along the line as specified by 'sign'. Each step is of length h
-    double precision :: r(3), r0(3)
+    real(np) :: r(3), r0(3)
     integer :: sign
-    double precision :: h, hdum, stepdist
+    real(np) :: h, hdum, stepdist
 
     stepdist = h
-    hdum = 0d0
+    hdum = 0.0_np
     r0 = r
 
     do while (hdum < stepdist .and. .not. outedge(r))
@@ -33,7 +33,7 @@ contains
       hdum = hdum + abs(h)
     enddo
     
-    if (modulus(r-r0) < 0.1d0*stepdist .and. .not. outedge(r)) then
+    if (modulus(r-r0) < 0.1_np*stepdist .and. .not. outedge(r)) then
       print*, 'field line not tracin', modulus(r-r0), stepdist, sign
       print*, xmin, xmax, ymin, ymax, zmin, zmax
       print*, r
@@ -48,9 +48,9 @@ contains
   !runge-kutta fehlberg integrator. Calculates a 4th order estimate (y) and a
   !fifth order estimate (z) and calculates the difference between them. From this it
   !determines the optimal step length with which to integrate the function by.
-    double precision :: h, hvec(3), mindist, s
-    double precision, dimension(3) :: k1, k2, k3, k4, k5, k6
-    double precision, dimension(3) :: r, r0, rtest, y, z, dr
+    real(np) :: h, hvec(3), mindist, s
+    real(np), dimension(3) :: k1, k2, k3, k4, k5, k6
+    real(np), dimension(3) :: r, r0, rtest, y, z, dr
     
     !minimum physical distance corresponding to fraction of gridcell (h)
     dr = getdr(r)
@@ -87,10 +87,10 @@ contains
     z = z1*k1 + z3*k3 + z4*k4 + z5*k5 + z6*k6
 
     !calculate optimum step length (s = hoptimum/h)
-    s = 0.84d0*(tol/modulus(z-y))**0.25d0
+    s = 0.84_np*(tol/modulus(z-y))**0.25_np
     
     if (abs(s*h) < stepmin) s = stepmin/abs(h)
-    if (s > 1) s = 1d0
+    if (s > 1) s = 1.0_np
 
     rtest = r0
     k1 = s*hvec*normalise(trilinear(rtest, bgrid))
@@ -111,7 +111,7 @@ contains
 
     h = h*s
 
-    ! if (modulus(r-r0) < 0.1d0*h .and. .not. outedge(r)) then
+    ! if (modulus(r-r0) < 0.1*h .and. .not. outedge(r)) then
     !   print*, 'trace failure',modulus(r-r0),h
     !   stop
     ! endif
@@ -122,11 +122,11 @@ contains
 
   function getdr(r)
     !outputs length of one gridcell in 'physical' length units (essentially (dx,dy,dz))
-    double precision :: r(3), rcheck(3) !grid cell number
-    double precision :: dx, dy, dz
-    double precision :: getdr(3)
+    real(np) :: r(3), rcheck(3) !grid cell number
+    real(np) :: dx, dy, dz
+    real(np) :: getdr(3)
     integer :: i, j, k
-    double precision :: xc, yc, zc !x, y and z at the midpoint of the cell
+    real(np) :: xc, yc, zc !x, y and z at the midpoint of the cell
 
     rcheck = r
     call edgecheck(rcheck)

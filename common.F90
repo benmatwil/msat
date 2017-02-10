@@ -4,13 +4,12 @@ use params
 
 implicit none
 
-double precision, allocatable :: bgrid(:,:,:,:)
-integer, parameter :: iseed=3141592
-double precision :: xmin, xmax, ymin, ymax, zmin, zmax
-double precision, dimension(:), allocatable :: x, y, z
+real(np), allocatable :: bgrid(:,:,:,:)
+real(np) :: xmin, xmax, ymin, ymax, zmin, zmax
+real(np), dimension(:), allocatable :: x, y, z
 integer :: nnulls
-double precision :: dx, dy, dz
-double precision, allocatable, dimension(:,:) :: rnulls, rnullsalt, spines, fans
+real(np) :: dx, dy, dz
+real(np), allocatable, dimension(:,:) :: rnulls, rnullsalt, spines, fans
 integer , allocatable, dimension(:) :: signs
 integer :: nseps
 
@@ -18,14 +17,14 @@ contains
 
   function trilinear(r,b)
     ! find the value of a function, b, at (x,y,z) using the 8 vertices
-    double precision, allocatable :: b(:,:,:,:)
-    double precision :: r(3)
-    double precision :: cube(2,2,2)
-    double precision :: x, y, z
-    double precision :: xp, yp, zp
-    double precision :: f11, f12, f21, f22
-    double precision :: f1, f2
-    double precision :: trilinear(3)
+    real(np), allocatable :: b(:,:,:,:)
+    real(np) :: r(3)
+    real(np) :: cube(2,2,2)
+    real(np) :: x, y, z
+    real(np) :: xp, yp, zp
+    real(np) :: f11, f12, f21, f22
+    real(np) :: f1, f2
+    real(np) :: trilinear(3)
     integer :: nx, ny, nz
     integer :: dims
     
@@ -101,8 +100,8 @@ contains
   ! dot product between a and b
   function dot(a,b)
 
-    double precision, dimension(3) :: a, b
-    double precision :: dot
+    real(np), dimension(3) :: a, b
+    real(np) :: dot
 
     dot = sum(a*b)
 
@@ -113,8 +112,8 @@ contains
   ! cross product between a and b
   function cross(a,b)
 
-    double precision, dimension(3) :: a,b
-    double precision, dimension(3) :: cross
+    real(np), dimension(3) :: a,b
+    real(np), dimension(3) :: cross
 
     cross(1) = a(2)*b(3) - a(3)*b(2)
     cross(2) = a(3)*b(1) - a(1)*b(3)
@@ -127,8 +126,8 @@ contains
   ! normalises a
   function normalise(a)
 
-    double precision, dimension(3) :: a
-    double precision, dimension(3) :: normalise
+    real(np), dimension(3) :: a
+    real(np), dimension(3) :: normalise
 
     normalise = a/sqrt(dot(a,a))
 
@@ -140,9 +139,9 @@ contains
   subroutine add_vector(x,vec,pos)
     implicit none
     
-    double precision, allocatable, dimension(:,:) :: x, dummy
-    double precision, allocatable, dimension(:) :: vec1
-    double precision :: vec(:)
+    real(np), allocatable, dimension(:,:) :: x, dummy
+    real(np), allocatable, dimension(:) :: vec1
+    real(np) :: vec(:)
     integer, optional :: pos
     integer :: nx, ny, position
 
@@ -220,7 +219,7 @@ contains
   subroutine remove_vector(x,pos)
     implicit none
     
-    double precision, allocatable, dimension(:,:) :: x, dummy
+    real(np), allocatable, dimension(:,:) :: x, dummy
     integer :: pos, nx, ny
 
     nx = size(x,1)
@@ -273,8 +272,8 @@ contains
 
   ! finds |a|
   function modulus(a)
-    double precision, dimension(3) :: a
-    double precision :: modulus
+    real(np), dimension(3) :: a
+    real(np) :: modulus
 
     modulus = sqrt(dot(a,a))
 
@@ -283,7 +282,7 @@ contains
   !********************************************************************************
 
   function outedge(r)
-    double precision :: r(3)
+    real(np) :: r(3)
     logical :: outedge
     
     outedge = .false.  
@@ -301,7 +300,7 @@ contains
 
   ! determines if the vector r is outwith the computational box
   subroutine edgecheck(r, out)
-    double precision :: r(3)
+    real(np) :: r(3)
     logical, optional :: out
     
     if (present(out)) out = outedge(r)
@@ -330,16 +329,16 @@ contains
   ! from the theta,phi coordinates of a fan vector, produces ring of points in the fanplane
   subroutine get_startpoints(theta,phi,xs,ys,zs)
 
-      double precision :: theta, phi
-      double precision, dimension(:) :: xs, ys, zs
+      real(np) :: theta, phi
+      real(np), dimension(:) :: xs, ys, zs
       integer :: i, nlines
-      double precision :: dtheta
-      double precision :: r(3)
-      double precision, parameter :: sep=0.1
+      real(np) :: dtheta
+      real(np) :: r(3)
+      real(np), parameter :: sep=0.1
 
       nlines = size(xs)
 
-      dtheta = 2.0d0*pi/nlines
+      dtheta = 2.0_np*pi/nlines
 
       ! generate nlines start points in ring around equator
       do i = 1, nlines
@@ -364,10 +363,10 @@ contains
 
   ! rotates a vector (r) by a certain angle about the x-z plane (theta), then by an angle (phi) about the x-y plane
   function rotate(r,theta,phi)
-      double precision :: r(3)
-      double precision :: theta, phi
-      double precision :: rotate(3)
-      double precision :: roty(3,3), rotz(3,3), rot(3,3)
+      real(np) :: r(3)
+      real(np) :: theta, phi
+      real(np) :: rotate(3)
+      real(np) :: roty(3,3), rotz(3,3), rot(3,3)
 
       !print *, 'rotate'
       !print*,'r in', r
@@ -408,8 +407,8 @@ contains
   function dist(a,b)
     ! calculates the distance between two points in grid units
     
-    double precision :: dist
-    double precision, dimension(3) :: a, b
+    real(np) :: dist
+    real(np), dimension(3) :: a, b
 
     dist = sqrt((a(1)-b(1))**2 + (a(2)-b(2))**2 + (a(3)-b(3))**2)
 

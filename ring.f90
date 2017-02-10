@@ -5,9 +5,9 @@ use params
 use common
 use trace
 
-double precision :: maxdist, mindist, nulldist
+real(np) :: maxdist, mindist, nulldist
 
-double precision, allocatable, dimension(:,:) :: line1, line2, add1, add2
+real(np), allocatable, dimension(:,:) :: line1, line2, add1, add2
 integer, allocatable, dimension(:) :: break, association, remove, endpoints, nearnull
 
 contains
@@ -18,15 +18,15 @@ contains
 
     integer :: nlines
     integer :: iline, nxtline, iadd, nadd
-    double precision :: b(3), maxdist0
+    real(np) :: b(3), maxdist0
 
     !$OMP SINGLE
     allocate(add1(3,nlines), add2(3,nlines))
     !$OMP END SINGLE
 
     !$OMP WORKSHARE
-    add1 = 0d0
-    add2 = 0d0
+    add1 = 0.0_np
+    add2 = 0.0_np
     !$OMP END WORKSHARE
 
     ! test for gaps. Where gaps need to be filled, put this info into add1, add2
@@ -39,10 +39,10 @@ contains
         else
           nxtline = 1
         endif
-        if (nearnull(iline) == 1 .or. nearnull(nxtline) == 1) maxdist0 = maxdist/2d0
+        if (nearnull(iline) == 1 .or. nearnull(nxtline) == 1) maxdist0 = maxdist/2.0_np
         if (dist(line2(:,iline),line2(:,nxtline)) > maxdist0) then !if two adjacent points too far away
-          add1(:,iline) = line1(:,iline) + 0.5d0*(line2(:,nxtline)-line2(:,iline)) !add point half way between two points
-          add2(:,iline) = line2(:,iline) + 0.5d0*(line2(:,nxtline)-line2(:,iline))
+          add1(:,iline) = line1(:,iline) + 0.5_np*(line2(:,nxtline)-line2(:,iline)) !add point half way between two points
+          add2(:,iline) = line2(:,iline) + 0.5_np*(line2(:,nxtline)-line2(:,iline))
         endif
       endif
     enddo
@@ -174,9 +174,9 @@ contains
     integer :: inull, iline, k
     integer :: nring
 
-    double precision :: h, h0, tracedist, checkdist
+    real(np) :: h, h0, tracedist, checkdist
 
-    double precision, allocatable :: r(:,:)
+    real(np), allocatable :: r(:,:)
     integer, allocatable :: rmap(:)
     integer :: near(nlines), notnear(nlines), endgap, gapsize
     integer :: index, count, nr, nnc, nextra, n1, n2

@@ -15,17 +15,17 @@ program ssfind
   integer*8 :: tstart, tstop, count_rate !to time program
   integer :: nx, ny, nz !size of grid
 
-  double precision :: r(3)
-  double precision :: h, h0
-  double precision :: slowdown
+  real(np) :: r(3)
+  real(np) :: h, h0
+  real(np) :: slowdown
 
   integer :: iring, iline, inull, inullchk
 
   ! null parameters
   integer :: sign, nearflag
-  double precision, dimension(3) :: fan, spine
-  double precision :: theta, phi
-  double precision, allocatable, dimension(:) :: xs, ys, zs
+  real(np), dimension(3) :: fan, spine
+  real(np) :: theta, phi
+  real(np), allocatable, dimension(:) :: xs, ys, zs
 
   integer :: nlines
   integer :: nrings
@@ -166,7 +166,7 @@ program ssfind
     nrings = ringsmax
     nperring = 0
     nperring(0) = nlines
-    slowdown = 1d0
+    slowdown = 1.0_np
     terror = 0
 
     write(20) nrings, 0, ringsmax+1
@@ -198,9 +198,9 @@ program ssfind
 
       !$OMP SINGLE
       if (iring < 50) then
-        h0 = 5d-2/slowdown
+        h0 = 4d-2/slowdown
       else
-        h0 = 25d-2/slowdown
+        h0 = 20d-2/slowdown
       endif
       !$OMP END SINGLE
 
@@ -230,13 +230,13 @@ program ssfind
       !$OMP SINGLE
       ! print*,'Checking at null', iring, nlines, inull
       if (iring < 50) then
-        maxdist = 0.1d0*h0*slowdown ! 0.0075d0
+        maxdist = 0.1_np*h0*slowdown ! 0.0075
       elseif (iring < 100) then
-        maxdist = 0.08d0*h0*slowdown ! 0.0075d0=0.15*0.05
+        maxdist = 0.08_np*h0*slowdown ! 0.0075=0.15*0.05
       else
-        maxdist = 0.6d0*h0*slowdown ! 0.15
+        maxdist = 0.6_np*h0*slowdown ! 0.15
       endif
-      nulldist = 1.4d0*h0*slowdown ! 0.6
+      nulldist = 1.4_np*h0*slowdown ! 0.6
       mindist = maxdist/3
       ! print*, iring, h0, nulldist, maxdist, mindist, nlines
       !$OMP END SINGLE
@@ -246,7 +246,7 @@ program ssfind
 
       !$OMP SINGLE
       allocate(nearnull(nlines))
-      slowdown = 1d0
+      slowdown = 1.0_np
       !$OMP END SINGLE
 
       !$OMP WORKSHARE
@@ -270,7 +270,7 @@ program ssfind
       nearflag = sum(nearnull)
       if (nearflag > 0) then
         ! print*, 'slowing down, adding points near null'
-        slowdown = 2d0
+        slowdown = 2.0_np
       endif
       !$OMP END SINGLE
 
