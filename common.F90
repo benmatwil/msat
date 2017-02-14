@@ -312,10 +312,10 @@ contains
     if (r(2) < ymin .or. r(2) > ymax) then
       if (r(2) < ymin) r(2) = 2*ymin - r(2)
       if (r(2) > ymax) r(2) = 2*ymax - r(2)
-      if (r(3) < (ymax-ymin)/2) then
-        r(3) = r(3) + (ymax-ymin)/2
+      if (r(3) < (zmax+zmin)/2) then
+        r(3) = r(3) + (zmax-zmin)/2
       else
-        r(3) = r(3) - (ymax-ymin)/2
+        r(3) = r(3) - (zmax-zmin)/2
       endif
     endif
     if (r(3) < zmin) r(3) = r(3) + zmax - zmin
