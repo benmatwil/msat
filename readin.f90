@@ -5,14 +5,14 @@ integer, parameter :: skip = 30 !number of rings to skip
 
 integer :: nrings, npoints, nringsmax
 integer, allocatable :: nperring(:)
-integer, allocatable :: assoc(:)
+integer, allocatable :: assoc(:), brk(:)
 integer :: association
 integer*8 :: pos
 
 integer :: preamble
 
 double precision :: r(3)
-double precision, allocatable :: ring(:,:), brk(:)
+double precision, allocatable :: ring(:,:)
 double precision, allocatable, dimension(:) :: x, y, z
 
 integer :: opt

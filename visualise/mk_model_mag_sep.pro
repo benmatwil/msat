@@ -1,4 +1,4 @@
-common shared_var, bgrid, xx, yy, zz, oModel, null, inull, ds
+common shared_var, bgrid, xx, yy, zz, oModel, null, inull, ds, file1
 
 pro model_add_sepsurf
   common shared_var
@@ -10,11 +10,11 @@ pro model_add_sepsurf
       if null[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
     endelse
     
-    file = 'output/ringidl' + string(i+1,'(I4.4)') + '.dat'
+    file = 'output/'+file1+'-ringidl' + string(i+1,'(I4.4)') + '.dat'
     print, file
     
     get_lun, fan
-    openr, fan, file, /f77_unformatted
+    openr, fan, file
     nrings = -1L
     readu, fan, nrings
     print, 'number of rings', nrings
@@ -84,11 +84,11 @@ pro model_add_fanlines
       if null[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
     endelse
 
-    file = 'output/ringidl' + string(i+1,'(I4.4)') + '.dat'
+    file = 'output/'+file+'ringidl' + string(i+1,'(I4.4)') + '.dat'
     print, file
     
     get_lun, fan
-    openr, fan, file, /f77_unformatted
+    openr, fan, file
     nrings = -1L
     readu, fan, nrings
 
@@ -140,7 +140,7 @@ pro model_add_separators
   print, 'Adding separators'
 
   foreach i, inull do begin
-    seps = read_separators('output/sep' + string(i+1,'(I4.4)') + '.dat')
+    seps = read_separators('output/'+file1+'-sep' + string(i+1,'(I4.4)') + '.dat')
     
     if seps ne !null then begin
       for j = 0, (size(seps))[1]-1 do begin
@@ -154,7 +154,7 @@ end
 pro model_add_nulls
   common shared_var
 
-  radius = min([xx[-1]-xx[0],yy[-1]-yy[0],zz[-1]-zz[0]])/200
+  radius = ds
   
   foreach i, inull do begin
     mesh_obj, 4, vert, poly, replicate(radius,21,21)
@@ -218,8 +218,11 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines
   free_lun, lun
 
   ds = min([min(xx[1:-1]-xx[0:-2]), min(yy[1:-1]-yy[0:-2]), min(zz[1:-1]-zz[0:-2])])
+
+  file1 = strmid(fname, strlen('data/'), strlen(fname))
+  file1 = strmid(file1, 0, strlen(file1)-strlen('.dat'))
   
-  null = read_nulls()
+  null = read_nulls(fname)
   inull = indgen(n_elements(null))
 
   oModel = obj_new("IDLgrModel")

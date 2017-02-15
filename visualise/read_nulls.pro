@@ -26,10 +26,8 @@ function read_nulls, file, simple=simple
       readu, null, nnulls
 
       signs = lonarr(nnulls)
-      r = dblarr(3,nnulls)
       spine = dblarr(3,nnulls)
       fan = spine
-      readu,null,r
       readu,null,signs,spine,fan
       signs = -signs
 
