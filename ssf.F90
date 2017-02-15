@@ -17,7 +17,7 @@ program ssfind
 
   real(np) :: r(3)
   real(np) :: h, h0
-  real(np) :: slowdown, shift
+  real(np) :: slowdown, shift(3)
 
   integer :: iring, iline, inull, inullchk
 
@@ -204,7 +204,7 @@ program ssfind
       endif
       !$OMP END SINGLE
 
-      !$OMP DO private(r, h, out)
+      !$OMP DO private(r, h, out, shift)
       do iline = 1, nlines ! loop over all points in ring (in parallel do)
 
         r(:) = line1(:,iline)
@@ -212,15 +212,32 @@ program ssfind
 
         call trace_line(r,sign,h) !trace line by a distance of h
 
-        if (abs(r(3) - line1(3,iline)) > (zmax-zmin)/2.0_np) then
+        shift = [0,0,0]
+#if spherical
+        if (abs(r(3) - line1(3,iline)) > 0.9_np*(zmax-zmin)) then
           if (r(3) - line1(3,iline) > 0) then
-            shift = zmax - zmin
+            shift(3) = zmax - zmin
           else
-            shift = zmin - zmax
+            shift(3) = -(zmax - zmin)
           endif
-        else
-          shift = 0
+        elseif (abs(r(3) - line1(3,iline)) < 0.6_np*(zmax-zmin) .and. abs(r(3) - line1(3,iline)) > 0.4_np*(zmax-zmin)) then
+          ! switch in theta untested
+          print*, 'shifting - untested'
+          if (r(3) - line1(3,iline) > 0) then
+            shift(3) = (zmax - zmin)/2
+          else
+            shift(3) = -(zmax - zmin)/2
+          endif
         endif
+#elif cylindrical
+        if (abs(r(2) - line1(2,iline)) > 0.9_num*(ymax-ymin)) then
+          if (r(2) - line1(2,iline) > 0) then
+            shift(2) = ymax - ymin
+          else
+            shift(2) = -(ymax - ymin)
+          endif
+        endif
+#endif
 
         line2(:,iline) = line2(:,iline) + r(:) - line1(:,iline) - shift
         call edgecheck(r, out)
