@@ -20,11 +20,11 @@ nf : params.f90 nf_mod.f90 nf.f90
 sf : params.f90 sf_mod.f90 sf.F90
 	$(FC) $(FLAGS) $(DEFINEMODE) -fopenmp $^ -o $@
 
-ssf : params.f90 common.F90 trace.F90 ring.f90 ssf.F90
+ssf : params.f90 common.F90 trace.F90 ring.F90 ssf.F90
 	$(FC) $(FLAGS) $(DEFINECOORD) $(DEFINEMODE) -fopenmp $^ -o $@
 	
-readin : params.f90 readin.f90
-	$(FC) $(FLAGS) $^ -o $@
+readin : params.f90 readin.F90
+	$(FC) $(FLAGS) $(DEFINEMODE) $^ -o $@
 
 ###########################################################
 

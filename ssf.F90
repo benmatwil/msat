@@ -17,7 +17,7 @@ program ssfind
 
   real(np) :: r(3)
   real(np) :: h, h0
-  real(np) :: slowdown
+  real(np) :: slowdown, shift
 
   integer :: iring, iline, inull, inullchk
 
@@ -37,7 +37,7 @@ program ssfind
   print*,'#                      Separatrix Surface Finder                      #'
   print*,'#######################################################################'
 
-  call omp_set_num_threads(nproc) ! have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
+  ! call omp_set_num_threads(nproc) ! have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
 
   call filenames
   
@@ -212,7 +212,17 @@ program ssfind
 
         call trace_line(r,sign,h) !trace line by a distance of h
 
-        line2(:,iline) = line2(:,iline) + r(:) - line1(:,iline)
+        if (abs(r(3) - line1(3,iline)) > (zmax-zmin)/2.0_np) then
+          if (r(3) - line1(3,iline) > 0) then
+            shift = zmax - zmin
+          else
+            shift = zmin - zmax
+          endif
+        else
+          shift = 0
+        endif
+
+        line2(:,iline) = line2(:,iline) + r(:) - line1(:,iline) - shift
         call edgecheck(r, out)
         ! counter to see how many points on ring have reached outer boundary
         if (out) then

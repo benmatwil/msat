@@ -81,13 +81,15 @@ program readin
 
   open(unit=10,file=trim(fileout)//'-nullpos.dat',access='stream',status='old')
     read(10) nnulls
-    print*,'num nulls',nnulls
+    print*, 'Number of nulls:', nnulls
 
     allocate(rnulls(3,nnulls))
 
-    do inull=1,nnulls
+    do inull = 1, nnulls
       read(10) rnulls(:,inull)
+#if debug
       print*, 'null position', inull, rnulls(:,inull)
+#endif
     enddo
   close(10)
 
@@ -112,8 +114,10 @@ program readin
 
     open(unit=11,file=trim(fileout)//'-sep'//trim(fname)//'.dat',access='stream',status='replace')
 
+#if debug
     print*, 'nrings, npoints, nringsmax'
     print*, nrings, npoints, nringsmax-1
+#endif
 
     preamble = 3 + nringsmax !takes you up to end of 'header'
 
@@ -121,12 +125,15 @@ program readin
       read(12) opt
       if (opt < 0) exit !if no separator in file, or reached the end of the file
       read(12) nullnum_f, nullnum_t
+      
+      read(12) nring, index !ring number and index within the ring the start point of the separator belongs to
+
+#if debug
       print*, 'Separator starts from null', nullnum_f
       print*, 'Separator ends at null', nullnum_t
-
-      read(12) nring, index !ring number and index within the ring the start point of the separator belongs to
       print*, 'ring number and index within ring where separator starts'
       print*, nring, index
+#endif
 
       allocate(x(0:nring+1), y(0:nring+1), z(0:nring+1))
 
@@ -134,8 +141,10 @@ program readin
       y(nring+1) = gtr(rnulls(2,nullnum_t), yg)
       z(nring+1) = gtr(rnulls(3,nullnum_t), zg)
 
+#if debug
       print*, 'Tracing Separator...'
       print*, 'Start ring is', nring
+#endif
 
       do iring = nring, 0, -1 !trace back each ring to the start
 
@@ -150,14 +159,14 @@ program readin
         z(iring) = gtr(r(3), zg)
         index = association
 
+#if debug
         if (iring == nring) then
           print*, 'End null, last point and start of separator'
           print*, x(nring+1), y(nring+1), z(nring+1)
           print*, x(nring), y(nring), z(nring)
         endif
-
         if (iring == 1) print*, x(1), y(1), z(1)
-
+#endif
       enddo
 
       write(11) nring+2
@@ -165,7 +174,9 @@ program readin
       write(11) x, y, z
 
       deallocate(x, y, z)
+#if debug
       print*, ''
+#endif
     enddo
 
     write(11) -1
@@ -173,10 +184,11 @@ program readin
     close(12)
 
     ! Just writes a selection of rings to file i.e. every "skip"ped number of rings
-    print*, 'writing rings to file'
 
     open(unit=11, file=trim(fileout)//'-ringidl'//trim(fname)//'.dat', access='stream', status='replace')
-    print*, 'nrings=', nrings
+#if debug
+    print*, 'Writing rings to file: nrings =', nrings
+#endif
     nrcount = 0
     do iring = 1, nrings-2, skip
       nrcount = nrcount+1

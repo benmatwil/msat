@@ -67,19 +67,19 @@ contains
     rtest = r0
     k1 = hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k21*k1
-    call edgecheck(rtest)
+    ! call edgecheck(rtest)
     k2 = hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k31*k1 + k32*k2
-    call edgecheck(rtest)
+    ! call edgecheck(rtest)
     k3 = hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k41*k1 + k42*k2 + k43*k3
-    call edgecheck(rtest)
+    ! call edgecheck(rtest)
     k4 = hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
-    call edgecheck(rtest)
+    ! call edgecheck(rtest)
     k5 = hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
-    call edgecheck(rtest)
+    ! call edgecheck(rtest)
     k6 = hvec*normalise(trilinear(rtest, bgrid))
     
 
@@ -96,16 +96,16 @@ contains
     rtest = r0
     k1 = s*hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k21*k1
-    call edgecheck(rtest)
+    ! call edgecheck(rtest)
     k2 = s*hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k31*k1 + k32*k2
-    call edgecheck(rtest)
+    ! call edgecheck(rtest)
     k3 = s*hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k41*k1 + k42*k2 + k43*k3
-    call edgecheck(rtest)
+    ! call edgecheck(rtest)
     k4 = s*hvec*normalise(trilinear(rtest, bgrid))
     rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
-    call edgecheck(rtest)
+    ! call edgecheck(rtest)
     k5 = s*hvec*normalise(trilinear(rtest, bgrid))
 
     r = r0 + y1*k1 + y3*k3 + y4*k4 + y5*k5

@@ -27,6 +27,8 @@ contains
     real(np) :: trilinear(3)
     integer :: nx, ny, nz
     integer :: dims
+
+    call edgecheck(r)
     
     xp = r(1)
     yp = r(2)
