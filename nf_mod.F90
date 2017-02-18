@@ -1,17 +1,15 @@
-!module for nullfinder
+! module for nullfinder
 module nf_mod
   use params
 
   contains
 
   subroutine bilin_test(cbx,cby,cbz,inull)
-    !tests surface of cube using bilinear method
+    ! tests surface of cube using bilinear method
     implicit none
 
     integer :: i, inull, n
-    !integer :: itest1, itest2, itest3
-    !integer :: face
-    !integer :: idum
+
     integer :: cross, sign
     integer :: edge
 
@@ -22,17 +20,18 @@ module nf_mod
     integer, dimension(6,6) :: test
     integer, dimension(6) :: test2
     integer, dimension(3) :: test3
-    !test is an array where the first index refers to the face number (1:6) and the second index is follows:
-    !1- x-y intersection (1/0)
-    !2- sign of z at this intersection (-1/1 /100 if null on face)
-    !3- xz intersection (1/0)
-    !4- sign of y on this intersection (-1/1 /100 if null on face)
-    !5- yz intersection (1/0)
-    !6- sign on x on this inersection (-1/1 /100 if null on face)
+    
+    ! test is an array where the first index refers to the face number (1:6) and the second index is follows:
+    ! 1- x-y intersection (1/0)
+    ! 2- sign of z at this intersection (-1/1 /100 if null on face)
+    ! 3- xz intersection (1/0)
+    ! 4- sign of y on this intersection (-1/1 /100 if null on face)
+    ! 5- yz intersection (1/0)
+    ! 6- sign on x on this inersection (-1/1 /100 if null on face)
 
-    inull = 0 !integer variable defining null. 1=null, 0=no null
-    test = 0 !set test array to zero
-    edge = 0 !integer variable defining null on edge. 1=null, 0=no null
+    inull = 0 ! integer variable defining null. 1=null, 0=no null
+    test = 0 ! set test array to zero
+    edge = 0 ! integer variable defining null on edge. 1=null, 0=no null
 
     !face #1 : (bottom face)
     facex = cbx(:,:,1)
@@ -51,7 +50,7 @@ module nf_mod
 
     edge = edge + edge_check(facex, facey, facez) !check for null on edge (with separator lying along edge)
 
-    !face #2 : left face
+    ! face #2 : left face
     facex = cbx(1,:,:)
     facey = cby(1,:,:)
     facez = cbz(1,:,:)
@@ -60,13 +59,6 @@ module nf_mod
     test(2,1) = cross
     test(2,2) = sign
     call face_solve(facey, facez, facex, cross, sign)
-    !print*, 'faces'
-    !print*, facey(:,1)
-    !print*, facey(:,2)
-    !print*, facez(:,1)
-    !print*, facez(:,2)
-    !print*, facex(:,1)
-    !print*, facex(:,2)
     test(2,3) = cross
     test(2,4) = sign
     call face_solve(facex, facez, facey, cross, sign)
@@ -75,7 +67,7 @@ module nf_mod
 
     edge = edge + edge_check(facex, facey, facez)
 
-    !face #3 : right face
+    ! face #3 : right face
     facex = cbx(2,:,:)
     facey = cby(2,:,:)
     facez = cbz(2,:,:)
@@ -92,7 +84,7 @@ module nf_mod
 
     edge = edge + edge_check(facex, facey, facez)
 
-    !face 4: front face
+    ! face 4: front face
     facex = cbx(:,1,:)
     facey = cby(:,1,:)
     facez = cbz(:,1,:)
@@ -107,9 +99,19 @@ module nf_mod
     test(4,5) = cross
     test(4,6) = sign
 
+#if debug
+    print*, 'Face 4: front'
+    do i = 1, 2
+      print*, 'x-coord', facex(1:2,i)
+    enddo
+    do i = 1, 2
+      print*, 'z-coord', facez(1:2,i)
+    enddo
+#endif 
+
     edge = edge + edge_check(facex, facey, facez)
 
-    !face 5: rear face
+    ! face 5: rear face
     facex = cbx(:,2,:)
     facey = cby(:,2,:)
     facez = cbz(:,2,:)
@@ -124,9 +126,19 @@ module nf_mod
     test(5,5) = cross
     test(5,6) = sign
 
+#if debug
+    print*, 'Face 5: rear'
+    do i = 1, 2
+      print*, 'x-coord', facex(1:2,i)
+    enddo
+    do i = 1, 2
+      print*, 'z-coord', facez(1:2,i)
+    enddo
+#endif  
+
     edge = edge + edge_check(facex, facey, facez)
 
-    !face 6: top face
+    ! face 6: top face
     facex = cbx(:,:,2)
     facey = cby(:,:,2)
     facez = cbz(:,:,2)
@@ -143,56 +155,52 @@ module nf_mod
 
     edge = edge + edge_check(facex, facey, facez)
 
-    !print out test array for checking
-    !do i=1,6
-    !  print*,test(i,:)
-    !enddo
-    !stop
+    ! check for nulls within cell
 
-    !check for nulls within cell
-
-    !total of each column in 'test'
+    ! total of each column in 'test'
     test2 = sum(test,1)
 
     test3 = 0
     do i = 1, 3
-      if (test2(2*i-1) >= 0) then !if there is a crossing
+      if (test2(2*i-1) >= 0) then ! if there is a crossing
         if (abs(test2(2*i)) < test2(2*i-1)) test3(i) = 1
       endif
     enddo
 
-    if (sum(test3) == 3) inull = 1 !we have a null (in the cell)
+#if debug
+    ! print out test array for checking
+    do i = 1, 6
+      print*, test(i,:)
+    enddo
+    print*, 'test2'
+    print*, test2
+    print*, 'test3'
+    print*, test3
+    print*, 'edge check'
+    print*, edge
+    if (sum(test3) == 3) print*, 'NULL IN CELL'
+    if (sum(test(:,2)) > 10 .or. sum(test(:,4)) > 10 .or. sum(test(:,6)) > 10) print*, 'NULL ON SURFACE'
+    if (edge > 0) print*, 'NULL ON EDGE WITH SPINE ALONG CELL EDGE :)'
+    ! stop
+#endif
+
+    ! check for null in the cell
+    if (sum(test3) == 3) inull = 1
 
     ! check for null on surface of cell
-    if (sum(test(:,2)) > 10 .or. sum(test(:,4)) > 10 .or. sum(test(:,6)) > 10) then
-      !print*, 'NULL ON SURFACE'
-      inull = 1
-    endif
+    if (sum(test(:,2)) > 10 .or. sum(test(:,4)) > 10 .or. sum(test(:,6)) > 10) inull = 1
 
 
-    !check for null on edge with spine/separator directed along that edge
-    if (edge > 0) then
-      !print*, 'NULL ON EDGE WITH SPINE ALONG CELL EDGE  :)'
-      inull = 1
-    endif
-    ! if (inull == 1) then
-    ! print*, 'test1'
-    ! do i = 1, 6
-    ! print*, test(i,:)
-    ! enddo
-    ! print*, 'test2'
-    ! print*, test2
-    ! print*, 'test3'
-    ! print*, test3
-    ! endif
-
+    ! check for null on edge with spine/separator directed along that edge
+    if (edge > 0) inull = 1
 
   end
 
   !********************************************************************************
 
   logical function zeropoint(a,b)
-    !Checks if there is the possibility that there is a zero on the faces a and b. If not, then there cannot be a crossing of zeroes on these faces.
+    ! Checks if there is the possibility that there is a zero on the faces a and b.
+    ! If not, then there cannot be a crossing of zeroes on these faces.
     implicit none
     real(np), dimension(2,2) :: a, b
     integer :: totala, totalb
@@ -232,7 +240,7 @@ module nf_mod
   !********************************************************************************
 
   function blankface(a,b,c)
-    !determines if the faces a, b and c are all zero. If so, return .false.
+    ! determines if the faces a, b and c are all zero. If so, return .false.
     real(np), dimension(2,2) :: a, b, c
     real(np) :: atot, btot,ctot
     logical :: blankface
@@ -272,19 +280,29 @@ module nf_mod
     real(np) :: a2, b2, c2, d2 !bilinear coefficients (facey)
     real(np) :: a, b, c !quadratic coefficients ax^2+bx+c=0
 
-    real(np) :: x1, x2, y1, y2
+    ! real(np) :: x1, x2, y1, y2
+    real(np) :: x11, x21, y11, y21, x12, x22, y12, y22
     real(np) :: det
 
     real(np) :: zcomp
 
-    x1 = -1
-    y1 = -1
-    x2 = -1
-    y2 = -1
+    x11 = -1
+    y11 = -1
+    x21 = -1
+    y21 = -1
+    x12 = -1
+    y12 = -1
+    x22 = -1
+    y22 = -1
 
     sign = 0
     cross = 0
     nsol = 0
+
+#if debug
+    print*,'zeropoint = ', zeropoint(facex,facey)
+    print*,'blankface = ', blankface(facex,facey,facez)
+#endif
 
     ! if there could be an intersection of the zeroes on facex and face y, or if the faces are not completely zero...
     if (zeropoint(facex,facey) .or. blankface(facex,facey,facez)) then
@@ -307,30 +325,45 @@ module nf_mod
       ! determinant of quadratic
       det = b**2 - 4*a*c
 
+#if debug
+    print*, 'a1, b1, c1, d1'
+    print*, a1, b1, c1, d1
+    print*, 'a2, b2, c2, d2'
+    print*, a2, b2, c2, d2
+    print*, 'ax^2 + bx + c = 0: a, b, c'
+    print*, a, b, c
+    print*, 'det (b**2 - 4*a*c)'
+    print*, det
+    print*, 'zero', zero
+#endif
+
       if (det >= 0) then ! there is a solution
         if (abs(a) < zero) then !have to solve linear
           if (b /= 0.0_np) then
-            x1 = -c/b ! solution exists
+            x11 = -c/b ! solution exists
+            x12 = -c/b ! solution exists
             nsol = 1
           endif
         else ! have to solve quadratic
           if (det == 0.0_np) then ! one solution
-            x1 = -b/(2*a)
+            x11 = -b/(2*a)
+            x12 = -b/(2*a)
             nsol = 1
           else ! two solutions
-            x1 = (-b + sqrt(det))/(2*a)
-            x2 = (-b - sqrt(det))/(2*a)
+            x11 = (-b + sqrt(det))/(2*a)
+            x12 = (-b + sqrt(det))/(2*a)
+            x21 = (-b - sqrt(det))/(2*a)
+            x22 = (-b - sqrt(det))/(2*a)
             nsol = 2
           endif
         endif
       endif
       if (nsol > 0) then
-        if ((c1 == 0.0_np .and. d1 == 0.0_np) .or. abs(c1 + d1*x1) < zero) then
-          y1 = -(a2 + b2*x1)/(c2 + d2*x1)
-          if (nsol == 2) y2 = -(a2 + b2*x2)/(c2 + d2*x2)
-        else
-          y1 = -(a1 + b1*x1)/(c1 + d1*x1)
-          if (nsol == 2) y2 = -(a1 + b1*x2)/(c1 + d1*x2)
+        y11 = -(a1 + b1*x11)/(c1 + d1*x11)
+        y12 = -(a2 + b2*x12)/(c2 + d2*x12)
+        if (nsol == 2) then
+          y21 = -(a1 + b1*x21)/(c1 + d1*x21)
+          y22 = -(a2 + b2*x22)/(c2 + d2*x22)
         endif
       else
         ! if the x equation isn't solvable then try the y equation
@@ -344,30 +377,29 @@ module nf_mod
         if (det >= 0) then !there is a solution
           if (abs(a) < zero) then !have to solve linear
             if (b /= 0.0_np) then
-              y1 = -c/b !solution exists
+              y11 = -c/b !solution exists
+              y12 = -c/b !solution exists
               nsol = 1
             endif
           else !have to solve quadratic
             if (det == 0.0_np) then !one solution
-              y1 = -b/(2*a)
+              y11 = -b/(2*a)
+              y12 = -b/(2*a)
               nsol = 1
             else !two solutions
-              y1 = (-b + sqrt(det))/(2*a)
-              y2 = (-b - sqrt(det))/(2*a)
+              y11 = (-b + sqrt(det))/(2*a)
+              y12 = (-b + sqrt(det))/(2*a)
+              y21 = (-b - sqrt(det))/(2*a)
+              y22 = (-b - sqrt(det))/(2*a)
               nsol = 2
             endif
           endif
           if (nsol > 0) then
-            if ((b1 == 0.0_np .and. d1 == 0.0_np) .or. abs(b1 + d1*y1) < zero) then
-              x1 = -(a2 + c2*y1)/(b2 + d2*y1)
-              if (nsol == 2) x2 = -(a2 + c2*y2)/(b2 + d2*y2)
-              ! y1 = -(a2 + b2*x1)/(c2 + d2*x1)
-              ! if (x2 >= 0.0_np) y2 = -(a2 + b2*x2)/(c2 + d2*x2)
-            else
-              x1 = -(a1 + c1*y1)/(b1 + d1*y1)
-              if (nsol == 2) x2 = -(a1 + c1*y2)/(b1 + d1*y2)
-              ! y1 = -(a1 + b1*x1)/(c1 + d1*x1)
-              ! if (x2 >= 0.0_np) y2 = -(a1 + b1*x2)/(c1 + d1*x2)
+            x11 = -(a1 + c1*y11)/(b1 + d1*y11)
+            x12 = -(a2 + c2*y12)/(b2 + d2*y12)
+            if (nsol == 2) then
+              x21 = -(a1 + c1*y21)/(b1 + d1*y21)
+              x22 = -(a2 + c2*y22)/(b2 + d2*y22)
             endif
           endif
         endif
@@ -392,10 +424,10 @@ module nf_mod
         ! endif
       endif
 
-      if (check(x1, y1)) then !if x and y are on face (between 0 and 1)
+      if (check(x11, y11)) then !if x and y are on face (between 0 and 1)
         cross = cross + 1
 
-        zcomp = bilinear_cell(x1, y1, facez) !'z' component of field at crossing point
+        zcomp = bilinear_cell(x11, y11, facez) !'z' component of field at crossing point
         if (zcomp > zero) then
           sign = sign + 1
         else if (zcomp < -zero) then
@@ -405,10 +437,10 @@ module nf_mod
         endif
       endif
 
-      if (check(x2, y2)) then
+      if (check(x12, y12)) then
         cross = cross + 1
 
-        zcomp = bilinear_cell(x2, y2, facez)
+        zcomp = bilinear_cell(x12, y12, facez)
         if (zcomp > zero) then
           sign = sign + 1
         else if (zcomp < -zero) then
@@ -417,6 +449,33 @@ module nf_mod
           sign = sign + 100
         endif
       endif
+
+      if (check(x21, y21)) then
+        cross = cross + 1
+
+        zcomp = bilinear_cell(x21, y21, facez)
+        if (zcomp > zero) then
+          sign = sign + 1
+        else if (zcomp < -zero) then
+          sign = sign - 1
+        else
+          sign = sign + 100
+        endif
+      endif
+    
+      if (check(x22, y22)) then
+        cross = cross + 1
+
+        zcomp = bilinear_cell(x22, y22, facez)
+        if (zcomp > zero) then
+          sign = sign + 1
+        else if (zcomp < -zero) then
+          sign = sign - 1
+        else
+          sign = sign + 100
+        endif
+      endif
+
     endif
 
   end subroutine
@@ -637,6 +696,10 @@ module nf_mod
 
           itestz = switch(cbz)
           if (itestz == 0) cycle
+
+#if debug
+          print*, 'Subgrid: calling bilinear test', i, j, k, dx
+#endif
 
           call bilin_test(cbx,cby,cbz,itest) ! check for null within (or on face/corner/edge of) cell
 

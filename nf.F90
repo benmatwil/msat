@@ -120,6 +120,10 @@ program nullfinder
       do i = 1, nx1
         if (candidates(i,j,k) == 1) then
 
+#if debug
+          print*, 'Grid coordinates of candidate cell', i, j, k
+#endif
+
           cbx = bx(i:i+1, j:j+1, k:k+1) !bx cell
           cby = by(i:i+1, j:j+1, k:k+1) !by cell
           cbz = bz(i:i+1, j:j+1, k:k+1) !bz cell
@@ -128,7 +132,12 @@ program nullfinder
 
           call bilin_test(cbx, cby, cbz, itest) ! check for null within (or on face/corner/edge of) cell
 
-          if (itest == 0) candidates(i,j,k) = 0 ! if no null found remove this candidate
+          if (itest == 0) then
+            candidates(i,j,k) = 0 ! if no null found remove this candidate
+#if debug
+            print*, 'CELL REJECTED'
+#endif
+          endif
 
         endif
       enddo
@@ -186,6 +195,10 @@ program nullfinder
           y = y + (mincube(2) - 1)*dx
           z = z + (mincube(3) - 1)*dx
 
+#if debug
+          print*, 'Null Location', i+x, j+y, k+z
+#endif
+
           if (x+i < 1 + 0.1_np**sig_figs .or. x+i > size(xgrid,1) - 0.1_np**sig_figs) ierror = 1
 
           if (ierror == 1) then
@@ -194,10 +207,12 @@ program nullfinder
             print*, "Don't believe this null. Removing from list"
             nnulls = nnulls-1
 
-          else
-            ! write(*,dblfmt) 'Null at ', i+x, j+y, k+z, ' in gridcell coordinates'
-            ! write(*,dblfmt) 'Null at ', linear(x, xgrid(i:i+1)), linear(y, ygrid(j:j+1)), linear(z, zgrid(k:k+1)), ' in real units'
+#if debug
+            print*, '|B| at point:', sqrt(trilinear_cell(x, y, z, cbx)**2 + &
+              trilinear_cell(x, y, z, cby)**2 + trilinear_cell(x, y, z, cbz)**2)
+#endif
 
+          else
             ! add this null to the list of nulls (in gridcell coordinates)
             call add_element(xs, x+i)
             call add_element(ys, y+j)
@@ -211,9 +226,12 @@ program nullfinder
             cby = by(i:i+1, j:j+1, k:k+1)
             cbz = bz(i:i+1, j:j+1, k:k+1)
 
-            ! print*, 'Sanity check:'
-            ! write(*,"(a,ES10.3)"), '|B| at point is', sqrt(trilinear_cell(x, y, z, cbx)**2 + &
-            ! trilinear_cell(x, y, z, cby)**2+trilinear_cell(x, y, z, cbz)**2)
+#if debug
+            print*, 'Null at ', i+x, j+y, k+z, ' in gridcell coordinates'
+            print*, 'Null at ', linear(x, xgrid(i:i+1)), linear(y, ygrid(j:j+1)), linear(z, zgrid(k:k+1)), ' in real units'
+            print*, '|B| at null:', sqrt(trilinear_cell(x, y, z, cbx)**2 + &
+              trilinear_cell(x, y, z, cby)**2 + trilinear_cell(x, y, z, cbz)**2)
+#endif
 
           endif
         endif

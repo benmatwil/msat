@@ -14,8 +14,8 @@ FLAGS += -Jmod
 all: nf sf ssf readin #nfnew #sf_gordon
 	@echo "Current number of OpenMP threads: $(OMP_NUM_THREADS)"
 
-nf : params.f90 nf_mod.f90 nf.f90
-	$(FC) $(FLAGS) $^ -o $@
+nf : params.f90 nf_mod.F90 nf.F90
+	$(FC) $(FLAGS) $(DEFINEMODE) $^ -o $@
 
 sf : params.f90 sf_mod.f90 sf.F90
 	$(FC) $(FLAGS) $(DEFINEMODE) -fopenmp $^ -o $@
