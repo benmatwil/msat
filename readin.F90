@@ -28,7 +28,7 @@ contains
     integer*8 :: a, b, p
     integer :: uptoring
 
-    !1 whole ring contains 3*np vector points and np association points
+    ! 1 whole ring contains 3*np vector points and np association points
     uptoring = preamble + sum(nperring(0:nring-1))*8
     a = uptoring + (index-1)*1
     b = uptoring + nperring(nring)*1 + (index-1)*1

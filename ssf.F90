@@ -40,7 +40,7 @@ program ssfind
   ! call omp_set_num_threads(nproc) ! have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
 
   call filenames
-  
+
   ! read in data
   open(unit=10, file=filein, access='stream', status='old')
     read(10) nx, ny, nz ! number of vertices
@@ -74,11 +74,11 @@ program ssfind
     allocate(signs(nnulls),spines(3,nnulls),fans(3,nnulls))
     read(10) signs, spines, fans
   close(10)
-  
+
   rnullsalt = rnulls
-  
+
 #if spherical
-  ! for sphericals 
+  ! for sphericals
   do inull = 1, nnulls
     ! check whether null is at the lower phi boundary
     if (rnullsalt(3,inull) < zmin + 1) then
@@ -86,21 +86,21 @@ program ssfind
       call edgecheck(rnullsalt(:,inull))
       rnullsalt(3,inull) = rnullsalt(3,inull) + 1
     endif
-    
+
     ! check whether null is at the upper phi boundary
     if (rnullsalt(3,inull) > zmax - 1) then
       rnullsalt(3,inull) = rnullsalt(3,inull) + 1
       call edgecheck(rnullsalt(:,inull))
       rnullsalt(3,inull) = rnullsalt(3,inull) - 1
     endif
-    
+
     ! check whether null is at the lower theta boundary
     if (rnullsalt(2,inull) < ymin + 1) then
       rnullsalt(2,inull) = rnullsalt(2,inull) - 1
       call edgecheck(rnullsalt(:,inull))
       rnullsalt(2,inull) = rnullsalt(2,inull) - 1
     endif
-    
+
     ! check whether null is at the upper theta boundary
     if (rnullsalt(2,inull) > ymax - 1) then
       rnullsalt(2,inull) = rnullsalt(2,inull) + 1
@@ -117,7 +117,7 @@ program ssfind
       call edgecheck(rnullsalt(:,inull))
       rnullsalt(2,inull) = rnullsalt(2,inull) + 1
     endif
-    
+
     ! check whether null is at upper phi boundary
     if (rnullsalt(2,inull) > ymax - 1) then
       rnullsalt(2,inull) = rnullsalt(2,inull) + 1
@@ -126,7 +126,7 @@ program ssfind
     endif
   enddo
 #endif
-  
+
   !$OMP PARALLEL private(iring, iline, inull)
   do inull = 1, nnulls ! loop over all nulls
     !$OMP SINGLE
@@ -248,12 +248,12 @@ program ssfind
           endpoints(iline) = 0
         endif
         line1(:,iline) = r(:)
-        
+
         association(iline) = iline
 
       enddo
       !$OMP END DO
-      
+
       !$OMP SINGLE
       ! print*,'Checking at null', iring, nlines, inull
       if (iring < 50) then
@@ -267,7 +267,7 @@ program ssfind
       mindist = maxdist/3
       ! print*, iring, h0, nulldist, maxdist, mindist, nlines
       !$OMP END SINGLE
-      
+
       ! remove points from ring if necessary
       call remove_points(nlines, iring)
 
@@ -313,7 +313,7 @@ program ssfind
 
       !$OMP SINGLE
       if (nlines > pointsmax) then
-      ! exit if too many points on ring 
+      ! exit if too many points on ring
         print*, 'Too many points on ring', nlines, iring
         exitcondition = .true.
       endif
@@ -323,7 +323,7 @@ program ssfind
         print*, 'All fan points have reached the outer boundary', iring
         exitcondition = .true.
       endif
-      
+
       if (terror == 1) then
         print*, 'Tracing has failed', iring
         exitcondition = .true.
@@ -345,11 +345,13 @@ program ssfind
 
     enddo
 
+    ! Trace spines...
+
     !$OMP SINGLE
     if (nrings == ringsmax) print*, "Reached maximum number of rings"
-    
+
     print*, 'number of separators=', nseps, 'number of rings', nrings
-    
+
     write(12) -1
     close(12)
 
@@ -367,6 +369,6 @@ program ssfind
 
   call system_clock(tstop, count_rate)
   print*, 'TIME = ', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"
-  print*, 'Done!' 
+  print*, 'Done!'
 
 end program
