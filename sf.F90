@@ -69,9 +69,10 @@ program sf_converge
 
 #if debug
 #else
-  print*, 'Null', inull,' of', nnulls
-  print*, 'Sign:', sign
-  print*, 'Warning:', warning
+    print*, 'Null', inull,' of', nnulls
+    print*, 'Sign:', sign
+    print*, 'Warning:', warning
+    print*, 'Tilt:', abs(90-acos(dot(fan,spine))/dtor)
 #endif
 
     signs(inull) = sign
