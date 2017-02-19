@@ -9,6 +9,7 @@ nf
 sf
 ssf
 readin
+make_cut
 writedata*
 sf_gordon
 *.dat
