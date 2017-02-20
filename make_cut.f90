@@ -1,11 +1,10 @@
 program make_cut
 
   use params
-  use trace
 
   implicit none
 
-  real(np) :: r0 = 1.2_np
+  real(np) :: r0 = 1.01_np
   character(4) :: fname
 
   integer :: nx, ny, nz
@@ -16,18 +15,16 @@ program make_cut
   integer, allocatable :: signs(:)
   real(np), allocatable :: spines(:,:)
 
-  integer :: iring, iline, nextline
+  integer :: inull, iring, iline, nextline
   integer :: nrings, npoints, nringsmax, nlines
   integer(8) :: p, uptoring
   integer, dimension(:), allocatable :: nperring
   real(np), dimension(:,:), allocatable :: line1
   real(np) :: s, point(3)
 
-  integer :: cont, inull
-  real(np), dimension(:), allocatable :: x, y, z
+  integer :: cont
 
-  integer :: dir, sign
-  real(np) :: rstart(:)
+  integer :: nspine, dir
 
   call filenames
 
@@ -54,7 +51,7 @@ program make_cut
 
   ! Need to deal with points at the edge/breakpoints
 
-  open(unit=12,file='output/cut_rings.dat',access='stream',status='replace')
+  open(unit=12,file=trim(fileout)//'-cut_rings.dat',access='stream',status='replace')
   do inull = 1, nnulls
   print*, inull
     write(fname,'(I4.4)') inull
@@ -94,7 +91,7 @@ program make_cut
   close(12)
 
   ! for each separator, check whether we cross r=r0 and add point to file
-  open(unit=13, file='output/cut_seps.dat',access='stream',status='replace')
+  open(unit=13, file=trim(fileout)//'-cut_seps.dat',access='stream',status='replace')
   do inull = 1, nnulls
     write(fname,'(I4.4)') inull
     open(unit=11, file=trim(fileout)//'-sep'//trim(fname)//'.dat',access='stream',status='old')
@@ -104,17 +101,13 @@ program make_cut
       read(11) nringsmax
       allocate(line1(cont,3))
       read(11) line1
-      do iline = 1, cont
-        if (iline == cont) then
-          nextline = 1
-        else
-          nextline = iline+1
-        endif
+      do iline = 1, cont-1
+        nextline = iline+1
         if ((line1(iline,1)-r0)*(line1(nextline,1)-r0) < 0) then
           ! find point in between two points (function?) and save
           s = (r0 - line1(iline,1))/(line1(nextline,1) - line1(iline,1))
           point = line1(iline,:) + s*(line1(nextline,:) - line1(iline,:))
-          write(12) point
+          write(13) point
         endif
       enddo
       deallocate(line1)
@@ -126,17 +119,28 @@ program make_cut
   close(13)
   
   
-  ! ! for each spine, check whether we cross r=r0 and add point to file
-  ! do inull = 1, nnulls
-  !   ! read in spine
-  !   read(12) spine
-  !   do dir = -1, 1, 2
-  !     ! Trace out spine for each null and check for crossing the plane
-  !     rstart = rnull(inull,:) + dir*spine*1e-3_np
-  !     h = 0.1_np
-  !     call trace_line(r, sign, h)
-  !     ! if crosses, save points, interpolate
-  !   enddo
-  ! enddo
+  open(unit=30,file=trim(fileout)//'-spinelines.dat',access='stream',status='old')
+  open(unit=15,file=trim(fileout)//'-cut_spines.dat',access='stream',status='replace')
+  ! for each spine, check whether we cross r=r0 and add point to file
+  do inull = 1, nnulls
+    ! read in spine
+    do dir = 1, 2
+      read(30) nspine
+      allocate(line1(3,nspine))
+      read(30) line1
+      do iline = 1, nspine-1
+        nextline = iline+1
+        if ((line1(1,iline)-r0)*(line1(1,nextline)-r0) < 0) then
+          ! find point in between two points (function?) and save
+          s = (r0 - line1(1,iline))/(line1(1,nextline) - line1(1,iline))
+          point = line1(:,iline) + s*(line1(:,nextline) - line1(:,iline))
+          write(15) point
+        endif
+      enddo
+      deallocate(line1)
+      ! if crosses, save points, interpolate
+    enddo
+  enddo
+  close(30)
 
 end
