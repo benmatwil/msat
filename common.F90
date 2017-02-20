@@ -336,7 +336,7 @@ contains
       integer :: i, nlines
       real(np) :: dtheta
       real(np) :: r(3)
-      real(np), parameter :: sep=0.1
+      real(np), parameter :: sep = 0.05_np
 
       nlines = size(xs)
 
@@ -413,6 +413,28 @@ contains
     real(np), dimension(3) :: a, b
 
     dist = sqrt((a(1)-b(1))**2 + (a(2)-b(2))**2 + (a(3)-b(3))**2)
+
+  end function
+
+  !********************************************************************************
+
+  function gtr(r, gx, gy, gz)
+
+    integer :: ir
+    real(np), dimension(:,:), allocatable :: r, gtr
+    real(np), allocatable :: gx(:), gy(:), gz(:)
+    integer, dimension(:,:), allocatable :: ig
+
+    gtr = r
+    ig = floor(r)
+
+    do ir = 1, size(r, 2)
+      
+      gtr(1, ir) = gx(ig(1, ir)) + (r(1, ir) - ig(1, ir))*(gx(ig(1, ir)+1) - gx(ig(1, ir)))
+      gtr(2, ir) = gy(ig(2, ir)) + (r(2, ir) - ig(2, ir))*(gy(ig(2, ir)+1) - gy(ig(2, ir)))
+      gtr(3, ir) = gz(ig(3, ir)) + (r(3, ir) - ig(3, ir))*(gz(ig(3, ir)+1) - gz(ig(3, ir)))
+
+    enddo
 
   end function
 

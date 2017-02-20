@@ -18,14 +18,19 @@ program ssfind
   real(np) :: r(3)
   real(np) :: h, h0
   real(np) :: slowdown, shift(3)
+  integer :: nearflag
 
   integer :: iring, iline, inull, inullchk
 
   ! null parameters
-  integer :: sign, nearflag
-  real(np), dimension(3) :: fan, spine
   real(np) :: theta, phi
   real(np), allocatable, dimension(:) :: xs, ys, zs
+
+  ! spine tracer
+  real(np), dimension(3) :: rspine
+  real(np), dimension(:,:), allocatable :: spine
+  real(np) :: hspine
+  integer :: dir
 
   integer :: nlines
   integer :: nrings
@@ -127,22 +132,20 @@ program ssfind
   enddo
 #endif
 
+
+  open(unit=30,file=trim(fileout)//'-spinelines.dat',status='replace',access='stream')
+
   !$OMP PARALLEL private(iring, iline, inull)
   do inull = 1, nnulls ! loop over all nulls
     !$OMP SINGLE
     print*, ''
     print*, 'Null number', inull, 'of', nnulls
 
-    r = rnulls(:, inull)
-    spine = spines(:, inull)
-    fan = fans(:, inull)
-    sign = signs(inull)
-
     ! get number of start points
     nlines = nstart
 
-    theta = acos(fan(3))
-    phi = atan(fan(2), fan(1))
+    theta = acos(fans(3,inull))
+    phi = atan(fans(2,inull), fans(1,inull))
     allocate(xs(nlines), ys(nlines), zs(nlines))
     call get_startpoints(theta,phi, xs,ys,zs)
 
@@ -151,14 +154,14 @@ program ssfind
 
     ! add start points to first ring relative to null
     do iline = 1, nlines !Go through each start point
-      line1(1,iline) = r(1) + xs(iline)
-      line1(2,iline) = r(2) + ys(iline)
-      line1(3,iline) = r(3) + zs(iline)
+      line1(1,iline) = rnulls(1,inull) + xs(iline)
+      line1(2,iline) = rnulls(2,inull) + ys(iline)
+      line1(3,iline) = rnulls(3,inull) + zs(iline)
     enddo
     line2 = line1
 
     write(fname,fmt) inull
-    open(unit=12, file=trim(fileout)//'-separator'//trim(fname)//'.dat' ,access='stream', status='replace')
+    open(unit=12, file=trim(fileout)//'-separator'//trim(fname)//'.dat', access='stream', status='replace')
     open(unit=20, file=trim(fileout)//'-everything'//trim(fname)//'.dat', access='stream', status='replace')
 
     break = 0
@@ -168,10 +171,11 @@ program ssfind
     nperring(0) = nlines
     slowdown = 1.0_np
     terror = 0
+    out = .false.
 
     write(20) nrings, 0, ringsmax+1
     write(20) nperring
-    write(20) [(iline,iline=1,nlines)], break, line1
+    write(20) [(iline,iline=1,nlines)], break, gtr(line1, x, y, z)
 
     exitcondition = .false.
     !$OMP END SINGLE
@@ -183,7 +187,7 @@ program ssfind
       !$OMP END SINGLE
 #endif
 
-      if (sign .eq. 0) then ! skip null which is uncharacterised
+      if (signs(inull) .eq. 0) then ! skip null which is uncharacterised
         print*,'Null has zero sign'
         exit
       endif
@@ -210,7 +214,7 @@ program ssfind
         r(:) = line1(:,iline)
         h = h0
 
-        call trace_line(r,sign,h) !trace line by a distance of h
+        call trace_line(r,signs(inull),h) !trace line by a distance of h
 
         shift = [0,0,0]
 #if spherical
@@ -333,7 +337,7 @@ program ssfind
       !$OMP SINGLE
       nperring(iring) = nlines
       ! Write ring and data to file separator????.dat
-      write(20) association, break, line1
+      write(20) association, break, gtr(line1, x, y, z)
 
       deallocate(endpoints, association)
       !$OMP END SINGLE
@@ -346,8 +350,23 @@ program ssfind
     enddo
 
     ! Trace spines...
-
     !$OMP SINGLE
+    do dir = -1, 1, 2
+      out = .false.
+      allocate(spine(3,2))
+      spine(:,1) = rnulls(:, inull)
+      spine(:,2) = rnulls(:, inull) + dir*spines(:, inull)*1e-3_np ! pick a good factor
+      rspine = spine(:,2)
+      do while (.not. out)
+        hspine = 5e-2_np
+        call trace_line(rspine, -signs(inull), hspine)
+        call edgecheck(rspine, out)
+        call add_vector(spine, rspine) 
+      enddo
+      write(30) size(spine,2), gtr(spine, x, y, z)
+      deallocate(spine)
+    enddo
+
     if (nrings == ringsmax) print*, "Reached maximum number of rings"
 
     print*, 'number of separators=', nseps, 'number of rings', nrings
@@ -364,6 +383,8 @@ program ssfind
     !$OMP END SINGLE
 
   enddo
+
+  close(30)
 
   !$OMP END PARALLEL
 
