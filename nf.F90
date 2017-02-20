@@ -200,6 +200,7 @@ program nullfinder
 #endif
 
           if (x+i < 1 + 0.1_np**sig_figs .or. x+i > size(xgrid,1) - 0.1_np**sig_figs) ierror = 1
+          if (minval(cube) > 1e-1_np**sig_figs) ierror = 1
 
           if (ierror == 1) then
 
