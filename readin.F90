@@ -85,12 +85,13 @@ program readin
 
     allocate(rnulls(3,nnulls))
 
-    do inull = 1, nnulls
-      read(10) rnulls(:,inull)
+    read(10) rnulls
+    read(10) rnulls
 #if debug
+    do inull = 1, nnulls
       print*, 'null position', inull, rnulls(:,inull)
-#endif
     enddo
+#endif
   close(10)
 
   call filenames
@@ -137,9 +138,9 @@ program readin
 
       allocate(x(0:nring+1), y(0:nring+1), z(0:nring+1))
 
-      x(nring+1) = gtr(rnulls(1,nullnum_t), xg)
-      y(nring+1) = gtr(rnulls(2,nullnum_t), yg)
-      z(nring+1) = gtr(rnulls(3,nullnum_t), zg)
+      x(nring+1) = rnulls(1,nullnum_t)
+      y(nring+1) = rnulls(2,nullnum_t)
+      z(nring+1) = rnulls(3,nullnum_t)
 
 #if debug
       print*, 'Tracing Separator...'
@@ -154,9 +155,9 @@ program readin
         read(10, pos=p) r !read position of point index on ring iring
         
         !write ring position vector into x, y and z
-        x(iring) = gtr(r(1), xg)
-        y(iring) = gtr(r(2), yg)
-        z(iring) = gtr(r(3), zg)
+        x(iring) = r(1)
+        y(iring) = r(2)
+        z(iring) = r(3)
         index = association
 
 #if debug
@@ -203,9 +204,9 @@ program readin
       read(10, pos=p) ring
       
       do iline = 1, nperring(iring)
-        x(iline) = gtr(ring(1,iline), xg)
-        y(iline) = gtr(ring(2,iline), yg)
-        z(iline) = gtr(ring(3,iline), zg)
+        x(iline) = ring(1,iline)
+        y(iline) = ring(2,iline)
+        z(iline) = ring(3,iline)
       enddo
 
       write(11) nperring(iring)
