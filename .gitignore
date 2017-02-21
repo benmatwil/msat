@@ -16,4 +16,4 @@ sf_gordon
 *.png
 Vis
 makefile
-pyvis/__pycache__/*.pyc
+*.pyc
