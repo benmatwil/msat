@@ -1,8 +1,10 @@
 FC = gfortran
 
-ifneq ($(coord),)
-	DEFINECOORD = -D$(coord)
+ifeq ($(coord),)
+	coord = cartesian
 endif
+DEFINECOORD = -D$(coord)
+
 ifeq ($(mode),debug)
 	FLAGS = -O0 -g -fbounds-check
 	DEFINEMODE += -D$(mode)
@@ -13,6 +15,7 @@ FLAGS += -Jmod
 
 all: nf sf ssf readin #nfnew #sf_gordon
 	@echo "Current number of OpenMP threads: $(OMP_NUM_THREADS)"
+	@echo "Using coordinate system: $(coord)"
 
 nf : params.f90 nf_mod.F90 nf.F90
 	$(FC) $(FLAGS) $(DEFINEMODE) $^ -o $@
