@@ -20,7 +20,7 @@ module trace
 
     subroutine trace_line(r,sign,h)
     ! traces a line from 'r' for 'nsteps' integration steps in the direction along the line as specified by 'sign'. Each step is of length h
-      real(np) :: r(3), r0(3)
+      real(np), dimension(3) :: r, r0, r1
       integer :: sign
       real(np) :: h, hdum, stepdist
 
@@ -30,8 +30,8 @@ module trace
 
       do while (hdum < stepdist .and. .not. outedge(r))
         h = sign*(stepdist-hdum)
-        call edgecheck(r)
-        call rk45(r,h)
+        call rk45(r, h)
+        ! call edgecheck(r0)
         hdum = hdum + abs(h)
       enddo
       
@@ -54,15 +54,15 @@ module trace
       real(np), dimension(3) :: k1, k2, k3, k4, k5, k6
       real(np), dimension(3) :: r, r0, rtest, y, z, dr
       
+      r0 = r
+      
       !minimum physical distance corresponding to fraction of gridcell (h)
-      dr = getdr(r)
+      dr = getdr(r0)
       mindist = minval(dr)*h
       
       !vector containing the grid's h for each direction
       !(so h for each direction is the same physical length, equal to mindist)
       hvec = mindist/dr
-
-      r0 = r
 
       !get rk values k1--k6
       rtest = r0

@@ -74,8 +74,8 @@ for null in nulls:
     xpts = pts[:,0]*np.sin(pts[:,1])*np.cos(pts[:,2])
     ypts = pts[:,0]*np.sin(pts[:,1])*np.sin(pts[:,2])
     zpts = pts[:,0]*np.cos(pts[:,1])
-    # ax.plot(xpts, ypts, zpts, c='green')
-    ax.plot(pts[:,0], pts[:,1], pts[:,2], c='green')
+    ax.plot(xpts, ypts, zpts, c='green')
+    # ax.plot(pts[:,0], pts[:,1], pts[:,2], c='green')
 
 plt.draw()
 

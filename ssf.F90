@@ -15,15 +15,15 @@ program ssfind
   integer*8 :: tstart, tstop, count_rate !to time program
   integer :: nx, ny, nz !size of grid
 
-  real(np) :: r(3)
+  real(np) :: r(3), rmove(3)
   real(np) :: h, h0
-  real(np) :: slowdown, shift(3)
+  real(np) :: slowdown !, shift(3)
   integer :: nearflag
 
   integer :: iring, iline, inull, inullchk
 
   ! null parameters
-  real(np) :: theta, phi
+  real(np) :: theta, phi, factor
   real(np), allocatable, dimension(:) :: xs, ys, zs
 
   ! spine tracer
@@ -37,6 +37,11 @@ program ssfind
   integer :: nperring(0:ringsmax)
 
   logical :: exitcondition, out
+
+  ! file writing
+  integer(8) :: ia, ib, ip
+  integer :: isep, nullnum1, nullnum2, linenum, ringnum
+  real(np), dimension(:,:), allocatable :: rsep
 
   print*,'#######################################################################'
   print*,'#                      Separatrix Surface Finder                      #'
@@ -71,8 +76,9 @@ program ssfind
 
   open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
     read(10) nnulls
-    allocate(rnulls(3,nnulls))
+    allocate(rnulls(3,nnulls), rnullsreal(3,nnulls))
     read(10) rnulls
+    read(10) rnullsreal
   close(10)
   open(unit=10, file=trim(fileout)//'-nulldata.dat', access='stream', status='old')
     read(10) nnulls
@@ -152,13 +158,32 @@ program ssfind
     allocate(line1(3,nlines), line2(3,nlines))
     allocate(break(nlines))
 
+    out = .false.
+    ! allocate(endpoints(nlines))
+    ! endpoints = 0
+
     ! add start points to first ring relative to null
     do iline = 1, nlines !Go through each start point
       line1(1,iline) = rnulls(1,inull) + xs(iline)
       line1(2,iline) = rnulls(2,inull) + ys(iline)
       line1(3,iline) = rnulls(3,inull) + zs(iline)
+      call edgecheck(line1(:,iline), out)
+      if (out) then
+        factor = 0.9_np
+        do while (out)
+          line1(1,iline) = rnulls(1,inull) + xs(iline)*factor
+          line1(2,iline) = rnulls(2,inull) + ys(iline)*factor
+          line1(3,iline) = rnulls(3,inull) + zs(iline)*factor
+          call edgecheck(line1(:,iline), out)
+          factor = factor*0.9_np
+        enddo
+      endif
     enddo
     line2 = line1
+
+    ! call remove_points(nlines)
+
+    ! deallocate(endpoints)
 
     write(fname,fmt) inull
     open(unit=12, file=trim(fileout)//'-separator'//trim(fname)//'.dat', access='stream', status='replace')
@@ -166,14 +191,12 @@ program ssfind
 
     break = 0
     nseps = 0
-    nrings = ringsmax
     nperring = 0
     nperring(0) = nlines
     slowdown = 1.0_np
     terror = 0
-    out = .false.
 
-    write(20) nrings, 0, ringsmax+1
+    write(20) 0, ringsmax+1
     write(20) nperring
     write(20) [(iline,iline=1,nlines)], break, gtr(line1, x, y, z)
 
@@ -191,7 +214,7 @@ program ssfind
         print*,'Null has zero sign'
         exit
       endif
-
+      
       !$OMP SINGLE
       allocate(endpoints(nlines), association(nlines))
       !$OMP END SINGLE
@@ -208,50 +231,57 @@ program ssfind
       endif
       !$OMP END SINGLE
 
-      !$OMP DO private(r, h, out, shift)
+      !$OMP DO private(r, h, out)
       do iline = 1, nlines ! loop over all points in ring (in parallel do)
 
-        r(:) = line1(:,iline)
+        r = line1(:,iline)
         h = h0
 
-        call trace_line(r,signs(inull),h) !trace line by a distance of h
+        call trace_line(r, signs(inull), h) ! trace line by a distance of h
 
-        shift = [0,0,0]
-#if spherical
-        if (abs(r(3) - line1(3,iline)) > 0.9_np*(zmax-zmin)) then
-          if (r(3) - line1(3,iline) > 0) then
-            shift(3) = zmax - zmin
-          else
-            shift(3) = -(zmax - zmin)
-          endif
-        elseif (abs(r(3) - line1(3,iline)) < 0.6_np*(zmax-zmin) .and. abs(r(3) - line1(3,iline)) > 0.4_np*(zmax-zmin)) then
-          ! switch in theta untested
-          print*, 'shifting - untested'
-          if (r(3) - line1(3,iline) > 0) then
-            shift(3) = (zmax - zmin)/2
-          else
-            shift(3) = -(zmax - zmin)/2
-          endif
-        endif
-#elif cylindrical
-        if (abs(r(2) - line1(2,iline)) > 0.9_num*(ymax-ymin)) then
-          if (r(2) - line1(2,iline) > 0) then
-            shift(2) = ymax - ymin
-          else
-            shift(2) = -(ymax - ymin)
-          endif
-        endif
-#endif
+!         shift = [0,0,0]
+! #if spherical
+!         if (abs(r(3) - line1(3,iline)) > 0.9_np*(zmax-zmin)) then
+!           print*, 'shifting phi'
+!           if (r(3) - line1(3,iline) > 0) then
+!             shift(3) = zmax - zmin
+!           else
+!             shift(3) = -(zmax - zmin)
+!           endif
+!         elseif (abs(r(3) - line1(3,iline)) < 0.6_np*(zmax-zmin) .and. abs(r(3) - line1(3,iline)) > 0.4_np*(zmax-zmin)) then
+!           ! switch in theta untested
+!           print*, 'shifting - untested'
+!           if (r(3) - line1(3,iline) > 0) then
+!             shift(3) = (zmax - zmin)/2
+!           else
+!             shift(3) = -(zmax - zmin)/2
+!           endif
+!         endif
+! #elif cylindrical
+!         if (abs(r(2) - line1(2,iline)) > 0.9_num*(ymax-ymin)) then
+!           if (r(2) - line1(2,iline) > 0) then
+!             shift(2) = ymax - ymin
+!           else
+!             shift(2) = -(ymax - ymin)
+!           endif
+!         endif
+! #endif
+!         line2(:,iline) = line2(:,iline) + r(:) - line1(:,iline) - shift
 
-        line2(:,iline) = line2(:,iline) + r(:) - line1(:,iline) - shift
-        call edgecheck(r, out)
+        line2(:,iline) = line2(:,iline) + (r - line1(:,iline))
+        line1(:,iline) = r
+
+
+        
+
+        ! call edgecheck(r, out)
         ! counter to see how many points on ring have reached outer boundary
-        if (out) then
+        if (outedge(r)) then
           endpoints(iline) = 1
         else
           endpoints(iline) = 0
         endif
-        line1(:,iline) = r(:)
+        ! line1(:,iline) = r(:)
 
         association(iline) = iline
 
@@ -273,7 +303,7 @@ program ssfind
       !$OMP END SINGLE
 
       ! remove points from ring if necessary
-      call remove_points(nlines, iring)
+      call remove_points(nlines)
 
       !$OMP SINGLE
       allocate(nearnull(nlines))
@@ -309,6 +339,12 @@ program ssfind
       call add_points(nlines)
 
       !$OMP SINGLE
+      do iline = 1, nlines
+        call edgecheck(line1(:,iline))
+      enddo
+      !$OMP END SINGLE
+
+      !$OMP SINGLE
       deallocate(nearnull)
       !$OMP END SINGLE
 
@@ -316,6 +352,7 @@ program ssfind
       if (nearflag > 0) call sep_detect(nlines,inull,iring)
 
       !$OMP SINGLE
+
       if (nlines > pointsmax) then
       ! exit if too many points on ring
         print*, 'Too many points on ring', nlines, iring
@@ -332,7 +369,14 @@ program ssfind
         print*, 'Tracing has failed', iring
         exitcondition = .true.
       endif
+
+      if (exitcondition) deallocate(endpoints, association)
       !$OMP END SINGLE
+
+      if (exitcondition) then
+        nrings = iring
+        exit
+      endif
 
       !$OMP SINGLE
       nperring(iring) = nlines
@@ -342,26 +386,53 @@ program ssfind
       deallocate(endpoints, association)
       !$OMP END SINGLE
 
-      if (exitcondition) then
-        nrings = iring
-        exit
-      endif
-
     enddo
 
-    ! Trace spines...
     !$OMP SINGLE
+    write(12) -1
+    write(20, pos=1) nrings
+    write(20, pos=9) nperring
+    close(12)
+
+    ! Trace separators...
+    open(unit=12,file=trim(fileout)//'-separator'//trim(fname)//'.dat',status='old',access='stream')
+    open(unit=30,file=trim(fileout)//'-sep'//trim(fname)//'.dat',status='replace',access='stream')
+    if (nseps > 0) then
+      print*, "Tracing separators"
+      do isep = 1, nseps
+        read(12) nullnum1, nullnum2, ringnum, linenum
+        allocate(rsep(3, ringnum+3))
+        do iring = ringnum, 0, -1
+          call position(iring, nperring, linenum, ia, ib, ip)
+          read(20, pos=ia) linenum
+          read(20, pos=ip) rsep(:,iring+2)
+        enddo
+        rsep(:,1) = rnullsreal(:,nullnum1)
+        rsep(:,ringnum+3) = rnullsreal(:,nullnum2)
+        write(30) ringnum+3
+        write(30) rsep
+        deallocate(rsep)
+      enddo
+    endif
+    write(30) -1
+    close(30)
+    close(12)
+
+    ! Close ring and separator data files
+    close(20)
+
+    ! Trace spines...
+    print*, "Tracing spines"
     do dir = -1, 1, 2
       out = .false.
-      allocate(spine(3,2))
+      allocate(spine(3,1))
       spine(:,1) = rnulls(:, inull)
-      spine(:,2) = rnulls(:, inull) + dir*spines(:, inull)*1e-3_np ! pick a good factor
-      rspine = spine(:,2)
+      rspine = rnulls(:, inull) + dir*spines(:, inull)*1e-3_np ! pick a good factor
       do while (.not. out)
+        call add_vector(spine, rspine)
         hspine = 5e-2_np
         call trace_line(rspine, -signs(inull), hspine)
         call edgecheck(rspine, out)
-        call add_vector(spine, rspine) 
       enddo
       write(30) size(spine,2), gtr(spine, x, y, z)
       deallocate(spine)
@@ -370,13 +441,6 @@ program ssfind
     if (nrings == ringsmax) print*, "Reached maximum number of rings"
 
     print*, 'number of separators=', nseps, 'number of rings', nrings
-
-    write(12) -1
-    close(12)
-
-    write(20, pos=1) nrings, sum(nperring)
-    write(20, pos=13) nperring
-    close(20)
 
     deallocate(xs, ys, zs)
     deallocate(line1, line2, break)
