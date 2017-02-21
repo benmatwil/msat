@@ -7,11 +7,11 @@ module common
   real(np), allocatable :: bgrid(:,:,:,:)
   real(np) :: xmin, xmax, ymin, ymax, zmin, zmax
   real(np), dimension(:), allocatable :: x, y, z
-  integer :: nnulls
+  integer(int32) :: nnulls
   real(np) :: dx, dy, dz
   real(np), allocatable, dimension(:,:) :: rnulls, rnullsalt, rnullsreal, spines, fans
-  integer , allocatable, dimension(:) :: signs
-  integer :: nseps
+  integer(int32), allocatable, dimension(:) :: signs
+  integer(int32) :: nseps
 
   contains
 
@@ -25,11 +25,13 @@ module common
       real(np) :: f11, f12, f21, f22
       real(np) :: f1, f2
       real(np) :: trilinear(3)
-      integer :: nx, ny, nz
-      integer :: dims
+      integer(int32) :: nx, ny, nz
+      integer(int32) :: dims
 
+#if cartesian
+#else
       call edgecheck(r)
-      
+#endif
       xp = r(1)
       yp = r(2)
       zp = r(3)
@@ -139,13 +141,12 @@ module common
 
     ! adds an row (val) to a nx column by ny row array at row number pos
     subroutine add_vector(x,vec,pos)
-      implicit none
       
       real(np), allocatable, dimension(:,:) :: x, dummy
       real(np), allocatable, dimension(:) :: vec1
       real(np) :: vec(:)
-      integer, optional :: pos
-      integer :: nx, ny, position
+      integer(int32), optional :: pos
+      integer(int32) :: nx, ny, position
 
       vec1 = vec
 
@@ -180,11 +181,10 @@ module common
     !********************************************************************************
 
     subroutine add_element(x,number,pos)
-      implicit none
       
-      integer, allocatable, dimension(:) :: x, dummy
-      integer, optional :: pos
-      integer :: nx, position, number, flag
+      integer(int32), allocatable, dimension(:) :: x, dummy
+      integer(int32), optional :: pos
+      integer(int32) :: nx, position, number, flag
       
       flag = number
 
@@ -219,10 +219,9 @@ module common
 
     ! removes row number pos from an array 
     subroutine remove_vector(x,pos)
-      implicit none
       
       real(np), allocatable, dimension(:,:) :: x, dummy
-      integer :: pos, nx, ny
+      integer(int32) :: pos, nx, ny
 
       nx = size(x,1)
       ny = size(x,2)
@@ -247,10 +246,9 @@ module common
 
     ! removes row number pos from an array 
     subroutine remove_element(x,pos)
-      implicit none
       
-      integer, allocatable, dimension(:) :: x, dummy
-      integer :: pos, nx
+      integer(int32), allocatable, dimension(:) :: x, dummy
+      integer(int32) :: pos, nx
 
       nx = size(x)
 
@@ -274,6 +272,7 @@ module common
 
     ! finds |a|
     function modulus(a)
+      
       real(np), dimension(3) :: a
       real(np) :: modulus
 
@@ -284,6 +283,7 @@ module common
     !********************************************************************************
 
     function outedge(r)
+      
       real(np) :: r(3)
       logical :: outedge
       
@@ -301,11 +301,9 @@ module common
     !********************************************************************************
 
     ! determines if the vector r is outwith the computational box
-    subroutine edgecheck(r, out)
-      real(np) :: r(3)
-      logical, optional :: out
+    subroutine edgecheck(r)
       
-      if (present(out)) out = outedge(r)
+      real(np) :: r(3)
       
 #if cylindrical
       if (r(2) < ymin) r(2) = r(2) + ymin - ymax
@@ -333,7 +331,7 @@ module common
 
         real(np) :: theta, phi
         real(np), dimension(:) :: xs, ys, zs
-        integer :: i, nlines
+        integer(int32) :: i, nlines
         real(np) :: dtheta
         real(np) :: r(3)
         real(np), parameter :: sep = 0.05_np
@@ -365,42 +363,40 @@ module common
 
     ! rotates a vector (r) by a certain angle about the x-z plane (theta), then by an angle (phi) about the x-y plane
     function rotate(r,theta,phi)
-        real(np) :: r(3)
-        real(np) :: theta, phi
-        real(np) :: rotate(3)
-        real(np) :: roty(3,3), rotz(3,3), rot(3,3)
 
-        !print *, 'rotate'
-        !print*,'r in', r
-        !print*, theta/dtor,phi/dtor
-        roty(1,1)=cos(-theta)
-        roty(1,2)=0
-        roty(1,3)=-sin(-theta)
-        
-        roty(2,1)=0
-        roty(2,2)=1
-        roty(2,3)=0
-        
-        roty(3,1)=sin(-theta)
-        roty(3,2)=0
-        roty(3,3)=cos(-theta)
+      real(np), dimension(3) :: r, rotate
+      real(np) :: theta, phi
+      real(np) :: roty(3,3), rotz(3,3), rot(3,3)
 
-        rotz(1,1)=cos(-phi)
-        rotz(1,2)=sin(-phi)
-        rotz(1,3)=0
+      !print *, 'rotate'
+      !print*,'r in', r
+      !print*, theta/dtor,phi/dtor
+      roty(1,1) = cos(-theta)
+      roty(1,2) = 0
+      roty(1,3) = -sin(-theta)
+      
+      roty(2,1) = 0
+      roty(2,2) = 1
+      roty(2,3) = 0
+      
+      roty(3,1) = sin(-theta)
+      roty(3,2) = 0
+      roty(3,3) = cos(-theta)
 
-        rotz(2,1)=-sin(-phi)
-        rotz(2,2)=cos(-phi)
-        rotz(2,3)=0
+      rotz(1,1) = cos(-phi)
+      rotz(1,2) = sin(-phi)
+      rotz(1,3) = 0
 
-        rotz(3,1)=0
-        rotz(3,2)=0
-        rotz(3,3)=1
+      rotz(2,1) = -sin(-phi)
+      rotz(2,2) = cos(-phi)
+      rotz(2,3) = 0
 
-        rot=matmul(rotz,roty)
-        rotate=matmul(rot,r)
+      rotz(3,1) = 0
+      rotz(3,2) = 0
+      rotz(3,3) = 1
 
-        r=rotate
+      rot = matmul(rotz,roty)
+      rotate = matmul(rot,r)
 
     end
 
@@ -420,10 +416,10 @@ module common
 
     function gtr(r, gx, gy, gz)
 
-      integer :: ir
+      integer(int32) :: ir
       real(np), dimension(:,:), allocatable :: r, gtr
       real(np), dimension(:), allocatable :: gx, gy, gz
-      integer, dimension(3) :: ig
+      integer(int32), dimension(3) :: ig
 
       gtr = r
 
@@ -440,11 +436,12 @@ module common
 
     !********************************************************************************
 
-    subroutine position(nring,nperring,index,a,b,p)
+    subroutine file_position(nring,nperring,index,a,b,p)
+
       integer(8) :: a, b, p
-      integer :: uptoring
-      integer :: nring, index
-      integer :: nperring(0:)
+      integer(int32) :: uptoring
+      integer(int32) :: nring, index
+      integer(int32) :: nperring(0:)
 
       ! 1 whole ring contains 3*np vector points and np association points
       uptoring = 2 + ringsmax + 1 + sum(nperring(0:nring-1))*8

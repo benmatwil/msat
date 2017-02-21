@@ -12,7 +12,7 @@ program ssfind
   character (len=8), parameter :: fmt='(I4.4)'
   character (len=5) :: fname
 
-  integer*8 :: tstart, tstop, count_rate !to time program
+  integer(8) :: tstart, tstop, count_rate !to time program
   integer :: nx, ny, nz !size of grid
 
   real(np) :: r(3), rmove(3)
@@ -167,14 +167,14 @@ program ssfind
       line1(1,iline) = rnulls(1,inull) + xs(iline)
       line1(2,iline) = rnulls(2,inull) + ys(iline)
       line1(3,iline) = rnulls(3,inull) + zs(iline)
-      call edgecheck(line1(:,iline), out)
-      if (out) then
+      call edgecheck(line1(:,iline))
+      if (outedge(line1(:,iline))) then
         factor = 0.9_np
-        do while (out)
+        do while (outedge(line1(:,iline)))
           line1(1,iline) = rnulls(1,inull) + xs(iline)*factor
           line1(2,iline) = rnulls(2,inull) + ys(iline)*factor
           line1(3,iline) = rnulls(3,inull) + zs(iline)*factor
-          call edgecheck(line1(:,iline), out)
+          call edgecheck(line1(:,iline))
           factor = factor*0.9_np
         enddo
       endif
@@ -204,11 +204,6 @@ program ssfind
     !$OMP END SINGLE
 
     do iring = 1, ringsmax ! loop over number of rings we want
-#if debug
-      !$OMP SINGLE
-      print*, iring, nlines
-      !$OMP END SINGLE
-#endif
 
       if (signs(inull) .eq. 0) then ! skip null which is uncharacterised
         print*,'Null has zero sign'
@@ -216,20 +211,22 @@ program ssfind
       endif
       
       !$OMP SINGLE
+#if debug
+      print*, iring, nlines
+#endif
+
       allocate(endpoints(nlines), association(nlines))
+
+      if (iring < 50) then
+        h0 = 4e-2_np/slowdown
+      else
+        h0 = 2e-1_np/slowdown
+      endif
       !$OMP END SINGLE
 
       !$OMP WORKSHARE
       endpoints = 0
       !$OMP END WORKSHARE
-
-      !$OMP SINGLE
-      if (iring < 50) then
-        h0 = 4d-2/slowdown
-      else
-        h0 = 20d-2/slowdown
-      endif
-      !$OMP END SINGLE
 
       !$OMP DO private(r, h, out)
       do iline = 1, nlines ! loop over all points in ring (in parallel do)
@@ -239,49 +236,15 @@ program ssfind
 
         call trace_line(r, signs(inull), h) ! trace line by a distance of h
 
-!         shift = [0,0,0]
-! #if spherical
-!         if (abs(r(3) - line1(3,iline)) > 0.9_np*(zmax-zmin)) then
-!           print*, 'shifting phi'
-!           if (r(3) - line1(3,iline) > 0) then
-!             shift(3) = zmax - zmin
-!           else
-!             shift(3) = -(zmax - zmin)
-!           endif
-!         elseif (abs(r(3) - line1(3,iline)) < 0.6_np*(zmax-zmin) .and. abs(r(3) - line1(3,iline)) > 0.4_np*(zmax-zmin)) then
-!           ! switch in theta untested
-!           print*, 'shifting - untested'
-!           if (r(3) - line1(3,iline) > 0) then
-!             shift(3) = (zmax - zmin)/2
-!           else
-!             shift(3) = -(zmax - zmin)/2
-!           endif
-!         endif
-! #elif cylindrical
-!         if (abs(r(2) - line1(2,iline)) > 0.9_num*(ymax-ymin)) then
-!           if (r(2) - line1(2,iline) > 0) then
-!             shift(2) = ymax - ymin
-!           else
-!             shift(2) = -(ymax - ymin)
-!           endif
-!         endif
-! #endif
-!         line2(:,iline) = line2(:,iline) + r(:) - line1(:,iline) - shift
-
         line2(:,iline) = line2(:,iline) + (r - line1(:,iline))
         line1(:,iline) = r
 
-
-        
-
-        ! call edgecheck(r, out)
         ! counter to see how many points on ring have reached outer boundary
         if (outedge(r)) then
           endpoints(iline) = 1
         else
           endpoints(iline) = 0
         endif
-        ! line1(:,iline) = r(:)
 
         association(iline) = iline
 
@@ -403,7 +366,7 @@ program ssfind
         read(12) nullnum1, nullnum2, ringnum, linenum
         allocate(rsep(3, ringnum+3))
         do iring = ringnum, 0, -1
-          call position(iring, nperring, linenum, ia, ib, ip)
+          call file_position(iring, nperring, linenum, ia, ib, ip)
           read(20, pos=ia) linenum
           read(20, pos=ip) rsep(:,iring+2)
         enddo
@@ -428,11 +391,11 @@ program ssfind
       allocate(spine(3,1))
       spine(:,1) = rnulls(:, inull)
       rspine = rnulls(:, inull) + dir*spines(:, inull)*1e-3_np ! pick a good factor
-      do while (.not. out)
+      do while (.not. outedge(rspine))
         call add_vector(spine, rspine)
         hspine = 5e-2_np
         call trace_line(rspine, -signs(inull), hspine)
-        call edgecheck(rspine, out)
+        call edgecheck(rspine)
       enddo
       write(30) size(spine,2), gtr(spine, x, y, z)
       deallocate(spine)
@@ -457,3 +420,5 @@ program ssfind
   print*, 'Done!'
 
 end program
+
+!separate outedge and edgecheck
