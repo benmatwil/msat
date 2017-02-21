@@ -26,6 +26,9 @@ ssf : params.f90 common.F90 trace.F90 ring.F90 ssf.F90
 readin : params.f90 readin.F90
 	$(FC) $(FLAGS) $(DEFINEMODE) $^ -o $@
 
+make_cut : params.f90 make_cut.f90
+	$(FC) $(FLAGS) $(DEFINEMODE) $^ -o $@
+
 ###########################################################
 
 clean:

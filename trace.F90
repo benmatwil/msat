@@ -7,11 +7,12 @@ module trace
   real(np), parameter :: k31 = 3.0_np/32.0_np, k32 = 9.0_np/32.0_np
   real(np), parameter :: k41 = 1932.0_np/2197.0_np, k42 = -7200.0_np/2197.0_np, k43 = 7296.0_np/2197.0_np
   real(np), parameter :: k51 = 439.0_np/216.0_np, k52 = -8.0_np, k53 = 3680.0_np/513.0_np, k54 = -845.0_np/4104.0_np
-  real(np), parameter :: k61 = -8.0_np/27.0_np, k62 = 2.0_np, k63 = -3544.0_np/2565.0_np, k64 = 1859.0_np/4104.0_np, k65 = -11.0_np/40.0_np
+  real(np), parameter :: k61 = -8.0_np/27.0_np, k62 = 2.0_np, k63 = -3544.0_np/2565.0_np, &
+    k64 = 1859.0_np/4104.0_np, k65 = -11.0_np/40.0_np
 
   real(np), parameter :: y1 = 25.0_np/216.0_np, y3 = 1408.0_np/2565.0_np, y4 = 2197.0_np/4101.0_np, y5 = -1.0_np/5.0_np
-  real(np), parameter :: z1 = 16.0_np/135.0_np, z3 = 6656.0_np/12825.0_np, z4 = 28561.0_np/56430.0_np
-  real(np), parameter :: z5 = -9.0_np/50.0_np, z6 = 2.0_np/55.0_np
+  real(np), parameter :: z1 = 16.0_np/135.0_np, z3 = 6656.0_np/12825.0_np, z4 = 28561.0_np/56430.0_np, &
+    z5 = -9.0_np/50.0_np, z6 = 2.0_np/55.0_np
 
   integer :: terror
 
@@ -34,12 +35,12 @@ module trace
         hdum = hdum + abs(h)
       enddo
       
-      if (modulus(r-r0) < 0.1_np*stepdist .and. .not. outedge(r)) then
-        print*, 'field line not tracin', modulus(r-r0), stepdist, sign
-        print*, xmin, xmax, ymin, ymax, zmin, zmax
-        print*, r
-        terror = 1
-      endif
+      ! if (modulus(r-r0) < 0.1_np*stepdist .and. .not. outedge(r)) then
+      !   print*, 'field line not tracin', modulus(r-r0), stepdist, sign
+      !   print*, xmin, xmax, ymin, ymax, zmin, zmax
+      !   print*, r
+      !   terror = 1
+      ! endif
 
     end
 
@@ -144,18 +145,18 @@ module trace
       yc = y(j) + dy/2
       zc = z(k) + dz/2
 
-  #if cartesian
+#if cartesian
       !cartesian coordinates
       getdr = [dx, dy, dz]
-  #elif spherical
+#elif spherical
       !spherical coordinates
       getdr = [dx, xc*dy, xc*sin(yc)*dz]
-  #elif cylindrical
+#elif cylindrical
       !cylindrical coordinates
       getdr = [dx, xc*dy, dz]
-  #else
+#else
       stop 'No coordinate system selected. Please select a valid one when compiling'
-  #endif
+#endif
       
     end function
 
