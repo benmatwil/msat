@@ -69,11 +69,11 @@ def separators(filename):
     with open('output/'+filename[5:-4]+'-sep{:04d}.dat'.format(inull), 'rb') as sepfile:
       length = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
       while length > 0:
-        pts = np.empty((length, 3), dtype=np.float64)
-        ringsmax = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
-        pts[:,0] = np.fromfile(sepfile, dtype=np.float64, count=length)
-        pts[:,1] = np.fromfile(sepfile, dtype=np.float64, count=length)
-        pts[:,2] = np.fromfile(sepfile, dtype=np.float64, count=length)
+        pts = np.fromfile(sepfile, dtype=np.float64, count=3*length).reshape(length,3)
+        # pts = np.empty((length, 3), dtype=np.float64)
+        # pts[:,0] = np.fromfile(sepfile, dtype=np.float64, count=length)
+        # pts[:,1] = np.fromfile(sepfile, dtype=np.float64, count=length)
+        # pts[:,2] = np.fromfile(sepfile, dtype=np.float64, count=length)
         sepsi = sepsi + [pts]
         length = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
     seps = seps + [sepsi]
@@ -90,8 +90,7 @@ def connectivity(filename):
     info = []
     with open('output/'+filename[5:-4]+'-separator{:04d}.dat'.format(inull), 'rb') as connectfile:
       flag = np.asscalar(np.fromfile(connectfile, dtype=np.int32, count=1))
-      while flag == 1:
-        np.fromfile(connectfile, dtype=np.int32, count=1)
+      while flag > 0:
         info = info + [np.asscalar(np.fromfile(connectfile, dtype=np.int32, count=1))]
         np.fromfile(connectfile, dtype=np.int32, count=2)
         flag = np.asscalar(np.fromfile(connectfile, dtype=np.int32, count=1))
