@@ -19,11 +19,11 @@ module common
       ! find the value of a function, b, at (x,y,z) using the 8 vertices
       real(np), allocatable :: b(:,:,:,:)
       real(np) :: r(3)
-      real(np) :: cube(2,2,2)
+      real(np) :: cube(2,2,2,3), square(2,2,3), line(2,3)
       real(np) :: x, y, z
       real(np) :: xp, yp, zp
-      real(np) :: f11, f12, f21, f22
-      real(np) :: f1, f2
+      ! real(np) :: f11, f12, f21, f22
+      ! real(np) :: f1, f2
       real(np) :: trilinear(3)
       integer(int32) :: nx, ny, nz
       integer(int32) :: dims
@@ -84,19 +84,24 @@ module common
       y = yp-ny
       z = zp-nz
       
-      do dims = 1, 3
-        cube = b(nx:nx+1,ny:ny+1,nz:nz+1,dims)
+      ! do dims = 1, 3
+        cube = b(nx:nx+1,ny:ny+1,nz:nz+1,:)
 
-        f11 = (1-x)*cube(1,1,1) + x*cube(2,1,1)
-        f12 = (1-x)*cube(1,1,2) + x*cube(2,1,2)
-        f21 = (1-x)*cube(1,2,1) + x*cube(2,2,1)
-        f22 = (1-x)*cube(1,2,2) + x*cube(2,2,2)
+        square = (1-x)*cube(1,:,:,:) + x*cube(2,:,:,:)
 
-        f1 = (1-y)*f11 + y*f21
-        f2 = (1-y)*f12 + y*f22
+        line = (1-y)*square(1,:,:) + y*square(2,:,:)
         
-        trilinear(dims) = (1-z)*f1 + z*f2
-      enddo
+
+        ! f11 = (1-x)*cube(1,1,1,:) + x*cube(2,1,1,:)
+        ! f12 = (1-x)*cube(1,1,2,:) + x*cube(2,1,2,:)
+        ! f21 = (1-x)*cube(1,2,1,:) + x*cube(2,2,1,:)
+        ! f22 = (1-x)*cube(1,2,2,:) + x*cube(2,2,2,:)
+
+        ! f1 = (1-y)*f11 + y*f21
+        ! f2 = (1-y)*f12 + y*f22
+        
+        trilinear = (1-z)*line(1,:) + z*line(2,:)
+      ! enddo
 
     end
 
