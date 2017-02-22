@@ -8,7 +8,7 @@ filename = 'data/field_20100601_0081-fft.dat'
 
 def plot(filename, layout=None):
   nulls = rd.nulls(filename)
-  con = rd.connectivity(filename)
+  con = rd.separators(filename, lines=False)
 
   g = ig.Graph()
   for inull in range(nulls.shape[0]):
