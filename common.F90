@@ -32,6 +32,7 @@ module common
 #else
       call edgecheck(r)
 #endif
+
       xp = r(1)
       yp = r(2)
       zp = r(3)
@@ -438,15 +439,15 @@ module common
     subroutine file_position(nring,nperring,index,a,b,p)
 
       integer(int64) :: a, b, p
-      integer(int32) :: uptoring
+      integer(int64) :: uptoring
       integer(int32) :: nring, index
       integer(int32) :: nperring(0:)
 
       ! 1 whole ring contains 3*np vector points and np association points
-      uptoring = sum(nperring(0:nring-1))*8
-      a = uptoring + (index-1)
-      b = uptoring + nperring(nring) + (index-1)
-      p = uptoring + nperring(nring)*2 + (index-1)*6
+      uptoring = sum(int(nperring(0:nring-1), int64))*8
+      a = uptoring + int((index-1), int64)
+      b = uptoring + int(nperring(nring) + (index-1), int64)
+      p = uptoring + int(nperring(nring)*2 + (index-1)*6, int64)
 
       a = a*4 + 1
       b = b*4 + 1
