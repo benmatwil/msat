@@ -32,7 +32,7 @@ make_cut : params.f90 make_cut.f90
 ###########################################################
 
 clean:
-	@rm mod/*.mod nf sf ssf readin
+	@rm mod/*.mod nf sf ssf make_cut
 
 tidy:
 	@rm output/*.dat
