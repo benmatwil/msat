@@ -16,9 +16,9 @@ def start(r, filename):
   plt.figure(figsize=(10,5))
   plt.plot([])
   plt.xlim([0,2*np.pi])
-  plt.xticks([0, np.pi/2, np.pi, np.pi*3/2, np.pi*2], ['0', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'])
+  plt.xticks([0, np.pi/2, np.pi, np.pi*3/2, np.pi*2], [r'$0$', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'])
   plt.ylim([np.pi,0])
-  plt.yticks([0, np.pi/4, np.pi/2, np.pi*3/4, np.pi], ['0', r'$\frac{\pi}{4}$', r'$\frac{\pi}{2}$', r'$\frac{3\pi}{4}$', r'$\pi$'])
+  plt.yticks([0, np.pi/4, np.pi/2, np.pi*3/4, np.pi], [r'$0$', r'$\frac{\pi}{4}$', r'$\frac{\pi}{2}$', r'$\frac{3\pi}{4}$', r'$\pi$'])
 
 def spines():
   spines = np.fromfile('output/field_20100601_0081-fft-cut_spines.dat', dtype=np.float64).reshape(-1,3)
