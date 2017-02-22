@@ -1,6 +1,6 @@
-import read_data as rd
+import pyvis.read_data as rd
 import numpy as np
-import fieldline3d as fl
+import pyvis.fieldline3d as fl
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os
@@ -9,7 +9,7 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2
 
   if converge == True:
     os.system('make sf mode=debug')
-    os.system('sf -i {0} -n {1:04d}'.format(filename, n) )
+    os.system('./sf -i {0} -n {1:04d}'.format(filename, n) )
 
   field = rd.field(filename)
   bgrid = np.zeros((field[0].shape[0], field[0].shape[1], field[0].shape[2], 3), dtype=np.float64)
