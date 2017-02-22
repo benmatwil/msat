@@ -8,7 +8,7 @@ use trace
 real(np) :: maxdist, mindist, nulldist
 
 real(np), allocatable, dimension(:,:) :: line1, line2, add1, add2
-integer, allocatable, dimension(:) :: break, association, remove, endpoints, nearnull
+integer(int32), allocatable, dimension(:) :: break, association, remove, endpoints, nearnull
 
 contains
 
@@ -16,8 +16,8 @@ contains
     ! adds points to rings if required
     implicit none
 
-    integer :: nlines
-    integer :: iline, nxtline, iadd, nadd
+    integer(int32) :: nlines
+    integer(int32) :: iline, nxtline, iadd, nadd
     real(np) :: b(3), maxdist0
 
     !$OMP SINGLE
@@ -90,8 +90,8 @@ contains
     ! removes points from rings as required
     implicit none
 
-    integer :: nlines
-    integer :: iline, nxtline, iremove, nremove
+    integer(int32) :: nlines
+    integer(int32) :: iline, nxtline, iremove, nremove
 
     !$OMP SINGLE
     allocate(remove(nlines))
@@ -170,18 +170,18 @@ contains
   ! If so, integrate it and its neighbours forward to see if any of them diverge around the null (i.e. a separator)
 
     implicit none
-    integer :: nlines
-    integer :: nullnum ! the null the fan is being drawn from
-    integer :: inull, iline, k
-    integer :: nring
+    integer(int32) :: nlines
+    integer(int32) :: nullnum ! the null the fan is being drawn from
+    integer(int32) :: inull, iline, k
+    integer(int32) :: nring
 
     real(np) :: h, h0, tracedist, checkdist
 
     real(np), allocatable :: r(:,:)
-    integer, allocatable :: rmap(:)
-    integer :: near(nlines), notnear(nlines), endgap, gapsize
-    integer :: index, count, nr, nnc, nextra, n1, n2
-    integer, allocatable :: signof(:)
+    integer(int32), allocatable :: rmap(:)
+    integer(int32) :: near(nlines), notnear(nlines), endgap, gapsize
+    integer(int32) :: index, count, nr, nnc, nextra, n1, n2
+    integer(int32), allocatable :: signof(:)
 
     h0 = 1d-2
     tracedist = 3*nulldist
@@ -281,9 +281,8 @@ contains
                   break(rmap(index-1)) = 1 ! disassociate points so that new points don't get added between them as they diverge around the null
                   nseps = nseps + 1
                   ! write the point's information to the separator file
-                  ! write(12) 1
-                  write(12) nullnum, inull
-                  write(12) nring, rmap(index-1)
+                  write(95) nullnum, inull, nring, rmap(index-1)
+                  write(40) nullnum, inull 
                 endif
               endif
             endif

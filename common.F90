@@ -287,13 +287,12 @@ module common
       real(np) :: r(3)
       logical :: outedge
       
-      outedge = .false.  
-      if (r(1) > xmax .or. r(1) < xmin) outedge = .true.
+      outedge = .false.
+      outedge = outedge .or. r(1) > xmax .or. r(1) < xmin
 #if cartesian
-      if (r(2) > ymax .or. r(2) < ymin) outedge = .true.
-      if (r(3) > zmax .or. r(3) < zmin) outedge = .true.
+      outedge = outedge .or. r(2) > ymax .or. r(2) < ymin .or. r(3) > zmax .or. r(3) < zmin
 #elif cylindrical
-      if (r(3) > zmax .or. r(3) < zmin) outedge = .true.
+      outedge = outedge .or. r(3) > zmax .or. r(3) < zmin
 #endif
       
     end function  
@@ -438,13 +437,13 @@ module common
 
     subroutine file_position(nring,nperring,index,a,b,p)
 
-      integer(8) :: a, b, p
+      integer(int64) :: a, b, p
       integer(int32) :: uptoring
       integer(int32) :: nring, index
       integer(int32) :: nperring(0:)
 
       ! 1 whole ring contains 3*np vector points and np association points
-      uptoring = 2 + ringsmax + 1 + sum(nperring(0:nring-1))*8
+      uptoring = sum(nperring(0:nring-1))*8
       a = uptoring + (index-1)
       b = uptoring + nperring(nring) + (index-1)
       p = uptoring + nperring(nring)*2 + (index-1)*6

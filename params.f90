@@ -31,6 +31,7 @@ module params
   integer(int32), parameter :: pointsmax = 100000 ! maximum number of points in ring
   real(np), parameter :: tol = 1e-5_np ! tolerance of rkf45 scheme
   real(np), parameter :: stepmin = 3e-4_np ! minimum step length
+  integer(int32), parameter :: skiprings = 30 ! Rings to skip from total in final ring file
 
   contains
   

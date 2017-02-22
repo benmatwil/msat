@@ -14,14 +14,14 @@ module trace
   real(np), parameter :: z1 = 16.0_np/135.0_np, z3 = 6656.0_np/12825.0_np, z4 = 28561.0_np/56430.0_np, &
     z5 = -9.0_np/50.0_np, z6 = 2.0_np/55.0_np
 
-  integer :: terror
+  integer(int32) :: terror
 
   contains
 
     subroutine trace_line(r,sign,h)
     ! traces a line from 'r' for 'nsteps' integration steps in the direction along the line as specified by 'sign'. Each step is of length h
       real(np), dimension(3) :: r, r0, r1
-      integer :: sign
+      integer(int32) :: sign
       real(np) :: h, hdum, stepdist
 
       stepdist = h
@@ -68,19 +68,14 @@ module trace
       rtest = r0
       k1 = hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k21*k1
-      ! call edgecheck(rtest)
       k2 = hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k31*k1 + k32*k2
-      ! call edgecheck(rtest)
       k3 = hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k41*k1 + k42*k2 + k43*k3
-      ! call edgecheck(rtest)
       k4 = hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
-      ! call edgecheck(rtest)
       k5 = hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
-      ! call edgecheck(rtest)
       k6 = hvec*normalise(trilinear(rtest, bgrid))
       
 
@@ -97,16 +92,12 @@ module trace
       rtest = r0
       k1 = s*hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k21*k1
-      ! call edgecheck(rtest)
       k2 = s*hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k31*k1 + k32*k2
-      ! call edgecheck(rtest)
       k3 = s*hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k41*k1 + k42*k2 + k43*k3
-      ! call edgecheck(rtest)
       k4 = s*hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
-      ! call edgecheck(rtest)
       k5 = s*hvec*normalise(trilinear(rtest, bgrid))
 
       r = r0 + y1*k1 + y3*k3 + y4*k4 + y5*k5
@@ -127,7 +118,7 @@ module trace
       real(np) :: r(3), rcheck(3) !grid cell number
       real(np) :: dx, dy, dz
       real(np) :: getdr(3)
-      integer :: i, j, k
+      integer(int32) :: i, j, k
       real(np) :: xc, yc, zc !x, y and z at the midpoint of the cell
 
       rcheck = r
@@ -143,7 +134,7 @@ module trace
       
       xc = x(i) + dx/2
       yc = y(j) + dy/2
-      zc = z(k) + dz/2
+      ! zc = z(k) + dz/2
 
 #if cartesian
       !cartesian coordinates

@@ -9,18 +9,15 @@ program ssfind
 
   implicit none
 
-  character (len=8), parameter :: fmt='(I4.4)'
-  character (len=5) :: fname
-
-  integer(8) :: tstart, tstop, count_rate !to time program
-  integer :: nx, ny, nz !size of grid
+  integer(int64) :: tstart, tstop, count_rate !to time program
+  integer(int32) :: nx, ny, nz !size of grid
 
   real(np) :: r(3), rmove(3)
   real(np) :: h, h0
   real(np) :: slowdown !, shift(3)
-  integer :: nearflag
+  integer(int32) :: nearflag
 
-  integer :: iring, iline, inull, inullchk
+  integer(int32) :: iring, iline, inull, jnull
 
   ! null parameters
   real(np) :: theta, phi, factor
@@ -30,18 +27,19 @@ program ssfind
   real(np), dimension(3) :: rspine
   real(np), dimension(:,:), allocatable :: spine
   real(np) :: hspine
-  integer :: dir
+  integer(int32) :: dir
 
-  integer :: nlines
-  integer :: nrings
-  integer :: nperring(0:ringsmax)
+  integer(int32) :: nlines
+  integer(int32) :: nrings
+  integer(int32) :: nperring(0:ringsmax)
 
   logical :: exitcondition, out
 
   ! file writing
-  integer(8) :: ia, ib, ip
-  integer :: isep, nullnum1, nullnum2, linenum, ringnum
-  real(np), dimension(:,:), allocatable :: rsep
+  integer(int64) :: ia, ib, ip
+  integer(int32) :: isep, nullnum1, nullnum2, linenum, ringnum
+  real(np), dimension(:,:), allocatable :: rsep, rring, linewrite
+  integer(int32), dimension(:), allocatable :: brk
 
   print*,'#######################################################################'
   print*,'#                      Separatrix Surface Finder                      #'
@@ -138,8 +136,18 @@ program ssfind
   enddo
 #endif
 
+  ! stores all info regarding size of rings
+  open(unit=10,file=trim(fileout)//'-ringinfo.dat',status='replace',access='stream')
+  ! stores all the coordinates of rings in original coordinate system
+  open(unit=20,file=trim(fileout)//'-rings.dat',status='replace',access='stream')
+  ! stores all the connection info about each separator
+  open(unit=40,file=trim(fileout)//'-separatorinfo.dat',status='replace',access='stream')
+  ! stores all the coordinates of the separator lines in original coordinate system
+  open(unit=50,file=trim(fileout)//'-separators.dat',status='replace',access='stream')
+  ! stores all the coordinates of the spine lines in original coordinate system
+  open(unit=60,file=trim(fileout)//'-spines.dat',status='replace',access='stream')
 
-  open(unit=30,file=trim(fileout)//'-spinelines.dat',status='replace',access='stream')
+  write(10) ringsmax+1
 
   !$OMP PARALLEL private(iring, iline, inull)
   do inull = 1, nnulls ! loop over all nulls
@@ -159,8 +167,6 @@ program ssfind
     allocate(break(nlines))
 
     out = .false.
-    ! allocate(endpoints(nlines))
-    ! endpoints = 0
 
     ! add start points to first ring relative to null
     do iline = 1, nlines !Go through each start point
@@ -181,13 +187,8 @@ program ssfind
     enddo
     line2 = line1
 
-    ! call remove_points(nlines)
-
-    ! deallocate(endpoints)
-
-    write(fname,fmt) inull
-    open(unit=12, file=trim(fileout)//'-separator'//trim(fname)//'.dat', access='stream', status='replace')
-    open(unit=20, file=trim(fileout)//'-everything'//trim(fname)//'.dat', access='stream', status='replace')
+    open(unit=90, access='stream', status='scratch')
+    open(unit=95, access='stream', status='scratch')
 
     break = 0
     nseps = 0
@@ -196,9 +197,10 @@ program ssfind
     slowdown = 1.0_np
     terror = 0
 
-    write(20) 0, ringsmax+1
-    write(20) nperring
-    write(20) [(iline,iline=1,nlines)], break, gtr(line1, x, y, z)
+    linewrite = gtr(line1, x, y, z)
+    write(90) [(iline,iline=1,nlines)], break, linewrite
+    write(20) break, linewrite
+    deallocate(linewrite)
 
     exitcondition = .false.
     !$OMP END SINGLE
@@ -277,12 +279,12 @@ program ssfind
       nearnull = 0
       !$OMP END WORKSHARE
 
-      !$OMP DO private(inullchk)
+      !$OMP DO private(jnull)
       do iline = 1, nlines
-        do inullchk = 1, nnulls
-          if (signs(inullchk) == signs(inull)) cycle
-          if (dist(rnulls(:,inullchk), line1(:, iline)) < 2.5*nulldist .or. &
-            dist(rnullsalt(:,inullchk), line1(:, iline)) < 2.5*nulldist) then
+        do jnull = 1, nnulls
+          if (signs(jnull) == signs(inull)) cycle
+          if (dist(rnulls(:,jnull), line1(:, iline)) < 2.5*nulldist .or. &
+            dist(rnullsalt(:,jnull), line1(:, iline)) < 2.5*nulldist) then
             nearnull(iline) = 1
             exit
           endif
@@ -344,45 +346,53 @@ program ssfind
       !$OMP SINGLE
       nperring(iring) = nlines
       ! Write ring and data to file separator????.dat
-      write(20) association, break, gtr(line1, x, y, z)
+      linewrite = gtr(line1, x, y, z)
+      write(90) association, break, linewrite
+      write(20) break, linewrite
 
-      deallocate(endpoints, association)
+      deallocate(endpoints, association, linewrite)
       !$OMP END SINGLE
 
     enddo
 
     !$OMP SINGLE
-    write(12) -1
-    write(20, pos=1) nrings
-    write(20, pos=9) nperring
-    close(12)
+    write(10) nperring
 
-    ! Trace separators...
-    open(unit=12,file=trim(fileout)//'-separator'//trim(fname)//'.dat',status='old',access='stream')
-    open(unit=30,file=trim(fileout)//'-sep'//trim(fname)//'.dat',status='replace',access='stream')
+    ! trace separators...
+    write(95, pos=1)
     if (nseps > 0) then
       print*, "Tracing separators"
       do isep = 1, nseps
-        read(12) nullnum1, nullnum2, ringnum, linenum
+        read(95) nullnum1, nullnum2, ringnum, linenum
         allocate(rsep(3, ringnum+3))
         do iring = ringnum, 0, -1
           call file_position(iring, nperring, linenum, ia, ib, ip)
-          read(20, pos=ia) linenum
-          read(20, pos=ip) rsep(:,iring+2)
+          read(90, pos=ia) linenum
+          read(90, pos=ip) rsep(:,iring+2)
         enddo
         rsep(:,1) = rnullsreal(:,nullnum1)
         rsep(:,ringnum+3) = rnullsreal(:,nullnum2)
-        write(30) ringnum+3
-        write(30) rsep
+        write(50) ringnum+3
+        write(50) rsep
         deallocate(rsep)
       enddo
     endif
-    write(30) -1
-    close(30)
-    close(12)
 
-    ! Close ring and separator data files
-    close(20)
+    ! don't need scratch ring file anymore
+    close(95)
+
+    ! ! write a subset of rings to 
+    ! print*, 'Writing rings'
+    ! write(30) nrings/skiprings + 1
+    ! do iring = 0, nrings-1, skiprings
+    !   call file_position(iring, nperring, 1, ia, ib, ip)
+    !   allocate(rring(3,nperring(iring)), brk(nperring(iring)))
+    !   read(90, pos=ib) brk
+    !   read(90, pos=ip) rring
+    !   write(30) nperring(iring), rring, brk
+    !   deallocate(rring, brk)
+    ! enddo
+    close(90)
 
     ! Trace spines...
     print*, "Tracing spines"
@@ -397,7 +407,7 @@ program ssfind
         call trace_line(rspine, -signs(inull), hspine)
         call edgecheck(rspine)
       enddo
-      write(30) size(spine,2), gtr(spine, x, y, z)
+      write(60) size(spine,2), gtr(spine, x, y, z)
       deallocate(spine)
     enddo
 
@@ -411,9 +421,14 @@ program ssfind
 
   enddo
 
-  close(30)
-
   !$OMP END PARALLEL
+
+  close(10)
+  close(20)
+  write(40) -1
+  close(40)
+  close(50)
+  close(60)
 
   call system_clock(tstop, count_rate)
   print*, 'TIME = ', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"

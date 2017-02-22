@@ -1,5 +1,8 @@
 import numpy as np
 
+def prefix(filename):
+  return filename[5:-4]
+
 def synmap(filename):
 
   with open(filename, 'rb') as fieldfile:
@@ -28,13 +31,13 @@ def field(filename):
 
 def nulls(filename, simple=False):
   
-  with open('output/'+filename[5:-4]+'-nullpos.dat', 'rb') as nullfile:
+  with open('output/'+prefix(filename)+'-nullpos.dat', 'rb') as nullfile:
     nnulls = np.asscalar(np.fromfile(nullfile, dtype=np.int32, count=1))
     gridpos = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls,3)
     pos = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls,3)
   
   if simple == False:
-    with open('output/'+filename[5:-4]+'-nulldata.dat', 'rb') as nullfile:
+    with open('output/'+prefix(filename)+'-nulldata.dat', 'rb') as nullfile:
       nnulls = np.asscalar(np.fromfile(nullfile, dtype=np.int32, count=1))
       signs = np.fromfile(nullfile, dtype=np.int32, count=nnulls)
       spines = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls,3)
@@ -59,42 +62,79 @@ def nulls(filename, simple=False):
 
   return nulls
 
-def separators(filename):
+def separators(filename, lines=True, connectivity=True):
 
   nulldata = nulls(filename, simple=True)
 
-  seps = []
-  for inull in nulldata.number:
-    sepsi = []
-    with open('output/'+filename[5:-4]+'-sep{:04d}.dat'.format(inull), 'rb') as sepfile:
-      length = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
-      while length > 0:
-        pts = np.fromfile(sepfile, dtype=np.float64, count=3*length).reshape(length,3)
-        # pts = np.empty((length, 3), dtype=np.float64)
-        # pts[:,0] = np.fromfile(sepfile, dtype=np.float64, count=length)
-        # pts[:,1] = np.fromfile(sepfile, dtype=np.float64, count=length)
-        # pts[:,2] = np.fromfile(sepfile, dtype=np.float64, count=length)
-        sepsi = sepsi + [pts]
-        length = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
-    seps = seps + [sepsi]
-  
-  return seps
+  conlist = []
+  seplist = []
+  coni = []
+  sepi = []
+  inull = 1
 
-def connectivity(filename):
-  
-  nulldata = nulls(filename, simple=True)
-  
-  connectdata = []
-
-  for inull in nulldata.number:
-    info = []
-    with open('output/'+filename[5:-4]+'-separator{:04d}.dat'.format(inull), 'rb') as connectfile:
-      flag = np.asscalar(np.fromfile(connectfile, dtype=np.int32, count=1))
-      while flag > 0:
-        info = info + [np.asscalar(np.fromfile(connectfile, dtype=np.int32, count=1))]
-        np.fromfile(connectfile, dtype=np.int32, count=2)
-        flag = np.asscalar(np.fromfile(connectfile, dtype=np.int32, count=1))
+  with open('output/'+prefix(filename)+'-separatorinfo.dat', 'rb') as sepinfo:
+    with open('output/'+prefix(filename)+'-separators.dat', 'rb') as seps:
+      start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+      while start > 0 or inull <= 86:
+        if (inull == start):
+          end = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+          length = np.asscalar(np.fromfile(seps, dtype=np.int32, count=1))
+          separator = np.fromfile(seps, dtype=np.float64, count=3*length).reshape(-1,3)
+          coni += [end]
+          sepi += [separator]
+          start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+        else:
+          inull += 1
+          conlist += [coni]
+          seplist += [sepi]
+          sepi = []
+          coni = []
     
-    connectdata = connectdata + [info]
+  if lines == False:
+    return conlist
+  if connectivity == False:
+    return seplist
+  else:
+    return seplist, conlist
 
-  return connectdata
+def spines(filename):
+  
+  nulldata = nulls(filename, simple=True)
+
+  spinelist = []
+
+  with open('output/'+prefix(filename)+'-spines.dat', 'rb') as spinefile:
+    for inull in nulldata.number:
+      spinelisti = []
+      for ispine in range(2):
+        length = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
+        spinelisti += [np.fromfile(spinefile, dtype=np.float64, count=3*length).reshape(-1,3)]
+      spinelist += [spinelisti]
+  
+  return spinelist
+
+def rings(filename, breakinfo=False):
+
+  nulldata = nulls(filename, simple=True)
+
+  ringlist = []
+
+  with open('output/'+prefix(filename)+'-ringinfo.dat', 'rb') as ringinfo:
+    with open('output/'+prefix(filename)+'-rings.dat', 'rb') as ringfile:
+      ringsmax = np.asscalar(np.fromfile(ringinfo, dtype=np.int32, count=1))
+      for inull in nulldata.number:
+        breaklisti = []
+        ringlisti = []
+        lengths = np.fromfile(ringinfo, dtype=np.int32, count=ringsmax)
+        iring = 0
+        while iring < ringsmax and lengths[iring] > 0:
+          breaklisti += [np.fromfile(ringfile, dtype=np.int32, count=lengths[iring])]
+          ringlisti += [np.fromfile(ringfile, dtype=np.float64, count=3*lengths[iring]).reshape(-1,3)]
+          iring += 1
+        ringlist += [ringlisti]
+        breaklist += [breaklisti]
+
+  if breakinfo == True:
+    return
+  else:
+    return ringlist
