@@ -280,20 +280,21 @@ module nf_mod
     real(np) :: a2, b2, c2, d2 !bilinear coefficients (facey)
     real(np) :: a, b, c !quadratic coefficients ax^2+bx+c=0
 
-    ! real(np) :: x1, x2, y1, y2
-    real(np) :: x11, x21, y11, y21, x12, x22, y12, y22
+    real(np), dimension(2,2) :: x, y !x11, x21, y11, y21, x12, x22, y12, y22
     real(np) :: det
 
     real(np) :: zcomp
 
-    x11 = -1
-    y11 = -1
-    x21 = -1
-    y21 = -1
-    x12 = -1
-    y12 = -1
-    x22 = -1
-    y22 = -1
+    x = -1
+    y = -1
+    ! x11 = -1
+    ! y11 = -1
+    ! x21 = -1
+    ! y21 = -1
+    ! x12 = -1
+    ! y12 = -1
+    ! x22 = -1
+    ! y22 = -1
 
     sign = 0
     cross = 0
@@ -340,30 +341,30 @@ module nf_mod
       if (det >= 0) then ! there is a solution
         if (abs(a) < zero) then !have to solve linear
           if (b /= 0.0_np) then
-            x11 = -c/b ! solution exists
-            x12 = -c/b ! solution exists
+            x(1,:) = -c/b ! solution exists
+            ! x(1,2) = -c/b ! solution exists
             nsol = 1
           endif
         else ! have to solve quadratic
           if (det == 0.0_np) then ! one solution
-            x11 = -b/(2*a)
-            x12 = -b/(2*a)
+            x(1,:) = -b/(2*a)
+            ! x(1,2) = -b/(2*a)
             nsol = 1
           else ! two solutions
-            x11 = (-b + sqrt(det))/(2*a)
-            x12 = (-b + sqrt(det))/(2*a)
-            x21 = (-b - sqrt(det))/(2*a)
-            x22 = (-b - sqrt(det))/(2*a)
+            x(1,:) = (-b + sqrt(det))/(2*a)
+            ! x(1,2) = (-b + sqrt(det))/(2*a)
+            x(2,:) = (-b - sqrt(det))/(2*a)
+            ! x(2,2) = (-b - sqrt(det))/(2*a)
             nsol = 2
           endif
         endif
       endif
       if (nsol > 0) then
-        y11 = -(a1 + b1*x11)/(c1 + d1*x11)
-        y12 = -(a2 + b2*x12)/(c2 + d2*x12)
+        y(1,1) = -(a1 + b1*x(1,1))/(c1 + d1*x(1,1))
+        y(1,2) = -(a2 + b2*x(1,2))/(c2 + d2*x(1,2))
         if (nsol == 2) then
-          y21 = -(a1 + b1*x21)/(c1 + d1*x21)
-          y22 = -(a2 + b2*x22)/(c2 + d2*x22)
+          y(2,1) = -(a1 + b1*x(2,1))/(c1 + d1*x(2,1))
+          y(2,2) = -(a2 + b2*x(2,2))/(c2 + d2*x(2,2))
         endif
       else
         ! if the x equation isn't solvable then try the y equation
@@ -377,29 +378,29 @@ module nf_mod
         if (det >= 0) then !there is a solution
           if (abs(a) < zero) then !have to solve linear
             if (b /= 0.0_np) then
-              y11 = -c/b !solution exists
-              y12 = -c/b !solution exists
+              y(1,:) = -c/b !solution exists
+              ! y(1,2) = -c/b !solution exists
               nsol = 1
             endif
           else !have to solve quadratic
             if (det == 0.0_np) then !one solution
-              y11 = -b/(2*a)
-              y12 = -b/(2*a)
+              y(1,:) = -b/(2*a)
+              ! y(1,2) = -b/(2*a)
               nsol = 1
             else !two solutions
-              y11 = (-b + sqrt(det))/(2*a)
-              y12 = (-b + sqrt(det))/(2*a)
-              y21 = (-b - sqrt(det))/(2*a)
-              y22 = (-b - sqrt(det))/(2*a)
+              y(1,:) = (-b + sqrt(det))/(2*a)
+              ! y(1,2) = (-b + sqrt(det))/(2*a)
+              y(2,:) = (-b - sqrt(det))/(2*a)
+              ! y(2,2) = (-b - sqrt(det))/(2*a)
               nsol = 2
             endif
           endif
           if (nsol > 0) then
-            x11 = -(a1 + c1*y11)/(b1 + d1*y11)
-            x12 = -(a2 + c2*y12)/(b2 + d2*y12)
+            x(1,1) = -(a1 + c1*y(1,1))/(b1 + d1*y(1,1))
+            x(1,2) = -(a2 + c2*y(1,2))/(b2 + d2*y(1,2))
             if (nsol == 2) then
-              x21 = -(a1 + c1*y21)/(b1 + d1*y21)
-              x22 = -(a2 + c2*y22)/(b2 + d2*y22)
+              x(2,1) = -(a1 + c1*y(2,1))/(b1 + d1*y(2,1))
+              x(2,2) = -(a2 + c2*y(2,2))/(b2 + d2*y(2,2))
             endif
           endif
         endif
@@ -424,10 +425,10 @@ module nf_mod
         ! endif
       endif
 
-      if (check(x11, y11)) then !if x and y are on face (between 0 and 1)
+      if (check(x(1,1), y(1,1))) then !if x and y are on face (between 0 and 1)
         cross = cross + 1
 
-        zcomp = bilinear_cell(x11, y11, facez) !'z' component of field at crossing point
+        zcomp = bilinear_cell(x(1,1), y(1,1), facez) !'z' component of field at crossing point
         if (zcomp > zero) then
           sign = sign + 1
         else if (zcomp < -zero) then
@@ -437,10 +438,10 @@ module nf_mod
         endif
       endif
 
-      if (check(x12, y12)) then
+      if (check(x(1,2), y(1,2))) then
         cross = cross + 1
 
-        zcomp = bilinear_cell(x12, y12, facez)
+        zcomp = bilinear_cell(x(1,2), y(1,2), facez)
         if (zcomp > zero) then
           sign = sign + 1
         else if (zcomp < -zero) then
@@ -450,10 +451,10 @@ module nf_mod
         endif
       endif
 
-      if (check(x21, y21)) then
+      if (check(x(2,1), y(2,1))) then
         cross = cross + 1
 
-        zcomp = bilinear_cell(x21, y21, facez)
+        zcomp = bilinear_cell(x(2,1), y(2,1), facez)
         if (zcomp > zero) then
           sign = sign + 1
         else if (zcomp < -zero) then
@@ -463,10 +464,10 @@ module nf_mod
         endif
       endif
     
-      if (check(x22, y22)) then
+      if (check(x(2,2), y(2,2))) then
         cross = cross + 1
 
-        zcomp = bilinear_cell(x22, y22, facez)
+        zcomp = bilinear_cell(x(2,2), y(2,2), facez)
         if (zcomp > zero) then
           sign = sign + 1
         else if (zcomp < -zero) then
