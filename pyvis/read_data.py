@@ -72,7 +72,7 @@ def separators(filename, lines=True, connectivity=True):
   sepi = []
   inull = 1
 
-  with open('output/'+prefix(filename)+'-separatorinfo.dat', 'rb') as sepinfo:
+  with open('output/'+prefix(filename)+'-connectivity.dat', 'rb') as sepinfo:
     with open('output/'+prefix(filename)+'-separators.dat', 'rb') as seps:
       start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
       while start > 0 or inull <= 86:
@@ -89,7 +89,7 @@ def separators(filename, lines=True, connectivity=True):
           seplist += [sepi]
           sepi = []
           coni = []
-    
+  
   if lines == False:
     return conlist
   if connectivity == False:

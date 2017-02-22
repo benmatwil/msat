@@ -13,7 +13,7 @@ else
 endif
 FLAGS += -Jmod
 
-all: nf sf ssf readin #nfnew #sf_gordon
+all: nf sf ssf make_cut #nfnew #sf_gordon
 	@echo "Current number of OpenMP threads: $(OMP_NUM_THREADS)"
 	@echo "Using coordinate system: $(coord)"
 

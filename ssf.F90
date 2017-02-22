@@ -141,7 +141,7 @@ program ssfind
   ! stores all the coordinates of rings in original coordinate system
   open(unit=20,file=trim(fileout)//'-rings.dat',status='replace',access='stream')
   ! stores all the connection info about each separator
-  open(unit=40,file=trim(fileout)//'-separatorinfo.dat',status='replace',access='stream')
+  open(unit=40,file=trim(fileout)//'-connectivity.dat',status='replace',access='stream')
   ! stores all the coordinates of the separator lines in original coordinate system
   open(unit=50,file=trim(fileout)//'-separators.dat',status='replace',access='stream')
   ! stores all the coordinates of the spine lines in original coordinate system

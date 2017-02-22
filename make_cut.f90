@@ -4,143 +4,144 @@ program make_cut
 
   implicit none
 
-  real(np) :: r0 = 1.01_np
-  character(4) :: fname
+  real(np) :: r0
 
-  integer :: nx, ny, nz
-  real(np), allocatable :: bgrid(:,:,:,:)
-  real(np), dimension(:), allocatable :: x, y, z
+  ! integer(int32) :: nx, ny, nz
+  ! real(np), allocatable :: bgrid(:,:,:,:)
+  ! real(np), dimension(:), allocatable :: x, y, z
 
-  integer :: nnulls
-  integer, allocatable :: signs(:)
-  real(np), allocatable :: spines(:,:)
+  integer(int32) :: nnulls
+  ! integer(int32), allocatable :: signs(:)
+  ! real(np), allocatable :: spines(:,:)
 
-  integer :: inull, iring, iline, nextline
-  integer :: nrings, npoints, nringsmax, nlines
-  integer(8) :: p, uptoring
-  integer, dimension(:), allocatable :: nperring
-  real(np), dimension(:,:), allocatable :: line1
+  integer :: iarg
+  character(10) :: arg
+
+  integer(int32) :: inull, iring, iline, nextline, flag
+  integer(int32) :: nrings, npoints, nlines
+  ! integer(8) :: p, uptoring
+  integer(int32), dimension(:), allocatable :: nperring, breaks
+  real(np), dimension(:,:), allocatable :: line
   real(np) :: s, point(3)
 
-  integer :: cont
+  integer(int32) :: nspine, dir
 
-  integer :: nspine, dir
+  if (command_argument_count() > 0) then
+    do iarg = 1, command_argument_count()
+      call get_command_argument(iarg,arg)
+      if (trim(arg) == '-r') then
+        call get_command_argument(iarg+1,arg)
+        read(arg,*) r0
+      endif
+    enddo
+  else
+    stop "Need to provide a radius"
+  endif
 
   call filenames
 
-  open(unit=20, file=filein, access='stream', status='old')
-    read(20) nx, ny, nz ! number of vertices
-    allocate(bgrid(nx,ny,nz,3))
-    allocate(x(nx), y(ny), z(nz))
-    read(20) bgrid(:,:,:,1)
-    read(20) bgrid(:,:,:,2)
-    read(20) bgrid(:,:,:,3)
-    read(20) x, y, z
-  close(20)
+  ! open(unit=20, file=filein, access='stream', status='old')
+  !   read(20) nx, ny, nz ! number of vertices
+  !   allocate(bgrid(nx,ny,nz,3))
+  !   allocate(x(nx), y(ny), z(nz))
+  !   read(20) bgrid(:,:,:,1)
+  !   read(20) bgrid(:,:,:,2)
+  !   read(20) bgrid(:,:,:,3)
+  !   read(20) x, y, z
+  ! close(20)
 
   open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
     read(10) nnulls
   close(10)
 
-  open(unit=10, file=trim(fileout)//'-nulldata.dat', access='stream', status='old')
-    read(10) nnulls
-    allocate(signs(nnulls), spines(3,nnulls))
-    read(10) signs, spines
-  close(10)
+  ! open(unit=10, file=trim(fileout)//'-nulldata.dat', access='stream', status='old')
+  !   read(10) nnulls
+  !   allocate(signs(nnulls), spines(3,nnulls))
+  !   read(10) signs, spines
+  ! close(10)
 
 
   ! Need to deal with points at the edge/breakpoints
 
-  open(unit=12,file=trim(fileout)//'-cut_rings.dat',access='stream',status='replace')
+  open(unit=1, file=trim(fileout)//'-cut_rings.dat', access='stream', status='replace')
+  open(unit=10, file=trim(fileout)//'-ringinfo.dat', access='stream', status='old')
+  read(10) nrings
+  open(unit=20, file=trim(fileout)//'-rings.dat', access='stream', status='old')
+  
   do inull = 1, nnulls
-  print*, inull
-    write(fname,'(I4.4)') inull
-    open(unit=10,file=trim(fileout)//'-everything'//trim(fname)//'.dat',access='stream',status='old')
-      read(10) nrings, npoints, nringsmax
-      ! print*, nrings
-      allocate(nperring(0:nringsmax-1))
-      read(10) nperring
-      ! print*, nperring(nrings-1:nrings+1)
-    
-    iring = 1
-    do iring = 0, nrings-1
-      allocate(line1(3,nperring(iring)))
-      uptoring = 3 + nringsmax + sum(nperring(0:iring-1))*8
-      p = uptoring + nperring(iring)*2
-      p = p*4 + 1
-      read(10, pos=p) line1
+    allocate(nperring(ringsmax+1))
+    read(10) nperring
+    nrings = count(nperring > 0)
+    do iring = 1, nrings
+      allocate(breaks(nperring(iring)), line(3,nperring(iring)))
+      read(20) breaks, line
       do iline = 1, nperring(iring)
         if (iline == nperring(iring)) then
           nextline = 1
         else
           nextline = iline+1
         endif
-        if ((line1(1,iline)-r0)*(line1(1,nextline)-r0) < 0 .and. abs(line1(1,iline) - line1(1,nextline)) < 1) then
+        if ((line(1,iline)-r0)*(line(1,nextline)-r0) < 0) then
           ! find point in between at r0 and add to line
-          s = (r0 - line1(1,iline))/(line1(1,nextline) - line1(1,iline))
-          point = line1(:,iline) + s*(line1(:,nextline) - line1(:,iline))
-          write(12) point
-          ! print*, point(1), line1(1,iline), line1(1,nextline)
+          s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
+          point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
+          write(1) point
         endif
       enddo
-      deallocate(line1)
+      deallocate(line, breaks)
     enddo
     deallocate(nperring)
-    close(10)
   enddo
-  close(12)
+  close(1)
+  close(10)
+  close(20)
 
   ! for each separator, check whether we cross r=r0 and add point to file
-  open(unit=13, file=trim(fileout)//'-cut_seps.dat',access='stream',status='replace')
-  do inull = 1, nnulls
-    write(fname,'(I4.4)') inull
-    open(unit=11, file=trim(fileout)//'-sep'//trim(fname)//'.dat',access='stream',status='old')
-      read(11) cont
-      
-    do while (cont > 0)
-      read(11) nringsmax
-      allocate(line1(cont,3))
-      read(11) line1
-      do iline = 1, cont-1
-        nextline = iline+1
-        if ((line1(iline,1)-r0)*(line1(nextline,1)-r0) < 0) then
-          ! find point in between two points (function?) and save
-          s = (r0 - line1(iline,1))/(line1(nextline,1) - line1(iline,1))
-          point = line1(iline,:) + s*(line1(nextline,:) - line1(iline,:))
-          write(13) point
-        endif
-      enddo
-      deallocate(line1)
-      read(11) cont
+  open(unit=2, file=trim(fileout)//'-cut_seps.dat', access='stream', status='replace')
+  open(unit=40, file=trim(fileout)//'-connectivity.dat', access='stream', status='old')
+  open(unit=50, file=trim(fileout)//'-separators.dat', access='stream', status='old')
+  read(40) flag
+  do while (flag > 0)
+    read(50) npoints
+    allocate(line(3,npoints))
+    read(50) line
+    do iline = 1, npoints-1
+      nextline = iline+1
+      if ((line(1,iline)-r0)*(line(1,nextline)-r0) < 0) then
+        s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
+        point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
+        write(2) point
+      endif
     enddo
-
-    close(11)
+    deallocate(line)
+    read(40) flag, flag
   enddo
-  close(13)
+  close(2)
+  close(50)
   
+  ! for each spine, check whether we cross r=r0 and add point to file
+  open(unit=3, file=trim(fileout)//'-cut_spines.dat', access='stream', status='replace')
+  open(unit=30, file=trim(fileout)//'-spines.dat', access='stream', status='old')
   
-  open(unit=30,file=trim(fileout)//'-spinelines.dat',access='stream',status='old')
-  open(unit=15,file=trim(fileout)//'-cut_spines.dat',access='stream',status='replace')
   ! for each spine, check whether we cross r=r0 and add point to file
   do inull = 1, nnulls
     ! read in spine
     do dir = 1, 2
       read(30) nspine
-      allocate(line1(3,nspine))
-      read(30) line1
+      allocate(line(3,nspine))
+      read(30) line
       do iline = 1, nspine-1
         nextline = iline+1
-        if ((line1(1,iline)-r0)*(line1(1,nextline)-r0) < 0) then
-          ! find point in between two points (function?) and save
-          s = (r0 - line1(1,iline))/(line1(1,nextline) - line1(1,iline))
-          point = line1(:,iline) + s*(line1(:,nextline) - line1(:,iline))
-          write(15) point
+        if ((line(1,iline)-r0)*(line(1,nextline)-r0) < 0) then
+          s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
+          point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
+          write(3) point
         endif
       enddo
-      deallocate(line1)
-      ! if crosses, save points, interpolate
+      deallocate(line)
     enddo
   enddo
+  close(3)
   close(30)
 
 end
