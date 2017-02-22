@@ -16,7 +16,8 @@ module common
   contains
 
     function trilinear(r,b)
-      ! find the value of a function, b, at (x,y,z) using the 8 vertices
+      ! find the value of a function, b, at (x,y,z) using the 8 vertices and trilinear method
+
       real(np), allocatable :: b(:,:,:,:)
       real(np) :: r(3)
       real(np) :: cube(2,2,2), square(2,2), line(2)
@@ -93,8 +94,8 @@ module common
 
     !********************************************************************************
 
-    ! dot product between a and b
     function dot(a,b)
+    ! dot product between a and b
 
       real(np), dimension(3) :: a, b
       real(np) :: dot
@@ -105,8 +106,8 @@ module common
 
     !********************************************************************************
 
-    ! cross product between a and b
     function cross(a,b)
+    ! cross product between a and b
 
       real(np), dimension(3) :: a,b
       real(np), dimension(3) :: cross
@@ -119,8 +120,8 @@ module common
 
     !********************************************************************************
 
-    ! normalises a
     function normalise(a)
+    ! finds the unit vector of a
 
       real(np), dimension(3) :: a
       real(np), dimension(3) :: normalise
@@ -131,9 +132,9 @@ module common
 
     !********************************************************************************
 
-    ! adds an row (val) to a nx column by ny row array at row number pos
     subroutine add_vector(x,vec,pos)
-      
+    ! adds an row (vec) to a nx column by ny row array at row number pos
+
       real(np), allocatable, dimension(:,:) :: x, dummy
       real(np), allocatable, dimension(:) :: vec1
       real(np) :: vec(:)
@@ -193,9 +194,9 @@ module common
 
     !********************************************************************************
 
-    ! removes row number pos from an array 
     subroutine remove_vector(x,pos)
-      
+    ! removes row number pos from an array
+
       real(np), allocatable, dimension(:,:) :: x, dummy
       integer(int32) :: pos, nx, ny
 
@@ -214,9 +215,9 @@ module common
 
     !********************************************************************************
 
-    ! removes row number pos from an array 
     subroutine remove_element(x,pos)
-      
+    ! removes row number pos from an array
+
       integer(int32), allocatable, dimension(:) :: x, dummy
       integer(int32) :: pos, nx
 
@@ -234,7 +235,6 @@ module common
 
     !********************************************************************************
 
-    ! finds |a|
     function modulus(a)
       
       real(np), dimension(3) :: a
@@ -247,7 +247,9 @@ module common
     !********************************************************************************
 
     function outedge(r)
-      
+    ! determines if the point r is outwith the computation box across a non periodic
+    ! boundary and flags true or false
+
       real(np) :: r(3)
       logical :: outedge
       
@@ -263,9 +265,10 @@ module common
 
     !********************************************************************************
 
-    ! determines if the vector r is outwith the computational box
     subroutine edgecheck(r)
-      
+    ! determines if the point r is outwith the computational box across a 
+    ! periodic boundary and moves if necessary
+
       real(np) :: r(3)
       
 #if cylindrical
@@ -289,8 +292,8 @@ module common
 
     !********************************************************************************
 
-    ! from the theta,phi coordinates of a fan vector, produces ring of points in the fanplane
     subroutine get_startpoints(theta,phi,xs,ys,zs)
+    ! from the theta,phi coordinates of a fan vector, produces ring of points in the fanplane
 
         real(np) :: theta, phi
         real(np), dimension(:) :: xs, ys, zs
@@ -316,16 +319,13 @@ module common
           zs(i) = r(3)*sep
         enddo
 
-        ! r(1) = sin(theta)*cos(phi)
-        ! r(2) = sin(theta)*sin(phi)
-        ! r(3) = cos(theta)
-
     end subroutine
 
     !********************************************************************************
 
-    ! rotates a vector (r) by a certain angle about the x-z plane (theta), then by an angle (phi) about the x-y plane
     function rotate(r,theta,phi)
+    ! rotates a vector (r) by a certain angle about the x-z plane (theta),
+    ! then by an angle (phi) about the x-y plane
 
       real(np), dimension(3) :: r, rotate
       real(np) :: theta, phi
@@ -366,7 +366,7 @@ module common
     !********************************************************************************
 
     function dist(a,b)
-      ! calculates the distance between two points in grid units
+    ! calculates the distance between two points in grid units
       
       real(np) :: dist
       real(np), dimension(3) :: a, b
@@ -378,6 +378,7 @@ module common
     !********************************************************************************
 
     function gtr(r, gx, gy, gz)
+    ! converts a list of grid points to real coordinates
 
       integer(int32) :: ir
       real(np), dimension(:,:), allocatable :: r, gtr
@@ -400,6 +401,7 @@ module common
     !********************************************************************************
 
     subroutine file_position(nring,nperring,index,a,b,p)
+    ! calculates the position in the temporary files of the rings and specific points
 
       integer(int64) :: a, b, p
       integer(int64) :: uptoring
