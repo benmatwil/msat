@@ -7,19 +7,19 @@ program sf_converge
   implicit none
 
   real(np), dimension(:,:), allocatable :: spines, fans
-  integer, dimension(:), allocatable :: signs, warnings
+  integer(int32), dimension(:), allocatable :: signs, warnings
 
-  integer :: nnulls, nullstart, nullend, savedata = 0
+  integer(int32) :: nnulls, nullstart, nullend, savedata = 0
 
-  integer :: pcount, ncount, ucount
+  integer(int32) :: pcount, ncount, ucount
 
-  integer :: sign, warning
+  integer(int32) :: sign, warning
   real(np), dimension(3) :: spine, fan
 
-  integer :: inull
+  integer(int32) :: inull
 
   character(20) :: arg
-  integer :: iarg
+  integer(int32) :: iarg
 
   print*,'#######################################################################'
   print*,'#                             Spinefinder                             #'
@@ -123,12 +123,12 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
   use sf_converge_mod
 
   implicit none
-  integer :: itheta, iphi, itry, ifan, idense
-  integer :: count, iconv, imin, nfw, nbw, maxcount, mincount
-  integer :: flagfw, flagbw, savedata, angleflag
+  integer(int32) :: itheta, iphi, itry, ifan, idense
+  integer(int32) :: count, iconv, imin, nfw, nbw, maxcount, mincount
+  integer(int32) :: flagfw, flagbw, savedata, angleflag
 
   real(np), allocatable :: thetas(:), phis(:)
-  integer, parameter :: nphi1 = nphi/3, ntheta1 = ntheta/3
+  integer(int32), parameter :: nphi1 = nphi/3, ntheta1 = ntheta/3
   real(np) :: dphi, dtheta, angle, minmove
   real(np), dimension(3) :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
   real(np), dimension(3) :: rold, rnew, bnew, rfw1, rbw1
@@ -137,12 +137,12 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
   real(np), dimension(:,:), allocatable :: rconvergefw, rconvergebw, rmin
   real(np), dimension(:,:), allocatable :: rspine, rfan
   real(np), dimension(:,:), allocatable :: rfanperp, crossfan
-  integer, dimension(:,:), allocatable :: densepos, denseposfw, denseposbw
+  integer(int32), dimension(:,:), allocatable :: densepos, denseposfw, denseposbw
 
   real(np) :: mindot, dotprod
-  integer :: sign, warning, signguess, possign
+  integer(int32) :: sign, warning, signguess, possign
 
-  integer :: inull
+  integer(int32) :: inull
   real(np), dimension(3) :: rnull, spine, fan, maxvec, minvec
 
   character(100) :: warningmessage

@@ -3,7 +3,7 @@ module sf_converge_mod
   use params
   implicit none
 
-  integer :: nx, ny, nz
+  integer(int32) :: nx, ny, nz
   real(np), allocatable :: bgrid(:,:,:,:)
 
   real(np), dimension(:,:), allocatable :: rnulls
@@ -23,9 +23,9 @@ module sf_converge_mod
     real(np) :: f11, f12, f21, f22
     real(np) :: f1, f2
     real(np) :: trilinear(3)
-    integer :: nx, ny, nz
-    integer :: dims
-    integer :: nxpoints,nypoints,nzpoints
+    integer(int32) :: nx, ny, nz
+    integer(int32) :: dims
+    integer(int32) :: nxpoints,nypoints,nzpoints
     
     nxpoints = size(b,1)
     nypoints = size(b,2)
@@ -123,8 +123,8 @@ module sf_converge_mod
     implicit none
 
     real(np), allocatable, dimension(:,:) :: x, dummy
-    integer :: pos
-    integer :: nx, ny
+    integer(int32) :: pos
+    integer(int32) :: nx, ny
 
     nx = size(x,1)
     ny = size(x,2)
@@ -144,9 +144,9 @@ module sf_converge_mod
   subroutine add_element(x,val)
     implicit none
 
-    integer, allocatable, dimension(:,:) :: x, dummy
-    integer :: val
-    integer :: nx, ny
+    integer(int32), allocatable, dimension(:,:) :: x, dummy
+    integer(int32) :: val
+    integer(int32) :: nx, ny
 
     nx = size(x,1)
     ny = size(x,2)
@@ -171,9 +171,9 @@ module sf_converge_mod
     
     real(np), allocatable :: vecarray(:,:)
     real(np) :: accur
-    integer, allocatable, optional :: nclose(:,:)
-    integer, allocatable :: dummy(:,:)
-    integer :: i, j, n, nclosei, ny
+    integer(int32), allocatable, optional :: nclose(:,:)
+    integer(int32), allocatable :: dummy(:,:)
+    integer(int32) :: i, j, n, nclosei, ny
     
     n = size(vecarray,2)
     i = 1
@@ -214,7 +214,7 @@ module sf_converge_mod
     
     real(np), dimension(3) :: rnull, rold, rnew, bnew
     real(np) :: fact
-    integer :: dir
+    integer(int32) :: dir
     
     rold = rnew
     rnew = rnew + dir*fact*normalise(bnew)
