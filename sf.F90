@@ -85,6 +85,7 @@ program sf_converge
     print*, '-----------------------------------------------------------------------------'
     print*, ''
   enddo
+  if (nullend - nullstart /= nnulls - 1) stop
 
   !now write data to nulls.dat
   open(unit=10, file=trim(fileout)//'-nulldata.dat', access='stream')
