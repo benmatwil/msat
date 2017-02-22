@@ -19,11 +19,9 @@ module common
       ! find the value of a function, b, at (x,y,z) using the 8 vertices
       real(np), allocatable :: b(:,:,:,:)
       real(np) :: r(3)
-      real(np) :: cube(2,2,2,3), square(2,2,3), line(2,3)
+      real(np) :: cube(2,2,2), square(2,2), line(2)
       real(np) :: x, y, z
       real(np) :: xp, yp, zp
-      ! real(np) :: f11, f12, f21, f22
-      ! real(np) :: f1, f2
       real(np) :: trilinear(3)
       integer(int32) :: nx, ny, nz
       integer(int32) :: dims
@@ -84,24 +82,12 @@ module common
       y = yp-ny
       z = zp-nz
       
-      ! do dims = 1, 3
-        cube = b(nx:nx+1,ny:ny+1,nz:nz+1,:)
-
-        square = (1-x)*cube(1,:,:,:) + x*cube(2,:,:,:)
-
-        line = (1-y)*square(1,:,:) + y*square(2,:,:)
-        
-
-        ! f11 = (1-x)*cube(1,1,1,:) + x*cube(2,1,1,:)
-        ! f12 = (1-x)*cube(1,1,2,:) + x*cube(2,1,2,:)
-        ! f21 = (1-x)*cube(1,2,1,:) + x*cube(2,2,1,:)
-        ! f22 = (1-x)*cube(1,2,2,:) + x*cube(2,2,2,:)
-
-        ! f1 = (1-y)*f11 + y*f21
-        ! f2 = (1-y)*f12 + y*f22
-        
-        trilinear = (1-z)*line(1,:) + z*line(2,:)
-      ! enddo
+      do dims = 1, 3
+        cube = b(nx:nx+1,ny:ny+1,nz:nz+1,dims)
+        square = (1-z)*cube(:,:,1) + z*cube(:,:,2)
+        line = (1-y)*square(:,1) + y*square(:,2)
+        trilinear(dims) = (1-x)*line(1) + x*line(2)
+      enddo
 
     end
 
@@ -170,17 +156,9 @@ module common
       deallocate(x)
       allocate(x(nx,ny+1))
 
-      ! if (position == 1) then
-      !   x(:,1) = vec1
-      !   x(:,2:ny+1) = dummy
-      ! elseif (position == ny+1) then
-      !   x(:,1:ny) = dummy
-      !   x(:,ny+1) = vec1
-      ! else
-        x(:,1:position-1) = dummy(:,1:position-1)
-        x(:,position) = vec1
-        x(:,position+1:ny+1) = dummy(:,position:ny)
-      ! endif
+      x(:,1:position-1) = dummy(:,1:position-1)
+      x(:,position) = vec1
+      x(:,position+1:ny+1) = dummy(:,position:ny)
 
     end
 
@@ -207,17 +185,9 @@ module common
       deallocate(x)
       allocate(x(nx+1))
 
-      ! if (position == 1) then
-      !   x(1) = flag
-      !   x(2:nx+1) = dummy
-      ! elseif (position == nx+1) then
-      !   x(1:nx) = dummy
-      !   x(nx+1) = flag
-      ! else
-        x(1:position-1) = dummy(1:position-1)
-        x(position) = flag
-        x(position+1:nx+1) = dummy(position:nx)
-      ! endif
+      x(1:position-1) = dummy(1:position-1)
+      x(position) = flag
+      x(position+1:nx+1) = dummy(position:nx)
 
     end
 
@@ -237,14 +207,8 @@ module common
       deallocate(x)
       allocate(x(nx,ny-1))
 
-      ! if (pos == 1) then
-      !   x = dummy(:,2:ny)
-      ! elseif (pos == ny) then
-      !   x = dummy(:,1:ny-1)
-      ! else
-        x(:,1:pos-1) = dummy(:,1:pos-1)
-        x(:,pos:ny-1) = dummy(:,pos+1:ny)
-      ! endif
+      x(:,1:pos-1) = dummy(:,1:pos-1)
+      x(:,pos:ny-1) = dummy(:,pos+1:ny)
       
     end
 
@@ -263,14 +227,8 @@ module common
       deallocate(x)
       allocate(x(nx-1))
 
-      ! if (pos == 1) then
-      !   x = dummy(2:nx)
-      ! elseif (pos == nx) then
-      !   x = dummy(1:nx-1)
-      ! else
-        x(1:pos-1) = dummy(1:pos-1)
-        x(pos:nx-1) = dummy(pos+1:nx)
-      ! endif
+      x(1:pos-1) = dummy(1:pos-1)
+      x(pos:nx-1) = dummy(pos+1:nx)
       
     end
 
