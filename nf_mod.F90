@@ -8,18 +8,18 @@ module nf_mod
     ! tests surface of cube using bilinear method
     implicit none
 
-    integer :: i, inull, n
+    integer(int32) :: i, inull, n
 
-    integer :: cross, sign
-    integer :: edge
+    integer(int32) :: cross, sign
+    integer(int32) :: edge
 
     real(np), dimension(2,2,2) :: cbx,cby,cbz
 
     real(np), dimension(2,2) :: facex, facey, facez
 
-    integer, dimension(6,6) :: test
-    integer, dimension(6) :: test2
-    integer, dimension(3) :: test3
+    integer(int32), dimension(6,6) :: test
+    integer(int32), dimension(6) :: test2
+    integer(int32), dimension(3) :: test3
     
     ! test is an array where the first index refers to the face number (1:6) and the second index is follows:
     ! 1- x-y intersection (1/0)
@@ -29,9 +29,9 @@ module nf_mod
     ! 5- yz intersection (1/0)
     ! 6- sign on x on this inersection (-1/1 /100 if null on face)
 
-    inull = 0 ! integer variable defining null. 1=null, 0=no null
+    inull = 0 ! variable defining null. 1=null, 0=no null
     test = 0 ! set test array to zero
-    edge = 0 ! integer variable defining null on edge. 1=null, 0=no null
+    edge = 0 ! variable defining null on edge. 1=null, 0=no null
 
     !face #1 : (bottom face)
     facex = cbx(:,:,1)
@@ -203,8 +203,8 @@ module nf_mod
     ! If not, then there cannot be a crossing of zeroes on these faces.
     implicit none
     real(np), dimension(2,2) :: a, b
-    integer :: totala, totalb
-    integer :: i, j
+    integer(int32) :: totala, totalb
+    integer(int32) :: i, j
 
     totala = 0
     totalb = 0
@@ -275,7 +275,7 @@ module nf_mod
 
     implicit none
     real(np), dimension(2,2) :: facex, facey, facez
-    integer :: cross, sign, i, nsol
+    integer(int32) :: cross, sign, i, nsol
     real(np) :: a1, b1, c1, d1 !bilinear coefficients (facex)
     real(np) :: a2, b2, c2, d2 !bilinear coefficients (facey)
     real(np) :: a, b, c !quadratic coefficients ax^2+bx+c=0
@@ -482,12 +482,12 @@ module nf_mod
 
   !********************************************************************************
 
-  integer function edge_check(facex,facey,facez)
+  function edge_check(facex,facey,facez)
     !check for null along edges of a cell face
     implicit none
     real(np), dimension(2,2) :: facex,facey,facez
     real(np), dimension(2) :: linex, liney , linez
-    !real(np) :: x,y,z
+    integer(int32) :: edge_check
 
     edge_check = 0
 
@@ -521,12 +521,12 @@ module nf_mod
 
   !********************************************************************************
 
-  integer function line_check(linex,liney,linez)
+  function line_check(linex,liney,linez)
     !checks if null lies on an edge
     implicit none
     real(np), dimension(2) :: linex, liney, linez
-    !real(np) :: x, y, z
     real(np) :: x1, x2, y1, y2, z1, z2
+    integer(int32) :: line_check
 
     x1 = linex(1)
     x2 = linex(2)
@@ -608,12 +608,13 @@ module nf_mod
 
   !********************************************************************************
 
-  integer function switch(cube)
+  function switch(cube)
     !determines whether all the vertices of the cube have the same sign or not
     implicit none
-    integer :: i, j, k, icount
+    integer(int32) :: i, j, k, icount
     real(np) :: cube(2,2,2)
-    integer :: itest
+    integer(int32) :: itest
+    integer(int32) :: switch
 
     icount = 0
 
@@ -649,10 +650,10 @@ module nf_mod
     real(np), dimension(2,2,2) :: bx, by, bz
     real(np) :: x, y, z
     real(np) :: dx
-    integer :: ierror
+    integer(int32) :: ierror
 
-    integer :: i, j, k
-    integer :: itestx,itesty,itestz, itest
+    integer(int32) :: i, j, k
+    integer(int32) :: itestx,itesty,itestz, itest
 
     real(np), dimension(2,2,2) :: cbx,cby,cbz
     real(np), dimension(11,11,11) ::  cubex, cubey,cubez
@@ -727,7 +728,7 @@ module nf_mod
     implicit none
     real(np), allocatable :: x(:), dummy(:)
     real(np) :: element
-    integer :: isize
+    integer(int32) :: isize
 
     isize = size(x)
 
@@ -748,8 +749,8 @@ module nf_mod
   subroutine remove_element(x,index)
     ! removes element number index from an array
     real(np), allocatable :: x(:), dummy(:)
-    integer :: index
-    integer :: isize
+    integer(int32) :: index
+    integer(int32) :: isize
 
     isize = size(x)
 
@@ -790,11 +791,11 @@ module nf_mod
     real(np), allocatable :: x(:), y(:), z(:)
     real(np), allocatable :: xp(:), yp(:), zp(:)
     real(np), allocatable :: distances(:,:)
-    integer :: n
-    integer :: i,j
-    integer :: counter
+    integer(int32) :: n
+    integer(int32) :: i,j
+    integer(int32) :: counter
     real(np) :: sep
-    integer :: exitcondition
+    integer(int32) :: exitcondition
 
     if (n > 1) then
       exitcondition=0

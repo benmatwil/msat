@@ -13,23 +13,23 @@ program nullfinder
   
   real(np), dimension(:,:,:), allocatable :: bx, by, bz
 
-  integer, dimension(:,:,:), allocatable :: candidates ! array containing coords of candidate cells (1 if candidate, 0 if not)
+  integer(int32), dimension(:,:,:), allocatable :: candidates ! array containing coords of candidate cells (1 if candidate, 0 if not)
   real(np), dimension(2,2,2) :: cube, cbx, cby, cbz ! arrays containing vertices surrounding a cell
-  integer :: mincube(3)
+  integer(int32) :: mincube(3)
   real(np) :: x, y, z ! coordinates of a null
   real(np), allocatable, dimension(:) :: xgrid, ygrid, zgrid
 
-  integer :: nx, ny, nz ! number of vertices
-  integer :: nx1, ny1, nz1 ! number of cells
+  integer(int32) :: nx, ny, nz ! number of vertices
+  integer(int32) :: nx1, ny1, nz1 ! number of cells
 
-  integer :: i, j, k
-  integer :: ii, jj, kk
-  integer :: ix, iy, iz
+  integer(int32) :: i, j, k
+  integer(int32) :: ii, jj, kk
+  integer(int32) :: ix, iy, iz
 
-  integer :: nnulls, nvert
-  integer :: itestx, itesty, itestz, itest
+  integer(int32) :: nnulls, nvert
+  integer(int32) :: itestx, itesty, itestz, itest
 
-  integer :: ierror
+  integer(int32) :: ierror
   real(np) :: dx
   real(np), allocatable, dimension(:,:) :: distances
 
@@ -68,7 +68,7 @@ program nullfinder
   ny1 = ny-1
   nz1 = nz-1
 
-  allocate(candidates(nx1,ny1,nz1)) ! integer array where candidate cells are flagged
+  allocate(candidates(nx1,ny1,nz1)) ! array where candidate cells are flagged
 
   nnulls = 0
 
