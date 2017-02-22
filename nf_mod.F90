@@ -806,7 +806,7 @@ module nf_mod
         do j = 1, n
           do i = j+1, n
             sep = (x(i) - x(j))**2 + (y(i) - y(j))**2 + (z(i) - z(j))**2
-            if (sep < 1d-3) then
+            if (sep < 1e-3_np) then
               print*, 'removing duplcate at index', j
               call remove_element(x, j)
               call remove_element(y, j)

@@ -85,7 +85,6 @@ program sf_converge
     print*, '-----------------------------------------------------------------------------'
     print*, ''
   enddo
-  if (nullend - nullstart /= nnulls - 1) stop
 
   !now write data to nulls.dat
   open(unit=10, file=trim(fileout)//'-nulldata.dat', access='stream')
@@ -136,10 +135,8 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
 
   real(np), dimension(:,:), allocatable :: rconvergefw, rconvergebw, rmin
   real(np), dimension(:,:), allocatable :: rspine, rfan
-  real(np), dimension(:,:), allocatable :: rfanperp, crossfan
   integer(int32), dimension(:,:), allocatable :: densepos, denseposfw, denseposbw
 
-  real(np) :: mindot, dotprod
   integer(int32) :: sign, warning, signguess, possign
 
   integer(int32) :: inull
@@ -179,7 +176,7 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
       phis(iphi) = (iphi-1)*dphi + angle
     enddo
     do itheta = 1, ntheta
-      thetas(itheta) = (itheta-0.5d0)*dtheta + angle
+      thetas(itheta) = (itheta-0.5_np)*dtheta + angle
     enddo
 
     phis = phis*dtor
@@ -206,8 +203,8 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
           call it_conv(rnull,roldbw,rnewbw,bnewbw,fact,-1)
           if ((modulus(rnewfw-roldfw) < accconv .or. modulus(rnewbw-roldbw) < accconv) .and. count >= mincount) exit
         enddo
-        if ((modulus(rfw1-rnewfw) < minmove .or. modulus(rbw1-rnewbw) < minmove) .and. angle < 4d0) then
-          angle = angle + 1d0
+        if ((modulus(rfw1-rnewfw) < minmove .or. modulus(rbw1-rnewbw) < minmove) .and. angle < 4.0_np) then
+          angle = angle + 1.0_np
 #if debug
           print*, 'Adjusting the initial points and starting again'
 #endif
@@ -253,13 +250,13 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
 #endif
 
   ! Now working on a unit sphere of points
-  ! remove duplicate vectors which are a distance 1d-4 apart
+  ! remove duplicate vectors which are a distance 1e-4 apart
   ! spine should be left with 2 vectors
   ! fan left with either 2 vectors (minvec eigenvalue too small), a circle of points or just a mess
   sign = 0
   possign = 0
   do itry = 4, 2, -1
-    acc = 1d-1**itry
+    acc = 1e-1_np**itry
 #if debug
     print*, 'Removing to accuracy', acc
 #endif
@@ -399,7 +396,7 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
     if (size(rfan,2) == 2) then
       maxvec = rfan(:,1)
     else
-      !call remove_duplicates(rfan, 1d-2, densepos)
+      !call remove_duplicates(rfan, 1e-2_np, densepos)
       maxvec = rfan(:,maxval(maxloc(densepos)))
     endif
     deallocate(densepos)
@@ -416,14 +413,14 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
 
     allocate(thetas(ntheta1), phis(nphi1), rmin(3,nphi1*ntheta1))
 
-    dphi = 360d0/nphi1
-    dtheta = 180d0/ntheta1
+    dphi = 360.0_np/nphi1
+    dtheta = 180.0_np/ntheta1
 
     do iphi = 1, nphi1
       phis(iphi) = (iphi-1)*dphi + angle
     enddo
     do itheta = 1, ntheta1
-      thetas(itheta) = (itheta-0.5d0)*dtheta + angle
+      thetas(itheta) = (itheta-0.5_np)*dtheta + angle
     enddo
 
     phis = phis*dtor
@@ -462,14 +459,13 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
 
     fan = normalise(cross(minvec,maxvec)) ! fan vector is perp to fan plane
 
-    ! Save data if there is a problematic null for inspection by map.pro
+    ! Save data if there is a problematic null for inspection
     if (savedata == 1) then
       open(unit=10, file='output/spine.dat', access='stream', status='replace')
         write(10) size(rspine,2), rspine, spine
       close(10)
       open(unit=10, file='output/maxvec.dat', access='stream', status='replace')
         write(10) size(rfan,2), rfan, maxvec
-        if (allocated(crossfan)) write(10) size(crossfan,2), crossfan
       close(10)
       open(unit=10, file='output/minvec.dat', access='stream', status='replace')
         write(10) size(rmin,2), rmin, minvec
@@ -483,7 +479,7 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
   endif
 
   if (warning == 1) warningmessage = 'WARNING: NULL LIKELY A SOURCE OR SINK'
-  if (abs(90-acos(dot(fan,spine))/dtor) < 1d1) then
+  if (abs(90-acos(dot(fan,spine))/dtor) < 1e1_np) then
     warningmessage = 'WARNING: SPINE AND FAN STRONGLY INCLINED'
     if (warning /= 1) warning = 2
   endif
