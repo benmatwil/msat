@@ -6,27 +6,32 @@ import igraph as ig
 filename = 'data/field_20100601_0081-fft.dat'
 # filename = 'data/field_test.dat'
 
-nulls = rd.nulls(filename)
-con = rd.connectivity(filename)
+def plot(filename, layout=None):
+  nulls = rd.nulls(filename)
+  con = rd.connectivity(filename)
 
-g = ig.Graph()
-for inull in range(nulls.shape[0]):
-  if nulls[inull].sign == 1:
-    col = 'red'
-  elif nulls[inull].sign == -1:
-    col = 'blue'
+  g = ig.Graph()
+  for inull in range(nulls.shape[0]):
+    if nulls[inull].sign == 1:
+      col = 'red'
+    elif nulls[inull].sign == -1:
+      col = 'blue'
+    else:
+      col = 'green'
+    g.add_vertex(color=col)
+
+  for inull, cnulls in enumerate(con):
+    for jnull in cnulls:
+      g.add_edge(inull, jnull-1, color=g.vs[inull]['color'])
+
+
+  # layout = g.layout('kk')
+  if layout is None:
+    layout = g.layout('fr')
   else:
-    col = 'green'
-  g.add_vertex(color=col)
+    layout = g.layout(layout)
 
-for inull, cnulls in enumerate(con):
-  for jnull in cnulls:
-    g.add_edge(inull, jnull-1, color=g.vs[inull]['color'])
-
-
-layout = g.layout('kk')
-layout = g.layout('fr')
-ig.plot(g, layout=layout, bbox=(1000,1000), margin=50, vertex_size=20)
+  ig.plot(g, layout=layout, bbox=(1000,1000), margin=50, vertex_size=20)
 
 # g = nx.Graph()
 # cols = {}
