@@ -1,9 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pyvis.read_data as rd
+import os
 
 plt.ion()
 
-def start():
+def start(r, filename):
+
+  global datafile
+
+  datafile = filename
+
+  os.system(f'./make_cut -i {filename} -r {r}')
+
+  plt.figure(figsize=(10,5))
   plt.plot([])
   plt.xlim([0,2*np.pi])
   plt.xticks([0, np.pi/2, np.pi, np.pi*3/2, np.pi*2], ['0', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'])
@@ -21,3 +31,8 @@ def separators():
 def rings():
   rings = np.fromfile('output/field_20100601_0081-fft-cut_rings.dat', dtype=np.float64).reshape(-1,3)
   plt.plot(rings[:,2], rings[:,1], '.', c='blue')
+
+def nulls():
+  global datafile
+  nulls = rd.nulls(file, simple=True)
+  plt.plot(nulls.pos[:,2], nulls.pos[:,1], '.', c='green')
