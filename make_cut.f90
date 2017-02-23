@@ -5,10 +5,11 @@ program make_cut
   implicit none
 
   real(np) :: r0
+  integer(int32) :: rc = 0
 
   integer(int32) :: nnulls
 
-  integer :: iarg
+  integer(int32) :: iarg
   character(10) :: arg
 
   integer(int32) :: inull, iring, iline, nextline, flag
@@ -25,9 +26,11 @@ program make_cut
       if (trim(arg) == '-r') then
         call get_command_argument(iarg+1,arg)
         read(arg,*) r0
+        rc = 1
       endif
     enddo
-  else
+  endif
+  if (rc == 0) then    
     stop "Need to provide a radius"
   endif
 
