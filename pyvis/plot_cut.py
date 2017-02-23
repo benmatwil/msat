@@ -6,10 +6,12 @@ import os
 plt.ion()
 
 def start(r, filename):
-  global datafile, prefile
+  global datafile, prefile, nulldata
 
   datafile = filename
   prefile = rd.prefix(filename)
+
+  nulldata = rd.nulls(datafile, simple=True)
 
   os.system(f'./make_cut -i {filename} -r {r}')
 
@@ -26,26 +28,58 @@ def start(r, filename):
 def spines():
   global prefile
 
-  spines = np.fromfile('output/'+prefile+'-cut_spines.dat', dtype=np.float64).reshape(-1,3)
-  plt.plot(spines[:,2], spines[:,1], '.', c='orange')
+  with open('output/'+prefile+'-cut_spines.dat', 'rb') as spinefile:
+    null = np.fromfile(spinefile, dtype=np.int32, count=1)
+    while null > 0:
+      spine = np.fromfile(spinefile, dtype=np.float64, count=3)
+      plt.plot(spine[2], spine[1], '.', c='orange')
+      null = np.fromfile(spinefile, dtype=np.int32, count=1)
 
 def separators():
   global prefile
 
-  seps = np.fromfile('output/'+prefile+'-cut_seps.dat', dtype=np.float64).reshape(-1,3)
-  plt.plot(seps[:,2], seps[:,1], '.', c='red')
+  with open('output/'+prefile+'-cut_seps.dat', 'rb') as sepfile:
+    null = np.fromfile(sepfile, dtype=np.int32, count=1)
+    while null > 0:
+      sep = np.fromfile(sepfile, dtype=np.float64, count=3)
+      plt.plot(sep[2], sep[1], '.', c='red')
+      null = np.fromfile(sepfile, dtype=np.int32, count=1)
+
+def ringssort():
+  global prefile, nulldata
+
+  with open('output/'+prefile+'-cut_rings.dat', 'rb') as ringfile:
+    for i in range(nulldata.number.max()):
+      length = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
+      ring = np.fromfile(ringfile, dtype=np.float64, count=3*length).reshape(-1,3)
+      if length > 0:
+        ring2 = ring.copy()
+        ring2[0,:] = ring2[-1,:]
+        ring2[1:,0] = 0
+        ring = ring[:-1,:]
+        for iring in range(ring2.shape[0]-1):
+          ptlist = set(range(ring.shape[0]))
+          dists = np.zeros(ring.shape[0], dtype=np.float64)
+          for ii, jring in enumerate(ptlist):
+            dists[ii] = np.sum((ring2[iring, :] - ring[jring, :])**2)
+          ring2[iring+1] = ring[dists.argmin(), :]
+          ptlist.remove(dists.argmin())
+          ring = ring[list(ptlist),:]
+        plt.plot(ring2[:,2], ring2[:,1])
 
 def rings():
-  global prefile
+  global prefile, nulldata
 
-  rings = np.fromfile('output/'+prefile+'-cut_rings.dat', dtype=np.float64).reshape(-1,3)
-  plt.plot(rings[:,2], rings[:,1], '.', c='blue')
+  with open('output/'+prefile+'-cut_rings.dat', 'rb') as ringfile:
+    for i in range(nulldata.number.max()):
+      length = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
+      ring = np.fromfile(ringfile, dtype=np.float64, count=3*length).reshape(-1,3)
+      plt.plot(ring[:,2], ring[:,1])
 
 def nulls():
-  global datafile
+  global datafile, nulldata
 
-  nulls = rd.nulls(datafile, simple=True)
-  plt.plot(nulls.pos[:,2], nulls.pos[:,1], '.', c='green')
+  plt.plot(nulldata.pos[:,2], nulldata.pos[:,1], '.', c='green')
 
 def field():
   global datafile
