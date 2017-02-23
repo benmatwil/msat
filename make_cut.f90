@@ -6,20 +6,13 @@ program make_cut
 
   real(np) :: r0
 
-  ! integer(int32) :: nx, ny, nz
-  ! real(np), allocatable :: bgrid(:,:,:,:)
-  ! real(np), dimension(:), allocatable :: x, y, z
-
   integer(int32) :: nnulls
-  ! integer(int32), allocatable :: signs(:)
-  ! real(np), allocatable :: spines(:,:)
 
   integer :: iarg
   character(10) :: arg
 
   integer(int32) :: inull, iring, iline, nextline, flag
   integer(int32) :: nrings, npoints, nlines
-  ! integer(8) :: p, uptoring
   integer(int32), dimension(:), allocatable :: nperring, breaks
   real(np), dimension(:,:), allocatable :: line
   real(np) :: s, point(3)
@@ -40,26 +33,9 @@ program make_cut
 
   call filenames
 
-  ! open(unit=20, file=filein, access='stream', status='old')
-  !   read(20) nx, ny, nz ! number of vertices
-  !   allocate(bgrid(nx,ny,nz,3))
-  !   allocate(x(nx), y(ny), z(nz))
-  !   read(20) bgrid(:,:,:,1)
-  !   read(20) bgrid(:,:,:,2)
-  !   read(20) bgrid(:,:,:,3)
-  !   read(20) x, y, z
-  ! close(20)
-
   open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
     read(10) nnulls
   close(10)
-
-  ! open(unit=10, file=trim(fileout)//'-nulldata.dat', access='stream', status='old')
-  !   read(10) nnulls
-  !   allocate(signs(nnulls), spines(3,nnulls))
-  !   read(10) signs, spines
-  ! close(10)
-
 
   ! Need to deal with points at the edge/breakpoints
 
