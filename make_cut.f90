@@ -1,22 +1,25 @@
 program make_cut
 
   use params
+  use common
 
   implicit none
 
   real(np) :: r0
   integer(int32) :: rc = 0
 
-  integer(int32) :: nnulls
+  ! integer(int32) :: nnulls
 
   integer(int32) :: iarg
   character(10) :: arg
 
-  integer(int32) :: inull, iring, iline, nextline, flag
+  integer(int32) :: inull, iring, iline, ip, jp, nextline, flag
+  integer(int32) :: imin(1)
   integer(int32) :: nrings, npoints, nlines
   integer(int32), dimension(:), allocatable :: nperring, breaks
-  real(np), dimension(:,:), allocatable :: line
-  real(np) :: s, point(3)
+  real(np), dimension(:), allocatable :: dists
+  real(np), dimension(:,:), allocatable :: line, points, pordered
+  real(np) :: s, point(3), diff(3)
 
   integer(int32) :: nspine, dir
 
@@ -46,8 +49,9 @@ program make_cut
   open(unit=10, file=trim(fileout)//'-ringinfo.dat', access='stream', status='old')
   read(10) nrings
   open(unit=20, file=trim(fileout)//'-rings.dat', access='stream', status='old')
-  
+
   do inull = 1, nnulls
+    allocate(points(3,0))
     allocate(nperring(ringsmax+1))
     read(10) nperring
     nrings = count(nperring > 0)
@@ -64,12 +68,28 @@ program make_cut
           ! find point in between at r0 and add to line
           s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
           point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
-          write(1) point
+          call add_vector(points, point)
         endif
       enddo
       deallocate(line, breaks)
     enddo
     deallocate(nperring)
+
+    pordered = points
+    pordered(:,2:) = 0
+    call remove_vector(points, 1)
+    do ip = 1, size(pordered, 2)-1
+      allocate(dists(size(points, 2)))
+      do jp = 1, size(points, 2)
+        dists(jp) = sum((points(:,jp) - pordered(:,ip))**2)
+      enddo
+      imin = minloc(dists)
+      pordered(:,ip+1) = points(:,imin(1))
+      call remove_vector(points, imin(1))
+      deallocate(dists)
+    enddo
+    write(1) size(pordered, 2), pordered
+    deallocate(points, pordered)
   enddo
   close(1)
   close(10)
@@ -89,12 +109,13 @@ program make_cut
       if ((line(1,iline)-r0)*(line(1,nextline)-r0) < 0) then
         s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
         point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
-        write(2) point
+        write(2) flag, point
       endif
     enddo
     deallocate(line)
     read(40) flag, flag
   enddo
+  write(2) -1
   close(2)
   close(50)
   
@@ -114,12 +135,13 @@ program make_cut
         if ((line(1,iline)-r0)*(line(1,nextline)-r0) < 0) then
           s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
           point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
-          write(3) point
+          write(3) inull, point
         endif
       enddo
       deallocate(line)
     enddo
   enddo
+  write(3) -1
   close(3)
   close(30)
 
