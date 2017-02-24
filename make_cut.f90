@@ -9,12 +9,16 @@ program make_cut
   integer(int32) :: rc = 0
 
   ! integer(int32) :: nnulls
+  integer(int32) :: nx, ny, nz
+  integer(int64) :: g
+  real(np), dimension(:), allocatable :: xg, yg, zg
+  real(np) :: ds
 
   integer(int32) :: iarg
   character(10) :: arg
 
   integer(int32) :: inull, iring, iline, ip, jp, nextline, flag
-  integer(int32) :: imin(1)
+  integer(int32) :: imin
   integer(int32) :: nrings, npoints, nlines
   integer(int32), dimension(:), allocatable :: nperring, breaks
   real(np), dimension(:), allocatable :: dists
@@ -42,6 +46,15 @@ program make_cut
   open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
     read(10) nnulls
   close(10)
+
+  open(unit=10,file=filein,access='stream',status='old')
+    read(10), nx, ny, nz !number of vertices
+    allocate(xg(nx), yg(ny), zg(nz))
+    g = 3_int64*4_int64 + 3_int64*int(nx, int64)*int(ny, int64)*int(nz, int64)*8_int64 + 1_int64
+    read(10, pos=g) xg, yg, zg
+  close(10)
+
+  ds = maxval([maxval(yg(2:ny) - yg(1:ny-1)), maxval(zg(2:nz) - zg(1:nz-1))])
 
   ! Need to deal with points at the edge/breakpoints
 
@@ -78,19 +91,31 @@ program make_cut
     pordered = points
     pordered(:,2:) = 0
     call remove_vector(points, 1)
-    do ip = 1, size(pordered, 2)-1
-      allocate(dists(size(points, 2)))
-      do jp = 1, size(points, 2)
-        dists(jp) = sum((points(:,jp) - pordered(:,ip))**2)
+    main: do while (size(points,2) > 0)
+      do ip = 1, size(pordered, 2)-1
+        allocate(dists(size(points, 2)))
+        do jp = 1, size(points, 2)
+          dists(jp) = sum((points(:,jp) - pordered(:,ip))**2)
+        enddo
+        if (minval(dists) > ds/2) then
+          write(1) size(pordered(:,1:ip), 2), pordered(:,1:ip)
+          deallocate(pordered, dists)
+          pordered = points
+          pordered(:,2:) = 0
+          call remove_vector(points, 1)
+          cycle main
+        else
+          imin = minloc(dists,1)
+          pordered(:,ip+1) = points(:,imin)
+          call remove_vector(points, imin)
+          deallocate(dists)
+        endif
       enddo
-      imin = minloc(dists)
-      pordered(:,ip+1) = points(:,imin(1))
-      call remove_vector(points, imin(1))
-      deallocate(dists)
-    enddo
+    enddo main
     write(1) size(pordered, 2), pordered
     deallocate(points, pordered)
   enddo
+  write(1) -1
   close(1)
   close(10)
   close(20)
