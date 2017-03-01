@@ -23,7 +23,7 @@ program make_cut
   integer(int32), dimension(:), allocatable :: nperring, breaks
   real(np), dimension(:), allocatable :: dists
   real(np), dimension(:,:), allocatable :: line, points, pordered
-  real(np) :: s, point(3), diff(3)
+  real(np) :: s, point(3), diff(3), mindist
 
   integer(int32) :: nspine, dir
 
@@ -77,7 +77,7 @@ program make_cut
         else
           nextline = iline+1
         endif
-        if ((line(1,iline)-r0)*(line(1,nextline)-r0) < 0) then
+        if ((line(1,iline)-r0)*(line(1,nextline)-r0) < 0 .and. breaks(iline) == 0) then
           ! find point in between at r0 and add to line
           s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
           point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
@@ -88,37 +88,123 @@ program make_cut
     enddo
     deallocate(nperring)
 
-    pordered = points
-    pordered(:,2:) = 0
-    call remove_vector(points, 1)
-    main: do while (size(points,2) > 0)
-      do ip = 1, size(pordered, 2)-1
+
+    do while (size(points, 2) > 0)
+      allocate(pordered(3, 1))
+      pordered(:, 1) = points(:, 1)
+      call remove_vector(points, 1)
+      ! add points in the "forward" direction
+      ip = 1
+      do while (size(points, 2) > 0)
         allocate(dists(size(points, 2)))
         do jp = 1, size(points, 2)
-          dists(jp) = sum((points(:,jp) - pordered(:,ip))**2)
+          dists(jp) = sum((points(:,jp) - pordered(:, ip))**2)
         enddo
-        if (minval(dists) > ds/2) then
-          write(1) size(pordered(:,1:ip), 2), pordered(:,1:ip)
-          deallocate(pordered, dists)
-          pordered = points
-          pordered(:,2:) = 0
-          call remove_vector(points, 1)
-          cycle main
-        else
-          imin = minloc(dists,1)
-          pordered(:,ip+1) = points(:,imin)
+        imin = minloc(dists, 1)
+        mindist = dists(imin)
+        deallocate(dists)
+        if (mindist < ds/2) then
+          call add_vector(pordered, points(:, imin))
           call remove_vector(points, imin)
-          deallocate(dists)
+        else
+          exit
+        endif
+        ip = ip + 1
+      enddo
+      ! add points in the "backward" direction
+      do while (size(points, 2) > 0)
+        allocate(dists(size(points, 2)))
+        do jp = 1, size(points, 2)
+          dists(jp) = sum((points(:, jp) - pordered(:, 1))**2)
+        enddo
+        imin = minloc(dists, 1)
+        mindist = dists(imin)
+        deallocate(dists)
+        if (mindist < ds/2) then
+          call add_vector(pordered, points(:, imin), 1)
+          call remove_vector(points, imin)
+        else
+          exit
         endif
       enddo
-    enddo main
-    write(1) size(pordered, 2), pordered
-    deallocate(points, pordered)
+      write(1) size(pordered, 2), pordered
+      deallocate(pordered)
+    enddo
+    deallocate(points)
   enddo
   write(1) -1
   close(1)
   close(10)
   close(20)
+
+  ! for hcs
+  open(unit=10, file=trim(fileout)//'-hcs.dat', access='stream', status='old')
+  open(unit=5, file=trim(fileout)//'-cut_hcs.dat', access='stream', status='replace')
+  read(10) npoints
+  write(10, pos=(1+2*npoints*3)*4+1)
+  allocate(points(3, 0))
+  do ip = 1, 2*npoints
+    read(10) npoints
+    allocate(line(3, npoints))
+    read(10) line
+    do iline = 1, npoints-1
+      nextline = iline+1
+      if ((line(1,iline)-r0)*(line(1,nextline)-r0) < 0) then
+        s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
+        point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
+        call add_vector(points, point)
+      endif
+    enddo
+    deallocate(line)
+  enddo
+  print*, size(points, 2)
+
+  do while (size(points, 2) > 0)
+    allocate(pordered(3, 1))
+    pordered(:, 1) = points(:, 1)
+    call remove_vector(points, 1)
+    ! add points in the "forward" direction
+    ip = 1
+    do while (size(points, 2) > 0)
+      allocate(dists(size(points, 2)))
+      do jp = 1, size(points, 2)
+        dists(jp) = sum((points(:,jp) - pordered(:, ip))**2)
+      enddo
+      imin = minloc(dists, 1)
+      mindist = dists(imin)
+      deallocate(dists)
+      if (mindist < ds/2) then
+        call add_vector(pordered, points(:, imin))
+        call remove_vector(points, imin)
+      else
+        exit
+      endif
+      ip = ip + 1
+    enddo
+    ! add points in the "backward" direction
+    do while (size(points, 2) > 0)
+      allocate(dists(size(points, 2)))
+      do jp = 1, size(points, 2)
+        dists(jp) = sum((points(:, jp) - pordered(:, 1))**2)
+      enddo
+      imin = minloc(dists, 1)
+      mindist = dists(imin)
+      deallocate(dists)
+      if (mindist < ds/2) then
+        call add_vector(pordered, points(:, imin), 1)
+        call remove_vector(points, imin)
+      else
+        exit
+      endif
+    enddo
+    write(5) size(pordered, 2), pordered
+    print*, size(pordered, 2)
+    deallocate(pordered)
+  enddo
+  deallocate(points)
+  write(5) -1
+  close(5)
+  close(10)
 
   ! for each separator, check whether we cross r=r0 and add point to file
   open(unit=2, file=trim(fileout)//'-cut_seps.dat', access='stream', status='replace')
