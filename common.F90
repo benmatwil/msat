@@ -39,40 +39,40 @@ module common
       nx = floor(xp)
       ny = floor(yp)
       nz = floor(zp)
-      
+
       ! if point goes out of an edge which is not periodic, set point to be at boundary to trilinear
       ! it will go out and be removed soon
       if (outedge(r)) then
         ! first coordinate needs checking in all coordinate systems
-        if (xp < xmin) then
+        if (xp <= xmin) then
           xp = xmin
           nx = nint(xp)
-        elseif (xp > xmax) then
+        elseif (xp >= xmax) then
           xp = xmax
           nx = nint(xp)-1
         endif
 #if cartesian
         ! for cartesians
-        if (yp < ymin) then
+        if (yp <= ymin) then
           yp = ymin
           ny = nint(yp)
-        elseif (yp > ymax) then
+        elseif (yp >= ymax) then
           yp = ymax
           ny = nint(yp)-1
         endif
-        if (zp < zmin) then
+        if (zp <= zmin) then
           zp = zmin
           nz = nint(zp)
-        elseif (zp > zmax) then
+        elseif (zp >= zmax) then
           zp = zmax
           nz = nint(zp)-1
         endif
 #elif cylindrical
         ! for cylindricals
-        if (zp < zmin) then
+        if (zp <= zmin) then
           zp = zmin
           nz = nint(zp)
-        elseif (zp > zmax) then
+        elseif (zp >= zmax) then
           zp = zmax
           nz = nint(zp)-1
         endif
@@ -82,7 +82,7 @@ module common
       x = xp-nx
       y = yp-ny
       z = zp-nz
-      
+
       do dims = 1, 3
         cube = b(nx:nx+1,ny:ny+1,nz:nz+1,dims)
         square = (1-z)*cube(:,:,1) + z*cube(:,:,2)
@@ -254,11 +254,11 @@ module common
       logical :: outedge
       
       outedge = .false.
-      outedge = outedge .or. r(1) > xmax .or. r(1) < xmin
+      outedge = outedge .or. r(1) >= xmax .or. r(1) <= xmin
 #if cartesian
-      outedge = outedge .or. r(2) > ymax .or. r(2) < ymin .or. r(3) > zmax .or. r(3) < zmin
+      outedge = outedge .or. r(2) >= ymax .or. r(2) <= ymin .or. r(3) >= zmax .or. r(3) <= zmin
 #elif cylindrical
-      outedge = outedge .or. r(3) > zmax .or. r(3) < zmin
+      outedge = outedge .or. r(3) >= zmax .or. r(3) <= zmin
 #endif
       
     end function  
@@ -284,8 +284,8 @@ module common
           r(3) = r(3) - (zmax-zmin)/2
         endif
       endif
-      if (r(3) < zmin) r(3) = r(3) + zmax - zmin
-      if (r(3) > zmax) r(3) = r(3) - (zmax - zmin)
+      if (r(3) <= zmin) r(3) = r(3) + zmax - zmin
+      if (r(3) >= zmax) r(3) = r(3) - (zmax - zmin)
 #endif
           
     end subroutine
