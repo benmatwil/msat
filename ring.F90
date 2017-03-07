@@ -5,6 +5,8 @@ use params
 use common
 use trace
 
+integer(int32) :: nseps
+
 real(np) :: maxdist, mindist, nulldist
 
 real(np), allocatable, dimension(:,:) :: line1, line2, add1, add2
@@ -165,7 +167,7 @@ contains
 
   !********************************************************************************
 
-  subroutine sep_detect(nlines,nullnum,nring)
+  subroutine sep_detect(nlines,nullnum,nring,sign)
   ! Determine whether a point in a ring is 'near' a null
   ! If so, integrate it and its neighbours forward to see if any of them diverge around the null (i.e. a separator)
 
@@ -174,6 +176,7 @@ contains
     integer(int32) :: nullnum ! the null the fan is being drawn from
     integer(int32) :: inull, iline, k
     integer(int32) :: nring
+    integer(int32) :: sign
 
     real(np) :: h, h0, tracedist, checkdist
 
@@ -189,8 +192,7 @@ contains
 
     !$OMP DO ! private(near, notnear, nnc, k, gapsize, endgap, nr, r, rmap, signof, index, count, h)
     do inull = 1, size(rnulls,2)
-      if (inull == nullnum) cycle ! ignore the null the points belong to
-      if (signs(inull)*signs(nullnum) /= 1) then !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
+      if (signs(inull) /= sign) then !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
         near = 0
         notnear = 0
 
@@ -255,12 +257,12 @@ contains
             count = 0
             do while (dist(r(:,index),rnulls(:,inull)) < tracedist .and. count < 10000)
               h = h0
-              call trace_line(r(:,index),signs(nullnum),h)
+              call trace_line(r(:,index),sign,h)
               call edgecheck(r(:,index))
               count = count+1
             enddo
 
-            if (signs(inull)*signs(nullnum) == -1) then
+            if (signs(inull)*sign == -1) then
               ! check which side of the null the points end out on
               if (dot(spines(:,inull),r(:,index)-rnulls(:,inull)) > 0) then
                 signof(index) = 1

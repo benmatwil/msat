@@ -11,7 +11,6 @@ module common
   real(np) :: dx, dy, dz
   real(np), allocatable, dimension(:,:) :: rnulls, rnullsalt, rnullsreal, spines, fans
   integer(int32), allocatable, dimension(:) :: signs
-  integer(int32) :: nseps
 
   contains
 
@@ -371,7 +370,8 @@ module common
       real(np) :: dist
       real(np), dimension(3) :: a, b
 
-      dist = sqrt((a(1)-b(1))**2 + (a(2)-b(2))**2 + (a(3)-b(3))**2)
+      dist = sqrt(sum((b - a)**2))
+      ! dist = sqrt((a(1)-b(1))**2 + (a(2)-b(2))**2 + (a(3)-b(3))**2)
 
     end function
 

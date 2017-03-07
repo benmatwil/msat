@@ -12,9 +12,9 @@ program ssfind
   integer(int64) :: tstart, tstop, count_rate !to time program
   integer(int32) :: nx, ny, nz !size of grid
 
-  real(np) :: r(3), rmove(3)
+  real(np) :: r(3)
   real(np) :: h, h0
-  real(np) :: slowdown !, shift(3)
+  real(np) :: slowdown
   integer(int32) :: nearflag
 
   integer(int32) :: iring, iline, inull, jnull
@@ -199,7 +199,7 @@ program ssfind
 
     linewrite = gtr(line1, x, y, z)
     write(90) [(iline,iline=1,nlines)], break, linewrite
-    write(20) break, linewrite
+    write(20) [(iline,iline=1,nlines)], break, linewrite
     deallocate(linewrite)
 
     exitcondition = .false.
@@ -314,7 +314,7 @@ program ssfind
       !$OMP END SINGLE
 
       ! determine if any lines are separators
-      if (nearflag > 0) call sep_detect(nlines,inull,iring)
+      if (nearflag > 0) call sep_detect(nlines,inull,iring,signs(inull))
 
       !$OMP SINGLE
 
@@ -348,7 +348,7 @@ program ssfind
       ! Write ring and data to file separator????.dat
       linewrite = gtr(line1, x, y, z)
       write(90) association, break, linewrite
-      write(20) break, linewrite
+      write(20) association, break, linewrite
 
       deallocate(endpoints, association, linewrite)
       !$OMP END SINGLE
@@ -435,5 +435,3 @@ program ssfind
   print*, 'Done!'
 
 end program
-
-!separate outedge and edgecheck
