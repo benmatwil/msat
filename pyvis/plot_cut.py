@@ -23,6 +23,14 @@ def start(r, filename):
   plt.ylabel('Latitude')
   plt.ylim([np.pi,0])
   plt.yticks([0, np.pi/4, np.pi/2, np.pi*3/4, np.pi], [r'$0$', r'$\frac{\pi}{4}$', r'$\frac{\pi}{2}$', r'$\frac{3\pi}{4}$', r'$\pi$'])
+  plt.axhline(y=np.pi/2, ls='--')
+
+  # _, _, _, _, thetas, phis = rd.field(filename)
+  # for phi in phis:
+  #   plt.axvline(x=phi, ls='--')
+  # for theta in thetas:
+  #   plt.axhline(y=theta, ls='--')
+
   plt.tight_layout()
 
 #################################################################
@@ -48,7 +56,15 @@ def separators():
     null = np.fromfile(sepfile, dtype=np.int32, count=1)
     while null > 0:
       sep = np.fromfile(sepfile, dtype=np.float64, count=3)
-      plt.plot(sep[2], sep[1], '.', c='purple')
+      plt.plot(sep[2], sep[1], '*', c='purple')
+      null = np.fromfile(sepfile, dtype=np.int32, count=1)
+
+  with open('output/'+prefile+'-cut_seps_hcs.dat', 'rb') as sepfile:
+    null = np.fromfile(sepfile, dtype=np.int32, count=1)
+    while null == 0:
+      print(null)
+      sep = np.fromfile(sepfile, dtype=np.float64, count=3)
+      plt.plot(sep[2], sep[1], '*', c='purple')
       null = np.fromfile(sepfile, dtype=np.int32, count=1)
 
 #################################################################
@@ -61,7 +77,7 @@ def rings():
     while length >= 0:
       ring = np.fromfile(ringfile, dtype=np.float64, count=3*length).reshape(-1,3)
       plt.plot(ring[:,2], ring[:,1])
-      # plt.plot(ring[:,2], ring[:,1], '.', c='blue')
+      plt.plot(ring[:,2], ring[:,1], '.', c='green')
       length = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
 
 #################################################################
@@ -71,10 +87,12 @@ def hcs():
 
   with open('output/'+prefile+'-cut_hcs.dat', 'rb') as hcsfile:
     length = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
+    print(length)
     while length >= 0:
+      print(length)
       line = np.fromfile(hcsfile, dtype=np.float64, count=3*length).reshape(-1,3)
       # print(line)
-      plt.plot(line[:,2], line[:,1], '.')
+      plt.plot(line[:,2], line[:,1], '--')
       length = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
 
 #################################################################
