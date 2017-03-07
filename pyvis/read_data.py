@@ -62,37 +62,56 @@ def nulls(filename, simple=False):
 
   return nulls
 
-def separators(filename, lines=True, connectivity=True):
+def separators(filename, lines=True, connectivity=True, hcs=False):
 
   nulldata = nulls(filename, simple=True)
 
   conlist = []
   seplist = []
-  coni = []
-  sepi = []
-  inull = 1
+  
 
-  with open('output/'+prefix(filename)+'-connectivity.dat', 'rb') as sepinfo:
-    with open('output/'+prefix(filename)+'-separators.dat', 'rb') as seps:
-      start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
-      while start > 0 or inull <= 86:
-        if (inull == start):
+  if hcs == False:
+    connectivityfile = 'output/'+prefix(filename)+'-connectivity.dat'
+    separatorsfile = 'output/'+prefix(filename)+'-separators.dat'
+    inull = 1
+    coni = []
+    sepi = []
+
+    with open(connectivityfile, 'rb') as sepinfo:
+      with open(separatorsfile, 'rb') as seps:
+        start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+        while start >= 0 or inull <= nulldata.shape[0]:
+          if (inull == start):
+            end = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+            length = np.asscalar(np.fromfile(seps, dtype=np.int32, count=1))
+            separator = np.fromfile(seps, dtype=np.float64, count=3*length).reshape(-1,3)
+            coni += [end]
+            sepi += [separator]
+            start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+          else:
+            inull += 1
+            conlist += [coni]
+            seplist += [sepi]
+            sepi = []
+            coni = []
+  else:
+    connectivityfile = 'output/'+prefix(filename)+'-connectivity-hcs.dat'
+    separatorsfile = 'output/'+prefix(filename)+'-separators-hcs.dat'
+
+    with open(connectivityfile, 'rb') as sepinfo:
+      with open(separatorsfile, 'rb') as seps:
+        start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+        while start == 0:
           end = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
           length = np.asscalar(np.fromfile(seps, dtype=np.int32, count=1))
           separator = np.fromfile(seps, dtype=np.float64, count=3*length).reshape(-1,3)
-          coni += [end]
-          sepi += [separator]
+          conlist += [end]
+          seplist += [separator]
           start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
-        else:
-          inull += 1
-          conlist += [coni]
-          seplist += [sepi]
-          sepi = []
-          coni = []
-  
+
   if lines == False:
     return conlist
-  if connectivity == False:
+  elif connectivity == False:
     return seplist
   else:
     return seplist, conlist
