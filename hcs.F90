@@ -259,11 +259,24 @@ program hcs
   ! need to substract a tiny amount of the r coord
   pordered(1, :) = pordered(1, :) - 1e-6_np
 
+  print*, 'There are ', ubound(npoints, 1) - 1, 'components of the hcs'
+
   !$OMP PARALLEL private(iring, iline, dir, ihcs)
 
   do ihcs = 1, ubound(npoints, 1)-1
+    !$OMP SINGLE
+    print*, ''
+    print*, 'Component ', ihcs
+    !$OMP END SINGLE
     do dir = 1, -1, -2 ! do each direction
+
       !$OMP SINGLE
+      if (dir == 1) then
+        print*, 'Tracing forwards'
+      else
+        print*, 'Tracing backwards'
+      endif
+      
       write(20, pos=uptonullring+1)
       write(40, pos=uptonullconn)
       ! get number of start points
