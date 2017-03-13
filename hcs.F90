@@ -255,196 +255,199 @@ program hcs
 
   write(10) ringsmax+1
 
-  ihcs = 1
+  ! ihcs = 1
   ! need to substract a tiny amount of the r coord
   pordered(1, :) = pordered(1, :) - 1e-6_np
 
-  !$OMP PARALLEL private(iring, iline, inull)
-  do dir = 1, -1, -2 ! do each direction
-    !$OMP SINGLE
-    write(20, pos=uptonullring+1)
-    write(40, pos=uptonullconn)
-    ! get number of start points
-    line1 = pordered(:, npoints(ihcs)+1:npoints(ihcs+1))
-    line2 = line1
-    nlines = size(line1, 2)
+  !$OMP PARALLEL private(iring, iline, dir, ihcs)
 
-    allocate(break(nlines))
-
-    out = .false.
-
-    break = 0
-    break(nlines) = 1
-    nseps = 0
-    nperring = 0
-    nperring(0) = nlines
-    slowdown = 1.0_np
-    terror = 0
-
-    write(20) [(iline,iline=1,nlines)], break, gtr(line1, x, y, z)
-
-    exitcondition = .false.
-    !$OMP END SINGLE
-
-    do iring = 1, ringsmax ! loop over number of rings we want
-
+  do ihcs = 1, ubound(npoints, 1)-1
+    do dir = 1, -1, -2 ! do each direction
       !$OMP SINGLE
+      write(20, pos=uptonullring+1)
+      write(40, pos=uptonullconn)
+      ! get number of start points
+      line1 = pordered(:, npoints(ihcs)+1:npoints(ihcs+1))
+      line2 = line1
+      nlines = size(line1, 2)
 
-      allocate(endpoints(nlines), association(nlines))
+      allocate(break(nlines))
 
-      h0 = 1e-1_np/slowdown
+      out = .false.
 
+      break = 0
+      break(nlines) = 1
+      nseps = 0
+      nperring = 0
+      nperring(0) = nlines
+      slowdown = 1.0_np
+      terror = 0
+
+      write(20) [(iline,iline=1,nlines)], break, gtr(line1, x, y, z)
+
+      exitcondition = .false.
       !$OMP END SINGLE
 
-      !$OMP WORKSHARE
-      endpoints = 0
-      !$OMP END WORKSHARE
+      do iring = 1, ringsmax ! loop over number of rings we want
 
-      !$OMP DO private(r, h, out)
-      do iline = 1, nlines ! loop over all points in ring (in parallel do)
+        !$OMP SINGLE
 
-        r = line1(:,iline)
-        h = h0
+        allocate(endpoints(nlines), association(nlines))
 
-        call trace_line(r, dir, h) ! trace line by a distance of h
+        h0 = 1e-1_np/slowdown
 
-        line2(:,iline) = line2(:,iline) + (r - line1(:,iline))
-        line1(:,iline) = r
+        !$OMP END SINGLE
 
-        ! counter to see how many points on ring have reached outer boundary
-        if (outedge(r)) then
-          endpoints(iline) = 1
-        else
-          endpoints(iline) = 0
+        !$OMP WORKSHARE
+        endpoints = 0
+        !$OMP END WORKSHARE
+
+        !$OMP DO private(r, h, out)
+        do iline = 1, nlines ! loop over all points in ring (in parallel do)
+
+          r = line1(:,iline)
+          h = h0
+
+          call trace_line(r, dir, h) ! trace line by a distance of h
+
+          line2(:,iline) = line2(:,iline) + (r - line1(:,iline))
+          line1(:,iline) = r
+
+          ! counter to see how many points on ring have reached outer boundary
+          if (outedge(r)) then
+            endpoints(iline) = 1
+          else
+            endpoints(iline) = 0
+          endif
+
+          association(iline) = iline
+
+        enddo
+        !$OMP END DO
+
+        !$OMP SINGLE
+        maxdist = h0*slowdown
+        nulldist = 2*h0*slowdown
+        mindist = maxdist/3
+        !$OMP END SINGLE
+
+        ! remove points from ring if necessary
+        call remove_points(nlines)
+
+        !$OMP SINGLE
+        allocate(nearnull(nlines))
+        slowdown = 1.0_np
+        !$OMP END SINGLE
+
+        !$OMP WORKSHARE
+        nearnull = 0
+        !$OMP END WORKSHARE
+
+        !$OMP DO private(jnull)
+        do iline = 1, nlines
+          do jnull = 1, nnulls
+            if (signs(jnull) == dir) cycle
+            if (dist(rnulls(:,jnull), line1(:, iline)) < 2.5*nulldist .or. &
+              dist(rnullsalt(:,jnull), line1(:, iline)) < 2.5*nulldist) then
+              nearnull(iline) = 1
+              exit
+            endif
+          enddo
+        enddo
+        !$OMP END DO
+
+        !$OMP SINGLE
+        nearflag = sum(nearnull)
+        if (nearflag > 0) then
+          ! print*, 'slowing down, adding points near null'
+          slowdown = 2.0_np
+        endif
+        !$OMP END SINGLE
+
+        ! add points to ring if necessary
+        call add_points(nlines)
+
+        !$OMP SINGLE
+        do iline = 1, nlines
+          call edgecheck(line1(:,iline))
+        enddo
+        !$OMP END SINGLE
+
+        !$OMP SINGLE
+        deallocate(nearnull)
+        !$OMP END SINGLE
+
+        ! determine if any lines are separators
+        if (nearflag > 0) call sep_detect(nlines,ihcs,iring,dir)
+
+        !$OMP SINGLE
+
+        if (nlines > pointsmax) then
+        ! exit if too many points on ring
+          print*, 'Too many points on ring', nlines, iring
+          exitcondition = .true.
         endif
 
-        association(iline) = iline
+        if (nlines == 0) then
+          ! exit if all points have reached outer boundary (left box)
+          print*, 'All fan points have reached the outer boundary', iring
+          exitcondition = .true.
+        endif
+
+        if (terror == 1) then
+          print*, 'Tracing has failed', iring
+          exitcondition = .true.
+        endif
+
+        if (exitcondition) deallocate(endpoints, association)
+        !$OMP END SINGLE
+
+        if (exitcondition) then
+          nrings = iring
+          exit
+        endif
+
+        !$OMP SINGLE
+        nperring(iring) = nlines
+        write(20) association, break, gtr(line1, x, y, z)
+
+        deallocate(endpoints, association)
+        !$OMP END SINGLE
 
       enddo
-      !$OMP END DO
 
       !$OMP SINGLE
-      maxdist = h0*slowdown
-      nulldist = 2*h0*slowdown
-      mindist = maxdist/3
-      !$OMP END SINGLE
+      write(10) nperring
 
-      ! remove points from ring if necessary
-      call remove_points(nlines)
-
-      !$OMP SINGLE
-      allocate(nearnull(nlines))
-      slowdown = 1.0_np
-      !$OMP END SINGLE
-
-      !$OMP WORKSHARE
-      nearnull = 0
-      !$OMP END WORKSHARE
-
-      !$OMP DO private(jnull)
-      do iline = 1, nlines
-        do jnull = 1, nnulls
-          if (signs(jnull) == dir) cycle
-          if (dist(rnulls(:,jnull), line1(:, iline)) < 2.5*nulldist .or. &
-            dist(rnullsalt(:,jnull), line1(:, iline)) < 2.5*nulldist) then
-            nearnull(iline) = 1
-            exit
-          endif
+      ! trace separators...
+      write(40, pos=uptonullconn)
+      if (nseps > 0) then
+        print*, "Tracing separators"
+        do isep = 1, nseps
+          read(40) nullnum1, nullnum2, ringnum, linenum
+          allocate(rsep(3, ringnum+2))
+          do iring = ringnum, 0, -1
+            call file_position(iring, nperring, linenum, ia, ib, ip)
+            read(20, pos=uptonullring+ia) linenum
+            read(20, pos=uptonullring+ip) rsep(:,iring+1)
+          enddo
+          rsep(:,ringnum+2) = rnullsreal(:,nullnum2)
+          write(50) ringnum+2
+          write(50) rsep
+          deallocate(rsep)
         enddo
-      enddo
-      !$OMP END DO
-
-      !$OMP SINGLE
-      nearflag = sum(nearnull)
-      if (nearflag > 0) then
-        ! print*, 'slowing down, adding points near null'
-        slowdown = 2.0_np
-      endif
-      !$OMP END SINGLE
-
-      ! add points to ring if necessary
-      call add_points(nlines)
-
-      !$OMP SINGLE
-      do iline = 1, nlines
-        call edgecheck(line1(:,iline))
-      enddo
-      !$OMP END SINGLE
-
-      !$OMP SINGLE
-      deallocate(nearnull)
-      !$OMP END SINGLE
-
-      ! determine if any lines are separators
-      if (nearflag > 0) call sep_detect(nlines,inull,iring,dir)
-
-      !$OMP SINGLE
-
-      if (nlines > pointsmax) then
-      ! exit if too many points on ring
-        print*, 'Too many points on ring', nlines, iring
-        exitcondition = .true.
       endif
 
-      if (nlines == 0) then
-        ! exit if all points have reached outer boundary (left box)
-        print*, 'All fan points have reached the outer boundary', iring
-        exitcondition = .true.
-      endif
+      if (nrings == ringsmax) print*, "Reached maximum number of rings"
 
-      if (terror == 1) then
-        print*, 'Tracing has failed', iring
-        exitcondition = .true.
-      endif
+      print*, 'number of separators=', nseps, 'number of rings', nrings
 
-      if (exitcondition) deallocate(endpoints, association)
-      !$OMP END SINGLE
-
-      if (exitcondition) then
-        nrings = iring
-        exit
-      endif
-
-      !$OMP SINGLE
-      nperring(iring) = nlines
-      write(20) association, break, gtr(line1, x, y, z)
-
-      deallocate(endpoints, association)
+      deallocate(line1, line2, break)
+      uptonullring = uptonullring + sum(int(nperring, int64))*32_int64
+      uptonullconn = uptonullconn + nseps*16_int64 ! 4*4
       !$OMP END SINGLE
 
     enddo
-
-    !$OMP SINGLE
-    write(10) nperring
-
-    ! trace separators...
-    write(40, pos=uptonullconn)
-    if (nseps > 0) then
-      print*, "Tracing separators"
-      do isep = 1, nseps
-        read(40) nullnum1, nullnum2, ringnum, linenum
-        allocate(rsep(3, ringnum+2))
-        do iring = ringnum, 0, -1
-          call file_position(iring, nperring, linenum, ia, ib, ip)
-          read(20, pos=uptonullring+ia) linenum
-          read(20, pos=uptonullring+ip) rsep(:,iring+1)
-        enddo
-        rsep(:,ringnum+2) = rnullsreal(:,nullnum2)
-        write(50) ringnum+2
-        write(50) rsep
-        deallocate(rsep)
-      enddo
-    endif
-
-    if (nrings == ringsmax) print*, "Reached maximum number of rings"
-
-    print*, 'number of separators=', nseps, 'number of rings', nrings
-
-    deallocate(line1, line2, break)
-    uptonullring = uptonullring + sum(int(nperring, int64))*32_int64
-    uptonullconn = uptonullconn + nseps*16_int64 ! 4*4
-    !$OMP END SINGLE
-
   enddo
 
   !$OMP END PARALLEL
