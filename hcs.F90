@@ -32,9 +32,9 @@ program hcs
   real(np) :: bvec(3), ds
 
   ! file writing
-  integer(int64) :: ia, ib, ip
+  integer(int64) :: ia, ib, ip, uptonullring, uptonullconn
   integer(int32) :: isep, nullnum1, nullnum2, linenum, ringnum
-  real(np), dimension(:,:), allocatable :: rsep, rring, linewrite
+  real(np), dimension(:,:), allocatable :: rsep, rring
   integer(int32), dimension(:), allocatable :: brk
 
   print*,'#######################################################################'
@@ -131,6 +131,9 @@ program hcs
     endif
   enddo
 #endif
+
+  uptonullring = 0
+  uptonullconn = 1
 
   ! stores all info regarding size of rings
   open(unit=10,file=trim(fileout)//'-ringinfo-hcs.dat',status='replace',access='stream')
@@ -259,6 +262,8 @@ program hcs
   !$OMP PARALLEL private(iring, iline, inull)
   do dir = 1, -1, -2 ! do each direction
     !$OMP SINGLE
+    write(20, pos=uptonullring+1)
+    write(40, pos=uptonullconn)
     ! get number of start points
     line1 = pordered(:, npoints(ihcs)+1:npoints(ihcs+1))
     line2 = line1
@@ -268,9 +273,6 @@ program hcs
 
     out = .false.
 
-    open(unit=90, access='stream', status='scratch')
-    open(unit=95, access='stream', status='scratch')
-
     break = 0
     break(nlines) = 1
     nseps = 0
@@ -279,10 +281,7 @@ program hcs
     slowdown = 1.0_np
     terror = 0
 
-    linewrite = gtr(line1, x, y, z)
-    write(90) [(iline,iline=1,nlines)], break, linewrite
-    write(20) [(iline,iline=1,nlines)], break, linewrite
-    deallocate(linewrite)
+    write(20) [(iline,iline=1,nlines)], break, gtr(line1, x, y, z)
 
     exitcondition = .false.
     !$OMP END SINGLE
@@ -408,12 +407,9 @@ program hcs
 
       !$OMP SINGLE
       nperring(iring) = nlines
-      ! Write ring and data to file separator????.dat
-      linewrite = gtr(line1, x, y, z)
-      write(90) association, break, linewrite
-      write(20) association, break, linewrite
+      write(20) association, break, gtr(line1, x, y, z)
 
-      deallocate(endpoints, association, linewrite)
+      deallocate(endpoints, association)
       !$OMP END SINGLE
 
     enddo
@@ -422,16 +418,16 @@ program hcs
     write(10) nperring
 
     ! trace separators...
-    write(95, pos=1)
+    write(40, pos=uptonullconn)
     if (nseps > 0) then
       print*, "Tracing separators"
       do isep = 1, nseps
-        read(95) nullnum1, nullnum2, ringnum, linenum
+        read(40) nullnum1, nullnum2, ringnum, linenum
         allocate(rsep(3, ringnum+2))
         do iring = ringnum, 0, -1
           call file_position(iring, nperring, linenum, ia, ib, ip)
-          read(90, pos=ia) linenum
-          read(90, pos=ip) rsep(:,iring+1)
+          read(20, pos=uptonullring+ia) linenum
+          read(20, pos=uptonullring+ip) rsep(:,iring+1)
         enddo
         rsep(:,ringnum+2) = rnullsreal(:,nullnum2)
         write(50) ringnum+2
@@ -440,15 +436,13 @@ program hcs
       enddo
     endif
 
-    ! don't need scratch ring file anymore
-    close(95)
-    close(90)
-
     if (nrings == ringsmax) print*, "Reached maximum number of rings"
 
     print*, 'number of separators=', nseps, 'number of rings', nrings
 
     deallocate(line1, line2, break)
+    uptonullring = uptonullring + sum(int(nperring, int64))*32_int64
+    uptonullconn = uptonullconn + nseps*16_int64 ! 4*4
     !$OMP END SINGLE
 
   enddo

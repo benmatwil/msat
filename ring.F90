@@ -283,8 +283,7 @@ contains
                   break(rmap(index-1)) = 1 ! disassociate points so that new points don't get added between them as they diverge around the null
                   nseps = nseps + 1
                   ! write the point's information to the separator file
-                  write(95) nullnum, inull, nring, rmap(index-1)
-                  write(40) nullnum, inull 
+                  write(40) nullnum, inull, nring, rmap(index-1)
                 endif
               endif
             endif

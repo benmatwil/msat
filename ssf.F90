@@ -36,9 +36,9 @@ program ssfind
   logical :: exitcondition, out
 
   ! file writing
-  integer(int64) :: ia, ib, ip
+  integer(int64) :: ia, ib, ip, uptonullring, uptonullconn
   integer(int32) :: isep, nullnum1, nullnum2, linenum, ringnum
-  real(np), dimension(:,:), allocatable :: rsep, rring, linewrite
+  real(np), dimension(:,:), allocatable :: rsep, rring
   integer(int32), dimension(:), allocatable :: brk
 
   print*,'#######################################################################'
@@ -136,6 +136,9 @@ program ssfind
   enddo
 #endif
 
+  uptonullring = 0
+  uptonullconn = 1
+
   ! stores all info regarding size of rings
   open(unit=10,file=trim(fileout)//'-ringinfo.dat',status='replace',access='stream')
   ! stores all the coordinates of rings in original coordinate system
@@ -152,6 +155,8 @@ program ssfind
   !$OMP PARALLEL private(iring, iline, inull)
   do inull = 1, nnulls ! loop over all nulls
     !$OMP SINGLE
+    write(20, pos=uptonullring+1)
+    write(40, pos=uptonullconn)
     print*, ''
     print*, 'Null number', inull, 'of', nnulls
 
@@ -187,9 +192,6 @@ program ssfind
     enddo
     line2 = line1
 
-    open(unit=90, access='stream', status='scratch')
-    open(unit=95, access='stream', status='scratch')
-
     break = 0
     nseps = 0
     nperring = 0
@@ -197,10 +199,7 @@ program ssfind
     slowdown = 1.0_np
     terror = 0
 
-    linewrite = gtr(line1, x, y, z)
-    write(90) [(iline,iline=1,nlines)], break, linewrite
-    write(20) [(iline,iline=1,nlines)], break, linewrite
-    deallocate(linewrite)
+    write(20) [(iline,iline=1,nlines)], break, gtr(line1, x, y, z)
 
     exitcondition = .false.
     !$OMP END SINGLE
@@ -345,12 +344,9 @@ program ssfind
 
       !$OMP SINGLE
       nperring(iring) = nlines
-      ! Write ring and data to file separator????.dat
-      linewrite = gtr(line1, x, y, z)
-      write(90) association, break, linewrite
-      write(20) association, break, linewrite
+      write(20) association, break, gtr(line1, x, y, z)
 
-      deallocate(endpoints, association, linewrite)
+      deallocate(endpoints, association)
       !$OMP END SINGLE
 
     enddo
@@ -359,16 +355,16 @@ program ssfind
     write(10) nperring
 
     ! trace separators...
-    write(95, pos=1)
+    write(40, pos=uptonullconn)
     if (nseps > 0) then
       print*, "Tracing separators"
       do isep = 1, nseps
-        read(95) nullnum1, nullnum2, ringnum, linenum
+        read(40) nullnum1, nullnum2, ringnum, linenum
         allocate(rsep(3, ringnum+3))
         do iring = ringnum, 0, -1
           call file_position(iring, nperring, linenum, ia, ib, ip)
-          read(90, pos=ia) linenum
-          read(90, pos=ip) rsep(:,iring+2)
+          read(20, pos=uptonullring+ia) linenum
+          read(20, pos=uptonullring+ip) rsep(:,iring+2)
         enddo
         rsep(:,1) = rnullsreal(:,nullnum1)
         rsep(:,ringnum+3) = rnullsreal(:,nullnum2)
@@ -377,9 +373,6 @@ program ssfind
         deallocate(rsep)
       enddo
     endif
-
-    ! don't need scratch ring file anymore
-    close(95)
 
     ! ! write a subset of rings to 
     ! print*, 'Writing rings'
@@ -392,7 +385,6 @@ program ssfind
     !   write(30) nperring(iring), rring, brk
     !   deallocate(rring, brk)
     ! enddo
-    close(90)
 
     ! Trace spines...
     print*, "Tracing spines"
@@ -417,6 +409,8 @@ program ssfind
 
     deallocate(xs, ys, zs)
     deallocate(line1, line2, break)
+    uptonullring = uptonullring + sum(int(nperring, int64))*32_int64
+    uptonullconn = uptonullconn + nseps*16_int64 ! 4*4
     !$OMP END SINGLE
 
   enddo
