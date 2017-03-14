@@ -250,7 +250,7 @@ program make_cut
         pordered = pordered(:, size(pordered, 2):1:-1)
       enddo
 
-      write(1) size(pordered, 2), pordered
+      write(1) inull, size(pordered, 2), pordered
       deallocate(pordered)
     enddo
     deallocate(points)
@@ -297,6 +297,7 @@ program make_cut
     enddo
     uptonull = uptonull + sum(int(nperring, int64))*32_int64
 
+    print*, 'sorting hcs points'
     print*, size(points, 2)
 
     disttol = ds/3
