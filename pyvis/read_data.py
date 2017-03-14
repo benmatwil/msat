@@ -64,50 +64,55 @@ def nulls(filename, simple=False):
 
 def separators(filename, lines=True, connectivity=True, hcs=False):
 
-  nulldata = nulls(filename, simple=True)
-
-  conlist = []
-  seplist = []
-  
+  nulldata = nulls(filename, simple=True)  
 
   if hcs == False:
     connectivityfile = 'output/'+prefix(filename)+'-connectivity.dat'
     separatorsfile = 'output/'+prefix(filename)+'-separators.dat'
-    inull = 1
-    coni = []
-    sepi = []
-
-    with open(connectivityfile, 'rb') as sepinfo:
-      with open(separatorsfile, 'rb') as seps:
-        start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
-        while start >= 0 or inull <= nulldata.shape[0]:
-          if (inull == start):
-            end = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
-            length = np.asscalar(np.fromfile(seps, dtype=np.int32, count=1))
-            separator = np.fromfile(seps, dtype=np.float64, count=3*length).reshape(-1,3)
-            coni += [end]
-            sepi += [separator]
-            start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
-          else:
-            inull += 1
-            conlist += [coni]
-            seplist += [sepi]
-            sepi = []
-            coni = []
   else:
     connectivityfile = 'output/'+prefix(filename)+'-connectivity-hcs.dat'
     separatorsfile = 'output/'+prefix(filename)+'-separators-hcs.dat'
+  
+  conlist = []
+  seplist = []
+  inull = 1
+  coni = []
+  sepi = []
 
-    with open(connectivityfile, 'rb') as sepinfo:
-      with open(separatorsfile, 'rb') as seps:
-        start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
-        while start == 0:
+  with open(connectivityfile, 'rb') as sepinfo:
+    with open(separatorsfile, 'rb') as seps:
+      start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+      #need to deal with how big the lists are...
+      while start >= 0 or inull <= nulldata.number.max():
+        if (inull == start):
           end = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+          sepinfo.seek(8, 1)
           length = np.asscalar(np.fromfile(seps, dtype=np.int32, count=1))
           separator = np.fromfile(seps, dtype=np.float64, count=3*length).reshape(-1,3)
-          conlist += [end]
-          seplist += [separator]
+          coni += [end]
+          sepi += [separator]
           start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+        if inull != start:
+          inull += 1
+          conlist += [coni]
+          seplist += [sepi]
+          sepi = []
+          coni = []
+  # else:
+  #   connectivityfile = 'output/'+prefix(filename)+'-connectivity-hcs.dat'
+  #   separatorsfile = 'output/'+prefix(filename)+'-separators-hcs.dat'
+
+  #   with open(connectivityfile, 'rb') as sepinfo:
+  #     with open(separatorsfile, 'rb') as seps:
+  #       start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+  #       while start == 0:
+  #         end = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
+  #         sepinfo.seek(8, 1)
+  #         length = np.asscalar(np.fromfile(seps, dtype=np.int32, count=1))
+  #         separator = np.fromfile(seps, dtype=np.float64, count=3*length).reshape(-1,3)
+  #         conlist += [end]
+  #         seplist += [separator]
+  #         start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
 
   if lines == False:
     return conlist
