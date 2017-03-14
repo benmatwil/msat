@@ -5,34 +5,40 @@ ifeq ($(coord),)
 endif
 DEFINECOORD = -D$(coord)
 
-ifeq ($(mode),debug)
+ifeq ($(debug),on)
 	FLAGS = -O0 -g -fbounds-check
-	DEFINEMODE += -D$(mode)
+	DEFINEDEBUG = -Ddebug
 else
 	FLAGS = -O3
 endif
 FLAGS += -Jmod
 
-all: nf sf ssf make_cut #nfnew #sf_gordon
+all: nf sf ssf hcs bp make_cut #nfnew #sf_gordon
 	@echo "Current number of OpenMP threads: $(OMP_NUM_THREADS)"
 	@echo "Using coordinate system: $(coord)"
 
 nf : params.f90 nf_mod.F90 nf.F90
-	$(FC) $(FLAGS) $(DEFINEMODE) $^ -o $@
+	$(FC) $(FLAGS) $(DEFINEDEBUG) $^ -o $@
 
 sf : params.f90 sf_mod.f90 sf.F90
-	$(FC) $(FLAGS) $(DEFINEMODE) -fopenmp $^ -o $@
+	$(FC) $(FLAGS) $(DEFINEDEBUG) -fopenmp $^ -o $@
 
 ssf : params.f90 common.F90 trace.F90 ring.F90 ssf.F90
-	$(FC) $(FLAGS) $(DEFINECOORD) $(DEFINEMODE) -fopenmp $^ -o $@
+	$(FC) $(FLAGS) $(DEFINECOORD) $(DEFINEDEBUG) -fopenmp $^ -o $@
+
+hcs : params.f90 common.F90 trace.F90 ring.F90 hcs.F90
+	$(FC) $(FLAGS) $(DEFINECOORD) $(DEFINEDEBUG) -fopenmp $^ -o $@
+
+bp : params.f90 common.F90 trace.F90 ring.F90 bp.F90
+	$(FC) $(FLAGS) $(DEFINECOORD) $(DEFINEDEBUG) -fopenmp $^ -o $@
 
 make_cut : common.F90 params.f90 make_cut.f90
-	$(FC) $(FLAGS) $(DEFINEMODE) $^ -o $@
+	$(FC) $(FLAGS) $(DEFINEDEBUG) $^ -o $@
 
 ###########################################################
 
 clean:
-	@rm mod/*.mod nf sf ssf make_cut
+	@rm mod/*.mod nf sf ssf hcs bp make_cut
 
 tidy:
 	@rm output/*.dat
