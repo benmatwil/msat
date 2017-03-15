@@ -1,10 +1,11 @@
 import pyvis.read_data as rd
 import igraph as ig
+import os
 
-def plot(filename, layout=None, labels=False):
+def plot(filename, layout=None, labels=False, save=False):
   nulls = rd.nulls(filename)
   con = rd.separators(filename, lines=False)
-  conhcs = rd.separators(filename, lines=False, hcs=True)
+  prefile = rd.prefix(filename)
   
   g = ig.Graph()
   g.add_vertices(nulls.number[-1])
@@ -26,12 +27,14 @@ def plot(filename, layout=None, labels=False):
       else:
         g.add_edge(inull, jnull-1, color=g.vs[inull]['color'])
   
-  for ihcs, connect in enumerate(conhcs):
-    if len(connect) > 0:
-      g.add_vertex(1)
-      g.vs[ihcs+nulls.number[-1]]['color'] = 'green'
-      for inull in connect:
-        g.add_edge(ihcs+nulls.number[-1], inull-1)
+  if os.path.isfile('output/'+prefile+'-connectivity-hcs.dat'):
+    conhcs = rd.separators(filename, lines=False, hcs=True)
+    for ihcs, connect in enumerate(conhcs):
+      if len(connect) > 0:
+        g.add_vertex(1)
+        g.vs[ihcs+nulls.number[-1]]['color'] = 'green'
+        for inull in connect:
+          g.add_edge(ihcs+nulls.number[-1], inull-1)
 
   # layout = g.layout('kk')
   if layout is None:
@@ -39,6 +42,9 @@ def plot(filename, layout=None, labels=False):
   else:
     layout = g.layout(layout)
 
-  ig.plot(g, layout=layout, bbox=(1000,1000), margin=50, vertex_size=20)
+  if save == False:
+    ig.plot(g, layout=layout, bbox=(1000,1000), margin=50, vertex_size=20)
+  else:
+    ig.plot(g, 'output/'+prefile+'-graph.png', layout=layout, bbox=(1000,1000), margin=50, vertex_size=20)
 
   return g
