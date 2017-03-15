@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import pyvis.read_data as rd
+from . import read as rd
 import os
 from random import shuffle
 

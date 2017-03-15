@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import read_data as rd
+from . import read as rd
 
 filename = 'data/field_20100601_0081-fft.dat'
 
