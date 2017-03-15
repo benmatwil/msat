@@ -1,4 +1,4 @@
-import read_data as rd
+from . import read as rd
 import numpy as np
 import matplotlib.pyplot as plt
 

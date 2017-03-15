@@ -1,4 +1,4 @@
-import pyvis.read_data as rd
+from . import read as rd
 import numpy as np
 import pyvis.fieldline3d as fl
 import matplotlib.pyplot as plt

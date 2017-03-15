@@ -1,4 +1,4 @@
-import pyvis.read_data as rd
+from . import read as rd
 import igraph as ig
 import os
 
