@@ -1,6 +1,9 @@
 ! module for nullfinder
 module nf_mod
+  
   use params
+
+  implicit none
 
   contains
 
