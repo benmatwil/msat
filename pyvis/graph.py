@@ -3,6 +3,7 @@ import igraph as ig
 import os
 
 def plot(filename, layout=None, labels=False, save=False):
+  print('Filename is {}'.format(filename))
   nulls = rd.nulls(filename)
   con = rd.separators(filename, lines=False)
   prefile = rd.prefix(filename)
