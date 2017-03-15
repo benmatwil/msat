@@ -45,6 +45,6 @@ def plot(filename, layout=None, labels=False, save=False):
   if save == False:
     ig.plot(g, layout=layout, bbox=(1000,1000), margin=50, vertex_size=20)
   else:
-    ig.plot(g, 'output/'+prefile+'-graph.png', layout=layout, bbox=(1000,1000), margin=50, vertex_size=20)
+    ig.plot(g, 'pngs/'+prefile+'-graph.png', layout=layout, bbox=(1000,1000), margin=50, vertex_size=20)
 
   return g
