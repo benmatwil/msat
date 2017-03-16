@@ -20,13 +20,19 @@ def plot(filename, layout=None, labels=False, save=False):
       if labels == True:
         g.vs[inull]['label'] = '{}'.format(inull+1)
   
+  # for inull, cnulls in enumerate(con):
+  #   print(inull+1, cnulls)
+  #   for jnull in cnulls:
+  #     if inull+1 in con[jnull-1]:
+  #       g.add_edge(inull, jnull-1)
+  #       con[jnull-1].remove(inull+1)
+  #       con[inull].remove(jnull)
+  #     else:
+  #       g.add_edge(inull, jnull-1, color=g.vs[inull]['color'])
   for inull, cnulls in enumerate(con):
+    print(inull+1, cnulls)
     for jnull in cnulls:
-      if inull+1 in con[jnull-1]:
-        g.add_edge(inull, jnull-1)
-        con[jnull-1].remove(inull+1)
-      else:
-        g.add_edge(inull, jnull-1, color=g.vs[inull]['color'])
+      g.add_edge(inull, jnull-1, color=g.vs[inull]['color'])
   
   if os.path.isfile('output/'+prefile+'-connectivity-hcs.dat'):
     conhcs = rd.separators(filename, lines=False, hcs=True)
@@ -48,4 +54,4 @@ def plot(filename, layout=None, labels=False, save=False):
   else:
     ig.plot(g, 'pngs/'+prefile+'-graph.png', layout=layout, bbox=(1000,1000), margin=50, vertex_size=20)
 
-  return g
+  # return g
