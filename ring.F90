@@ -186,7 +186,7 @@ contains
     integer(int32) :: index, count, nr, nnc, nextra, n1, n2
     integer(int32), allocatable :: signof(:)
 
-    h0 = 1d-2
+    h0 = 1e-2_np
     tracedist = 3*nulldist
     checkdist = tracedist + 3*h0
 
