@@ -179,6 +179,8 @@ program hcs
 
   enddo
 
+  print*, 'done theta'
+
   do ip = 1, nnp
 
     allocate(line(nnt))
@@ -204,6 +206,9 @@ program hcs
     deallocate(line, diffs)
 
   enddo
+
+  print*, 'done phi'
+  print*, size(points, 2)
 
   ! sort points
   ds = maxval([maxval(y(2:ny) - y(1:ny-1)), maxval(z(2:nz) - z(1:nz-1))])
@@ -253,16 +258,18 @@ program hcs
   ! need to add a tiny amount of the r coord
   ! pordered(1, :) = pordered(1, :) + 1e-6_np
 
+  print*, 'done ordering'
+
   allocate(baldpatch(3,0), breakbp(0))
   do ip = 1, size(npoints, 1)-1
-    print*, ip
+    ! print*, ip
     do iseg = npoints(ip)+1, npoints(ip+1)-1
       lvec = pordered(:, iseg+1) - pordered(:, iseg)
       midpoint = (pordered(:, iseg+1) + pordered(:, iseg))/2
       perp = [0.0_np, lvec(3), -lvec(2)]
-      print*, lvec
-      print*, midpoint, shape(bgrid)
-      print*, perp
+      ! print*, lvec
+      ! print*, midpoint, shape(bgrid)
+      ! print*, perp
       bvec = trilinear(midpoint, bgrid)
       field1 = trilinear(midpoint+perp*1e-4_np, bgrid)
       field2 = trilinear(midpoint-perp*1e-4_np, bgrid)
@@ -270,11 +277,14 @@ program hcs
         perp = -perp
       endif
       if (dot(bvec, perp) > 0) then ! we have a bald patch
-        print*, iseg
-        if (size(baldpatch, 2) /= 0 .and. .not. all(pordered(:, iseg) == baldpatch(:, size(baldpatch, 2)))) then
-          breakbp(size(baldpatch, 2)) = 1
-          call add_vector(baldpatch, pordered(:, iseg))
-          call add_element(breakbp, 0)
+        ! print*, iseg
+        ! print*, size(baldpatch, 2), pordered(:, iseg), baldpatch(:, size(baldpatch, 2))
+        if (size(baldpatch, 2) /= 0) then
+          if (.not. all(pordered(:, iseg) == baldpatch(:, size(baldpatch, 2)))) then
+            breakbp(size(baldpatch, 2)) = 1
+            call add_vector(baldpatch, pordered(:, iseg))
+            call add_element(breakbp, 0)
+          endif
         endif
         call add_vector(baldpatch, pordered(:, iseg+1))
         call add_element(breakbp, 0)
@@ -282,7 +292,10 @@ program hcs
     enddo
   enddo
 
-  print*, 'done'
+  print*, 'done', size(baldpatch, 2)
+  open(unit=9, file='test.dat', status='replace', access='stream')
+  write(9) size(baldpatch, 2), gtr(baldpatch, x, y, z)
+  close(9)
 
   write(10) ringsmax+1
 
