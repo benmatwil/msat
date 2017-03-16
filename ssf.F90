@@ -219,9 +219,9 @@ program ssfind
       allocate(endpoints(nlines), association(nlines))
 
       if (iring < 50) then
-        h0 = 4e-2_np/slowdown
+        h0 = stepsize/slowdown/5
       else
-        h0 = 2e-1_np/slowdown
+        h0 = stepsize/slowdown
       endif
       !$OMP END SINGLE
 
@@ -255,13 +255,13 @@ program ssfind
       !$OMP SINGLE
       ! print*,'Checking at null', iring, nlines, inull
       if (iring < 50) then
-        maxdist = 0.1_np*h0*slowdown ! 0.0075
+        maxdist = 0.1_np*h0*slowdown
       elseif (iring < 100) then
-        maxdist = 0.08_np*h0*slowdown ! 0.0075=0.15*0.05
+        maxdist = 0.08_np*h0*slowdown
       else
-        maxdist = 0.6_np*h0*slowdown ! 0.15
+        maxdist = 0.6_np*h0*slowdown
       endif
-      nulldist = 1.4_np*h0*slowdown ! 0.6
+      nulldist = 1.4_np*h0*slowdown
       mindist = maxdist/3
       ! print*, iring, h0, nulldist, maxdist, mindist, nlines
       !$OMP END SINGLE
