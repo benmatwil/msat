@@ -63,22 +63,23 @@ def spines():
 
 #################################################################
 
-def separators():
+def separators(labels=False):
   global prefile
 
   with open('output/'+prefile+'-cut_seps.dat', 'rb') as sepfile:
-    null = np.fromfile(sepfile, dtype=np.int32, count=1)
+    null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
     while null > 0:
       sep = np.fromfile(sepfile, dtype=np.float64, count=3)
       plt.plot(sep[2], sep[1], '*', c='yellow')
-      null = np.fromfile(sepfile, dtype=np.int32, count=1)
+      plt.text(sep[2], sep[1], f'{null}')
+      null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
 
   with open('output/'+prefile+'-cut_seps_hcs.dat', 'rb') as sepfile:
-    null = np.fromfile(sepfile, dtype=np.int32, count=1)
+    null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
     while null > 0:
       sep = np.fromfile(sepfile, dtype=np.float64, count=3)
       plt.plot(sep[2], sep[1], '*', c='orange')
-      null = np.fromfile(sepfile, dtype=np.int32, count=1)
+      null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
 
 #################################################################
 
@@ -86,18 +87,18 @@ def rings(dots=False):
   global prefile, nulldata
 
   negcolors, poscolors = plt.get_cmap('Blues'), plt.get_cmap('Reds')
-  negcolors = [negcolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(nulldata.sign == 1))]
-  poscolors = [poscolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(nulldata.sign == -1))]
+  negcolors = [negcolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(nulldata.sign == -1))]
+  poscolors = [poscolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(nulldata.sign == 1))]
   shuffle(poscolors)
   shuffle(negcolors)
   colors, ipos, ineg = [], 0, 0
   for inull in range(nulldata.number[-1]):
     if nulldata[inull].sign == -1:
-      col = negcolors[ipos]
-      ipos += 1
-    elif nulldata[inull].sign == 1:
-      col = poscolors[ineg]
+      col = negcolors[ineg]
       ineg += 1
+    elif nulldata[inull].sign == 1:
+      col = poscolors[ipos]
+      ipos += 1
     colors = colors + [col]
 
   with open('output/'+prefile+'-cut_rings.dat', 'rb') as ringfile:
