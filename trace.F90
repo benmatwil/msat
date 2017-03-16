@@ -89,16 +89,18 @@ module trace
       if (abs(s*h) < stepmin) s = stepmin/abs(h)
       if (s > 1) s = 1.0_np
 
+      hvec = s*hvec
+
       rtest = r0
-      k1 = s*hvec*normalise(trilinear(rtest, bgrid))
+      k1 = hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k21*k1
-      k2 = s*hvec*normalise(trilinear(rtest, bgrid))
+      k2 = hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k31*k1 + k32*k2
-      k3 = s*hvec*normalise(trilinear(rtest, bgrid))
+      k3 = hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k41*k1 + k42*k2 + k43*k3
-      k4 = s*hvec*normalise(trilinear(rtest, bgrid))
+      k4 = hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
-      k5 = s*hvec*normalise(trilinear(rtest, bgrid))
+      k5 = hvec*normalise(trilinear(rtest, bgrid))
 
       r = r0 + y1*k1 + y3*k3 + y4*k4 + y5*k5
 
