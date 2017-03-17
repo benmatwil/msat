@@ -153,8 +153,8 @@ program hcs
   pgrid = real([(ip,ip=0,nnp-1)], np)/nsplit + 1
   tgrid(1) = tgrid(1) + 1e-6_np
   tgrid(nnt) = tgrid(nnt) - 1e-6_np
-  allocate(points(3, 0))
 
+  allocate(points(3, 0))
   do it = 1, nnt
 
     allocate(line(nnp))
@@ -207,7 +207,7 @@ program hcs
   enddo
 
   ! sort points
-  ds = maxval([maxval(y(2:ny) - y(1:ny-1)), maxval(z(2:nz) - z(1:nz-1))])
+  ds = 0.2_np ! need to think about this
   allocate(pordered(3, 0))
   allocate(npoints(1))
   npoints(1) = 0
