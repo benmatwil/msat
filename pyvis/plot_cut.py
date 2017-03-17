@@ -49,16 +49,18 @@ def start(r, filename):
 
 #################################################################
 
-def spines():
+def spines(labels=False):
   global prefile
 
   cols = {-1:'blue', 0:'green', 1:'red'}
 
   with open('output/'+prefile+'-cut_spines.dat', 'rb') as spinefile:
-    inull = np.fromfile(spinefile, dtype=np.int32, count=1)
+    inull = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
     while inull > 0:
       spine = np.fromfile(spinefile, dtype=np.float64, count=3)
       plt.plot(spine[2], spine[1], '.', c=cols[np.asscalar(nulldata[inull-1].sign)])
+      if labels == True:
+        plt.text(spine[2], spine[1], f'{inull}')
       inull = np.fromfile(spinefile, dtype=np.int32, count=1)
 
 #################################################################
@@ -71,7 +73,8 @@ def separators(labels=False):
     while null > 0:
       sep = np.fromfile(sepfile, dtype=np.float64, count=3)
       plt.plot(sep[2], sep[1], '*', c='yellow')
-      plt.text(sep[2], sep[1], f'{null}')
+      if labels == True:
+        plt.text(sep[2], sep[1], f'{null}')
       null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
 
   with open('output/'+prefile+'-cut_seps_hcs.dat', 'rb') as sepfile:
@@ -83,7 +86,7 @@ def separators(labels=False):
 
 #################################################################
 
-def rings(dots=False):
+def rings(dots=False, labels=False):
   global prefile, nulldata
 
   negcolors, poscolors = plt.get_cmap('Blues'), plt.get_cmap('Reds')
@@ -107,6 +110,8 @@ def rings(dots=False):
       length = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
       ring = np.fromfile(ringfile, dtype=np.float64, count=3*length).reshape(-1,3)
       plt.plot(ring[:,2], ring[:,1], c=colors[inull-1])
+      if labels == True:
+        plt.text(ring[length//2,2], ring[length//2,1], f'{inull}')
       if dots == True:
         plt.plot(ring[:,2], ring[:,1], '.', c='green')
       inull = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
@@ -128,7 +133,7 @@ def hcs(dots=False):
 
 #################################################################
 
-def nulls():
+def nulls(labels=False):
   global datafile, nulldata
 
   cols = {-1:'blue', 0:'green', 1:'red'}
@@ -136,6 +141,8 @@ def nulls():
   for i in range(nulldata.shape[0]):
     col = cols[nulldata[i-1].sign]
     plt.plot(nulldata.pos[i,2], nulldata.pos[i,1], 'x', color=col)
+    if labels == True:
+      plt.text(nulldata.pos[i,2], nulldata.pos[i,1], f'{i}, {nulldata.pos[i,0]:04f}')
 
 #################################################################
 
