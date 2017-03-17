@@ -84,7 +84,7 @@ def separators(filename, lines=True, connectivity=True, hcs=False):
       start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
       #need to deal with how big the lists are...
       while start >= 0 or inull <= nulldata.number.max():
-        if (inull == start):
+        if inull == start:
           end = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
           sepinfo.seek(8, 1)
           length = np.asscalar(np.fromfile(seps, dtype=np.int32, count=1))
@@ -142,21 +142,26 @@ def rings(filename, breakinfo=False):
   nulldata = nulls(filename, simple=True)
 
   ringlist = []
+  breaklist = []
+  assoclist = []
 
   with open('output/'+prefix(filename)+'-ringinfo.dat', 'rb') as ringinfo:
     with open('output/'+prefix(filename)+'-rings.dat', 'rb') as ringfile:
       ringsmax = np.asscalar(np.fromfile(ringinfo, dtype=np.int32, count=1))
       for inull in nulldata.number:
+        assoclisti = []
         breaklisti = []
         ringlisti = []
         lengths = np.fromfile(ringinfo, dtype=np.int32, count=ringsmax)
         iring = 0
         while iring < ringsmax and lengths[iring] > 0:
+          assoclisti += [np.fromfile(ringfile, dtype=np.int32, count=lengths[iring])]
           breaklisti += [np.fromfile(ringfile, dtype=np.int32, count=lengths[iring])]
           ringlisti += [np.fromfile(ringfile, dtype=np.float64, count=3*lengths[iring]).reshape(-1,3)]
           iring += 1
         ringlist += [ringlisti]
         breaklist += [breaklisti]
+        assoclist += [assoclisti]
 
   if breakinfo == True:
     return
