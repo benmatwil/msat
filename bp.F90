@@ -281,13 +281,18 @@ program hcs
         ! print*, size(baldpatch, 2), pordered(:, iseg), baldpatch(:, size(baldpatch, 2))
         if (size(baldpatch, 2) /= 0) then
           if (.not. all(pordered(:, iseg) == baldpatch(:, size(baldpatch, 2)))) then
-            breakbp(size(baldpatch, 2)) = 1
-            call add_vector(baldpatch, pordered(:, iseg))
-            call add_element(breakbp, 0)
+              breakbp(size(baldpatch, 2)) = 1
+              call add_vector(baldpatch, pordered(:, iseg))
+              call add_element(breakbp, 0)
+            endif
           endif
-        endif
-        call add_vector(baldpatch, pordered(:, iseg+1))
-        call add_element(breakbp, 0)
+          call add_vector(baldpatch, pordered(:, iseg+1))
+          call add_element(breakbp, 0)
+        else
+          call add_vector(baldpatch, pordered(:, iseg))
+          call add_element(breakbp, 0)
+          call add_vector(baldpatch, pordered(:, iseg+1))
+          call add_element(breakbp, 0)
       endif
     enddo
   enddo
