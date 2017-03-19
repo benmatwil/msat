@@ -134,7 +134,7 @@ def nulls():
   cols = {-1:'blue', 0:'green', 1:'red'}
 
   for i in range(nulldata.shape[0]):
-    col = cols[nulldata[i-1].sign]
+    col = cols[nulldata[i].sign]
     plt.plot(nulldata.pos[i,2], nulldata.pos[i,1], 'x', color=col)
 
 #################################################################
