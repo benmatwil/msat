@@ -3,16 +3,16 @@ from math import *
 
 def trilinear3d(pt, grid, xx, yy, zz):
 
-  xp = floor(pt[0])
-  yp = floor(pt[1])
-  zp = floor(pt[2])
+  ix = np.where(pt[0] > xx)[0].max()
+  iy = np.where(pt[1] > yy)[0].max()
+  iz = np.where(pt[2] > zz)[0].max()
 
-  x = pt[0] - xp
-  y = pt[1] - yp
-  z = pt[2] - zp
+  x = (pt[0] - xx[ix])/(xx[ix+1] - xx[ix])
+  y = (pt[1] - yy[iy])/(yy[iy+1] - yy[iy])
+  z = (pt[2] - zz[iz])/(zz[iz+1] - zz[iz])
 
   btri = np.zeros(3, dtype=np.float64)
-  cube = grid[xp:xp+2, yp:yp+2, zp:zp+2, :]
+  cube = grid[ix:ix+2, iy:iy+2, iz:iz+2, :]
 
   for ib in range(3):
     f11 = (1 - x)*cube[0,0,0,ib] + x*cube[1,0,0,ib]

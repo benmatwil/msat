@@ -124,14 +124,19 @@ function read_spines, filename
     endfor
     spinelist = spinelist + list(spinelisti)
   endforeach
+
+  close, spi
+  free_lun, spi
   
   return, spinelist
 
 end
 
-function read_rings, filename
+function read_rings, filename, nskip=nskip, breaks=breaklist
 
   nulldata = read_nulls(filename, /simple)
+
+  if not keyword_set(nskip) then nskip = 1
 
   ringlist = list()
   breaklist = list()
@@ -144,7 +149,6 @@ function read_rings, filename
 
   readu, rinfo, ringsmax
   foreach inull, nulldata.number do begin
-    print, inull
     breaklisti = list()
     ringlisti = list()
     assoclisti = list()
@@ -153,22 +157,28 @@ function read_rings, filename
     iring = 0
     while iring lt ringsmax do begin
       if lengths[iring] eq 0 then break
-      print, iring, lengths[iring], ringsmax
       assocs = lonarr(lengths[iring])
       breaks = lonarr(lengths[iring])
       rings = dblarr(3,lengths[iring])
       readu, ring, assocs, breaks, rings
+      iskip = 1
+      while iskip + iring lt ringsmax and iskip lt nskip do begin
+        skip_lun, ring, lengths[iring+iskip]*32L
+        iskip++
+      endwhile
+      iring = iring + nskip
       assoclisti = assoclisti + list(assocs)
       breaklisti = breaklisti + list(breaks)
       ringlisti = ringlisti + list(rings)
-      iring++
     endwhile
     assoclist = assoclist + list(assoclisti)
     ringlist = ringlist + list(ringlisti)
     breaklist = breaklist + list(breaklisti)
   endforeach
+
+  close, rinfo, ring
+  free_lun, rinfo, ring
   
   return, ringlist
-
 
 end

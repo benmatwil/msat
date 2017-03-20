@@ -60,7 +60,7 @@ def spines(labels=False):
       spine = np.fromfile(spinefile, dtype=np.float64, count=3)
       plt.plot(spine[2], spine[1], '.', c=cols[np.asscalar(nulldata[inull-1].sign)])
       if labels == True:
-        plt.text(spine[2], spine[1], f'{inull}')
+        plt.text(spine[2], spine[1], f'{inull}', color='green')
       inull = np.fromfile(spinefile, dtype=np.int32, count=1)
 
 #################################################################

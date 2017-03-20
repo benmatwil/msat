@@ -14,7 +14,7 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2
   field = rd.field(filename)
   bgrid = np.zeros((field[0].shape[0], field[0].shape[1], field[0].shape[2], 3), dtype=np.float64)
   for i in range(3):
-    bgrid[:,:,:,i] = field[i]
+    bgrid[:, :, :, i] = field[i]
   
   rads = field[3]
   thetas = field[4]

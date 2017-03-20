@@ -137,7 +137,7 @@ def spines(filename):
   
   return spinelist
 
-def rings(filename, breakinfo=False):
+def rings(filename, breakinfo=False, nskip=1):
 
   nulldata = nulls(filename, simple=True)
 
@@ -158,12 +158,16 @@ def rings(filename, breakinfo=False):
           assoclisti += [np.fromfile(ringfile, dtype=np.int32, count=lengths[iring])]
           breaklisti += [np.fromfile(ringfile, dtype=np.int32, count=lengths[iring])]
           ringlisti += [np.fromfile(ringfile, dtype=np.float64, count=3*lengths[iring]).reshape(-1,3)]
-          iring += 1
+          iskip = 1
+          while iskip + iring < ringsmax and iskip < nskip:
+            ringfile.seek(lengths[iring+iskip]*32, 1)
+            iskip += 1
+          iring += nskip
         ringlist += [ringlisti]
         breaklist += [breaklisti]
         assoclist += [assoclisti]
 
   if breakinfo == True:
-    return
+    return ringlist, breaklist
   else:
     return ringlist
