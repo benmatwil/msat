@@ -55,7 +55,7 @@ contains
     ! where the 'add' array has a point to be added, add this point
     nadd = 1
     do iline = 1, nlines
-      if (modulus(add1(:,iline)) > 1d-4) then !if |add(:,iline)| is not zero, all points > (1,1,1)
+      if (modulus(add1(:,iline)) > 1e-4_np) then !if |add(:,iline)| is not zero, all points > (1,1,1)
         iadd = iline + nadd
         !$OMP SECTIONS
         !$OMP SECTION

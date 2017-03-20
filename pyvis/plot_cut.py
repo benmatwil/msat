@@ -139,7 +139,7 @@ def nulls(labels=False):
   cols = {-1:'blue', 0:'green', 1:'red'}
 
   for i in range(nulldata.shape[0]):
-    col = cols[nulldata[i-1].sign]
+    col = cols[nulldata[i].sign]
     plt.plot(nulldata.pos[i,2], nulldata.pos[i,1], 'x', color=col)
     if labels == True:
       plt.text(nulldata.pos[i,2], nulldata.pos[i,1], f'{i}, {nulldata.pos[i,0]:04f}')
