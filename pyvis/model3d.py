@@ -85,7 +85,7 @@ def model_add_nulls():
 
   print("Adding nulls")
 
-  radius = 15*ds
+  radius = 5*ds
 
   cols = {-1:(0,0,1), 0:(0,1,0), 1:(1,0,0)}
   
@@ -93,8 +93,9 @@ def model_add_nulls():
     xpos = nulldata[nulldata.sign == sign].pos[:,0]
     ypos = nulldata[nulldata.sign == sign].pos[:,1]
     zpos = nulldata[nulldata.sign == sign].pos[:,2]
+    radii = np.ones_like(xpos)*radius
     
-    ml.points3d(xpos, ypos, zpos, radius, color=cols[sign], scale_factor=1)
+    ml.points3d(xpos, ypos, zpos, radii, color=cols[sign], scale_factor=1)
 
 def model_add_box():
   global xx, yy, zz, ds
@@ -117,7 +118,7 @@ def model_add_box():
   
   ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=(0,0,0), tube_radius=None)
 
-def mk_model_mag_sep(fname, nulls=False, separators=False, sepsurf=False, spines=False, box=False, fanlines=False, nskip=20):
+def make(fname, nulls=False, separators=False, sepsurf=False, spines=False, box=False, fanlines=False, nskip=20):
   
   global bgrid, xx, yy, zz, nulldata, ds, filename, nskipglob
 
