@@ -14,7 +14,7 @@ program ssfind
 
   real(np) :: r(3)
   real(np) :: h, h0
-  real(np) :: slowdown
+  real(np) :: slowdown, slowdist
   integer(int32) :: nearflag
 
   integer(int32) :: iring, iline, inull, jnull
@@ -212,6 +212,7 @@ program ssfind
       endif
       
       !$OMP SINGLE
+      nrings = iring
 #if debug
       print*, iring, nlines
 #endif
@@ -259,10 +260,11 @@ program ssfind
       elseif (iring < 100) then
         maxdist = 0.08_np*h0*slowdown
       else
-        maxdist = 0.6_np*h0*slowdown
+        maxdist = 0.5_np*h0*slowdown
       endif
-      nulldist = 1.4_np*h0*slowdown
+      nulldist = 2.0_np*h0*slowdown
       mindist = maxdist/3
+      slowdist = 2.0*nulldist
       ! print*, iring, h0, nulldist, maxdist, mindist, nlines
       !$OMP END SINGLE
 
@@ -282,8 +284,8 @@ program ssfind
       do iline = 1, nlines
         do jnull = 1, nnulls
           if (signs(jnull) == signs(inull)) cycle
-          if (dist(rnulls(:,jnull), line1(:, iline)) < 2.5*nulldist .or. &
-            dist(rnullsalt(:,jnull), line1(:, iline)) < 2.5*nulldist) then
+          if (dist(rnulls(:,jnull), line1(:, iline)) < slowdist .or. &
+            dist(rnullsalt(:,jnull), line1(:, iline)) < slowdist) then
             nearnull(iline) = 1
             exit
           endif

@@ -32,7 +32,7 @@ contains
     !$OMP END WORKSHARE
 
     ! test for gaps. Where gaps need to be filled, put this info into add1, add2
-    !$OMP DO
+    !$OMP DO private(iline, maxdist0, nxtline)
     do iline = 1, nlines !loop over each point in ring
       maxdist0 = maxdist
       if (break(iline) == 0) then
@@ -55,7 +55,7 @@ contains
     ! where the 'add' array has a point to be added, add this point
     nadd = 1
     do iline = 1, nlines
-      if (modulus(add1(:,iline)) > 1e-4_np) then !if |add(:,iline)| is not zero, all points > (1,1,1)
+      if (add1(1,iline) > 1e-1_np) then !if |add(:,iline)| is not zero, all points > (1,1,1)
         iadd = iline + nadd
         !$OMP SECTIONS
         !$OMP SECTION
@@ -93,7 +93,7 @@ contains
     implicit none
 
     integer(int32) :: nlines
-    integer(int32) :: iline, nxtline, iremove, nremove
+    integer(int32) :: iline, nxtline, iremove, nremove, break1
 
     !$OMP SINGLE
     allocate(remove(nlines))
@@ -103,42 +103,48 @@ contains
     remove = 0
     !$OMP END WORKSHARE
 
-    !$OMP DO
-    do iline = 1, nlines
-      if (endpoints(iline) == 1) then ! remove points that have left the simulation
+    !$OMP SINGLE
+    break1 = break(1)
+    do iline = 2, nlines
+      if (endpoints(iline) == 1 .or. break(iline) == 2) then ! remove points that have left the simulation or stuck
+        if (break(iline) == 2) endpoints(iline) = 1
         remove(iline) = 1
-        if (iline /= 1) then
-          break(iline-1) = 1
-        else
-          break(nlines) = 1
-        endif
+        break(iline-1) = 1
       endif
     enddo
-    !$OMP END DO
+    if (endpoints(1) == 1 .or. break1 == 2) then ! remove points that have left the simulation or stuck
+      if (break(1) == 2) endpoints(1) = 1
+      remove(1) = 1
+      break(nlines) = 1
+    endif
 
     ! check for too tightly spaced points, flag points to be removed
-    !$OMP DO
     do iline = 1, nlines ! loop over all points
       if (break(iline) == 0) then
-        if (iline < nlines) then ! if not end point
+        if (iline /= nlines) then ! if not end point
           nxtline = iline+1
         else
           nxtline = 1
         endif
-        if (iline /= 1) then
-          if (dist(line2(:,iline),line2(:,nxtline)) < mindist .and. remove(iline-1) == 0) remove(iline) = 1 ! if iline and iline+1 are too near
+        if (dist(line2(:,iline), line2(:,nxtline)) < mindist .and. remove(iline) == 0) then ! if iline and iline+1 are too near
+          if (break(nxtline) == 1) then
+            remove(iline) = 1
+          else
+            remove(nxtline) = 1
+          endif
         endif
       endif
     enddo
-    !$OMP END DO
+    !$OMP END SINGLE
 
     ! remove points
     nremove = 0
     if (nlines > nstart .or. sum(endpoints) /= 0) then ! if the number of points isn't too small...
       do iline = 1, nlines
-        if (nlines <= nstart .and. sum(endpoints) == 0) exit
+        if (nlines <= nstart .and. sum(endpoints(iline:nlines)) == 0) exit
         if (remove(iline) == 1) then ! if point is flagged to be removed, then remove
           iremove = iline - nremove
+          !$OMP BARRIER
           !$OMP SECTIONS
           !$OMP SECTION
           call remove_vector(line1,iremove)
@@ -178,17 +184,19 @@ contains
     integer(int32) :: nring
     integer(int32) :: sign
 
-    real(np) :: h, h0, tracedist, checkdist
+    real(np) :: h, tracedist, checkdist, dist1, dist2
 
     real(np), allocatable :: r(:,:)
     integer(int32), allocatable :: rmap(:)
     integer(int32) :: near(nlines), notnear(nlines), endgap, gapsize
-    integer(int32) :: index, count, nr, nnc, nextra, n1, n2
+    integer(int32) :: index, count, count1, nr, nnc, nextra, n1, n2
     integer(int32), allocatable :: signof(:)
 
-    h0 = 1e-2_np
-    tracedist = 3*nulldist
-    checkdist = tracedist + 3*h0
+    integer(int32), parameter :: maxcount = 1000
+    real(np), parameter :: h0 = 5e-2_np*stepsize
+
+    tracedist = 3*nulldist ! trace points around null until tracedist away
+    checkdist = tracedist + 2*h0 ! distance to check for separator after being iterated to tracedist away
 
     !$OMP DO ! private(near, notnear, nnc, k, gapsize, endgap, nr, r, rmap, signof, index, count, h)
     do inull = 1, size(rnulls,2)
@@ -255,7 +263,7 @@ contains
           do index = 1, nr
             ! extrapolate points along fieldlines
             count = 0
-            do while (dist(r(:,index),rnulls(:,inull)) < tracedist .and. count < 10000)
+            do while (dist(r(:,index),rnulls(:,inull)) < tracedist .and. count < maxcount)
               h = h0
               call trace_line(r(:,index),sign,h)
               call edgecheck(r(:,index))
@@ -275,29 +283,27 @@ contains
                 if (signof(index-1)*signof(index) == -1 .and. break(rmap(index-1)) /= 1 &
                   .and. dist(rnulls(:,inull), r(:,index)) < checkdist &
                   .and. dist(rnulls(:,inull), r(:,index-1)) < checkdist) then
+                  dist1 = dist(rnulls(:,inull), r(:,index-1))
+                  dist2 = dist(rnulls(:,inull), r(:,index))
 #if debug
                   print*, 'Found a separator', nring, rmap(index-1), nlines, nullnum, inull
 #else
                   print*, 'Found a separator between the two nulls', nullnum, inull
 #endif
+                  
                   break(rmap(index-1)) = 1 ! disassociate points so that new points don't get added between them as they diverge around the null
                   nseps = nseps + 1
                   ! write the point's information to the separator file
-                  write(40) nullnum, inull, nring, rmap(index-1)
+                  if (dist1 > dist2) then
+                    write(40) nullnum, inull, nring, rmap(index)
+                  else
+                    write(40) nullnum, inull, nring, rmap(index-1)
+                  endif
                 endif
               endif
             endif
-            if (count == 10000) then !then we want to remove points as they appear to be stuck at the null
-              ! remove(rmap(index)) = 1
-              ! print*, rmap(index), index, inull, nring
-              if (rmap(index) /= 1) then
-                break(rmap(index)-1) = 1
-              else
-                break(nlines) = 1
-              endif
-              ! break(rmap(index)-1) = 1
-              cycle
-            endif
+            if (count1 == maxcount) break(rmap(index-1)) = 2 ! points appear to be stuck at the null
+            count1 = count
           enddo
           deallocate(r, signof, rmap)
         endif
