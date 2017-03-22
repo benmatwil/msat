@@ -1,58 +1,53 @@
-program writedata
+program writedata_ws
 use params
 
 implicit none
 integer :: i,j,k
-double precision :: a, b, c, aa, bb, cc, dd, tt 
-double precision, allocatable, dimension(:,:,:) :: bx, by, bz
+double precision :: b0, L, z0, xc, yc, zc, ll, aa, b1, tt 
+double precision, allocatable, dimension(:,:,:) :: bx, by, bz, ee
 double precision, allocatable, dimension(:) :: x, y, z    !coordinates of grid
 
 !xyz grid parameters
-integer, parameter :: nnx=206, nny=705, nnz=1409 !size of grid
-double precision, parameter :: xxmin=1, xxmax=2.5  !xrange
-double precision, parameter :: yymin=0, yymax=2*pi  !yrange
-double precision, parameter :: zzmin=pi, zzmax=0  !zrange
+integer, parameter :: nnx=201, nny=201, nnz=601 !size of grid
+! integer, parameter :: nnx=200, nny=200, nnz=600
+double precision, parameter :: xxmin=-2.5d0, xxmax=2.5d0  !xrange
+double precision, parameter :: yymin=-2.5d0, yymax=2.5d0  !yrange
+double precision, parameter :: zzmin=-7.5d0, zzmax=7.5d0  !zrange
 
 !magnetic field parameters
 !form of magnetic field
-!Bx = (a_par-z)*x + b_par*y + aa_par*tt_par 
-!By = c_par*x - (a_par+z)*y + bb_par*tt_par
-!Bz = dd_par*tt_par*y + z*z + cc_par*tt_par
-!spiral
-!double precision, parameter :: a_par=1.0, b_par=1.0, c_par=-2.0 
-!double precision, parameter :: aa_par=1.0, bb_par=0.0, cc_par=-2.0, dd_par=3.0
-!double precision, parameter :: tt_par=0.1  
-!improper
-double precision, parameter :: a_par=2.0, b_par=-1.0, c_par=3.0 
-double precision, parameter :: aa_par=1.0, bb_par=-1.0, cc_par=-1.0, dd_par=0.0
-double precision, parameter :: tt_par=0.4
+!Bx = (b0/(L^2))*x*(z - 3*z0) 
+!By = (b0/L^2)*y*(z + 3*z0) 
+!Bz = (b0/L^2)*(z0^2 - z^2 + x^2 + y^2) 
 
-allocate(bx(nnx,nny,nnz),by(nnx,nny,nnz),bz(nnx,nny,nnz))
+allocate(bx(nnx,nny,nnz),by(nnx,nny,nnz),bz(nnx,nny,nnz),ee(nnx,nny,nnz))
 allocate(x(nnx),y(nny),z(nnz))
 
-a = a_par
-b = b_par
-c = c_par
-aa = aa_par
-bb = bb_par
-cc = cc_par
-dd = dd_par
-tt = tt_par
+b0 = 1d0
+L = 1d0
+z0 = 5d0
+b1 = 20d0
+xc = 0d0
+yc = 0d0
+zc = 0d0
+ll = 1d0
+aa = 0.5d0
+tt = 0d0
 
 do k=1,nnz
-  z(k) = zzmin + (zzmax-zzmin)*(k-1)/nnz 
+  z(k) = zzmin + (zzmax-zzmin)*(k-1)/(nnz-1)
+  !print*, z(k)
   do j=1,nny
-    y(j) = yymin + (yymax-yymin)*(j-1)/nny 
+    y(j) = yymin + (yymax-yymin)*(j-1)/(nny-1)
     do i=1,nnx
-      x(i) = xxmin + (xxmax-xxmin)*(i-1)/nnx 
-      bx(i,j,k) = (a-z(k))*x(i) + b*y(j) + aa*tt
-      by(i,j,k) = c*x(i) - (a+z(k))*y(j) + bb*tt
-      bz(i,j,k) = dd*tt*y(j) + z(k)*z(k) + cc*tt
+      x(i) = xxmin + (xxmax-xxmin)*(i-1)/(nnx-1)
+      ee(i,j,k) = exp(-((x(i)-xc)/aa)**2-((y(j)-yc)/aa)**2-((z(k)-zc)/ll)**2)
+      bx(i,j,k) = (b0/(L**2))*x(i)*(z(k) - 3*z0)-tt*(2*b1*(y(j)-yc)/aa)*ee(i,j,k) 
+      by(i,j,k) = (b0/(L**2))*y(j)*(z(k) + 3*z0)+tt*(2*b1*(x(i)-xc)/aa)*ee(i,j,k) 
+      bz(i,j,k) = (b0/(L**2))*(z0**2 - z(k)**2 + 0.5*x(i)**2 + 0.5*y(j)**2)
     enddo
   enddo
 enddo
-
-print*,'Mag field data',a,b,c,aa,bb,cc,dd,tt
 
 call filenames
 
