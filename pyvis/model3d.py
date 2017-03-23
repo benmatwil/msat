@@ -110,8 +110,11 @@ def add_nulls(size):
   print("Adding nulls")
 
   cols = {-1:(0,0,1), 0:(0,1,0), 1:(1,0,0)}
-  
-  r = 5*ds*size
+
+  boxsize = min([xx[-1] - xx[0], yy[-1] - yy[0], zz[-1] - zz[0]])/40
+
+  r = max([boxsize, ds])
+  r = r*size
   theta, phi = np.mgrid[0:np.pi:101j, 0:2*np.pi:101j]
   x = r * np.sin(theta) * np.cos(phi)
   y = r * np.sin(theta) * np.sin(phi)
