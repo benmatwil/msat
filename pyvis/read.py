@@ -89,13 +89,13 @@ def separators(filename, lines=True, connectivity=True, hcs=False):
           sepinfo.seek(8, 1)
           length = np.asscalar(np.fromfile(seps, dtype=np.int32, count=1))
           separator = np.fromfile(seps, dtype=np.float64, count=3*length).reshape(-1,3)
-          coni += [end]
-          sepi += [separator]
+          coni.append(end)
+          sepi.append(separator)
           start = np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1))
         if inull != start:
           inull += 1
-          conlist += [coni]
-          seplist += [sepi]
+          conlist.append(coni)
+          seplist.append(sepi)
           sepi = []
           coni = []
   # else:
@@ -132,8 +132,8 @@ def spines(filename):
       spinelisti = []
       for ispine in range(2):
         length = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
-        spinelisti += [np.fromfile(spinefile, dtype=np.float64, count=3*length).reshape(-1,3)]
-      spinelist += [spinelisti]
+        spinelisti.append(np.fromfile(spinefile, dtype=np.float64, count=3*length).reshape(-1,3))
+      spinelist.append(spinelisti)
   
   return spinelist
 
@@ -155,17 +155,17 @@ def rings(filename, breakinfo=False, nskip=1):
         lengths = np.fromfile(ringinfo, dtype=np.int32, count=ringsmax)
         iring = 0
         while iring < ringsmax and lengths[iring] > 0:
-          assoclisti += [np.fromfile(ringfile, dtype=np.int32, count=lengths[iring])]
-          breaklisti += [np.fromfile(ringfile, dtype=np.int32, count=lengths[iring])]
-          ringlisti += [np.fromfile(ringfile, dtype=np.float64, count=3*lengths[iring]).reshape(-1,3)]
+          assoclisti.append(np.fromfile(ringfile, dtype=np.int32, count=lengths[iring]))
+          breaklisti.append(np.fromfile(ringfile, dtype=np.int32, count=lengths[iring]))
+          ringlisti.append(np.fromfile(ringfile, dtype=np.float64, count=3*lengths[iring]).reshape(-1,3))
           iskip = 1
           while iskip + iring < ringsmax and iskip < nskip:
             ringfile.seek(lengths[iring+iskip]*32, 1)
             iskip += 1
           iring += nskip
-        ringlist += [ringlisti]
-        breaklist += [breaklisti]
-        assoclist += [assoclisti]
+        ringlist.append(ringlisti)
+        breaklist.append(breaklisti)
+        assoclist.append(assoclisti)
 
   if breakinfo == True:
     return ringlist, breaklist
