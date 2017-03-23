@@ -7,14 +7,17 @@ module sf_converge_mod
   real(np), allocatable :: bgrid(:,:,:,:)
 
   real(np), dimension(:,:), allocatable :: rnulls
+  real(np), parameter :: rsphere = rspherefact*(1e-1_np)**sig_figs
 
   contains
 
   !********************************************************************************
 
   function trilinear(r,b)
+    ! find the vector b at position r using trilinear method
+
     implicit none
-    !find the value of a function, b, at r=(x,y,z) using the 8 vertices
+    
     real(np) :: b(:,:,:,:)
     real(np) :: r(3)
     real(np) :: cube(2,2,2)
@@ -61,6 +64,8 @@ module sf_converge_mod
   !********************************************************************************
 
   function dot(a,b)
+    ! find the dot product of vectors a and b
+
     implicit none
 
     real(np), dimension(3) :: a, b
@@ -72,6 +77,8 @@ module sf_converge_mod
   !********************************************************************************
 
   function cross(a,b)
+    ! find the cross product of vectors a and b
+
     implicit none
 
     real(np), dimension(3) :: cross, a, b
@@ -84,6 +91,8 @@ module sf_converge_mod
   !********************************************************************************
 
   function modulus(a)
+    ! find the modulus of vector a
+      
     implicit none
 
     real(np) :: a(3)
