@@ -283,21 +283,13 @@ module nf_mod
     real(np) :: a2, b2, c2, d2 !bilinear coefficients (facey)
     real(np) :: a, b, c !quadratic coefficients ax^2+bx+c=0
 
-    real(np), dimension(2,2) :: x, y !x11, x21, y11, y21, x12, x22, y12, y22
+    real(np), dimension(2,2) :: x, y
     real(np) :: det
 
     real(np) :: zcomp
 
     x = -1
     y = -1
-    ! x11 = -1
-    ! y11 = -1
-    ! x21 = -1
-    ! y21 = -1
-    ! x12 = -1
-    ! y12 = -1
-    ! x22 = -1
-    ! y22 = -1
 
     sign = 0
     cross = 0
