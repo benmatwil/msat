@@ -144,7 +144,6 @@ contains
         if (nlines <= nstart .and. sum(endpoints(iline:nlines)) == 0) exit
         if (remove(iline) == 1) then ! if point is flagged to be removed, then remove
           iremove = iline - nremove
-          !$OMP BARRIER
           !$OMP SECTIONS
           !$OMP SECTION
           call remove_vector(line1,iremove)
@@ -174,10 +173,11 @@ contains
   !********************************************************************************
 
   subroutine sep_detect(nlines,nullnum,nring,sign)
-  ! Determine whether a point in a ring is 'near' a null
-  ! If so, integrate it and its neighbours forward to see if any of them diverge around the null (i.e. a separator)
+    ! determine whether a point in a ring is near a null
+    ! if so, integrate it and its neighbours forward to see if any of them diverge around the null to find a separator
 
     implicit none
+
     integer(int32) :: nlines
     integer(int32) :: nullnum ! the null the fan is being drawn from
     integer(int32) :: inull, iline, k
