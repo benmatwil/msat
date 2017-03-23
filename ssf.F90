@@ -45,7 +45,7 @@ program ssfind
   print*,'#                      Separatrix Surface Finder                      #'
   print*,'#######################################################################'
 
-  ! call omp_set_num_threads(nproc) ! have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
+  ! if (nproc > 0) call omp_set_num_threads(nproc)
 
   call filenames
 
@@ -321,13 +321,13 @@ program ssfind
 
       if (nlines > pointsmax) then
       ! exit if too many points on ring
-        print*, 'Too many points on ring', nlines, iring
+        print*, 'Reached maximum number of points'
         exitcondition = .true.
       endif
 
       if (nlines == 0) then
         ! exit if all points have reached outer boundary (left box)
-        print*, 'All fan points have reached the outer boundary', iring
+        print*, 'All points have left the box'
         exitcondition = .true.
       endif
 
@@ -355,11 +355,11 @@ program ssfind
 
     !$OMP SINGLE
     write(10) nperring
+    print*, "Tracing spines and any separators"
 
     ! trace separators...
     write(40, pos=uptonullconn)
     if (nseps > 0) then
-      print*, "Tracing separators"
       do isep = 1, nseps
         read(40) nullnum1, nullnum2, ringnum, linenum
         allocate(rsep(3, ringnum+3))
@@ -389,7 +389,6 @@ program ssfind
     ! enddo
 
     ! Trace spines...
-    print*, "Tracing spines"
     do dir = -1, 1, 2
       out = .false.
       allocate(spine(3,1))
@@ -407,7 +406,7 @@ program ssfind
 
     if (nrings == ringsmax) print*, "Reached maximum number of rings"
 
-    print*, 'number of separators=', nseps, 'number of rings', nrings
+    print*, 'Number of separators:', nseps, 'Number of rings:', nrings
 
     deallocate(xs, ys, zs)
     deallocate(line1, line2, break)
@@ -427,7 +426,6 @@ program ssfind
   close(60)
 
   call system_clock(tstop, count_rate)
-  print*, 'TIME = ', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"
-  print*, 'Done!'
+  print*, 'Time taken:', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"
 
 end program
