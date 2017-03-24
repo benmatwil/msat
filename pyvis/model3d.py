@@ -164,6 +164,8 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(1,1,1
 
     global bgrid, xx, yy, zz, nulldata, ds, filename, nskipglob, nulllist
 
+    if addlist == []: addlist = ['nulls', 'separators', 'spines', 'sepsurf', 'fanlines']
+
     ml.figure(bgcolor=(1,1,1), fgcolor=(0,0,0), size=(800,800))
 
     nskipglob = nskip
