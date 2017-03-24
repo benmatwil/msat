@@ -145,7 +145,7 @@ pro model_add_box
   oModel -> add, obj_new('IDLgrPolyline',line[*,0],line[*,1],line[*,2],color=[0,0,0])
 end
 
-function mk_model_mag_sep,fname,nulls=nulls,separators=separators,$
+function mk_model,fname,nulls=nulls,separators=separators,$
 sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines,nskip=nskip
   common shared_var
 

@@ -85,14 +85,14 @@ function read_separators, filename, conlist=conlist
       readu, sep, length
       separator = dblarr(3, length)
       readu, sep, separator
-      coni = coni + list(end1)
-      sepi = sepi + list(separator)
+      coni.add(end1)
+      sepi.add(separator)
       readu, con, start
     endif
     if inull ne start then begin
       inull++
-      conlist = conlist + list(coni)
-      seplist = seplist + list(sepi)
+      conlist.add(coni)
+      seplist.add(sepi)
       sepi = list()
       coni = list()
     endif
@@ -120,9 +120,9 @@ function read_spines, filename
       readu, spi, length
       spine = dblarr(3, length)
       readu, spi, spine
-      spinelisti = spinelisti + list(spine)
+      spinelisti.add(spine)
     endfor
-    spinelist = spinelist + list(spinelisti)
+    spinelist.add(spinelisti)
   endforeach
 
   close, spi
@@ -167,13 +167,13 @@ function read_rings, filename, nskip=nskip, breaks=breaklist
         iskip++
       endwhile
       iring = iring + nskip
-      assoclisti = assoclisti + list(assocs)
-      breaklisti = breaklisti + list(breaks)
-      ringlisti = ringlisti + list(rings)
+      assoclisti.add(assocs)
+      breaklisti.add(breaks)
+      ringlisti.add(rings)
     endwhile
-    assoclist = assoclist + list(assoclisti)
-    ringlist = ringlist + list(ringlisti)
-    breaklist = breaklist + list(breaklisti)
+    assoclist.add(assoclisti)
+    ringlist.add(ringlisti)
+    breaklist.add(breaklisti)
   endforeach
 
   close, rinfo, ring
