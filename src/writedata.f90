@@ -57,7 +57,7 @@ program writedata
   if (command_argument_count() > 0) then
     do iarg = 1, command_argument_count()
       call get_command_argument(iarg,arg)
-      if (trim(arg) == '-i') then
+      if (trim(arg) == '-o') then
         call get_command_argument(iarg+1,arg)
         outname = trim(arg)
         oc = 1
