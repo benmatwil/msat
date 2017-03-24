@@ -20,9 +20,9 @@ module params
   integer(int32), parameter :: nstart = 500 ! number of startpoints in ring
   integer(int32), parameter :: ringsmax = 10000 ! maximum number of rings
   integer(int32), parameter :: pointsmax = 100000 ! maximum number of points in ring
-  real(np), parameter :: stepsize = 0.025_np ! 0.25_np ! step size h after 50 iterations (otherwise 5 times smaller)
-  real(np), parameter :: tol = 1e-6_np ! 1e-5_np ! tolerance of rkf45 scheme
-  real(np), parameter :: stepmin = 1e-5_np ! 3e-4_np ! minimum step length
+  real(np), parameter :: stepsize = 0.2_np ! step size h after 50 iterations (otherwise 5 times smaller)
+  real(np), parameter :: tol = 1e-6_np ! tolerance of rkf45 scheme
+  real(np), parameter :: stepmin = 1e-5_np ! minimum step length
 
   ! NO NEED TO CHANGE BEYOND HERE (basic parameters/constants)
   real(np), parameter :: pi = acos(-1.0_np)
