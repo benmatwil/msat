@@ -4,10 +4,6 @@ module params
 
   implicit none
 
-  ! data file containing the magnetic field data
-  character(100), parameter :: defaultfilename = 'data/magfield.dat'
-  character(100), parameter :: outputdir = 'output'
-
   ! Number of threads to be used by OpenMP
   integer(int32), parameter :: nproc = 4  ! set to zero to use the environment variable OMP_NUM_THREADS
 
@@ -37,14 +33,10 @@ module params
   
     subroutine filenames
 
-      character(100) :: arg, outname
-      integer(int32) :: iarg, ifname, ic, oc
+      character(50) :: arg, outname
+      integer(int32) :: iarg, ic
 
       ic = 0
-      oc = 0
-      
-      outname = outputdir
-      filein = trim(defaultfilename)
       
       if (command_argument_count() > 0) then
         do iarg = 1, command_argument_count()
@@ -53,27 +45,24 @@ module params
             call get_command_argument(iarg+1,arg)
             filein = trim(arg)
             ic = 1
-          elseif (trim(arg) == '-o') then
-            call get_command_argument(iarg+1,arg)
-            outname = trim(arg)
-          elseif (trim(arg) == '-of') then
-            call get_command_argument(iarg+1,arg)
-            outname = trim(arg)
-            oc = 1
           endif
         enddo
       endif
-
       if (ic == 0) stop 'No input file provided'
+
+      outname = 'output'
+      fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
+        //trim(outname)//'/' &
+        //trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
       
-      if (oc == 0) then
-        fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
-          //trim(outname)//'/' &
-          //trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
-      else
-        if (index(outname, '/', .true.) /= len(trim(outname))) outname = trim(outname)//'/'
-        fileout = trim(outname)//trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
-      endif
+      ! if (oc == 0) then
+      !   fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
+      !     //trim(outname)//'/' &
+      !     //trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
+      ! else
+      !   if (index(outname, '/', .true.) /= len(trim(outname))) outname = trim(outname)//'/'
+      !   fileout = trim(outname)//trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
+      ! endif
 
     end
 
