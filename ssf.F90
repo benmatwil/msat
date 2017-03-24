@@ -1,7 +1,10 @@
 !code to find the separatrix surface and separators of null points
 program ssfind
 
+#if _OPENMP
   use omp_lib
+#endif
+
   use params
   use common
   use trace
@@ -45,7 +48,10 @@ program ssfind
   print*,'#                      Separatrix Surface Finder                      #'
   print*,'#######################################################################'
 
-  ! if (nproc > 0) call omp_set_num_threads(nproc)
+#if _OPENMP
+  if (nproc > 0) call omp_set_num_threads(nproc)
+  print*, 'Using', nproc, 'processors'
+#endif
 
   call filenames
 

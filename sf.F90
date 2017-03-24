@@ -1,6 +1,10 @@
 ! spine finder with convergence method
 program sf_converge
 
+#if _OPENMP
+  use omp_lib
+#endif
+
   use params
   use sf_converge_mod
 
@@ -24,6 +28,11 @@ program sf_converge
   print*,'#######################################################################'
   print*,'#                             Spinefinder                             #'
   print*,'#######################################################################'
+
+#if _OPENMP
+  if (nproc > 0) call omp_set_num_threads(nproc)
+  print*, 'Using', nproc, 'processors'
+#endif
 
   call filenames
 
