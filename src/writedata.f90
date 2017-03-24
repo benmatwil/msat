@@ -1,60 +1,80 @@
-program writedata_ws
-use params
+program writedata
 
-implicit none
-integer :: i,j,k
-double precision :: b0, L, z0, xc, yc, zc, ll, aa, b1, tt 
-double precision, allocatable, dimension(:,:,:) :: bx, by, bz, ee
-double precision, allocatable, dimension(:) :: x, y, z    !coordinates of grid
+  use params
 
-!xyz grid parameters
-integer, parameter :: nnx=201, nny=201, nnz=601 !size of grid
-! integer, parameter :: nnx=200, nny=200, nnz=600
-double precision, parameter :: xxmin=-2.5d0, xxmax=2.5d0  !xrange
-double precision, parameter :: yymin=-2.5d0, yymax=2.5d0  !yrange
-double precision, parameter :: zzmin=-7.5d0, zzmax=7.5d0  !zrange
+  implicit none
 
-!magnetic field parameters
-!form of magnetic field
-!Bx = (b0/(L^2))*x*(z - 3*z0) 
-!By = (b0/L^2)*y*(z + 3*z0) 
-!Bz = (b0/L^2)*(z0^2 - z^2 + x^2 + y^2) 
+  ! reading in filenames
+  character(50) :: arg, outname
+  integer(int32) :: iarg, oc
 
-allocate(bx(nnx,nny,nnz),by(nnx,nny,nnz),bz(nnx,nny,nnz),ee(nnx,nny,nnz))
-allocate(x(nnx),y(nny),z(nnz))
 
-b0 = 1d0
-L = 1d0
-z0 = 5d0
-b1 = 20d0
-xc = 0d0
-yc = 0d0
-zc = 0d0
-ll = 1d0
-aa = 0.5d0
-tt = 0d0
+  ! loop indices in three directions
+  integer(int32) :: ix, iy, iz
+  ! three components of field
+  real(np), allocatable, dimension(:,:,:) :: bx, by, bz
+  !coordinates of grid
+  real(np), allocatable, dimension(:) :: x, y, z
 
-do k=1,nnz
-  z(k) = zzmin + (zzmax-zzmin)*(k-1)/(nnz-1)
-  !print*, z(k)
-  do j=1,nny
-    y(j) = yymin + (yymax-yymin)*(j-1)/(nny-1)
-    do i=1,nnx
-      x(i) = xxmin + (xxmax-xxmin)*(i-1)/(nnx-1)
-      ee(i,j,k) = exp(-((x(i)-xc)/aa)**2-((y(j)-yc)/aa)**2-((z(k)-zc)/ll)**2)
-      bx(i,j,k) = (b0/(L**2))*x(i)*(z(k) - 3*z0)-tt*(2*b1*(y(j)-yc)/aa)*ee(i,j,k) 
-      by(i,j,k) = (b0/(L**2))*y(j)*(z(k) + 3*z0)+tt*(2*b1*(x(i)-xc)/aa)*ee(i,j,k) 
-      bz(i,j,k) = (b0/(L**2))*(z0**2 - z(k)**2 + 0.5*x(i)**2 + 0.5*y(j)**2)
+  ! grid parameters
+  integer(int32), parameter :: nx = 201, ny = 201, nz = 601 ! size of grid
+  real(np), parameter :: xxmin = -2.5_np, xxmax = 2.5_np  !xrange
+  real(np), parameter :: yymin = -2.5_np, yymax = 2.5_np  !yrange
+  real(np), parameter :: zzmin = -7.5_np, zzmax = 7.5_np  !zrange
+
+  ! specific field parameters
+  real(np), allocatable, dimension(:,:,:) :: ee
+  real(np), parameter :: xc = 0.0_np, yc = 0.0_np, zc = 0.0_np, aa = 0.5_np, ll = 1.0_np
+  real(np), parameter :: b0 = 1.0_np, L = 1.0_np, z0 = 5.0_np
+  real(np), parameter :: b1 = 20.0_np, tt = 0.0_np
+ 
+  ! form of current ring magnetic field (without time dependence)
+  ! Bx = (b0/(L^2))*x*(z - 3*z0) 
+  ! By = (b0/L^2)*y*(z + 3*z0) 
+  ! Bz = (b0/L^2)*(z0^2 - z^2 + x^2 + y^2) 
+
+  allocate(bx(nx, ny, nz), by(nx, ny, nz), bz(nx, ny, nz))
+  allocate(ee(nx, ny, nz))
+  allocate(x(nx), y(ny), z(nz))
+
+  do iz = 1, nz
+    z(iz) = zzmin + (zzmax - zzmin)*(iz - 1)/(nz - 1)
+    do iy = 1, ny
+      y(iy) = yymin + (yymax - yymin)*(iy - 1)/(ny - 1)
+      do ix = 1, nx
+        x(ix) = xxmin + (xxmax - xxmin)*(ix - 1)/(nx - 1)
+        ee(ix, iy, iz) = exp(-((x(ix) - xc)/aa)**2-((y(iy) - yc)/aa)**2-((z(iz) - zc)/ll)**2)
+        bx(ix, iy, iz) = (b0/(L**2))*x(ix)*(z(iz) - 3*z0) - &
+          tt*(2*b1*(y(iy) - yc)/aa)*ee(ix, iy, iz) 
+        by(ix, iy, iz) = (b0/(L**2))*y(iy)*(z(iz) + 3*z0) + &
+          tt*(2*b1*(x(ix) - xc)/aa)*ee(ix, iy, iz) 
+        bz(ix, iy, iz) = (b0/(L**2))*(z0**2 - z(iz)**2 + 0.5_np*x(ix)**2 + 0.5_np*y(iy)**2)
+      enddo
     enddo
   enddo
-enddo
 
-call filenames
+  oc = 0
+  if (command_argument_count() > 0) then
+    do iarg = 1, command_argument_count()
+      call get_command_argument(iarg,arg)
+      if (trim(arg) == '-i') then
+        call get_command_argument(iarg+1,arg)
+        outname = trim(arg)
+        oc = 1
+      endif
+    enddo
+  endif
 
-open (unit=10,file=filein,access='stream')
-write(10) nnx, nny, nnz
-write(10) bx,by,bz
-write(10) x, y, z
-close(10)
+  if (oc == 1) then
+    outname = 'data/'//trim(outname)
+  else
+    outname = 'data/magfield.dat'
+  endif
+
+  open(unit=10, file=trim(outname), access='stream', status='replace')
+    write(10) nx, ny, nz
+    write(10) bx, by, bz
+    write(10) x, y, z
+  close(10)
 
 end
