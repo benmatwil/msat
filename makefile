@@ -58,6 +58,11 @@ check:
 #	@echo "Current number of OpenMP threads: $(OMP_NUM_THREADS)"
 #	@echo "Using coordinate system: $(coord)"
 
+doc: doc/manual.tex
+	pdflatex doc/manual
+	@pdflatex doc/manual
+	@rm -f doc/*.aux doc/*.log doc/*.out
+
 setup:
 	@rm -f data output
 	ln -s -f $(DATADIR) data

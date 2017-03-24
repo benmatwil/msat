@@ -1,15 +1,168 @@
-Writing to files
-Example of file writing in fortran/idl
-File writing from LARE
+\documentclass[12pt]{article}
 
-Setup
-symobolic linking/actual folders. Maybe easier always to use symbolic links
+% \usepackage{mathtools}
+% \usepackage{graphicx}
+\usepackage{parskip}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+% \usepackage{tikz}
+% \usepackage{float}
+% \usepackage{amssymb}
+% \usepackage{subfig}
+\usepackage[hidelinks]{hyperref}
+% \usepackage[citestyle=authoryear, style=authoryear]{biblatex}
+% \usepackage{siunitx}
+% \addbibresource{thesis.bib}
 
-make file
+% \usetikzlibrary{3d,calc,intersections,patterns,positioning}
 
-nf
-sf
-ssf
-hcs/bp
+\raggedright
+\linespread{1.3}
 
-python/idl plotting
+\author{Benjamin Williams}
+\title{Skeleton Finding Code Manual}
+
+\begin{document}
+
+  \maketitle
+
+  \section{Introduction}
+
+    The following manual describes the usage and set-up of these Skeleton Finding Codes written in modern Fortran and are parallelised using OpenMP. The main codes are a nullfinder, a spinefinder and separatrix surface finder which will all be described individually later. There are also codes to calculate the heliospheric current sheet curtains and bald patches in solar magnetic field analysis in spherical geometry. The codes can be run in cartesian, cylindrical and spherical geometry as required although running in cylindrical coordinates in currently untested. The package also provides visualisation codes for Python and IDL and have been tested using Python 3.5 and IDL 8.5.
+    
+    It is recommended the codes are stored in a different location to data such as a home directory and then use symbolic links to redirect the storage areas of the codes. Then many copies of the codes do not need to be created and the codes can be relinked to wherever the analysis is required to be done. 
+
+    \section{Compilation and Set-up}
+
+    A makefile is provided to compile all the codes. First it is recommended to setup up directories for the data files and output to be stored in. The codes assume that all the original magnetic field data files are stored in a directory called data and all output is stored in output within the main directory of the codes. It is recommended a symbolic link is set-up to link the code directory and where the data is stored. This can be done using the command:
+
+    \texttt{make setup data=/path/to/data/directory output=/path/to/output/directory}
+
+    This will create the symbolic links data and output and create a mod directory for the Fortran module files to be stored.
+
+    Then issuing the command \texttt{make} will initiate compilation of all codes and create compiled executables \texttt{writedata}, \texttt{nf}, \texttt{sf}, \texttt{ssf}, \texttt{hcs} and \texttt{bp} and by default will compile for cartesian coordinates.
+
+    \subsection{Options}
+
+      To switch coordinate systems, you specify the coordinate system at compilation time. To compile in spherical coordinates you type
+
+      \texttt{make coord=spherical}
+
+      and the other options are cartesian (default if coord is not specified) and cylindrical.
+
+      Debug mode may be enabled which prints more data to the terminal, optimises the code less and enables Fortran debuging options. This is enabled using \texttt{debug=on}.
+
+      OpenMP may be turned off using \texttt{openmp=off}. It is on by default.
+
+  \section{Preparing the data}
+
+    All the codes here require a 3D vector magnetic field, its grid size and corresponding coordinates of the grid points. The data file it is stored in must be a binary unformated data file with 32-bit (long) integers and 64-bit (double precision) floating point numbers. The file must be written to file in the following order:
+    \begin{enumerate}
+      \item integers: \( n_x \), \( n_y \) and \( n_z \)
+      \item floating point 3D arrays: \( B_x \), \( B_y \) and \( B_z \)
+      \item floating point 1D arrays: \( x \), \( y \) and \( z \)
+    \end{enumerate}
+    The arrays must be also be written in fortran order rather than C order.
+
+    An example of writing to file in both IDL (fortran order) and python (C order) follows assuming the arrays are in their default memory orders for each language respectively. The magnetic field compenent arrays are \texttt{bx}, \texttt{by} and \texttt{bz} of size \texttt{nx} by \texttt{ny} by \texttt{nz} and coordinate grids \texttt{x}, \texttt{y} and \texttt{z}.
+
+    IDL:
+
+    \texttt{openw, 10, 'data/magfield.dat'}
+
+    \texttt{writeu, 10, long(nx), long(ny), long(nz)}
+
+    \texttt{writeu, 10, bx, by, bz}
+
+    \texttt{writeu, 10, x, y, z}
+
+    \texttt{close, 10}
+
+    Python:
+
+    \texttt{with io.open('data/magfield', 'wb') as file:}
+
+    \texttt{\ \ \ \ bx.T.tofile(file)}
+
+    \texttt{    by.T.tofile(file)}
+    
+    \texttt{    bz.T.tofile(file)}
+    
+    \texttt{    x.T.tofile(file)}
+    
+    \texttt{    y.T.tofile(file)}
+    
+    \texttt{    z.T.tofile(file)}
+
+    An example in fortran is given in src/writedata.f90.
+
+    The equivalent data in spherical and cylindrical coordinates can be written to file in the usual orders \( r \), \( \theta \), \( \phi \) in spherical and \( r \), \( \phi \), \( z \) in cylindrical coordinates.
+
+    \subsection{Data from Lare3D}
+
+      Magnetic fields from from Lare3D can also be used with a bit of conversion since all the magnetic field components need to be moved to the centres of the grid cells. The following IDL code will do this conversion:
+
+      \texttt{d = getdata(0, /magnetic\_field, /grid) ; fetch Lare3D data file 0}
+
+      \texttt{nx = n\_elements(d.x) \& ny = n\_elements(d.y) \& nz = n\_elements(d.z) ; get sizes of the grids}
+
+      \texttt{bx = (d.bx[1:-1,*,*] + d.bx[0:-2,*,*])/2 \& by = (d.by[*,1:-1,*] + d.by[*,0:-2,*])/2 \& bz = (d.bz[*,*,1:-1] + d.bz[*,*,0:-2])/2 ; move magnetic field values to the same positions}
+
+      \texttt{x = d.x \& y = d.y \& z = d.z ; store the coordinate arrays.}
+
+      These variables can now be written to file as above.
+
+  \section{The Main Codes}
+
+    The three main codes to run are the null finder \texttt{nf}, spine finder \texttt{sf} and separatrix surface finder \texttt{ssf}. Each are run using the command
+
+    \texttt{<finder> -i data/fieldfile.dat}
+
+    They must be run in the order \texttt{nf}, \texttt{sf} and \texttt{ssf}. \texttt{nf} first finds the locations of the null points and writes these to file, \texttt{sf} then uses these locations to look for a spine and fan vector for each null point and then \texttt{ssf} uses the null locations and vectors to trace out separatrix surfaces for each null and identify separators. \texttt{ssf} also traces the spines using the same tracing algorithm and writes them to file. The three all use grid coordinates during the routines.
+
+    All options for these are in \texttt{params.f90} and are described here.
+
+    The first changeable parameter is \texttt{nproc}. This specifies the number of processors that OpenMP requests.
+
+    Next are the parameters for each of the codes. 
+    
+    For nullfinder, \texttt{zero} specifies what the code considers to be zero and \texttt{sig\_figs} specifies to what accuracy in the significant figures the code finds the nulls in grid coordinates. So \texttt{sig\_figs = 6} means it finds the null location to an accuracy of \( 10^{-6} \) of a grid cell.
+
+    For spinefinder, there are three parameters. \texttt{rspherefact} specifies what multiple of the accuracy away from the null location it calculates the field to find the spine and fan vectors. \texttt{rspherefact = 50} and \texttt{sig\_figs = 6} means it will set the radius of the sphere to be \( 50 \times 10^{-6} \). \texttt{nphi} and \texttt{ntheta} specify how many points in the \( \theta \) and \( \phi \) direction are placed inititially around the null for convergence.
+
+    For separatrix surface finder, there 2 different sets of parameters available. One set relate to how many points are traced and the other are related to the rkf45 integration scheme. \texttt{nstart} specifies how many points are placed on the initial ring and how many points it will try to keep in separatrix surface analysis. \texttt{ringsmax} specifies what is the maximum number of rings that if reached, the code will move onto the next null. \texttt{pointsmax} specifies what is the maximum number points on a ring. The code will again move onto the next ring if it reaches this number. The other set relating to the rkf45 scheme are the \texttt{stepsize} which is how far each of rings are traced at each iteration in grid coordinates. \texttt{tol} and \texttt{stepmin} are...
+  
+    The three codes output the files 
+    \begin{itemize}
+      \item \texttt{output/<originaldatafile>-nullpos.dat}
+      \item \texttt{output/<originaldatafile>-nulldata.dat}
+      \item \texttt{output/<originaldatafile>-ringinfodat}
+      \item \texttt{output/<originaldatafile>-rings.dat}
+      \item \texttt{output/<originaldatafile>-connectivity.dat}
+      \item \texttt{output/<originaldatafile>-separators.dat}
+      \item \texttt{output/<originaldatafile>-spines.dat}
+    \end{itemize}
+
+  \section{hcs and bp and makecut}
+
+  \section{Visualisation routines}
+
+    There are visualisation routines written in idl and python in the \texttt{idlvis} and \texttt{pyvis} directories respectively.
+
+
+\end{document}
+
+% Writing to files
+% Example of file writing in fortran/idl
+% File writing from LARE
+
+% Setup
+% symobolic linking/actual folders. Maybe easier always to use symbolic links
+
+% make file
+
+% nf
+% sf
+% ssf
+% hcs/bp
+
+% python/idl plotting
