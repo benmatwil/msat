@@ -77,4 +77,6 @@ program writedata
     write(10) x, y, z
   close(10)
 
+  print*, 'Done, wrote field to '//trim(outname)
+
 end program
