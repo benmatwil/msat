@@ -1,5 +1,5 @@
 !module for the spinefinder
-module sf_converge_mod
+module sf_mod
   use params
   implicit none
 

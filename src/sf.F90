@@ -1,12 +1,12 @@
 ! spine finder with convergence method
-program sf_converge
+program sf
 
 #if _OPENMP
   use omp_lib
 #endif
 
   use params
-  use sf_converge_mod
+  use sf_mod
 
   implicit none
 
@@ -129,7 +129,7 @@ end program
 
 !characterise each null
 subroutine get_properties(inull,sign,spine,fan,warning,savedata)
-  use sf_converge_mod
+  use sf_mod
 
   implicit none
   integer(int32) :: itheta, iphi, itry, ifan, idense
