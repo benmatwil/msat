@@ -55,6 +55,7 @@ make_cut : params.f90 src/common.F90 src/make_cut.f90
 ###########################################################
 
 setup:
+	@rm -f data output
 	ln -s -f $(DATADIR) data
 	ln -s -f $(OUTPUTDIR) output
 	@mkdir -p mod
