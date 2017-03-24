@@ -27,9 +27,9 @@ else
 	OUTPUTDIR = $(output)
 endif
 
-all: writedata nf sf ssf hcs bp make_cut
-	@echo "Current number of OpenMP threads: $(OMP_NUM_THREADS)"
-	@echo "Using coordinate system: $(coord)"
+ALLEXE = writedata nf sf ssf hcs bp make_cut
+
+all: $(ALLEXE) check
 	
 writedata : params.f90 src/writedata.f90
 	$(FC) $(FLAGS) $^ -o $@
@@ -54,6 +54,10 @@ make_cut : params.f90 src/common.F90 src/make_cut.f90
 
 ###########################################################
 
+check:
+#	@echo "Current number of OpenMP threads: $(OMP_NUM_THREADS)"
+#	@echo "Using coordinate system: $(coord)"
+
 setup:
 	@rm -f data output
 	ln -s -f $(DATADIR) data
@@ -61,10 +65,12 @@ setup:
 	@mkdir -p mod
 
 clean:
-	@rm -rf mod/*.mod nf sf ssf hcs bp make_cut
+	@rm -rf mod/*.mod $(ALLEXE)
 
 tidy:
 	@rm -rf output/*.dat
+
+.PHONY: check
 
 ###########################################################
 
