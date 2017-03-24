@@ -77,4 +77,4 @@ program writedata
     write(10) x, y, z
   close(10)
 
-end
+end program
