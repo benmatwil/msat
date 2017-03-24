@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from . import read as rd
-import os
+import os, io
 from random import shuffle
 
 plt.ion()
@@ -54,7 +54,7 @@ def spines(labels=False):
 
   cols = {-1:'blue', 0:'green', 1:'red'}
 
-  with open('output/'+prefile+'-cut_spines.dat', 'rb') as spinefile:
+  with io.open('output/'+prefile+'-cut_spines.dat', 'rb') as spinefile:
     inull = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
     while inull > 0:
       spine = np.fromfile(spinefile, dtype=np.float64, count=3)
@@ -68,7 +68,7 @@ def spines(labels=False):
 def separators(labels=False):
   global prefile
 
-  with open('output/'+prefile+'-cut_seps.dat', 'rb') as sepfile:
+  with io.open('output/'+prefile+'-cut_seps.dat', 'rb') as sepfile:
     null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
     while null > 0:
       sep = np.fromfile(sepfile, dtype=np.float64, count=3)
@@ -77,7 +77,7 @@ def separators(labels=False):
         plt.text(sep[2], sep[1], f'{null}')
       null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
 
-  with open('output/'+prefile+'-cut_seps_hcs.dat', 'rb') as sepfile:
+  with io.open('output/'+prefile+'-cut_seps_hcs.dat', 'rb') as sepfile:
     null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
     while null > 0:
       sep = np.fromfile(sepfile, dtype=np.float64, count=3)
@@ -104,7 +104,7 @@ def rings(dots=False, labels=False):
       ipos += 1
     colors = colors + [col]
 
-  with open('output/'+prefile+'-cut_rings.dat', 'rb') as ringfile:
+  with io.open('output/'+prefile+'-cut_rings.dat', 'rb') as ringfile:
     inull = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
     while inull >= 0:
       length = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
@@ -121,7 +121,7 @@ def rings(dots=False, labels=False):
 def hcs(dots=False):
   global prefile
 
-  with open('output/'+prefile+'-cut_hcs.dat', 'rb') as hcsfile:
+  with io.open('output/'+prefile+'-cut_hcs.dat', 'rb') as hcsfile:
     length = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
     while length >= 0:
       print(length)
