@@ -8,7 +8,6 @@ program writedata
   character(50) :: arg, outname
   integer(int32) :: iarg, oc
 
-
   ! loop indices in three directions
   integer(int32) :: ix, iy, iz
   ! three components of field
