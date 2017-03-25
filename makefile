@@ -61,7 +61,7 @@ check:
 doc: doc/manual.tex
 	pdflatex doc/manual
 	@pdflatex doc/manual
-	@rm -f doc/*.aux doc/*.log doc/*.out
+	@rm -f *.aux *.log *.out
 
 setup:
 	@rm -f data output

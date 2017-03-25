@@ -12,6 +12,7 @@
 % \usepackage[citestyle=authoryear, style=authoryear]{biblatex}
 % \usepackage{siunitx}
 % \addbibresource{thesis.bib}
+\usepackage{setspace}
 
 % \usetikzlibrary{3d,calc,intersections,patterns,positioning}
 
@@ -33,67 +34,66 @@
 
     \section{Compilation and Set-up}
 
-    A makefile is provided to compile all the codes. First it is recommended to setup up directories for the data files and output to be stored in. The codes assume that all the original magnetic field data files are stored in a directory called data and all output is stored in output within the main directory of the codes. It is recommended a symbolic link is set-up to link the code directory and where the data is stored. This can be done using the command:
+    A makefile is provided to compile all the codes. First it is recommended to set-up the directories for the data files and output to be stored in. The codes assume that all the original magnetic field data files are stored in a directory called \texttt{data} and all output is stored in \texttt{output} within the main directory of the codes. It is recommended a symbolic links are created to link the code directory and where the data is stored. This can be done using the command:
 
     \texttt{make setup data=/path/to/data/directory output=/path/to/output/directory}
 
-    This will create the symbolic links data and output and create a mod directory for the Fortran module files to be stored.
+    This will create the symbolic links called \texttt{data} and \texttt{output} linking to the specified directories and create a \texttt{mod} directory for the Fortran module files to be stored.
 
-    Then issuing the command \texttt{make} will initiate compilation of all codes and create compiled executables \texttt{writedata}, \texttt{nf}, \texttt{sf}, \texttt{ssf}, \texttt{hcs} and \texttt{bp} and by default will compile for cartesian coordinates.
+    Then issuing the command \texttt{make} will initiate compilation of all codes and create compiled executables \texttt{writedata}, \texttt{nf}, \texttt{sf}, \texttt{ssf}, \texttt{hcs} and \texttt{bp} and by default will compile for cartesian coordinates with OpenMP turned on.
 
     \subsection{Options}
 
-      To switch coordinate systems, you specify the coordinate system at compilation time. To compile in spherical coordinates you type
+      The main option to change at compilation is the coordinate system of the data. To switch coordinate systems, you specify the coordinate system at compilation time. To compile in spherical coordinates you type
 
       \texttt{make coord=spherical}
 
-      and the other options are cartesian (default if coord is not specified) and cylindrical.
+      and the other options are \texttt{cartesian} (default if \texttt{coord} is not specified) and \texttt{cylindrical}.
 
-      Debug mode may be enabled which prints more data to the terminal, optimises the code less and enables Fortran debuging options. This is enabled using \texttt{debug=on}.
+      Debugging mode may be enabled which prints more data to the terminal, optimises the code less and enables Fortran debuging options. This is enabled using \texttt{debug=on}.
 
-      OpenMP may be turned off using \texttt{openmp=off}. It is on by default.
+      OpenMP may be turned off using \texttt{openmp=off}. It is on by default. The number of processors can be selected in the params.f90 file, Fortran will request the required number of processors on execution of the programs.
 
   \section{Preparing the data}
 
-    All the codes here require a 3D vector magnetic field, its grid size and corresponding coordinates of the grid points. The data file it is stored in must be a binary unformated data file with 32-bit (long) integers and 64-bit (double precision) floating point numbers. The file must be written to file in the following order:
+    All the codes here require a 3D vector magnetic field, its grid size and corresponding coordinates of the grid points. The data must be stored in a binary unformatted data file and written in the following order:
+    %  with 32-bit (long) integers and 64-bit (double precision) floating point numbers
     \begin{enumerate}
-      \item integers: \( n_x \), \( n_y \) and \( n_z \)
-      \item floating point 3D arrays: \( B_x \), \( B_y \) and \( B_z \)
-      \item floating point 1D arrays: \( x \), \( y \) and \( z \)
+      \item three 32-bit (long) integers, \( n_1 \), \( n_2 \) and \( n_3 \), containing the three dimensions of the grid
+      \item three 64-bit (double precision) floating point \( n_1 \times n_2 \times n_3 \) arrays, \( B_1 \), \( B_2 \) and \( B_3 \), containing the magnetic field values for each direction.
+      \item three 64-bit (double precision) floating point 1D arrays, \( x_1 \), \( x_2 \) and \( x_3 \), containing the coordinates of each grid dimension.
     \end{enumerate}
-    The arrays must be also be written in fortran order rather than C order.
+    The 3D arrays must be also be written in fortran order rather than C order.
 
-    An example of writing to file in both IDL (fortran order) and python (C order) follows assuming the arrays are in their default memory orders for each language respectively. The magnetic field compenent arrays are \texttt{bx}, \texttt{by} and \texttt{bz} of size \texttt{nx} by \texttt{ny} by \texttt{nz} and coordinate grids \texttt{x}, \texttt{y} and \texttt{z}.
+    An example of writing to file in both IDL (Fortran order) and Python (C order) follows assuming the arrays are in their default memory orders for each language respectively. This simply requires a transpose of the arrays in numpy to switch them to Fortran order. There is also the option to create arrays in numpy in Fortran order using the \texttt{order='F'} keyword argument in the following numpy command
+    \texttt{np.array((101,101,201), dtype=np.float64, order='F')}. However I do not know whether this has the required effect when writing to file.
+    
+    Assuming we have the magnetic field compenent arrays stored as \texttt{bx}, \texttt{by} and \texttt{bz} of size \texttt{nx} by \texttt{ny} by \texttt{nz} and coordinate grids \texttt{x}, \texttt{y} and \texttt{z} with the correct bit sizes, you can save the data to file using:
 
     IDL:
 
-    \texttt{openw, 10, 'data/magfield.dat'}
-
-    \texttt{writeu, 10, long(nx), long(ny), long(nz)}
-
-    \texttt{writeu, 10, bx, by, bz}
-
-    \texttt{writeu, 10, x, y, z}
-
-    \texttt{close, 10}
+    \begin{verbatim}
+    IDL> openw, 10, 'data/magfield.dat'
+    IDL> writeu, 10, long([nx, ny, nz])
+    IDL> writeu, 10, bx, by, bz
+    IDL> writeu, 10, x, y, z
+    IDL> close, 10
+    \end{verbatim}
 
     Python:
 
-    \texttt{with io.open('data/magfield', 'wb') as file:}
+    \begin{verbatim}
+    >>> with io.open('data/magfield.dat', 'wb') as file:
+    ...     np.array([nx, ny, nz], dtype=np.int32).tofile(file)
+    ...     bx.T.tofile(file)
+    ...     by.T.tofile(file)
+    ...     bz.T.tofile(file)
+    ...     x.tofile(file)
+    ...     y.tofile(file)
+    ...     z.tofile(file)
+    \end{verbatim}
 
-    \texttt{\ \ \ \ bx.T.tofile(file)}
-
-    \texttt{    by.T.tofile(file)}
-    
-    \texttt{    bz.T.tofile(file)}
-    
-    \texttt{    x.T.tofile(file)}
-    
-    \texttt{    y.T.tofile(file)}
-    
-    \texttt{    z.T.tofile(file)}
-
-    An example in fortran is given in src/writedata.f90.
+    An example in Fortran is given in \texttt{src/writedata.f90}.
 
     The equivalent data in spherical and cylindrical coordinates can be written to file in the usual orders \( r \), \( \theta \), \( \phi \) in spherical and \( r \), \( \phi \), \( z \) in cylindrical coordinates.
 
@@ -101,13 +101,16 @@
 
       Magnetic fields from from Lare3D can also be used with a bit of conversion since all the magnetic field components need to be moved to the centres of the grid cells. The following IDL code will do this conversion:
 
-      \texttt{d = getdata(0, /magnetic\_field, /grid) ; fetch Lare3D data file 0}
-
-      \texttt{nx = n\_elements(d.x) \& ny = n\_elements(d.y) \& nz = n\_elements(d.z) ; get sizes of the grids}
-
-      \texttt{bx = (d.bx[1:-1,*,*] + d.bx[0:-2,*,*])/2 \& by = (d.by[*,1:-1,*] + d.by[*,0:-2,*])/2 \& bz = (d.bz[*,*,1:-1] + d.bz[*,*,0:-2])/2 ; move magnetic field values to the same positions}
-
-      \texttt{x = d.x \& y = d.y \& z = d.z ; store the coordinate arrays.}
+      \begin{verbatim}
+    IDL> d = getdata(0, /magnetic_field, /grid)
+    IDL> nx = n_elements(d.x)
+    IDL> ny = n_elements(d.y)
+    IDL> nz = n_elements(d.z)
+    IDL> bx = (d.bx[1:-1,*,*] + d.bx[0:-2,*,*])/2
+    IDL> by = (d.by[*,1:-1,*] + d.by[*,0:-2,*])/2
+    IDL> bz = (d.bz[*,*,1:-1] + d.bz[*,*,0:-2])/2
+    IDL> x = d.x & y = d.y & z = d.z
+      \end{verbatim}
 
       These variables can now be written to file as above.
 
