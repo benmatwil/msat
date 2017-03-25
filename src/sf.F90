@@ -1,5 +1,5 @@
 ! spine finder with convergence method
-program sf
+program spinefinder
 
 #if _OPENMP
   use omp_lib

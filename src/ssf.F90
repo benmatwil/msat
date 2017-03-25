@@ -1,5 +1,5 @@
 !code to find the separatrix surface and separators of null points
-program ssfind
+program ssfinder
 
 #if _OPENMP
   use omp_lib
