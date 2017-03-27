@@ -34,7 +34,7 @@ def plot(filename, layout=None, labels=False, save=False):
     for jnull in cnulls:
       g.add_edge(inull, jnull-1, color=g.vs[inull]['color'])
   
-  if os.path.isfile('output/'+prefile+'-connectivity-hcs.dat'):
+  if os.path.isfile('output/'+prefile+'-hcs-connectivity.dat'):
     conhcs = rd.separators(filename, lines=False, hcs=True)
     for ihcs, connect in enumerate(conhcs):
       if len(connect) > 0:

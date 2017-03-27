@@ -1,5 +1,8 @@
 import numpy as np
 import io
+import glob
+
+files = glob.glob('data/*.dat').sort()
 
 def prefix(filename):
     return filename[5:-4]
@@ -71,8 +74,8 @@ def separators(filename, lines=True, connectivity=True, hcs=False):
         connectivityfile = 'output/'+prefix(filename)+'-connectivity.dat'
         separatorsfile = 'output/'+prefix(filename)+'-separators.dat'
     else:
-        connectivityfile = 'output/'+prefix(filename)+'-connectivity-hcs.dat'
-        separatorsfile = 'output/'+prefix(filename)+'-separators-hcs.dat'
+        connectivityfile = 'output/'+prefix(filename)+'-hcs-connectivity.dat'
+        separatorsfile = 'output/'+prefix(filename)+'-hcs-separators.dat'
 
     conlist = []
     seplist = []

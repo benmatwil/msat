@@ -14,7 +14,7 @@ program hcs
 
   real(np) :: r(3)
   real(np) :: h, h0
-  real(np) :: slowdown
+  real(np) :: slowdown, slowdist
   integer(int32) :: nearflag
 
   integer(int32) :: iring, iline, inull, jnull, dir
@@ -136,13 +136,13 @@ program hcs
   uptonullconn = 1
 
   ! stores all info regarding size of rings
-  open(unit=10,file=trim(fileout)//'-ringinfo-hcs.dat',status='replace',access='stream')
+  open(unit=10,file=trim(fileout)//'-hcs-ringinfo.dat',status='replace',access='stream')
   ! stores all the coordinates of rings in original coordinate system
-  open(unit=20,file=trim(fileout)//'-rings-hcs.dat',status='replace',access='stream')
+  open(unit=20,file=trim(fileout)//'-hcs-rings.dat',status='replace',access='stream')
   ! stores all the connection info about each separator
-  open(unit=40,file=trim(fileout)//'-connectivity-hcs.dat',status='replace',access='stream')
+  open(unit=40,file=trim(fileout)//'-hcs-connectivity.dat',status='replace',access='stream')
   ! stores all the coordinates of the separator lines in original coordinate system
-  open(unit=50,file=trim(fileout)//'-separators-hcs.dat',status='replace',access='stream')
+  open(unit=50,file=trim(fileout)//'-hcs-separators.dat',status='replace',access='stream')
 
   ! calculate the points along the hcs line
   nsplit = 10
@@ -339,9 +339,10 @@ program hcs
         !$OMP END DO
 
         !$OMP SINGLE
-        maxdist = h0*slowdown
+        maxdist = 0.5_np*h0*slowdown
         nulldist = 2*h0*slowdown
         mindist = maxdist/3
+        slowdist = 2.0*nulldist
         !$OMP END SINGLE
 
         ! remove points from ring if necessary
@@ -360,8 +361,8 @@ program hcs
         do iline = 1, nlines
           do jnull = 1, nnulls
             if (signs(jnull) == dir) cycle
-            if (dist(rnulls(:,jnull), line1(:, iline)) < 2.5*nulldist .or. &
-              dist(rnullsalt(:,jnull), line1(:, iline)) < 2.5*nulldist) then
+            if (dist(rnulls(:,jnull), line1(:, iline)) < slowdist .or. &
+              dist(rnullsalt(:,jnull), line1(:, iline)) < slowdist) then
               nearnull(iline) = 1
               exit
             endif
