@@ -100,7 +100,6 @@ def add_separators():
     nskip0 = nskipglob//2
 
     for inull in nulllist:
-        print(inull)
         for con, sep in zip(conn[inull], seps[inull]):
             if con-1 in nulllist:
                 ml.plot3d(sep[::nskip0, 0], sep[::nskip0, 1], sep[::nskip0, 2], color=(0,1,0), line_width=4, tube_radius=None)
