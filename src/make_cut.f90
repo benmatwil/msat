@@ -69,7 +69,6 @@ module make_cut_mod
           deallocate(dists, spinedists)
           ! deallocate(dots, spinedots)
           if (mindist < mindistspine) then
-            if (mindist > 1e-2) print*, mindist
             if (dot(diff, normalise(points(:, imindist(1)) - pordered(:, 1))) < -0.98) then
               exit
             elseif (mindist < disttol) then
