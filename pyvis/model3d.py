@@ -1,9 +1,64 @@
-from __future__ import division
+# from __future__ import division
 import numpy as np
 import mayavi.mlab as ml
 from . import read as rd
 from . import fieldline3d as fl
 import sys
+
+def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(1,1,1), nskip=20,
+    nullrad=1, nfanlines=40, nring=None):
+
+    """Makes a 3D visualisation of the output from Skeleton Codes
+
+        fname: name of the field containing the original magnetic fieldlines
+        addlist: list of features to be plotted e.g. ['nulls', 'separators'] will
+            only plot the nulls and separators
+
+        nulls: if None (default), will plot all nulls, otherwise give a list (starting at 1) of nulls to plot
+            e.g. nulls=list(range(45,65)) for all nulls between 45 and 64 inclusive
+        nullrad: will scale radius of null spheres by this factor (default 1)
+            e.g. nullrad=0.5 will halve the size of the nulls
+        box: if True (default), plots a box otherwise set to False
+        fieldlines: provide a numpy array of shape (3, n) of start points and it will trace magnetic field lines
+        linecolor: color of fieldlines (defaults to black)
+        nskip: how many rings to skip in plotting (also skips points in spines and separators for speed)"""
+
+    global bgrid, xx, yy, zz, nulldata, ds, filename, nskipglob, nulllist
+
+    ml.figure(bgcolor=(1,1,1), fgcolor=(0,0,0), size=(800,800))
+
+    nskipglob = nskip
+
+    filename = fname
+
+    field = rd.field(filename)
+    bgrid = np.zeros((field[0].shape[0], field[0].shape[1], field[0].shape[2], 3), dtype=np.float64)
+    for i in range(3):
+        bgrid[:, :, :, i] = field[i]
+
+    xx = field[3]
+    yy = field[4]
+    zz = field[5]
+
+    ds = min([np.diff(xx).min(), np.diff(yy).min(), np.diff(zz).min()])
+
+    nulldata = rd.nulls(filename)
+
+    if nulls == None:
+        nulllist = list(range(nulldata.number[-1]))
+    else:
+        nulllist = []
+        for inull in nulls:
+            nulllist.append(inull-1)
+
+    if box == True: add_box()
+    if 'nulls' in addlist: add_nulls(nullrad)
+    if 'fanlines' in addlist: add_fanlines(nfanlines, nring)
+    if 'spines' in addlist: add_spines()
+    if 'sepsurf' in addlist: add_sepsurf()
+    if 'separators' in addlist: add_separators()
+    if fieldlines is not None: add_fieldlines(fieldlines, col=linecolor)
+
 
 def add_sepsurf():
     global nskipglob, nulldata
@@ -14,11 +69,15 @@ def add_sepsurf():
 
     cols = {-1:(0.5,0.5,1), 0:(0.5,1,0.5), 1:(1,0.5,0.5)}
 
+    acc = 6
+
     for inull in nulllist:
         print('Null {}'.format(inull+1))
         for iring, ring in enumerate(rings[inull]):
             print('Ring {}'.format(iring*nskipglob))
             sys.stdout.write("\033[F")
+            dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
+            breaks[inull][iring][dists > acc] = 1
             brks = np.r_[[-1], np.where(breaks[inull][iring] == 1)[0], [breaks[inull][iring].shape[0]-1]] + 1
             for ib0, ib1 in zip(brks[:-1], brks[1:]):
                 if ib0 != ib1:
@@ -89,7 +148,13 @@ def add_spines():
 
     for inull in nulllist:
         for spine in spines[inull]:
-            ml.plot3d(spine[::nskip0, 0], spine[::nskip0, 1], spine[::nskip0, 2], color=cols[nulldata[inull].sign], line_width=4, tube_radius=None)
+            spine0 = spine[::nskip0]
+            dists = np.r_[np.sum(np.diff(spine0, axis=0)**2, axis=1), [0]]
+            brks = np.r_[[0], np.where(dists > 6)[0]+1, dists.shape[0]-1]
+            for ib0, ib1 in zip(brks[:-1], brks[1:]):
+                if ib0 != ib1:
+                    ml.plot3d(spine0[ib0:ib1, 0], spine0[ib0:ib1, 1], spine0[ib0:ib1, 2],
+                        color=cols[nulldata[inull].sign], line_width=4, tube_radius=None)
 
 def add_separators():
     global nulldata, nskipglob
@@ -102,7 +167,13 @@ def add_separators():
     for inull in nulllist:
         for con, sep in zip(conn[inull], seps[inull]):
             if con-1 in nulllist:
-                ml.plot3d(sep[::nskip0, 0], sep[::nskip0, 1], sep[::nskip0, 2], color=(0,1,0), line_width=4, tube_radius=None)
+                sep0 = sep[::nskip0]
+                dists = np.r_[np.sum(np.diff(sep0, axis=0)**2, axis=1), [0]]
+                brks = np.r_[[0], np.where(dists > 6)[0]+1, dists.shape[0]-1]
+                for ib0, ib1 in zip(brks[:-1], brks[1:]):
+                    if ib0 != ib1:
+                        ml.plot3d(sep0[ib0:ib1, 0], sep0[ib0:ib1, 1], sep0[ib0:ib1, 2],
+                            color=(0,0.5,0), line_width=6, tube_radius=None)
 
 def add_nulls(size):
     global nulldata
@@ -144,58 +215,5 @@ def add_box():
 
     ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=(0,0,0), tube_radius=None, line_width=1)
 
-def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(1,1,1), nskip=20,
-    nullrad=1, nfanlines=40, nring=None):
-
-    """Makes a 3D visualisation of the output from Skeleton Codes
-
-        fname: name of the field containing the original magnetic fieldlines
-        addlist: list of features to be plotted e.g. ['nulls', 'separators'] will
-            only plot the nulls and separators
-
-        nulls: if None (default), will plot all nulls, otherwise give a list (starting at 1) of nulls to plot
-            e.g. nulls=list(range(45,65)) for all nulls between 45 and 64 inclusive
-        nullrad: will scale radius of null spheres by this factor (default 1)
-            e.g. nullrad=0.5 will halve the size of the nulls
-        box: if True (default), plots a box otherwise set to False
-        fieldlines: provide a numpy array of shape (3, n) of start points and it will trace magnetic field lines
-        linecolor: color of fieldlines (defaults to black)
-        nskip: how many rings to skip in plotting (also skips points in spines and separators for speed)"""
-
-    global bgrid, xx, yy, zz, nulldata, ds, filename, nskipglob, nulllist
-
-    if addlist == []: addlist = ['nulls', 'separators', 'spines', 'sepsurf', 'fanlines']
-
-    ml.figure(bgcolor=(1,1,1), fgcolor=(0,0,0), size=(800,800))
-
-    nskipglob = nskip
-
-    filename = fname
-
-    field = rd.field(filename)
-    bgrid = np.zeros((field[0].shape[0], field[0].shape[1], field[0].shape[2], 3), dtype=np.float64)
-    for i in range(3):
-        bgrid[:, :, :, i] = field[i]
-
-    xx = field[3]
-    yy = field[4]
-    zz = field[5]
-
-    ds = min([np.diff(xx).min(), np.diff(yy).min(), np.diff(zz).min()])
-
-    nulldata = rd.nulls(filename)
-
-    if nulls == None:
-        nulllist = list(range(nulldata.number[-1]))
-    else:
-        nulllist = []
-        for inull in nulls:
-            nulllist.append(inull-1)
-
-    if box == True: add_box()
-    if 'nulls' in addlist: add_nulls(nullrad)
-    if 'fanlines' in addlist: add_fanlines(nfanlines, nring)
-    if 'spines' in addlist: add_spines()
-    if 'sepsurf' in addlist: add_sepsurf()
-    if 'separators' in addlist: add_separators()
-    if fieldlines is not None: add_fieldlines(fieldlines, col=linecolor)
+def save():
+    ml.savefig('figures/' + rd.prefix(filename) + '-model3d.png')
