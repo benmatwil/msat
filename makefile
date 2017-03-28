@@ -67,7 +67,7 @@ setup:
 	@rm -f data output
 	ln -s -f $(DATADIR) data
 	ln -s -f $(OUTPUTDIR) output
-	@mkdir -p mod
+	@mkdir -p mod figures
 
 clean:
 	@rm -rf mod/*.mod $(ALLEXE)
