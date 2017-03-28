@@ -6,8 +6,10 @@ from random import shuffle
 
 plt.ion()
 
+# cols = {-1:'blue', 0:'green', 1:'red'}
+
 def start(r, filename, title=False):
-    global datafile, prefile, nulldata, rstr
+    global datafile, prefile, nulldata, rstr, colors
 
     datafile = filename
     prefile = rd.prefix(filename)
@@ -39,35 +41,40 @@ def start(r, filename, title=False):
     
     plt.title('Cut: ' + datafile + ' r = ' + rstr)
 
-    # plt.axhline(y=np.pi/2, ls='--')
+    negcolors, poscolors = plt.get_cmap('Blues'), plt.get_cmap('Reds')
+    negcolors = [negcolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(nulldata.sign == -1))]
+    poscolors = [poscolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(nulldata.sign == 1))]
+    shuffle(poscolors)
+    shuffle(negcolors)
+    colors, ipos, ineg = [], 0, 0
+    for inull in range(nulldata.number[-1]):
+        if nulldata[inull].sign == -1:
+            col = negcolors[ineg]
+            ineg += 1
+        elif nulldata[inull].sign == 1:
+            col = poscolors[ipos]
+            ipos += 1
+        colors.append(col)
 
-    # _, _, _, _, thetas, phis = rd.field(filename)
-    # for phi in phis:
-    #   plt.axvline(x=phi, ls='--')
-    # for theta in thetas:
-    #   plt.axhline(y=theta, ls='--')
-
-    plt.tight_layout()
+#################################################################
 
 def all(labels=False):
     rings(labels=labels)
+    hcs()
     spines(labels=labels)
     separators(labels=labels)
-    hcs()
 
 #################################################################
 
 def spines(labels=False):
-    cols = {-1:'blue', 0:'green', 1:'red'}
-
     with io.open('output/'+prefile+'-spines-cut_'+rstr+'.dat', 'rb') as spinefile:
         inull = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
         while inull > 0:
             spine = np.fromfile(spinefile, dtype=np.float64, count=3)
-            plt.plot(spine[2], spine[1], '.', c=cols[np.asscalar(nulldata[inull-1].sign)])
+            plt.plot(spine[2], spine[1], '.', c=colors[inull-1])
             if labels == True:
                 plt.text(spine[2], spine[1], '{}'.format(inull), color='green')
-            inull = np.fromfile(spinefile, dtype=np.int32, count=1)
+            inull = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
 
 #################################################################
 
@@ -91,21 +98,6 @@ def separators(labels=False):
 #################################################################
 
 def rings(dots=False, labels=False):
-    negcolors, poscolors = plt.get_cmap('Blues'), plt.get_cmap('Reds')
-    negcolors = [negcolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(nulldata.sign == -1))]
-    poscolors = [poscolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(nulldata.sign == 1))]
-    shuffle(poscolors)
-    shuffle(negcolors)
-    colors, ipos, ineg = [], 0, 0
-    for inull in range(nulldata.number[-1]):
-        if nulldata[inull].sign == -1:
-            col = negcolors[ineg]
-            ineg += 1
-        elif nulldata[inull].sign == 1:
-            col = poscolors[ipos]
-            ipos += 1
-        colors = colors + [col]
-
     with io.open('output/'+prefile+'-rings-cut_'+rstr+'.dat', 'rb') as ringfile:
         inull = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
         while inull >= 0:
@@ -135,11 +127,8 @@ def hcs(dots=False):
 #################################################################
 
 def nulls(labels=False):
-    cols = {-1:'blue', 0:'green', 1:'red'}
-
     for i in range(nulldata.shape[0]):
-        col = cols[nulldata[i].sign]
-        plt.plot(nulldata.pos[i,2], nulldata.pos[i,1], 'x', color=col)
+        plt.plot(nulldata.pos[i,2], nulldata.pos[i,1], 'x', color=colors[i])
         if labels == True:
             plt.text(nulldata.pos[i,2], nulldata.pos[i,1], '{}, {:04f}'.format(i, nulldata.pos[i,0]))
 
