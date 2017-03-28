@@ -2,7 +2,7 @@ import numpy as np
 import io
 import glob
 
-files = glob.glob('data/*.dat').sort()
+files = sorted(glob.glob('data/*.dat'))
 
 def prefix(filename):
     return filename[5:-4]
