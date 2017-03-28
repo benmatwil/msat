@@ -75,7 +75,7 @@ module make_cut_mod
               call add_vector(pordered, points(:, imindist(1)), 1)
               call remove_vector(points, imindist(1))
             elseif (dot(diff, normalise(points(:, imindist(1)) - pordered(:, 1))) > 0.95 .and. &
-              mindist < 3*disttol) then
+              mindist < 5*disttol) then
               call add_vector(pordered, points(:, imindist(1)), 1)
               call remove_vector(points, imindist(1))
             else
