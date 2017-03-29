@@ -288,7 +288,7 @@ contains
 #if debug
                   print*, 'Found a separator', nring, rmap(index-1), nlines, nullnum, inull
 #else
-                  print*, 'Found a separator between the two nulls', nullnum, inull
+                  print*, 'Found a separator between the two nulls', nullnum, inull, nring
 #endif
                   
                   break(rmap(index-1)) = 1 ! disassociate points so that new points don't get added between them as they diverge around the null
@@ -302,7 +302,7 @@ contains
                 endif
               endif
             endif
-            if (count1 == maxcount) break(rmap(index-1)) = 2 ! points appear to be stuck at the null
+            if (count1 == maxcount) break(rmap(index)-1) = 2 ! points appear to be stuck at the null
             count1 = count
           enddo
           deallocate(r, signof, rmap)
