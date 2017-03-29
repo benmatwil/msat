@@ -288,7 +288,7 @@ contains
 #if debug
                   print*, 'Found a separator', nring, rmap(index-1), nlines, nullnum, inull
 #else
-                  print*, 'Found a separator between the two nulls', nullnum, inull, nring
+                  print*, 'Found a separator to null', inull, 'on ring', nring
 #endif
                   
                   break(rmap(index-1)) = 1 ! disassociate points so that new points don't get added between them as they diverge around the null
