@@ -302,7 +302,13 @@ contains
                 endif
               endif
             endif
-            if (count1 == maxcount) break(rmap(index)-1) = 2 ! points appear to be stuck at the null
+            if (count1 == maxcount) then ! points appear to be stuck at the null
+              if (rmap(index) /= 1) then
+                break(rmap(index)-1) = 2
+              else
+                break(nlines) = 2
+              endif
+            endif
             count1 = count
           enddo
           deallocate(r, signof, rmap)
