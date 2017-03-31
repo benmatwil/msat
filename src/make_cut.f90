@@ -127,6 +127,9 @@ program make_cut
 
   integer(int32) :: nspine, dir
 
+  integer(int32) :: ringlun, ringinfolun, ringcutlun, spinelun, seplun, conlun, sepcutlun, spinecutlun
+  integer(int32) :: nulllun, fieldlun
+
   if (command_argument_count() > 0) then
     do iarg = 1, command_argument_count()
       call get_command_argument(iarg,arg)
@@ -145,122 +148,128 @@ program make_cut
 
   call filenames
 
-  open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
-    read(10) nnulls
-  close(10)
+  open(newunit=nulllun, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
+    read(nulllun) nnulls
+  close(nulllun)
 
-  open(unit=10,file=filein,access='stream',status='old')
-    read(10), nx, ny, nz !number of vertices
+  open(newunit=fieldlun,file=filein,access='stream',status='old')
+    read(fieldlun), nx, ny, nz !number of vertices
     allocate(xg(nx), yg(ny), zg(nz))
     ig = 3_int64*4_int64 + 3_int64*int(nx, int64)*int(ny, int64)*int(nz, int64)*8_int64 + 1_int64
-    read(10, pos=ig) xg, yg, zg
-  close(10)
+    read(fieldlun, pos=ig) xg, yg, zg
+  close(fieldlun)
 
   !********************************************************************************
 
   ! for each separator, check whether we cross r=r0 and add point to file
-  open(unit=2, file=trim(fileout)//'-separators-cut_'//rstr//'.dat', access='stream', status='replace')
-  open(unit=40, file=trim(fileout)//'-connectivity.dat', access='stream', status='old')
-  open(unit=50, file=trim(fileout)//'-separators.dat', access='stream', status='old')
-  read(40) flag
+  print*, 'Separators'
+  open(newunit=sepcutlun, file=trim(fileout)//'-separators-cut_'//rstr//'.dat', access='stream', status='replace')
+  open(newunit=conlun, file=trim(fileout)//'-connectivity.dat', access='stream', status='old')
+  open(newunit=seplun, file=trim(fileout)//'-separators.dat', access='stream', status='old')
+  
+  read(conlun) flag
   do while (flag > 0)
-    read(50) npoints
+    read(seplun) npoints
     allocate(line(3,npoints))
-    read(50) line
+    read(seplun) line
     do iline = 1, npoints-1
       nextline = iline+1
       if ((line(1,iline)-r0)*(line(1,nextline)-r0) < 0) then
         s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
         point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
-        write(2) flag, point
+        write(sepcutlun) flag, point
       endif
     enddo
     deallocate(line)
-    read(40) flag, flag, flag, flag
+    read(conlun) flag, flag, flag, flag
   enddo
-  write(2) -1
-  close(2)
-  close(50)
+  write(sepcutlun) -1
+  close(sepcutlun)
+  close(seplun)
 
   !********************************************************************************
 
   ! for each separator, check whether we cross r=r0 and add point to file
-  open(unit=2, file=trim(fileout)//'-hcs-separators-cut_'//rstr//'.dat', access='stream', status='replace')
-  open(unit=40, file=trim(fileout)//'-hcs-connectivity.dat', access='stream', status='old')
-  open(unit=50, file=trim(fileout)//'-hcs-separators.dat', access='stream', status='old')
-  read(40) flag
+  open(newunit=sepcutlun, file=trim(fileout)//'-hcs-separators-cut_'//rstr//'.dat', access='stream', status='replace')
+  open(newunit=conlun, file=trim(fileout)//'-hcs-connectivity.dat', access='stream', status='old')
+  open(newunit=seplun, file=trim(fileout)//'-hcs-separators.dat', access='stream', status='old')
+  
+  read(conlun) flag
   do while (flag > 0)
-    read(50) npoints
+    read(seplun) npoints
     allocate(line(3,npoints))
-    read(50) line
+    read(seplun) line
     do iline = 1, npoints-1
       nextline = iline+1
       if ((line(1,iline)-r0)*(line(1,nextline)-r0) < 0) then
         s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
         point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
-        write(2) flag, point
+        write(sepcutlun) flag, point
       endif
     enddo
     deallocate(line)
-    read(40) flag, flag, flag, flag
+    read(conlun) flag, flag, flag, flag
   enddo
-  write(2) -1
-  close(2)
-  close(50)
+  write(sepcutlun) -1
+  close(sepcutlun)
+  close(seplun)
 
   !********************************************************************************
   
   ! for each spine, check whether we cross r=r0 and add point to file
-  open(unit=3, file=trim(fileout)//'-spines-cut_'//rstr//'.dat', access='stream', status='replace')
-  open(unit=30, file=trim(fileout)//'-spines.dat', access='stream', status='old')
+  print*, 'Spines'
+  open(newunit=spinecutlun, file=trim(fileout)//'-spines-cut_'//rstr//'.dat', access='stream', status='replace')
+  open(newunit=spinelun, file=trim(fileout)//'-spines.dat', access='stream', status='old')
 
   allocate(spines(3, 0))
   
   do inull = 1, nnulls
     ! read in spine
     do dir = 1, 2
-      read(30) nspine
+      read(spinelun) nspine
       allocate(line(3,nspine))
-      read(30) line
+      read(spinelun) line
       do iline = 1, nspine-1
         nextline = iline+1
         if ((line(1,iline)-r0)*(line(1,nextline)-r0) < 0) then
           s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
           point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
-          write(3) inull, point
+          write(spinecutlun) inull, point
           call add_vector(spines, point)
         endif
       enddo
       deallocate(line)
     enddo
   enddo
-  write(3) -1
-  close(3)
-  close(30)
+  write(spinecutlun) -1
+  close(spinecutlun)
+  close(spinelun)
 
   !********************************************************************************
 
   ds = maxval([maxval(yg(2:ny) - yg(1:ny-1)), maxval(zg(2:nz) - zg(1:nz-1))])
 
-  open(unit=1, file=trim(fileout)//'-rings-cut_'//rstr//'.dat', access='stream', status='replace')
-  open(unit=10, file=trim(fileout)//'-ringinfo.dat', access='stream', status='old')
-  read(10) nrings
-  open(unit=20, file=trim(fileout)//'-rings.dat', access='stream', status='old')
+  print*, 'Rings'
+  open(newunit=ringcutlun, file=trim(fileout)//'-rings-cut_'//rstr//'.dat', access='stream', status='replace')
+  open(newunit=ringinfolun, file=trim(fileout)//'-ringinfo.dat', access='stream', status='old')
+  read(ringinfolun) nrings
+  open(newunit=ringlun, file=trim(fileout)//'-rings.dat', access='stream', status='old')
 
   uptonull = 0
   do inull = 1, nnulls
+    print*, inull
     allocate(points(3,0))
-    read(10) nperring
+    read(ringinfolun) nperring
     nrings = count(nperring > 0) - 1
     do iring = nrings, 1, -1
     
       call file_position(iring, nperring, 1, ia, ib, ip)
       allocate(association(nperring(iring)), breaks(nperring(iring)), line(3,nperring(iring)))
-      read(20, pos=uptonull+ia) association, breaks, line
+      read(ringlun, pos=uptonull+ia) association, breaks, line
 
       call file_position(iring-1, nperring, 1, ia, ib, ip)
       allocate(line2(3,nperring(iring-1)))
-      read(20, pos=uptonull+ip) line2
+      read(ringlun, pos=uptonull+ip) line2
 
       do iline = 1, nperring(iring)
         if ((line(1,iline)-r0)*(line2(1,association(iline))-r0) < 0) then
@@ -277,38 +286,38 @@ program make_cut
     uptonull = uptonull + sum(int(nperring, int64))*32_int64
 
     ! print*, size(points, 2)
-    call sortpoints(points, inull, 1)
+    call sortpoints(points, inull, ringcutlun)
     
     deallocate(points)
   enddo
-  write(1) -1
-  close(1)
-  close(10)
-  close(20)
+  write(ringcutlun) -1
+  close(ringcutlun)
+  close(ringinfolun)
+  close(ringlun)
 
   !********************************************************************************
 
   ! for hcs
-  open(unit=10, file=trim(fileout)//'-hcs-ringinfo.dat', access='stream', status='old')
-  open(unit=20, file=trim(fileout)//'-hcs-rings.dat', access='stream', status='old')
-  open(unit=5, file=trim(fileout)//'-hcs-cut_'//rstr//'.dat', access='stream', status='replace')
-  read(10) nrings
+  open(newunit=ringinfolun, file=trim(fileout)//'-hcs-ringinfo.dat', access='stream', status='old')
+  open(newunit=ringlun, file=trim(fileout)//'-hcs-rings.dat', access='stream', status='old')
+  open(newunit=ringcutlun, file=trim(fileout)//'-hcs-cut_'//rstr//'.dat', access='stream', status='replace')
+  read(ringinfolun) nrings
   
   uptonull = 0
   ihcs = 1
   do dir = 1, 2
     allocate(points(3,0))
-    read(10) nperring
+    read(ringinfolun) nperring
     nrings = count(nperring > 0) - 1
     do iring = nrings, 1, -1
     
       call file_position(iring, nperring, 1, ia, ib, ip)
       allocate(association(nperring(iring)), breaks(nperring(iring)), line(3,nperring(iring)))
-      read(20, pos=uptonull+ia) association, breaks, line
+      read(ringlun, pos=uptonull+ia) association, breaks, line
 
       call file_position(iring-1, nperring, 1, ia, ib, ip)
       allocate(line2(3,nperring(iring-1)))
-      read(20, pos=uptonull+ip) line2
+      read(ringlun, pos=uptonull+ip) line2
 
       do iline = 1, nperring(iring)
         if ((line(1,iline)-r0)*(line2(1,association(iline))-r0) < 0) then
@@ -327,12 +336,12 @@ program make_cut
     print*, 'sorting hcs points'
     print*, size(points, 2)
 
-    call sortpoints(points, ihcs, 5)
+    call sortpoints(points, ihcs, ringcutlun)
     deallocate(points)
   enddo
-  write(5) -1
-  close(5)
-  close(10)
-  close(20)
+  write(ringcutlun) -1
+  close(ringcutlun)
+  close(ringinfolun)
+  close(ringlun)
 
 end
