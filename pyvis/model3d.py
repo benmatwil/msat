@@ -61,8 +61,6 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(1,1,1
 
 
 def add_sepsurf():
-    global nskipglob, nulldata
-
     print('Adding separatrix surface rings')
 
     rings, breaks = rd.rings(filename, breakinfo=True, nskip=nskipglob)
@@ -85,8 +83,6 @@ def add_sepsurf():
         sys.stdout.write("\033[F")
 
 def add_fanlines(nlines, nring):
-    global bgrid, xx, yy, zz, ds
-
     print('Adding separatrix surface field lines')
 
     rings = rd.rings(filename, nskip=nskipglob)
@@ -120,8 +116,6 @@ def add_fanlines(nlines, nring):
             ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=cols[nulldata[inull].sign], tube_radius=None)
 
 def add_fieldlines(startpts, col=(0,0,0)):
-    global bgrid, xx, yy, zz, ds
-
     print('Adding separatrix surface field lines')
 
     for ipt in range(startpts.shape[0]):
@@ -137,8 +131,6 @@ def add_fieldlines(startpts, col=(0,0,0)):
         ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=col, tube_radius=None)
 
 def add_spines():
-    global nskipglob, nulldata
-
     print('Adding spines')
 
     cols = {-1:(0,0,1), 0:(0,1,0), 1:(1,0,0)}
@@ -157,8 +149,6 @@ def add_spines():
                         color=cols[nulldata[inull].sign], line_width=4, tube_radius=None)
 
 def add_separators():
-    global nulldata, nskipglob
-
     print('Adding separators')
 
     seps, conn = rd.separators(filename)
@@ -176,8 +166,6 @@ def add_separators():
                             color=(0,0.5,0), line_width=6, tube_radius=None)
 
 def add_nulls(size):
-    global nulldata
-
     print("Adding nulls")
 
     cols = {-1:(0,0,1), 0:(0,1,0), 1:(1,0,0)}
@@ -186,7 +174,7 @@ def add_nulls(size):
 
     r = max([boxsize, ds])
     r = r*size
-    theta, phi = np.mgrid[0:np.pi:101j, 0:2*np.pi:101j]
+    theta, phi = np.mgrid[0:np.pi:16j, 0:2*np.pi:31j]
     x = r * np.sin(theta) * np.cos(phi)
     y = r * np.sin(theta) * np.sin(phi)
     z = r * np.cos(theta)
@@ -195,8 +183,6 @@ def add_nulls(size):
         ml.mesh(x + nulldata[inull].pos[0], y + nulldata[inull].pos[1], z + nulldata[inull].pos[2], color=cols[nulldata[inull].sign])
 
 def add_box():
-    global xx, yy, zz, ds
-
     print("Adding box")
     box = np.zeros((3,2), dtype=np.float64)
     box[:, 0] = np.array([xx.min(), yy.min(), zz.min()])
@@ -214,6 +200,11 @@ def add_box():
     # oModel -> add, obj_new('idlgrtext', 'z', locations=[box[0,0],box[1,0],box[2,0]+dist], /onglass)
 
     ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=(0,0,0), tube_radius=None, line_width=1)
+
+def add_base():
+    y, z = np.mgrid[yy[0]:yy[-1]:yy.shape[0]*1j, zz[0]:zz[-1]:zz.shape[0]*1j]
+    x = np.ones_like(y)*xx[0]
+    base = ml.mesh(x, y, z, scalars=-bgrid[0,:,:,0], colormap='Greys', vmin=-10, vmax=10)
 
 def save():
     ml.savefig('figures/' + rd.prefix(filename) + '-model3d.png')
