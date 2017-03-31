@@ -41,7 +41,10 @@ program hcs
   print*,'#                      Separatrix Surface Finder                      #'
   print*,'#######################################################################'
 
-  ! call omp_set_num_threads(nproc) ! have it work on 4 threads (If machine has >4 cores this should be larger, if fewer than 4 coures, this should be smaller)
+#if _OPENMP
+  if (nproc > 0) call omp_set_num_threads(nproc)
+  print*, 'Using', nproc, 'processors'
+#endif
 
   call filenames
 
@@ -307,7 +310,10 @@ program hcs
 
         allocate(endpoints(nlines), association(nlines))
 
-        h0 = 1e-1_np/slowdown
+        h0 = stepsize/slowdown
+#if debug
+      print*, iring, nlines
+#endif
 
         !$OMP END SINGLE
 
