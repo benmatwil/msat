@@ -26,9 +26,9 @@ def get_colours():
     
     return colours
 
+#################################################################
 
-
-def start(r, filename, title=False):
+def start(r, filename, title=False, levels=np.linspace(-10,10,101)):
     global datafile, prefile, nulldata, rstr, colours
 
     datafile = filename
@@ -50,16 +50,15 @@ def start(r, filename, title=False):
     plt.yticks([0, np.pi/4, np.pi/2, np.pi*3/4, np.pi], [r'$0$', r'$\frac{\pi}{4}$', r'$\frac{\pi}{2}$', r'$\frac{3\pi}{4}$', r'$\pi$'])
 
     br, _, _, rads, thetas, phis = rd.field(datafile)
-    levels = np.linspace(-10,10,101)
     ir = np.where(r >= rads)[0].max()
     plotfield = br[ir, :, :] + (r - rads[ir])/(rads[ir+1] - rads[ir])*(br[ir+1, :, :] - br[ir, :, :])
-    plt.contourf(phis, thetas, plotfield, levels, cmap=plt.cm.Greys_r, extend='both', vmax=10, vmin=-10)
+    plt.contourf(phis, thetas, plotfield, levels, cmap=plt.cm.Greys_r, extend='both')
     cb = plt.colorbar(fraction=0.05, pad=0.025)
-    cb.set_ticks([-10,-5,0,5,10])
+    diff = levels[-1] - levels[0]
+    cb.set_ticks(np.array([0.0, 0.25, 0.5, 0.75, 1.0])*diff + levels[0])
     cb.set_label('Magnetic Field Strength (G)')
     plt.tight_layout()
-    
-    plt.title('Cut: ' + datafile + ' r = ' + rstr)
+    if title == True: plt.title('Cut: ' + datafile + ' r = ' + rstr)
 
     colours = get_colours()
 
@@ -126,16 +125,16 @@ def hcs(dots=False):
             length = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
             # print(length)
             line = np.fromfile(hcsfile, dtype=np.float64, count=3*length).reshape(-1,3)
-            plt.plot(line[:,2], line[:,1], ls=':', c='lime')
+            plt.plot(line[:, 2], line[:, 1], ls=':', c='lime')
             if dots == True:
-                plt.plot(line[:,2], line[:,1], '.', c='blue')
+                plt.plot(line[:, 2], line[:, 1], '.', c='blue')
             ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
 
 #################################################################
 
-def nulls(labels=False):
+def nulls(labels=False, size=1):
     for i in range(nulldata.shape[0]):
-        plt.plot(nulldata.pos[i,2], nulldata.pos[i,1], '.', color=colours[i])
+        plt.plot(nulldata.pos[i, 2], nulldata.pos[i, 1], '.', color=colours[i], ms=size)
         if labels == True:
             plt.text(nulldata.pos[i,2], nulldata.pos[i,1], '{}, {:04f}'.format(i, nulldata.pos[i,0]))
 
