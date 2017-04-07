@@ -28,17 +28,27 @@
 
   \section{Introduction}
 
-    The following manual describes the usage and set-up of these Skeleton Finding Codes written in modern Fortran and are parallelised using OpenMP. The main codes are a nullfinder, a spinefinder and separatrix surface finder which will all be described individually later. There are also codes to calculate the heliospheric current sheet curtains and bald patches in solar magnetic field analysis in spherical geometry. The codes can be run in cartesian, cylindrical and spherical geometry as required although running in cylindrical coordinates in currently untested. The package also provides several scripts in Python and IDL for visualisation of the output  and have been tested using Python 3.5 and IDL 8.5.
+    The following manual describes the usage and set-up of these Skeleton Finding Codes written in modern Fortran and are parallelised using OpenMP and have been tested and compiled using the free-to-use GFortran 4.8.5. The codes have been written using the Fortran 2008 standard so should be compiler independent. The main codes are a null finder, a spine finder and separatrix surface finder which will all be described individually later. There are also codes to calculate the heliospheric current sheet curtains and bald patches in solar magnetic field analysis in spherical geometry. The codes can be run in cartesian, cylindrical and spherical geometry as required although running in cylindrical coordinates in currently untested.
+    
+    The package also provides several scripts in Python and IDL for visualisation of the output and have been tested using recent versions of Python (3.5) and IDL (8.5). The Python visualisation tools should, in the main, work with Python 2 but as it will be unsupported in the near future, development will be concentrated onto Python 3.
+
+    The following Python modules are used (and tested using the versions in brackets):
+    \begin{enumerate}
+      \item NumPy (1.12)
+      \item Matplotlib (2.0)
+      \item Mayavi (4.5) (some issues with python 3 currently using default package)
+      \item igraph (0.7.1)
+    \end{enumerate}
     
     It is recommended the codes are stored in a different location to data such as a home directory and then use symbolic links to redirect the storage areas of the codes. Then many copies of the codes do not need to be created and the codes can be relinked to wherever the analysis is required to be done. 
 
-    \section{Compilation and Set-up}
+    \section{Compilation and Set-up using the Makefile}
 
-    A makefile is provided to compile all the codes. First it is recommended to set-up the directories for the data files and output to be stored in. The codes assume that all the original magnetic field data files are stored in a directory called \texttt{data} and all output is stored in \texttt{output} within the main directory of the codes. It is recommended a symbolic links are created to link the code directory and where the data is stored. This can be done using the command:
+    A makefile is provided to compile all the codes. First it is recommended to set-up the directories for the data files and output to be stored in. The codes assume that all the original magnetic field data files are stored in a directory called \texttt{data} and all output is stored in \texttt{output} within the main directory of the codes. It is recommended symbolic links are created to link the code directory and where the data is stored. This can be done using the command:
 
     \texttt{make setup data=/path/to/data/directory output=/path/to/output/directory}
 
-    This will create the symbolic links called \texttt{data} and \texttt{output} linking to the specified directories and create a \texttt{mod} directory for the Fortran module files to be stored.
+    This will create the symbolic links called \texttt{data} and \texttt{output} linking to the specified directories and create a \texttt{mod} directory for the Fortran module files to be stored. This should be able to be used to reset the locations of the symbolic links at any time.
 
     Then issuing the command \texttt{make} will initiate compilation of all codes and create compiled executables \texttt{writedata}, \texttt{nf}, \texttt{sf}, \texttt{ssf}, \texttt{hcs} and \texttt{bp} and by default will compile for cartesian coordinates with OpenMP turned on.
 
@@ -56,24 +66,21 @@
 
   \section{Preparing the data}
 
-    All the codes here require a 3D vector magnetic field, its grid size and corresponding coordinates of the grid points. The data must be stored in a binary unformatted data file and written in the following order:
+    All the codes here require a 3D divergence-free vector field (such as a magnetic field which will be assumed from now on), its grid size and corresponding coordinates of the grid points. The data must be stored in a binary unformatted data file and written in the following order:
     %  with 32-bit (long) integers and 64-bit (double precision) floating point numbers
     \begin{enumerate}
-      \item three 32-bit (long) integers, \( n_1 \), \( n_2 \) and \( n_3 \), containing the three dimensions of the grid
+      \item three 32-bit (long) integers, \( n_1 \), \( n_2 \) and \( n_3 \), containing the three dimension sizes of the grid
       \item three 64-bit (double precision) floating point \( n_1 \times n_2 \times n_3 \) arrays, \( B_1 \), \( B_2 \) and \( B_3 \), containing the magnetic field values for each direction.
       \item three 64-bit (double precision) floating point 1D arrays, \( x_1 \), \( x_2 \) and \( x_3 \), containing the coordinates of each grid dimension.
     \end{enumerate}
     The 3D arrays must be also be written in fortran order rather than C order.
 
-    An example of writing to file in both IDL (Fortran order) and Python (C order) follows assuming the arrays are in their default memory orders for each language respectively. This simply requires a transpose of the arrays in numpy to switch them to Fortran order. There is also the option to create arrays in numpy in Fortran order using the \texttt{order='F'} keyword argument in the following numpy command
-    \texttt{np.array((101,101,201), dtype=np.float64, order='F')}. However I do not know whether this has the required effect when writing to file.
-    
-    Assuming we have the magnetic field compenent arrays stored as \texttt{bx}, \texttt{by} and \texttt{bz} of size \texttt{nx} by \texttt{ny} by \texttt{nz} and coordinate grids \texttt{x}, \texttt{y} and \texttt{z} with the correct bit sizes, you can save the data to file using:
+    An example of writing to the data to file in both IDL (Fortran order) and Python (C order) follows assuming the arrays are in their default memory orders for each language respectively. Assuming we have the magnetic field compenent arrays stored as \texttt{bx}, \texttt{by} and \texttt{bz} of size \texttt{nx} by \texttt{ny} by \texttt{nz} and coordinate grids \texttt{x}, \texttt{y} and \texttt{z} with the correct bit sizes, you can save the data to file using:
 
     IDL:
 
     \begin{verbatim}
-    IDL> openw, 10, 'data/magfield.dat'
+    IDL> openw, 10, `data/magfield.dat'
     IDL> writeu, 10, long([nx, ny, nz])
     IDL> writeu, 10, bx, by, bz
     IDL> writeu, 10, x, y, z
@@ -83,7 +90,7 @@
     Python:
 
     \begin{verbatim}
-    >>> with io.open('data/magfield.dat', 'wb') as file:
+    >>> with io.open(`data/magfield.dat', 'wb') as file:
     ...     np.array([nx, ny, nz], dtype=np.int32).tofile(file)
     ...     bx.T.tofile(file)
     ...     by.T.tofile(file)
@@ -93,9 +100,15 @@
     ...     z.tofile(file)
     \end{verbatim}
 
+    Since Python uses C memory order, arrays simply require a transpose in numpy to switch them to Fortran order for writing. There is also the option to create arrays in numpy in Fortran order using the \texttt{order=`F'} keyword argument in the following numpy command \texttt{np.array((101,101,201), dtype=np.float64, order=`F')}. However I do not know whether this has the required effect when writing to file.
+
     An example in Fortran is given in \texttt{src/writedata.f90}. All the files are written with stream access allowing the data files to be portable between languages. There is no need to use the \texttt{/f77\_unformated} keyword in IDL when opening files.
 
     The equivalent data in spherical and cylindrical coordinates can be written to file in the usual orders \( r \), \( \theta \), \( \phi \) in spherical and \( r \), \( \phi \), \( z \) in cylindrical coordinates.
+
+    \subsection{\texttt{writedata}}
+
+    \texttt{writedata.f90} will be compiled at the same time as the main codes. To execute type \texttt{writedata}. This will save the magnetic field (by default) as \texttt{data/magfield.dat}. To change the output file name type \texttt{writedata -o newfilename.dat} and the data file will be saved as \texttt{data/newfilename.dat}
 
     \subsection{Data from Lare3D}
 
@@ -116,56 +129,151 @@
 
   \section{The Main Codes}
 
-    The three main codes to run are the null finder \texttt{nf}, spine finder \texttt{sf} and separatrix surface finder \texttt{ssf}. Each are run using the command
+    The three main codes to run are the null finder \texttt{nf}, spine finder \texttt{sf} and separatrix surface finder \texttt{ssf}. Each are run using the command (assuming the data file is called \texttt{magfield.dat})
 
-    \texttt{<finder> -i data/fieldfile.dat}
+    \texttt{./<finder> -i data/magfield.dat}
 
     They must be run in the order \texttt{nf}, \texttt{sf} and \texttt{ssf}. \texttt{nf} first finds the locations of the null points and writes these to file, \texttt{sf} then uses these locations to look for a spine and fan vector for each null point and then \texttt{ssf} uses the null locations and vectors to trace out separatrix surfaces for each null and identify separators. \texttt{ssf} also traces the spines using the same tracing algorithm and writes them to file. The three all use grid coordinates during the routines.
 
-    All options for these are in \texttt{params.f90} and are described here.
+    All options for these are in \texttt{params.f90} and are described here with their defaults.
 
-    The first changeable parameter is \texttt{nproc}. This specifies the number of processors that OpenMP requests.
+    \subsection{Global Parameters}
 
-    Next are the parameters for each of the codes. 
+    \begin{enumerate}
+      \item \texttt{nproc}: the number of processors for OpenMP. Set to zero to use the environment variable OMP\_NUM\_THREADS. It will be ignored if OpenMP is turned off.
+    \end{enumerate}
+
+    \subsection{Null Finder Parameters}
+
+    \begin{enumerate}
+      \item \texttt{zero = 1e-10\_np}: what the code considers to be zero. From the magnetic field values at the final null points to the accuracy in solving bilinear equations.
+      \item \texttt{sig\_figs = 6}: the accuracy in the significant figures the code finds the nulls in grid coordinates. So \texttt{sig\_figs = 6} means it finds the null location to an accuracy of \( 10^{-6} \) of a grid cell.
+    \end{enumerate}
     
-    For nullfinder, \texttt{zero} specifies what the code considers to be zero and \texttt{sig\_figs} specifies to what accuracy in the significant figures the code finds the nulls in grid coordinates. So \texttt{sig\_figs = 6} means it finds the null location to an accuracy of \( 10^{-6} \) of a grid cell.
+    \subsection{Spine Finder Parameters}
 
-    For spinefinder, there are three parameters. \texttt{rspherefact} specifies what multiple of the accuracy away from the null location it calculates the field to find the spine and fan vectors. \texttt{rspherefact = 50} and \texttt{sig\_figs = 6} means it will set the radius of the sphere to be \( 50 \times 10^{-6} \). \texttt{nphi} and \texttt{ntheta} specify how many points in the \( \theta \) and \( \phi \) direction are placed inititially around the null for convergence.
+    \begin{enumerate}
+      \item\texttt{rspherefact = 50.0\_np} specifies what multiple of the accuracy away from the null location it calculates the field to find the spine and fan vectors. \texttt{rspherefact = 50} and \texttt{sig\_figs = 6} means it will set the radius of the sphere to be \( 50 \times 10^{-6} \).
+      \item \texttt{nphi = 90} and \texttt{ntheta = 45}: specify how many points in the \( \theta \) and \( \phi \) direction are placed inititially around the null for convergence.
+    \end{enumerate}
 
-    For separatrix surface finder, there 2 different sets of parameters available. One set relate to how many points are traced and the other are related to the rkf45 integration scheme. \texttt{nstart} specifies how many points are placed on the initial ring and how many points it will try to keep in separatrix surface analysis. \texttt{ringsmax} specifies what is the maximum number of rings that if reached, the code will move onto the next null. \texttt{pointsmax} specifies what is the maximum number points on a ring. The code will again move onto the next ring if it reaches this number. The other set relating to the rkf45 scheme are the \texttt{stepsize} which is how far each of rings are traced at each iteration in grid coordinates. \texttt{tol} and \texttt{stepmin} are...
+    \subsection{Separatrix Surface Finder Parameters}
+
+      \subsubsection{Points}
+      
+      \begin{enumerate}
+        \item \texttt{nstart = 500}: how many points are placed on the initial ring and what is the minimum number of points \texttt{ssf} will try to keep in separatrix surface analysis.
+        \item \texttt{ringsmax = 10000}: what is the maximum number of rings (excluding the first) that if reached, the code stop analysis will move onto the next null. For large boxes, this may need to be increased.
+        \item \texttt{pointsmax = 100000}: specifies what is the maximum number points on a ring. The code will again move onto the next ring if it reaches this number.
+      \end{enumerate}
+
+      \subsubsection{Tracing}
+
+      These relate to the tracing of the fieldlines and the Runge–Kutta–Fehlberg integration scheme.
+
+      \begin{enumerate}
+        \item \texttt{stepsize = 0.2}: how far each of rings are traced at each iteration in grid coordinates. \texttt{stepsize = 0.2} means each point on the ring will be traced by approximately 0.2 in grid coordinates.
+        \item \texttt{tol} and \texttt{stepmin}: RKF45 parameters relating to the error tolerance and and the minimum step distance used at every iteration of the scheme.
+      \end{enumerate}
+    
+    \subsection{Output Files}
   
-    The three codes output the files 
-    \begin{itemize}
-      \item \texttt{output/<originaldatafile>-nullpos.dat}
-      \item \texttt{output/<originaldatafile>-nulldata.dat}
-      \item \texttt{output/<originaldatafile>-ringinfodat}
-      \item \texttt{output/<originaldatafile>-rings.dat}
-      \item \texttt{output/<originaldatafile>-connectivity.dat}
-      \item \texttt{output/<originaldatafile>-separators.dat}
-      \item \texttt{output/<originaldatafile>-spines.dat}
-    \end{itemize}
+      After running \texttt{nf}, \texttt{sf} and \texttt{ssf}, the following files should be created and can be read in using routines provided and described in section \ref{sec:vis}
+      \begin{itemize}
+        \item \texttt{output/<originaldatafile>-nullpos.dat}
+        \item \texttt{output/<originaldatafile>-nulldata.dat}
+        \item \texttt{output/<originaldatafile>-ringinfo.dat}
+        \item \texttt{output/<originaldatafile>-rings.dat}
+        \item \texttt{output/<originaldatafile>-connectivity.dat}
+        \item \texttt{output/<originaldatafile>-separators.dat}
+        \item \texttt{output/<originaldatafile>-spines.dat}
+      \end{itemize}
 
   \section{hcs and bp and makecut}
 
+  To be finished...
+
   \section{Visualisation routines}
+  \label{sec:vis}
 
-    There are visualisation routines written in idl and python in the \texttt{idlvis} and \texttt{pyvis} directories respectively.
+    There are visualisation routines written in idl and python in the \texttt{idlvis} and \texttt{pyvis} directories respectively. For now, only the python routines are described. There generally are equivalent routines for both Python and IDL.
 
+    \subsection{Data Reading Routines}
+
+      In \texttt{read.py}, there are routines for reading in all the output from the Fortran codes.
+
+      Here we will assume it has been imported using \texttt{import pyvis.read as rd} and each are desribed here. They all required the filename of the data file as input and then there are options available to configure the output.
+
+      \texttt{rd.nulls(filename, simple=False)}
+
+      This will read in the nulldata outputed from both \texttt{nf} and \texttt{sf}.
+
+      \texttt{simple=False}: set this to \texttt{True} to only read in the positions of the nulls --- useful if \texttt{sf} has not been run yet.
+
+      Returns a record array containing a dictionary like structure for each null containing the positions of the nulls in real coordinates and grid coordinates, the spine and fan vectors, the signs and the null number (in fortran numbering).
+
+      \texttt{rd.separators(filename, lines=True, connectivity=True, hcs=False)}
+
+      This will read in the separators and their null connectivities.
+
+      \texttt{lines=True} and \texttt{connectivity=True}: These both control what is outputted by the routine. For example, if you just want the coordinates of the separator lines then make \texttt{connectivity=False}. By default both are \texttt{True} and will output both.
+
+      \texttt{hcs=False}: set to \texttt{True} to get the separators connected to the heliospheric current sheet instead.
+
+      Returns a tuple of lists depending on the options above. The list contains an list for each null containing a list of the separators or connectivities.
+
+      \texttt{rd.spines(filename)}
+
+      This will read the spines of each null.
+
+      Returns a list containing lists for each null with an array of each spine for each null.
+
+      \texttt{rd.rings(filename, breakinfo=False, nskip=1)}
+
+      This will read in all the rings calculated for the separatrix surfaces and the break data if required.
+
+      \texttt{breakinfo=False}: set to \texttt{True} to also return the break information in the same form as the rings.
+
+      \texttt{nskip=1}: controls how many rings are outputted. By default, it is set to 1 which will output all rings. \texttt{nskip=2} will output every other ring for example.
+
+      Returns a list containing a list for each null contain a list of a arrays of each ring.
+
+      One more useful routine contained within \texttt{read.py} are for reading the field in the data file.
+
+      \texttt{rd.synmap(filename)}
+
+      Returns a 6-element tuple containing arrays of the three magnetic field components and arrays of the three grid coordinates in this order.
+
+    \subsection{3D Visualisation}
+
+      \texttt{model3d.py} has been written using the Mayavi module to visualise the structure of the fields in 3D.
+
+      Assuming you have imported the file using \texttt{import pyvis.model3d as m3d}, the main routine is as follows
+      
+      \texttt{m3d.make(filename, addlist, nulls=None, box=True, fieldlines=None, linecolor=(1,1,1), nskip=20, nullrad=1, nfanlines=40, nring=None)}
+
+      The two required imputs are the \texttt{filename} and \texttt{addlist}.
+      
+      \texttt{addlist} should be a list of strings with the magnetic structures you wish to plot e.g. \texttt{[`nulls', `separators', `spines', `sepsurf']}. The other available option is \texttt{`fanlines'} and would usually replace \texttt{`sepsurf'}.
+
+      \texttt{nulls=None}: \texttt{None} will plot all nulls, otherwise provide a list of specific nulls to plot. This will affect which spines and separators are also plotted.
+
+      \texttt{box=True}: set this to \texttt{False} to turn the outer box off
+
+      \texttt{fieldlines=None}: set this to a \texttt{(n, 3)} array to plot fieldlines passing through the list of points
+      
+      \texttt{linecolor=(1,1,1)}: set this to the RGB colour required for the fieldlines, default is black
+
+      \texttt{nskip=20}: reduces the number of rings plotted. Choose how many rings to skip in the plotting similar to \texttt{nskip} in the rings reading procedure. This will also affect the resolution of the spine and separator lines.
+
+      \texttt{nullrad=1}: set this to reduce/enlarge the radius of the null spheres by this factor. This multiplies the default radius.
+
+      \texttt{nfanlines=40}: set this to be the number of approximately equally spaced fieldlines drawn in the fan plane.
+
+      \texttt{nring=None}: which ring (given the ring skipping value above) to draw fieldlines from. If \texttt{None} then the code will pick the ring a 5th of the way along.
+
+      This procedure will plot and open the window for viewing.
+
+      For more documentation such as saving the figures, see the Mayavi online documentation at \texttt{http://docs.enthought.com/mayavi/mayavi/mlab.html}.
 
 \end{document}
-
-% Writing to files
-% Example of file writing in fortran/idl
-% File writing from LARE
-
-% Setup
-% symobolic linking/actual folders. Maybe easier always to use symbolic links
-
-% make file
-
-% nf
-% sf
-% ssf
-% hcs/bp
-
-% python/idl plotting
