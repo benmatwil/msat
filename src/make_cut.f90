@@ -35,6 +35,7 @@ module make_cut_mod
         enddo
       enddo
       imindist = minloc(dists)
+      if (dists(imindist(1), imindist(2)) > disttol*10) exit
       deallocate(dists)
       allocate(pordered(3, 2))
       pordered(:, 1) = points(:, imindist(1))
@@ -120,7 +121,7 @@ program make_cut
   integer(int64) :: ia, ip, ib, uptonull
   integer(int32) :: inull, jnull, iring, iline, nextline, flag, ihcs
   integer(int32) :: nrings, npoints, nlines
-  integer(int32), dimension(:), allocatable :: breaks, association
+  integer(int32), dimension(:), allocatable :: association
   integer(int32), dimension(0:ringsmax) :: nperring
   real(np), dimension(:,:), allocatable :: line, line2, points
   real(np) :: s, point(3)
@@ -257,15 +258,16 @@ program make_cut
 
   uptonull = 0
   do inull = 1, nnulls
-    print*, inull
+    if (mod(inull, 20) == 0) print*, inull
     allocate(points(3,0))
     read(ringinfolun) nperring
     nrings = count(nperring > 0) - 1
     do iring = nrings, 1, -1
     
       call file_position(iring, nperring, 1, ia, ib, ip)
-      allocate(association(nperring(iring)), breaks(nperring(iring)), line(3,nperring(iring)))
-      read(ringlun, pos=uptonull+ia) association, breaks, line
+      allocate(association(nperring(iring)), line(3,nperring(iring)))
+      read(ringlun, pos=uptonull+ia) association, line
+      read(ringlun, pos=uptonull+ip) line
 
       call file_position(iring-1, nperring, 1, ia, ib, ip)
       allocate(line2(3,nperring(iring-1)))
@@ -281,7 +283,7 @@ program make_cut
           endif
         endif
       enddo
-      deallocate(line, line2, breaks, association)
+      deallocate(line, line2, association)
     enddo
     uptonull = uptonull + sum(int(nperring, int64))*32_int64
 
@@ -312,8 +314,8 @@ program make_cut
     do iring = nrings, 1, -1
     
       call file_position(iring, nperring, 1, ia, ib, ip)
-      allocate(association(nperring(iring)), breaks(nperring(iring)), line(3,nperring(iring)))
-      read(ringlun, pos=uptonull+ia) association, breaks, line
+      allocate(association(nperring(iring)), line(3,nperring(iring)))
+      read(ringlun, pos=uptonull+ia) association, line
 
       call file_position(iring-1, nperring, 1, ia, ib, ip)
       allocate(line2(3,nperring(iring-1)))
@@ -329,7 +331,7 @@ program make_cut
           endif
         endif
       enddo
-      deallocate(line, line2, breaks, association)
+      deallocate(line, line2, association)
     enddo
     uptonull = uptonull + sum(int(nperring, int64))*32_int64
 
