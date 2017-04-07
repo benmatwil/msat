@@ -13,11 +13,12 @@
 % \usepackage{siunitx}
 % \addbibresource{thesis.bib}
 \usepackage{setspace}
-
+\usepackage{enumitem}
 % \usetikzlibrary{3d,calc,intersections,patterns,positioning}
 
 \raggedright
 \linespread{1.3}
+\setlist[description]{labelindent=1cm, leftmargin=!, labelwidth=1cm}
 
 \author{Benjamin Williams}
 \title{Skeleton Finding Code Manual}
@@ -30,7 +31,7 @@
 
     The following manual describes the usage and set-up of these Skeleton Finding Codes written in modern Fortran and are parallelised using OpenMP and have been tested and compiled using the free-to-use GFortran 4.8.5. The codes have been written using the Fortran 2008 standard so should be compiler independent. The main codes are a null finder, a spine finder and separatrix surface finder which will all be described individually later. There are also codes to calculate the heliospheric current sheet curtains and bald patches in solar magnetic field analysis in spherical geometry. The codes can be run in cartesian, cylindrical and spherical geometry as required although running in cylindrical coordinates in currently untested.
     
-    The package also provides several scripts in Python and IDL for visualisation of the output and have been tested using recent versions of Python (3.5) and IDL (8.5). The Python visualisation tools should, in the main, work with Python 2 but as it will be unsupported in the near future, development will be concentrated onto Python 3.
+    The package also provides several scripts in Python and IDL for visualisation of the output and have been tested using recent versions of Python (3.5) and IDL (8.5). The Python visualisation tools should, in the main, work with Python 2 but as it will be officially unsupported in the near future, development will be concentrated on Python 3.
 
     The following Python modules are used (and tested using the versions in brackets):
     \begin{enumerate}
@@ -169,7 +170,7 @@
 
       \subsubsection{Tracing}
 
-      These relate to the tracing of the fieldlines and the Runge–Kutta–Fehlberg integration scheme.
+      These relate to the tracing of the fieldlines and the Runge-Kutta-Fehlberg integration scheme.
 
       \begin{enumerate}
         \item \texttt{stepsize = 0.2}: how far each of rings are traced at each iteration in grid coordinates. \texttt{stepsize = 0.2} means each point on the ring will be traced by approximately 0.2 in grid coordinates.
@@ -206,43 +207,46 @@
 
       \texttt{rd.nulls(filename, simple=False)}
 
-      This will read in the nulldata outputed from both \texttt{nf} and \texttt{sf}.
+      \begin{description}
+        \item [Description:] This will read in the nulldata outputed from both \texttt{nf} and \texttt{sf}.
 
-      \texttt{simple=False}: set this to \texttt{True} to only read in the positions of the nulls --- useful if \texttt{sf} has not been run yet.
+        \item [\texttt{simple=False}:] set this to \texttt{True} to only read in the positions of the nulls --- useful if \texttt{sf} has not been run yet.
 
-      Returns a record array containing a dictionary like structure for each null containing the positions of the nulls in real coordinates and grid coordinates, the spine and fan vectors, the signs and the null number (in fortran numbering).
+        \item [Returns:] a record array containing a dictionary like structure for each null containing the positions of the nulls in real coordinates and grid coordinates, the spine and fan vectors, the signs and the null number (in fortran numbering).
+      \end{description}
 
       \texttt{rd.separators(filename, lines=True, connectivity=True, hcs=False)}
 
-      This will read in the separators and their null connectivities.
-
-      \texttt{lines=True} and \texttt{connectivity=True}: These both control what is outputted by the routine. For example, if you just want the coordinates of the separator lines then make \texttt{connectivity=False}. By default both are \texttt{True} and will output both.
-
-      \texttt{hcs=False}: set to \texttt{True} to get the separators connected to the heliospheric current sheet instead.
-
-      Returns a tuple of lists depending on the options above. The list contains an list for each null containing a list of the separators or connectivities.
+      \begin{description}
+        \item [Description:] This will read in the separators and their null connectivities.
+        \item [\texttt{lines=True}, \texttt{connectivity=True}:] These both control what is outputted by the routine. For example, if you just want the coordinates of the separator lines then make \texttt{connectivity=False}. By default both are \texttt{True} and will output both.
+        \item [\texttt{hcs=False}:] set to \texttt{True} to get the separators connected to the heliospheric current sheet instead.
+        \item [Returns:] a tuple of lists depending on the options above. The list contains an list for each null containing a list of the separators or connectivities.
+      \end{description}
 
       \texttt{rd.spines(filename)}
 
-      This will read the spines of each null.
-
-      Returns a list containing lists for each null with an array of each spine for each null.
+      \begin{description}
+        \item [Description:] This will read the spines of each null.
+        \item [Returns:] Returns a list containing lists for each null with an array of each spine for each null.
+      \end{description}
 
       \texttt{rd.rings(filename, breakinfo=False, nskip=1)}
 
-      This will read in all the rings calculated for the separatrix surfaces and the break data if required.
-
-      \texttt{breakinfo=False}: set to \texttt{True} to also return the break information in the same form as the rings.
-
-      \texttt{nskip=1}: controls how many rings are outputted. By default, it is set to 1 which will output all rings. \texttt{nskip=2} will output every other ring for example.
-
-      Returns a list containing a list for each null contain a list of a arrays of each ring.
+      \begin{description}
+        \item [Description:] This will read in all the rings calculated for the separatrix surfaces and the break data if required.
+        \item [\texttt{breakinfo=False}:] set to \texttt{True} to also return the break information in the same form as the rings.
+        \item [\texttt{nskip=1}:] controls how many rings are outputted. By default, it is set to 1 which will output all rings. \texttt{nskip=2} will output every other ring for example.
+        \item [Returns:] a list containing a list for each null contain a list of a arrays of each ring.
+      \end{description}
 
       One more useful routine contained within \texttt{read.py} are for reading the field in the data file.
 
-      \texttt{rd.synmap(filename)}
+      \texttt{rd.field(filename)}
 
-      Returns a 6-element tuple containing arrays of the three magnetic field components and arrays of the three grid coordinates in this order.
+      \begin{description}
+        \item [Returns:] a 6-element tuple containing arrays of the three magnetic field components and arrays of the three grid coordinates in this order.
+      \end{description}
 
     \subsection{3D Visualisation}
 
@@ -252,28 +256,21 @@
       
       \texttt{m3d.make(filename, addlist, nulls=None, box=True, fieldlines=None, linecolor=(1,1,1), nskip=20, nullrad=1, nfanlines=40, nring=None)}
 
-      The two required imputs are the \texttt{filename} and \texttt{addlist}.
-      
-      \texttt{addlist} should be a list of strings with the magnetic structures you wish to plot e.g. \texttt{[`nulls', `separators', `spines', `sepsurf']}. The other available option is \texttt{`fanlines'} and would usually replace \texttt{`sepsurf'}.
-
-      \texttt{nulls=None}: \texttt{None} will plot all nulls, otherwise provide a list of specific nulls to plot. This will affect which spines and separators are also plotted.
-
-      \texttt{box=True}: set this to \texttt{False} to turn the outer box off
-
-      \texttt{fieldlines=None}: set this to a \texttt{(n, 3)} array to plot fieldlines passing through the list of points
-      
-      \texttt{linecolor=(1,1,1)}: set this to the RGB colour required for the fieldlines, default is black
-
-      \texttt{nskip=20}: reduces the number of rings plotted. Choose how many rings to skip in the plotting similar to \texttt{nskip} in the rings reading procedure. This will also affect the resolution of the spine and separator lines.
-
-      \texttt{nullrad=1}: set this to reduce/enlarge the radius of the null spheres by this factor. This multiplies the default radius.
-
-      \texttt{nfanlines=40}: set this to be the number of approximately equally spaced fieldlines drawn in the fan plane.
-
-      \texttt{nring=None}: which ring (given the ring skipping value above) to draw fieldlines from. If \texttt{None} then the code will pick the ring a 5th of the way along.
+      \begin{description}
+        \item [Required:] \texttt{filename} and \texttt{addlist}.
+        \item [\texttt{addlist}:] should be a list of strings with the magnetic structures you wish to plot e.g. \texttt{[`nulls', `separators', `spines', `sepsurf']}. The other available option is \texttt{`fanlines'} and would usually replace \texttt{`sepsurf'}.
+        \item [\texttt{nulls=None}:] \texttt{None} will plot all nulls, otherwise provide a list of specific nulls to plot. This will affect which spines and separators are also plotted.
+        \item [\texttt{box=True}:] set this to \texttt{False} to turn the outer box off
+        \item [\texttt{fieldlines=None}:] set this to a \texttt{(n, 3)} array to plot fieldlines passing through the list of points
+        \item [\texttt{linecolor=(1,1,1)}:] set this to the RGB colour required for the fieldlines, default is black
+        \item [\texttt{nskip=20}:] reduces the number of rings plotted. Choose how many rings to skip in the plotting similar to \texttt{nskip} in the rings reading procedure. This will also affect the resolution of the spine and separator lines.
+        \item [\texttt{nullrad=1}:] set this to reduce/enlarge the radius of the null spheres by this factor. This multiplies the default radius.
+        \item [\texttt{nfanlines=40}:] set this to be the number of approximately equally spaced fieldlines drawn in the fan plane.
+        \item [\texttt{nring=None}:] which ring (given the ring skipping value above) to draw fieldlines from. If \texttt{None} then the code will pick the ring a 5th of the way along.
+      \end{description}
 
       This procedure will plot and open the window for viewing.
 
-      For more documentation such as saving the figures, see the Mayavi online documentation at \texttt{http://docs.enthought.com/mayavi/mayavi/mlab.html}.
+      For more documentation such as saving the figures, see the Mayavi online documentation at \texttt{http://docs.enthought.com/mayavi/mayavi/mlab.html}. The Mayavi module is also available using the \texttt{model3d} module now as \texttt{m3d.ml}
 
 \end{document}
