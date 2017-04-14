@@ -18,7 +18,6 @@ module make_cut_mod
     integer(int32), dimension(2) :: imindist, iminspinedist, imindot, iminspinedot
     integer(int32) :: ip, jp, i, npoints, unit, inull
 
-    print*, 'entering'
     disttol = ds/3
     do while (size(points, 2) > 0)
 
@@ -94,7 +93,7 @@ module make_cut_mod
       write(unit) inull, size(pordered, 2), pordered
       deallocate(pordered)
     enddo
-print*, 'exit'
+
   end subroutine
 
 end module
@@ -264,7 +263,7 @@ program make_cut
     
       call file_position(iring, nperring, 1, ia, ib, ip)
       allocate(association(nperring(iring)), line(3,nperring(iring)))
-      read(50, pos=uptonull+ia) association, line
+      read(50, pos=uptonull+ia) association
       read(50, pos=uptonull+ip) line
 
       call file_position(iring-1, nperring, 1, ia, ib, ip)
@@ -289,7 +288,6 @@ program make_cut
     call sortpoints(points, inull, 80)
     
     deallocate(points)
-    print*, 'deallocated points', inull
   enddo
   write(80) -1
   close(80)
@@ -309,16 +307,15 @@ program make_cut
   uptonull = 0
   ihcs = 1
   do dir = 1, 2
-  print*, dir
     allocate(points(3,0))
     read(40) nperring
     nrings = count(nperring > 0) - 1
     do iring = nrings, 1, -1
-    print*, iring
     
       call file_position(iring, nperring, 1, ia, ib, ip)
       allocate(association(nperring(iring)), line(3,nperring(iring)))
-      read(50, pos=uptonull+ia) association, line
+      read(50, pos=uptonull+ia) association
+      read(50, pos=uptonull+ip) line
 
       call file_position(iring-1, nperring, 1, ia, ib, ip)
       allocate(line2(3,nperring(iring-1)))
