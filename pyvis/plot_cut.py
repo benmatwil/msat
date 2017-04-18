@@ -28,7 +28,7 @@ def get_colours():
 
 #################################################################
 
-def start(r, filename, title=False, levels=np.linspace(-10,10,101)):
+def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.cm.Greys_r):
     global datafile, prefile, nulldata, rstr, colours
 
     datafile = filename
@@ -40,22 +40,24 @@ def start(r, filename, title=False, levels=np.linspace(-10,10,101)):
 
     # os.system(f'./make_cut -i {filename} -r {r}')
 
-    plt.figure(figsize=(16/2.55,9/2.55)) # set-up for A4
-    plt.plot([])
+    plt.figure(figsize=(16/2.55, 8/2.55)) # set-up for A4
+    ax = plt.gca()
     plt.xlabel('Longitude')
-    plt.xlim([0,2*np.pi])
+    plt.xlim([0, 2*np.pi])
     plt.xticks([0, np.pi/2, np.pi, np.pi*3/2, np.pi*2], [r'$0$', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'])
     plt.ylabel('Latitude')
-    plt.ylim([np.pi,0])
+    plt.ylim([np.pi, 0])
     plt.yticks([0, np.pi/4, np.pi/2, np.pi*3/4, np.pi], [r'$0$', r'$\frac{\pi}{4}$', r'$\frac{\pi}{2}$', r'$\frac{3\pi}{4}$', r'$\pi$'])
 
+    ax.set_rasterization_zorder(0)
     br, _, _, rads, thetas, phis = rd.field(datafile)
     ir = np.where(r >= rads)[0].max()
     plotfield = br[ir, :, :] + (r - rads[ir])/(rads[ir+1] - rads[ir])*(br[ir+1, :, :] - br[ir, :, :])
-    plt.contourf(phis, thetas, plotfield, levels, cmap=plt.cm.Greys_r, extend='both')
+    plt.contourf(phis, thetas, plotfield, levels, cmap=colmap, extend='both', zorder=-10)
     cb = plt.colorbar(fraction=0.05, pad=0.025)
     diff = levels[-1] - levels[0]
     cb.set_ticks(np.array([0.0, 0.25, 0.5, 0.75, 1.0])*diff + levels[0])
+    # print(np.array([0.0, 0.25, 0.5, 0.75, 1.0])*diff + levels[0])
     cb.set_label('Magnetic Field Strength (G)')
     plt.tight_layout()
     if title == True: plt.title('Cut: ' + datafile + ' r = ' + rstr)
@@ -64,32 +66,33 @@ def start(r, filename, title=False, levels=np.linspace(-10,10,101)):
 
 #################################################################
 
-def all(labels=False):
-    rings(labels=labels)
-    hcs()
-    spines(labels=labels)
-    separators(labels=labels)
+def all(labels=False, ms=3):
+    lw = 1
+    rings(labels=labels, lw=lw)
+    hcs(lw=lw)
+    spines(labels=labels, ms=ms)
+    separators(labels=labels, ms=ms)
 
 #################################################################
 
-def spines(labels=False):
+def spines(labels=False, ms=3):
     with io.open('output/'+prefile+'-spines-cut_'+rstr+'.dat', 'rb') as spinefile:
         inull = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
         while inull > 0:
             spine = np.fromfile(spinefile, dtype=np.float64, count=3)
-            plt.plot(spine[2], spine[1], '.', c=colours[inull-1])
+            plt.plot(spine[2], spine[1], '.', c=colours[inull-1], ms=ms)
             if labels == True:
                 plt.text(spine[2], spine[1], '{}'.format(inull), color='green')
             inull = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
 
 #################################################################
 
-def separators(labels=False):
+def separators(labels=False, ms=3):
     with io.open('output/'+prefile+'-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
         null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
         while null > 0:
             sep = np.fromfile(sepfile, dtype=np.float64, count=3)
-            plt.plot(sep[2], sep[1], '*', c='yellow')
+            plt.plot(sep[2], sep[1], '*', c='yellow', ms=ms)
             if labels == True:
                 plt.text(sep[2], sep[1], '{}'.format(null))
             null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
@@ -98,18 +101,18 @@ def separators(labels=False):
         null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
         while null > 0:
             sep = np.fromfile(sepfile, dtype=np.float64, count=3)
-            plt.plot(sep[2], sep[1], '*', c='orange')
+            plt.plot(sep[2], sep[1], '*', c='orange', ms=ms)
             null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
 
 #################################################################
 
-def rings(dots=False, labels=False):
+def rings(dots=False, labels=False, lw=1):
     with io.open('output/'+prefile+'-rings-cut_'+rstr+'.dat', 'rb') as ringfile:
         inull = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
         while inull >= 0:
             length = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
             ring = np.fromfile(ringfile, dtype=np.float64, count=3*length).reshape(-1,3)
-            plt.plot(ring[:,2], ring[:,1], c=colours[inull-1])
+            plt.plot(ring[:,2], ring[:,1], c=colours[inull-1], lw=lw)
             if labels == True:
                 plt.text(ring[length//2,2], ring[length//2,1], '{}'.format(inull))
             if dots == True:
@@ -118,14 +121,14 @@ def rings(dots=False, labels=False):
 
 #################################################################
 
-def hcs(dots=False):
+def hcs(dots=False, lw=1):
     with io.open('output/'+prefile+'-hcs-cut_'+rstr+'.dat', 'rb') as hcsfile:
         ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
         while ihcs >= 0:
             length = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
             # print(length)
             line = np.fromfile(hcsfile, dtype=np.float64, count=3*length).reshape(-1,3)
-            plt.plot(line[:, 2], line[:, 1], ls=':', c='lime')
+            plt.plot(line[:, 2], line[:, 1], ls=':', c='lime', lw=lw)
             if dots == True:
                 plt.plot(line[:, 2], line[:, 1], '.', c='blue')
             ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
@@ -150,6 +153,11 @@ def field():
     plt.tight_layout()
 
 #################################################################
-def save(type, dpi=600):
-    savename = 'figures/'+prefile+'-cut_'+rstr+'.{}'.format(type)
+def save(type, dpi=1200, figdir='figures', extra=None):
+    if extra is not None:
+        addin = '-' + extra
+    else:
+        addin = ''
+    savename = figdir+'/'+prefile+'-cut_'+rstr+addin+'.{}'.format(type)
     plt.savefig(savename, dpi=dpi)
+    print('Saved to {}'.format(savename))
