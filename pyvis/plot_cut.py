@@ -38,6 +38,26 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
 
     rstr = '{:6.4f}'.format(r)
 
+    def ticks(nsplit, npi):
+        from fractions import Fraction as fr
+        list = []
+        for i in range(nsplit+1):
+            string = r'$'
+            fract = fr(npi*i,nsplit)
+            if fract.numerator == 0:
+                string = r'$0$'
+            elif fract.denominator != 1:
+            string = string + r'\frac{'
+            if fract.numerator != 1:
+                string = string + str(fract.numerator) 
+            string = string + r'\pi$' + r'}{' + str(fract.denominator) + r'}$'
+            else:
+            if fract.numerator != 1:
+                string = string + str(fract.numerator)
+            string = string + r'\pi$'
+            list.append(string)
+        return list
+
     # os.system(f'./make_cut -i {filename} -r {r}')
 
     plt.figure(figsize=(16/2.55, 8/2.55)) # set-up for A4
