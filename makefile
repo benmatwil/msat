@@ -59,9 +59,11 @@ check:
 #	@echo "Using coordinate system: $(coord)"
 
 doc: doc/manual.tex
-	pdflatex doc/manual
-	@pdflatex doc/manual
-	@rm -f *.aux *.log *.out
+	pdflatex --output-directory=doc doc/manual
+	@biber doc/manual
+	@pdflatex --output-directory=doc doc/manual
+	@pdflatex --output-directory=doc doc/manual
+	@rm -f doc/*.aux doc/*.log doc/*.out doc/*.xml doc/*.blg doc/*.toc doc/*.bcf doc/*.bbl
 
 setup:
 	@rm -f data output
