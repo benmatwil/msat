@@ -5,8 +5,8 @@ from . import read as rd
 from . import fieldline3d as fl
 import sys
 
-def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(1,1,1), nskip=20,
-    nullrad=1, nfanlines=40, nring=None):
+def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
+    nullrad=1, nfanlines=40, nring=None, colquant=None):
 
     """Makes a 3D visualisation of the output from Skeleton Codes
 
@@ -57,7 +57,7 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(1,1,1
     if 'spines' in addlist: add_spines()
     if 'sepsurf' in addlist: add_sepsurf()
     if 'separators' in addlist: add_separators()
-    if fieldlines is not None: add_fieldlines(fieldlines, col=linecolor)
+    if fieldlines is not None: add_fieldlines(fieldlines, col=linecolor, colquant=colquant)
 
 
 def add_sepsurf():
@@ -115,20 +115,26 @@ def add_fanlines(nlines, nring):
 
             ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=cols[nulldata[inull].sign], tube_radius=None)
 
-def add_fieldlines(startpts, col=(0,0,0)):
+def add_fieldlines(startpts, col=(0,0,0), colquant=None):
     print('Adding separatrix surface field lines')
 
-    for ipt in range(startpts.shape[0]):
-        startpt = startpts[:,ipt]
-
+    for startpt in startpts:
         h = 0.01*ds
         hmin = 0.001*ds
         hmax = 0.5*ds
         epsilon = 1e-5
 
-        line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon)
+        line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, boxedge=np.array([[-2.49,-2.49,-6.49],[2.49,2.49,8.49]]))
 
-        ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=col, tube_radius=None)
+        if colquant is None:
+            ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=col, tube_radius=None)
+        else:
+            vals = np.zeros(line.shape[0], dtype=np.float64)
+            
+            for iline, pt in enumerate(line):
+                vals[iline] = fl.trilinearscalar3d(pt, colquant, xx, yy, zz)
+            
+            ml.plot3d(line[:, 0], line[:, 1], line[:, 2], vals, tube_radius=None, colormap='jet')
 
 def add_spines():
     print('Adding spines')
