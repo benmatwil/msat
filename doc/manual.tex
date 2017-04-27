@@ -35,7 +35,7 @@
 
   \section{Introduction}
 
-    The following manual describes the set-up of, and how to use, the Magnetic Skeleton Analysis Tools (MSAT) package that determine the magnetic skeleton of a 3D magnetic field \( \vec{B} \) (i.e. divergence-free vector field).
+    The following manual describes the set-up of, and how to use, the Magnetic Skeleton Analysis Tools (MSAT) package that determine the magnetic skeleton of a 3D magnetic field \( \vec{B} \) (or any divergence-free vector field).
 
     The MSAT package consists of a null finder (which locates points where \( \vec{B} = \vec{0} \)), a sign finder (which also identifies the sign of each 3D null) and a separatrix surface finder (which identifies not only the separatrix surface of each null but at the same time all the separators linking the null points). Each of these codes will be described individually later in more detail.  All these codes can be run in cartesian, cylindrical and spherical coordinate systems, although running in cylindrical coordinates is currently untested.
 
@@ -58,21 +58,24 @@
   \section{Quick Start for a Cartesian Data Set}
 
     \begin{enumerate}
-      \item First you need to setup up your directories using the command where
+      \item First you need to setup up your directories using the command
+      
+      \texttt{make setup data=/path/to/data/dir output=/path/to/output/dir}
+      
+      where
       \begin{itemize}
-        \item \texttt{/path/to/data/directory} is the path to the directory where your 3D cube of magnetic data is stored. To see how to write your magnetic data in the correct format see Section~\ref{sec:prep_data}. 
+        \item \texttt{/path/to/data/dir} is the path to the directory where your 3D cube of magnetic data is stored. To see how to write your magnetic data in the correct format see Section~\ref{sec:prep_data}. 
 
-        In the commands below it is assumed that your is saved in a file called \texttt{magfield.dat}.
-
-        \item \texttt{/path/to/output/directory} is the path to the directory where the output files from the skeleton analysis of the data will be stored.
+        \item \texttt{/path/to/output/dir} is the path to the directory where the output files from the skeleton analysis of the data will be stored. This can be the same as your data directory.
       \end{itemize}
-      \texttt{make setup data=/path/to/data/directory output=/path/to/output/directory}
 
       \item Compile the Fortran MSAT packages.
 
       \texttt{make}
 
       \item Running the skeleton analysis codes in order: the null finder, then the sign finder and finally the separatrix surface and separator finder.
+
+      In the commands below it is assumed that your is saved in a file called \texttt{magfield.dat}.
 
       \texttt{./nf -i data/magfield.dat}
 
@@ -105,9 +108,9 @@
 
     It is recommended symbolic links are created to link these files from the code directory to where the data is stored. This can be done using the command:
 
-    \texttt{make setup data=/path/to/data/directory output=/path/to/output/directory}
+    \texttt{make setup data=/path/to/data/dir output=/path/to/output/dir}
 
-    This will create the symbolic links called \texttt{data} and \texttt{output} linking to the specified directories and create a \texttt{mod} directory for the Fortran module files to be stored. This should be used to reset the locations of the symbolic links each time a new data set needs to be analysed.
+    This will create the symbolic links called \texttt{data} and \texttt{output} linking to the specified directories \texttt{/path/to/data/dir} and \texttt{/path/to/output/dir} respectively and create a \texttt{mod} directory for the Fortran module files to be stored. This should be used to reset the locations of the symbolic links each time a new data set needs to be analysed. These two directories can be the same but we recommend having two separate directories.
 
     Issuing the command
 
@@ -125,7 +128,7 @@
 
       Debugging mode may be enabled if required. If this mode is chosen then more data is printed to the terminal during the running of all the analysis code and all optimisations by the compiler are turned off. This makes the codes run much slower due to printing, but also because the codes are optimised less. This should hopefully not be required, but if it is is should only be used on rare occasions by those who know what they are doing! It enables Fortran debuging options. This is mode is enabled including the option \texttt{debug=on}.
 
-      OpenMP may be turned off using \texttt{openmp=off}. It is on by default. The number of processors can be selected in the params.f90 file, Fortran will request the required number of processors on execution of the programs. See section \ref{sec:params} for details on selecting numbers of processors.
+      OpenMP may be turned off using \texttt{openmp=off}. It is on by default. The number of processors can be selected in the params.f90 file, Fortran will request the required number of processors on execution of the programs. See section \ref{sec:params} for details on selecting numbers of processors. Not all of the codes are parallelised. They may be parallelised in future.
 
   \section{Preparing the data}
     \label{sec:prep_data}
@@ -136,7 +139,7 @@
       \item Three 64-bit (double precision) floating point \( n_1 \times n_2 \times n_3 \) arrays, e.g., \( B_1(n_1,n_2,n_3) \), \( B_2(n_1,n_2,n_3) \) and \( B_3(n_1,n_2,n_3) \), containing the magnetic field values at each grid coordinate.
       \item Three 64-bit (double precision) floating point 1D arrays, \( x_1(n_1) \), \( x_2(n_2) \) and \( x_3(n_3) \), containing the coordinates in each grid dimension.
     \end{enumerate}
-    The 3D arrays must be written with Fortran order rather than C order. A Fortran ordered array of size \( n_1 \times n_2 \times n_3 \times 3 \) is equivalent to the three separate arrays above.
+    The 3D arrays must be written with Fortran order rather than C order. A Fortran ordered array of size \( n_1 \times n_2 \times n_3 \times 3 \) is equivalent to the three separate magnetic field arrays above.
 
     An example of creating a suitable data file in both IDL (Fortran order) and Python (C order) follows assuming the arrays are in their default memory orders for each language respectively. Assuming the magnetic field component arrays are stored as \texttt{bx}, \texttt{by} and \texttt{bz} of size \texttt{nx} by \texttt{ny} by \texttt{nz} and coordinate grids \texttt{x}, \texttt{y} and \texttt{z} with the correct bit sizes, you can save the data to file using:\\
 
@@ -150,7 +153,7 @@
     IDL> close, 10
     \end{verbatim}
 
-    Files are required to be stream files so there is no need to use the \texttt{/f77\_unformated} keyword in IDL when opening files.
+    Files are required to be stream files so there is no need to use the \texttt{/f77\_unformated} keyword in IDL when opening files. This allows all files to have random access.
 
     Python:
 
@@ -167,7 +170,7 @@
 
     Since Python uses C memory order, arrays must be transposed in NumPy to switch them to Fortran order for writing. There is also the option to create arrays in NumPy in Fortran order using the \texttt{order=`F'} keyword argument in the following NumPy command \texttt{array((101,101,201), dtype=np.float64, order=`F')}. However I do not know whether this has the required effect when writing to file.
 
-    An example of creating a suitable data file written using a Fortran code is given in \texttt{src/writedata.f90} (see Section~\ref{sec:writedata}). All the files are written with stream access allowing the data files to be portable between languages.
+    An example of creating a suitable data file written using a Fortran code is given in \texttt{src/writedata.f90} (see Section~\ref{sec:writedata}). Note that the data file is written with stream access using the Fortran open keyword argument \texttt{access=`stream'} which allows the data files to be portable between languages.
 
     The equivalent data in spherical and cylindrical coordinates can be written to a file in the usual orders \( r \), \( \theta \), \( \phi \) in spherical and \( R \), \( \phi \), \( z \) in cylindrical coordinates.
 
