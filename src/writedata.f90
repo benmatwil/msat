@@ -12,14 +12,14 @@ program writedata
   integer(int32) :: ix, iy, iz
   ! three components of field
   real(np), allocatable, dimension(:,:,:) :: bx, by, bz
-  !coordinates of grid
+  ! coordinates of grid
   real(np), allocatable, dimension(:) :: x, y, z
 
   ! grid parameters
   integer(int32), parameter :: nx = 201, ny = 201, nz = 601 ! size of grid
-  real(np), parameter :: xxmin = -2.5_np, xxmax = 2.5_np  !xrange
-  real(np), parameter :: yymin = -2.5_np, yymax = 2.5_np  !yrange
-  real(np), parameter :: zzmin = -7.5_np, zzmax = 7.5_np  !zrange
+  real(np), parameter :: xxmin = -2.5_np, xxmax = 2.5_np  ! xrange
+  real(np), parameter :: yymin = -2.5_np, yymax = 2.5_np  ! yrange
+  real(np), parameter :: zzmin = -7.5_np, zzmax = 7.5_np  ! zrange
 
   ! specific field parameters
   real(np), allocatable, dimension(:,:,:) :: ee
