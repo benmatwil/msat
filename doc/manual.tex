@@ -202,7 +202,7 @@
 
   \section{The Magnetic Skeleton Finding Analysis Codes}
 
-    The analysis codes are the core of the MSAT package. The three main codes are the null finder \texttt{nf}, spine finder \texttt{sf} and separatrix surface finder \texttt{ssf}. Each are run using the following command (assuming the data file is called \texttt{magfield.dat})
+    The analysis codes are the core of the MSAT package. The three main codes are the null finder \texttt{nf}, sign finder \texttt{sf} and separatrix surface finder \texttt{ssf}. Each are run using the following command (assuming the data file is called \texttt{magfield.dat})
 
     \texttt{./nf -i data/magfield.dat}
 
@@ -217,7 +217,7 @@
       \item \texttt{sf} then uses these locations to look for the spine and fan vectors of each null point and can thus determine the sign of the nulls.
       \item \texttt{ssf} then uses the null locations and fan vectors to trace out separatrix surfaces for each null and identify all separators connecting null points. \texttt{ssf} also traces the spines using the same tracing algorithm and writes them to file.
     \end{enumerate}
-    The three codes work in grid coordinates but the output from each is all in real coordinates (unless grid coordinates also given).
+    The three codes work in grid coordinates (a coordinate given between 1 and \( n_x \) in the \( x \) direction for example). The output from each is all in real coordinates (a coordinate in the original coordinate system) (unless grid coordinates also given).
 
     All options for these are in \texttt{params.f90} and are described here with their defaults.
     
@@ -237,7 +237,7 @@
           \item [\texttt{sig\_figs = 6}:] the accuracy in the significant figures to which the code finds the null point locations in grid coordinates. So \texttt{sig\_figs = 6} means it finds the null location to an accuracy of \( 10^{-6} \) of a grid cell.
         \end{description}
 
-      \subsubsection{Spine Finder}
+      \subsubsection{Sign Finder}
         \begin{description}
           \item [\texttt{rspherefact = 50.0\_np}:] specifies what multiple of \texttt{sig\_figs} is the radius that is used to create a sphere centred on the null point where the spine and fan vectors of the null point are calculated i.e., if \texttt{rspherefact = 50} and \texttt{sig\_figs = 6} then the radius of the sphere is  \( 50 \times 10^{-6} = 5\times 10^{-5} \) of a grid point. This may be worth changing only if the code is struggling with a known true null.
           \item [\texttt{nphi = 90} and \texttt{ntheta = 45}:] specify how many points in the \( \theta \) and \( \phi \) direction are placed initially uniformly on the sphere around the null for determining the spine and fan vectors.
@@ -264,15 +264,15 @@
 
     \subsection{Output Files}
 
-      After running \texttt{nf}, \texttt{sf} and \texttt{ssf}, the following files should be created and can be read in using routines provided and described in Section~\ref{sec:vis}
+      After running \texttt{nf}, \texttt{sf} and \texttt{ssf}, the following files should be created and can be read in using routines provided and described in Section~\ref{sec:vis}. If not specified below, the coordinates written to file are real coordinates.
       \begin{description}
         \item [\texttt{output/magfield-nullpos.dat}:] the null point locations in both grid and real coordinates
         \item [\texttt{output/magfield-nulldata.dat}:] the sign and spine and fan vectors for each null point
-        \item [\texttt{output/magfield-ringinfo.dat}:] the number of points on each of the rings for each of the nulls
-        \item [\texttt{output/magfield-rings.dat}:] the real coordinates of all the rings
+        \item [\texttt{output/magfield-ringinfo.dat}:] the number of points on each of the rings for all of the nulls
+        \item [\texttt{output/magfield-rings.dat}:] the coordinates of all the rings
         \item [\texttt{output/magfield-connectivity.dat}:] the null numbers which the separators connect and the ring and point numbers of the final ring where the separator exists
-        \item [\texttt{output/magfield-separators.dat}:] the real coordinates of all separators
-        \item [\texttt{output/magfield-spines.dat}:] the real coordinates of all the spine lines
+        \item [\texttt{output/magfield-separators.dat}:] the coordinates of all separators
+        \item [\texttt{output/magfield-spines.dat}:] the coordinates of all the spine lines
       \end{description}
 
   \section{Heliospheric Current Sheet (hcs) and Bald Patches (bp)}
