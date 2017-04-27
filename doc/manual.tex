@@ -152,7 +152,6 @@
     IDL> writeu, 10, x, y, z
     IDL> close, 10
     \end{verbatim}
-
     Files are required to be stream files so there is no need to use the \texttt{/f77\_unformated} keyword in IDL when opening files. This allows all files to have random access.
 
     Python:
@@ -172,7 +171,7 @@
 
     An example of creating a suitable data file written using a Fortran code is given in \texttt{src/writedata.f90} (see Section~\ref{sec:writedata}). Note that the data file is written with stream access using the Fortran open keyword argument \texttt{access=`stream'} which allows the data files to be portable between languages.
 
-    The equivalent data in spherical and cylindrical coordinates can be written to a file in the usual orders \( r \), \( \theta \), \( \phi \) in spherical and \( R \), \( \phi \), \( z \) in cylindrical coordinates.
+    The equivalent data in spherical and cylindrical coordinates can be written to a file in the usual orders \( r \), \( \theta \), \( \phi \) in spherical and \( R \), \( \phi \), \( z \) in cylindrical coordinates. The grids in the angular directions must stretch over the whole angular domain i.e. \( 0 \) to \( 2\pi \) in \( \phi \) and \( 0 \) to \( \pi \) in \( \theta \). The codes will switch on periodic boundaries on the appropriate boundaries if spherical or cylindrical coordinates are turned on whether the angular directions are complete or not. Restricted angular domains may be available in future.
 
     \subsection{Creating a data set from an analytical expression in Fortran}
       \label{sec:writedata}
