@@ -141,7 +141,7 @@ def spines(filename):
 
     return spinelist
 
-def rings(filename, breakinfo=False, nskip=1):
+def rings(filename, allinfo=False, nskip=1):
 
     nulldata = nulls(filename, simple=True)
 
@@ -171,7 +171,7 @@ def rings(filename, breakinfo=False, nskip=1):
                 breaklist.append(breaklisti)
                 assoclist.append(assoclisti)
 
-    if breakinfo == True:
-        return ringlist, breaklist
+    if allinfo == True:
+        return ringlist, breaklist, assoclist
     else:
         return ringlist

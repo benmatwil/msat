@@ -63,7 +63,7 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0
 def add_sepsurf():
     print('Adding separatrix surface rings')
 
-    rings, breaks = rd.rings(filename, breakinfo=True, nskip=nskipglob)
+    rings, breaks, _ = rd.rings(filename, breakinfo=True, nskip=nskipglob)
 
     cols = {-1:(0.5,0.5,1), 0:(0.5,1,0.5), 1:(1,0.5,0.5)}
 
