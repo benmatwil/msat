@@ -28,7 +28,7 @@ def get_colours():
 
 #################################################################
 
-def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.cm.Greys_r):
+def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.cm.Greys_r, nticks=4, newcolours=True):
     global datafile, prefile, nulldata, rstr, colours
 
     datafile = filename
@@ -47,14 +47,14 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
             if fract.numerator == 0:
                 string = r'$0$'
             elif fract.denominator != 1:
-            string = string + r'\frac{'
-            if fract.numerator != 1:
-                string = string + str(fract.numerator) 
-            string = string + r'\pi$' + r'}{' + str(fract.denominator) + r'}$'
+                string = string + r'\frac{'
+                if fract.numerator != 1:
+                    string = string + str(fract.numerator) 
+                string = string + r'\pi' + r'}{' + str(fract.denominator) + r'}$'
             else:
-            if fract.numerator != 1:
-                string = string + str(fract.numerator)
-            string = string + r'\pi$'
+                if fract.numerator != 1:
+                    string = string + str(fract.numerator)
+                string = string + r'\pi$'
             list.append(string)
         return list
 
@@ -64,10 +64,10 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
     ax = plt.gca()
     plt.xlabel('Longitude')
     plt.xlim([0, 2*np.pi])
-    plt.xticks([0, np.pi/2, np.pi, np.pi*3/2, np.pi*2], [r'$0$', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'])
+    plt.xticks(np.linspace(0, 2*np.pi, nticks+1), ticks(nticks, 2))
     plt.ylabel('Latitude')
     plt.ylim([np.pi, 0])
-    plt.yticks([0, np.pi/4, np.pi/2, np.pi*3/4, np.pi], [r'$0$', r'$\frac{\pi}{4}$', r'$\frac{\pi}{2}$', r'$\frac{3\pi}{4}$', r'$\pi$'])
+    plt.yticks(np.linspace(0, np.pi, nticks+1), ticks(nticks, 1))
 
     ax.set_rasterization_zorder(0)
     br, _, _, rads, thetas, phis = rd.field(datafile)
@@ -82,7 +82,7 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
     plt.tight_layout()
     if title == True: plt.title('Cut: ' + datafile + ' r = ' + rstr)
 
-    colours = get_colours()
+    if newcolours == True: colours = get_colours()
 
 #################################################################
 
@@ -152,6 +152,7 @@ def hcs(dots=False, lw=1):
             if dots == True:
                 plt.plot(line[:, 2], line[:, 1], '.', c='blue')
             ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
+            if float(rstr) > 2.49: ihcs = -1
 
 #################################################################
 
