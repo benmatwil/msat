@@ -167,7 +167,7 @@
     ...     z.tofile(file)
     \end{verbatim}
 
-    Since Python uses C memory order, arrays must be transposed in NumPy to switch them to Fortran order for writing. There is also the option to create arrays in NumPy in Fortran order using the \texttt{order=`F'} keyword argument in the following NumPy command \texttt{array((101,101,201), dtype=np.float64, order=`F')}. However I do not know whether this has the required effect when writing to file.
+    Since Python uses C memory order, arrays must be transposed in NumPy to switch them to Fortran order for writing. There is also the option to create arrays in NumPy in Fortran order using the \texttt{order=`F'} keyword argument in the following NumPy command \texttt{array((nx, ny, nz), dtype=np.float64, order=`F')}. However I do not know whether this has the required effect when writing to file.
 
     An example of creating a suitable data file written using a Fortran code is given in \texttt{src/writedata.f90} (see Section~\ref{sec:writedata}). Note that the data file is written with stream access using the Fortran open keyword argument \texttt{access=`stream'} which allows the data files to be portable between languages.
 
