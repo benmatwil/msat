@@ -359,7 +359,7 @@
       \begin{description}
         \item [Required:] \texttt{filename} and \texttt{addlist}.
         \item [Option: \texttt{addlist}:] should be a list of strings with the magnetic structures you wish to plot e.g. \texttt{[`nulls', `separators', `spines', `sepsurf']}. The other available option is \texttt{`fanlines'} which should used instead of \texttt{`sepsurf'} if preferred.
-        \item [Option: \texttt{nulls=None}:] if this is set to \texttt{None} then all nulls will be plotted. Otherwise provide a list of specific nulls to plot, e.g. \texttt{nulls=(2,3,6,9)} or \texttt{nulls=list(range(10,20,2))} only plots the null with those unique numbers. Note, this also determines which spines and separators are also plotted.
+        \item [Option: \texttt{nulls=None}:] if this is set to \texttt{None} then all nulls will be plotted. Otherwise provide a list of specific nulls to plot, e.g. \texttt{nulls=[2, 3, 6, 9]} or \texttt{nulls=list(range(10, 20, 2))} only plots the null with those unique numbers (in Fortran numbering). Note, this also determines which spines and separators are also plotted.
         \item [Option: \texttt{box=True}:] set this to \texttt{False} to turn off the plotting of the outer box.
         \item [Option: \texttt{fieldlines=None}:] set this to a \texttt{(n, 3)} array to plot field lines passing through the list of specified points.
         \item [Option: \texttt{linecolor=(1,1,1)}:] set this to the RGB colour required for the fieldlines. e.g., \texttt{linecolor=(0,0,0)} is black (default),  \texttt{linecolor=(1,0,0)} is red, \texttt{linecolor=(0,1,0)} is green and \texttt{linecolor=(0,0,1)} is blue.
