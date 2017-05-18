@@ -239,7 +239,7 @@
       \subsubsection{Sign Finder}
         \begin{description}
           \item [\texttt{rspherefact = 50.0\_np}:] specifies what multiple of \texttt{sig\_figs} is the radius that is used to create a sphere centred on the null point where the spine and fan vectors of the null point are calculated i.e., if \texttt{rspherefact = 50} and \texttt{sig\_figs = 6} then the radius of the sphere is  \( 50 \times 10^{-6} = 5\times 10^{-5} \) of a grid point. This may be worth changing only if the code is struggling with a known true null.
-          \item [\texttt{nphi = 90} and \texttt{ntheta = 45}:] specify how many points in the \( \theta \) and \( \phi \) direction are placed initially uniformly on the sphere around the null for determining the spine and fan vectors.
+          \item [\texttt{nphi = 90}, \texttt{ntheta = 45}:] specify how many points in the \( \phi \) and \( \theta \) direction respectively are placed initially uniformly on the sphere around the null for determining the spine and fan vectors.
         \end{description}
 
       \subsubsection{Separatrix Surface Finder}
@@ -258,7 +258,7 @@
         
         These parameters relate to the tracing of the field lines via the Runge-Kutta-Fehlberg integration scheme.
         \begin{description}
-          \item [\texttt{tol} and \texttt{stepmin}:] These are RKF45 parameters that relate, respectively, to the tolerance to which a field line is traced and the minimum step distance used for iteration of the scheme.
+          \item [\texttt{tol}, \texttt{stepmin}:] These are RKF45 parameters that relate, respectively, to the tolerance to which a field line is traced and the minimum step distance used for iteration of the scheme.
         \end{description}
 
     \subsection{Output Files}
@@ -331,11 +331,11 @@
         \item [Returns:] It returns a list containing entries for each null consisting of an array with identifying the points that trace out each spine.
       \end{description}
 
-      \texttt{rd.rings(`data/magfield.dat', breakinfo=False, nskip=1)}
+      \texttt{rd.rings(`data/magfield.dat', allinfo=False, nskip=1)}
 
       \begin{description}
         \item [Description:] This reads in all the rings calculated for the separatrix surfaces and information on where each ring breaks, if required.
-        \item [Option: \texttt{breakinfo=False}:] To return the break information in the same form as the rings set to \texttt{True}.
+        \item [Option: \texttt{allinfo=False}:] To return the break and association information in the same form as the rings set to \texttt{True}.
         \item [Option: \texttt{nskip=1}:] a parameter which determines how many rings are outputted. By default, it is set to 1 which will output all rings. \texttt{nskip=2} will output every other ring, for example.
         \item [Returns:] a list containing an entry for each null which list the locations of the points in all required rings.
       \end{description}
