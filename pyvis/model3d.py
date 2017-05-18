@@ -25,7 +25,7 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0
 
     global bgrid, xx, yy, zz, nulldata, ds, filename, nskipglob, nulllist
 
-    ml.figure(bgcolor=(1,1,1), fgcolor=(0,0,0), size=(800,800))
+    ml.figure(bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(800, 800))
 
     nskipglob = nskip
 
@@ -63,9 +63,9 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0
 def add_sepsurf():
     print('Adding separatrix surface rings')
 
-    rings, breaks, _ = rd.rings(filename, breakinfo=True, nskip=nskipglob)
+    rings, breaks, _ = rd.rings(filename, allinfo=True, nskip=nskipglob)
 
-    cols = {-1:(0.5,0.5,1), 0:(0.5,1,0.5), 1:(1,0.5,0.5)}
+    cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
     acc = 6
 
@@ -87,7 +87,7 @@ def add_fanlines(nlines, nring):
 
     rings = rd.rings(filename, nskip=nskipglob)
 
-    cols = {-1:(0.5,0.5,1), 0:(0.5,1,0.5), 1:(1,0.5,0.5)}
+    cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
     for inull in nulllist:
         print('Null {}'.format(inull+1))
@@ -115,7 +115,7 @@ def add_fanlines(nlines, nring):
 
             ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=cols[nulldata[inull].sign], tube_radius=None)
 
-def add_fieldlines(startpts, col=(0,0,0), colquant=None):
+def add_fieldlines(startpts, col=(0, 0, 0), colquant=None):
     print('Adding separatrix surface field lines')
 
     for startpt in startpts:
@@ -124,22 +124,22 @@ def add_fieldlines(startpts, col=(0,0,0), colquant=None):
         hmax = 0.5*ds
         epsilon = 1e-5
 
-        line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, boxedge=np.array([[-2.49,-2.49,-6.49],[2.49,2.49,8.49]]))
+        line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, boxedge=np.array([[-2.49, -2.49, -6.49], [2.49, 2.49, 8.49]]))
 
         if colquant is None:
             ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=col, tube_radius=None)
         else:
             vals = np.zeros(line.shape[0], dtype=np.float64)
-            
+
             for iline, pt in enumerate(line):
                 vals[iline] = fl.trilinearscalar3d(pt, colquant, xx, yy, zz)
-            
+
             ml.plot3d(line[:, 0], line[:, 1], line[:, 2], vals, tube_radius=None, colormap='jet')
 
 def add_spines():
     print('Adding spines')
 
-    cols = {-1:(0,0,1), 0:(0,1,0), 1:(1,0,0)}
+    cols = {-1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0)}
 
     spines = rd.spines(filename)
     nskip0 = nskipglob//2
@@ -169,12 +169,12 @@ def add_separators():
                 for ib0, ib1 in zip(brks[:-1], brks[1:]):
                     if ib0 != ib1:
                         ml.plot3d(sep0[ib0:ib1, 0], sep0[ib0:ib1, 1], sep0[ib0:ib1, 2],
-                            color=(0,0.5,0), line_width=6, tube_radius=None)
+                            color=(0, 0.5, 0), line_width=6, tube_radius=None)
 
 def add_nulls(size):
     print("Adding nulls")
 
-    cols = {-1:(0,0,1), 0:(0,1,0), 1:(1,0,0)}
+    cols = {-1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0)}
 
     boxsize = min([xx[-1] - xx[0], yy[-1] - yy[0], zz[-1] - zz[0]])/40
 
@@ -190,7 +190,7 @@ def add_nulls(size):
 
 def add_box():
     print("Adding box")
-    box = np.zeros((3,2), dtype=np.float64)
+    box = np.zeros((3, 2), dtype=np.float64)
     box[:, 0] = np.array([xx.min(), yy.min(), zz.min()])
     box[:, 1] = np.array([xx.max(), yy.max(), zz.max()])
     line = np.array([[0,0,0],[1,0,0],[1,0,1],[1,0,0],[1,1,0],[1,1,1],[1,1,0],
