@@ -98,7 +98,7 @@
         \texttt{m3d.make(`data/magfield.dat', [`nulls', `separators', `spines', `fanlines'])}
       \end{itemize}
     \end{enumerate}
-    If any problems arise or for customisations please read the main part of the manual.
+    If any problems arise or for customisations please refer to the main part of the manual.
 
   \section{Set-up and Compilation using the Makefile}
 
@@ -197,9 +197,9 @@
     IDL> x = d.x & y = d.y & z = d.z
       \end{verbatim}
 
-      These variables can now be written to file as above.
+      These variables can now be written to file as above ready for analysis. For other grids, ensure all magnetic field components are in the same locations and they can be written to file in the same way.
 
-  \section{The Magnetic Skeleton Finding Analysis Codes}
+  \section{The Main Codes}
 
     The analysis codes are the core of the MSAT package. The three main codes are the null finder \texttt{nf}, sign finder \texttt{sf} and separatrix surface finder \texttt{ssf}. Each are run using the following command (assuming the data file is called \texttt{magfield.dat})
 
@@ -350,19 +350,19 @@
 
       \texttt{model3d.py} has been written using the Mayavi module to visualise the structure of the fields in 3D.
 
-      First import the data using \texttt{import pyvis.model3d as m3d}.
+      First import the module using \texttt{import pyvis.model3d as m3d}.
 
-      The main routine can then be run as follows
+      The main routine can then be run as using the following command
 
-      \texttt{m3d.make(`data/magfield.dat', addlist, nulls=None, box=True, fieldlines=None, linecolor=(1,1,1), nskip=20, nullrad=1, nfanlines=40, nring=None)}
+      \texttt{m3d.make(`data/magfield.dat', addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20, nullrad=1, nfanlines=40, nring=None)}
 
       \begin{description}
         \item [Required:] \texttt{filename} and \texttt{addlist}.
         \item [Option: \texttt{addlist}:] should be a list of strings with the magnetic structures you wish to plot e.g. \texttt{[`nulls', `separators', `spines', `sepsurf']}. The other available option is \texttt{`fanlines'} which should used instead of \texttt{`sepsurf'} if preferred.
-        \item [Option: \texttt{nulls=None}:] if this is set to \texttt{None} then all nulls will be plotted. Otherwise provide a list of specific nulls to plot, e.g. \texttt{nulls=(2,3,6,9)} or \texttt{nulls=list(range(10,20,2))} only plots the null with those unique numbers. Note, this also determines which spines and separators are also plotted.
+        \item [Option: \texttt{nulls=None}:] if this is set to \texttt{None} then all nulls will be plotted. Otherwise provide a list of specific nulls to plot, e.g. \texttt{nulls=[2, 3, 6, 9]} or \texttt{nulls=list(range(10, 20, 2))} only plots the null with those unique numbers (in Fortran numbering). Note, this also determines which spines and separators are also plotted.
         \item [Option: \texttt{box=True}:] set this to \texttt{False} to turn off the plotting of the outer box.
         \item [Option: \texttt{fieldlines=None}:] set this to a \texttt{(n, 3)} array to plot field lines passing through the list of specified points.
-        \item [Option: \texttt{linecolor=(1,1,1)}:] set this to the RGB colour required for the fieldlines. e.g., \texttt{linecolor-(1,1,1)} is black (default),  \texttt{linecolor=(1,0,0)} is red, \texttt{linecolor=(0,1,0)} is green and \texttt{linecolor=(0,0,1)} is blue.
+        \item [Option: \texttt{linecolor=(1,1,1)}:] set this to the RGB colour required for the fieldlines. e.g., \texttt{linecolor=(0,0,0)} is black (default),  \texttt{linecolor=(1,0,0)} is red, \texttt{linecolor=(0,1,0)} is green and \texttt{linecolor=(0,0,1)} is blue.
         \item [Option: \texttt{nskip=20}:] reduces the number of rings plotted. Choose how many rings to skip in when plotting the separatrix surfaces -- similar to \texttt{nskip} in the rings reading procedure. This will also determines the resolution of the spine and separator lines.
         \item [Option: \texttt{nullrad=1}:] set to reduce (if $<1$) or enlarge (if $>1$) the radius of the spheres used to identify the null points. The factor multiplies the default radius. The default radius is calculated based on the box size and grid spacing.
         \item [Option: \texttt{nfanlines=40}:] set this to the number of approximately equally spaced field lines drawn to map out the separatrix surfaces.
@@ -371,7 +371,17 @@
 
       This procedure will plot and open the window for viewing.
 
-      For more documentation, such as how to save the plots drawn, see the Mayavi online documentation at \texttt{http://docs.enthought.com/mayavi/mayavi/mlab.html}. Once the plotting window is open, standard Mayavi commands can be used. The Mayavi module is imported inder the name \texttt{ml} in the \texttt{model3d} module.
+      This viewer is currently only implemented in cartesian coordinates. It will plot a spherical coordinate magnetic skeleton for example taking into account the periodic boundaries but it will be as if the three coordinates were cartesian. Also any calculated fieldlines will be done using a cartesian fieldline tracer and so will be incorrect.
+
+      It is possible to add more magnetic skeleton features after the initial draw. There is an individual function for drawing each part of the magnetic skeleton which can be called separately. This is especially useful for drawing different sets of fieldlines individually. However the initial \texttt{make} must have been called. This will at least read in the required initial data. If you do not want anything to plot initally, set \texttt{addlist} to be an empty list.
+
+      The following command will plot fieldlines from the \texttt{(n, 3)} array of points given in \texttt{startpts}
+      
+      \texttt{m3d.add\_fieldlines(startpts, col=(0,0,0), colquant=None)}
+
+      If \texttt{colquant} is given as a scalar array of the same size as the grid, the fieldlines will be coloured to vary with the quantity given in \texttt{colquant} and \texttt{col} will be ignored. Custom colormaps will be soon be added.
+
+      For more documentation, such as how to save the plots drawn, see the Mayavi online documentation at \texttt{http://docs.enthought.com/mayavi/mayavi/mlab.html}. Once the plotting window is open, standard Mayavi commands can be used. The Mayavi module is imported inder the name \texttt{ml} in the \texttt{model3d} module or it can be imported into the main namespace.
 
   \printbibliography
 

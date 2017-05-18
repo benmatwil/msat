@@ -32,7 +32,7 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0
     filename = fname
 
     field = rd.field(filename)
-    bgrid = np.zeros((field[0].shape[0], field[0].shape[1], field[0].shape[2], 3), dtype=np.float64)
+    bgrid = np.zeros(field[0].shape + (3,), dtype=np.float64)
     for i in range(3):
         bgrid[:, :, :, i] = field[i]
 
