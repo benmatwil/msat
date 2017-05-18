@@ -3,7 +3,7 @@ import numpy as np
 import pyvis.fieldline3d as fl
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import os, io
+import os
 
 def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2, badtest=False):
 
@@ -43,7 +43,7 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2
         col = ['black', 'green', 'red']
 
         for j, name in enumerate(fnames):
-            with io.open('output/' + name, 'rb') as file:
+            with open('output/' + name, 'rb') as file:
                 ny = np.asscalar(np.fromfile(file, count=1, dtype=np.int32))
                 r = np.fromfile(file, count=3*ny, dtype=np.float64).reshape(ny,3).T
                 r = r * rsphere

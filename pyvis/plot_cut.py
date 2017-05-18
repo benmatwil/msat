@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from . import read as rd
-import os, io
+import os
 from random import shuffle
 
 plt.ion()
@@ -96,7 +96,7 @@ def all(labels=False, ms=3):
 #################################################################
 
 def spines(labels=False, ms=3):
-    with io.open('output/'+prefile+'-spines-cut_'+rstr+'.dat', 'rb') as spinefile:
+    with open('output/'+prefile+'-spines-cut_'+rstr+'.dat', 'rb') as spinefile:
         inull = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
         while inull > 0:
             spine = np.fromfile(spinefile, dtype=np.float64, count=3)
@@ -108,7 +108,7 @@ def spines(labels=False, ms=3):
 #################################################################
 
 def separators(labels=False, ms=3):
-    with io.open('output/'+prefile+'-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
+    with open('output/'+prefile+'-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
         null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
         while null > 0:
             sep = np.fromfile(sepfile, dtype=np.float64, count=3)
@@ -117,7 +117,7 @@ def separators(labels=False, ms=3):
                 plt.text(sep[2], sep[1], '{}'.format(null))
             null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
 
-    with io.open('output/'+prefile+'-hcs-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
+    with open('output/'+prefile+'-hcs-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
         null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
         while null > 0:
             sep = np.fromfile(sepfile, dtype=np.float64, count=3)
@@ -127,7 +127,7 @@ def separators(labels=False, ms=3):
 #################################################################
 
 def rings(dots=False, labels=False, lw=1):
-    with io.open('output/'+prefile+'-rings-cut_'+rstr+'.dat', 'rb') as ringfile:
+    with open('output/'+prefile+'-rings-cut_'+rstr+'.dat', 'rb') as ringfile:
         inull = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
         while inull >= 0:
             length = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
@@ -142,7 +142,7 @@ def rings(dots=False, labels=False, lw=1):
 #################################################################
 
 def hcs(dots=False, lw=1):
-    with io.open('output/'+prefile+'-hcs-cut_'+rstr+'.dat', 'rb') as hcsfile:
+    with open('output/'+prefile+'-hcs-cut_'+rstr+'.dat', 'rb') as hcsfile:
         ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
         while ihcs >= 0:
             length = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
