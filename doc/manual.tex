@@ -157,7 +157,7 @@
     Python:
 
     \begin{verbatim}
-    >>> with io.open(`data/magfield.dat', 'wb') as file:
+    >>> with io.open(`data/magfield.dat', `wb') as file:
     ...     np.array([nx, ny, nz], dtype=np.int32).tofile(file)
     ...     bx.T.tofile(file)
     ...     by.T.tofile(file)
