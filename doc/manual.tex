@@ -4,7 +4,7 @@
 % \usepackage{graphicx}
 \usepackage{parskip}
 \usepackage[a4paper,margin=2.5cm]{geometry}
-% \usepackage{tikz}
+\usepackage{tikz}
 % \usepackage{float}
 % \usepackage{amssymb}
 % \usepackage{subfig}
@@ -386,7 +386,11 @@
       \begin{center}
         \begin{tikzpicture}[remember picture,overlay]
           \node at (0,0) {\texttt{seps\tikzmark{inull}[inull][isep]}};
-          \filldraw[fill=black] (0,0) circle[radius=0.08cm] node[above] {};
+          \filldraw[fill=black] (pic cs:inull.south west) circle[radius=0.08cm] node[above] {a};
+          \filldraw[fill=black] (pic cs:inull.south east) circle[radius=0.08cm] node[above] {b};
+          \filldraw[fill=black] (pic cs:inull.north west) circle[radius=0.08cm] node[above] {c};
+          \filldraw[fill=black] (pic cs:inull.north east) circle[radius=0.08cm] node[above] {d};
+          \filldraw[fill=black] (pic cs:inull) circle[radius=0.08cm] node[above] {e};
         \end{tikzpicture}
       \end{center}
 
