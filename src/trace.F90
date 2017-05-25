@@ -75,7 +75,7 @@ module trace
       k4 = hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
       k5 = hvec*normalise(trilinear(rtest, bgrid))
-      rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
+      rtest = r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5
       k6 = hvec*normalise(trilinear(rtest, bgrid))
       
 
