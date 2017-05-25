@@ -84,7 +84,7 @@ module trace
       z = z1*k1 + z3*k3 + z4*k4 + z5*k5 + z6*k6
 
       !calculate optimum step length (s = hoptimum/h)
-      s = 0.84_np*(tol/modulus(z-y))**0.25_np
+      s = (tol/modulus(z-y)/2)**0.25_np
       
       if (abs(s*h) < stepmin) s = stepmin/abs(h)
       if (s > 1) s = 1.0_np
