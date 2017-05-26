@@ -158,16 +158,18 @@
 
     \begin{verbatim}
     >>> with io.open(`data/magfield.dat', `wb') as file:
-    ...     np.array([nx, ny, nz], dtype=np.int32).tofile(file)
-    ...     bx.T.tofile(file)
-    ...     by.T.tofile(file)
+    ...     numpy.array([nx, ny, nz], dtype=np.int32).tofile(file)
+    ...     bx.T.tofile(file) # transpose is required
+    ...     by.T.tofile(file) # for memory order
     ...     bz.T.tofile(file)
     ...     x.tofile(file)
     ...     y.tofile(file)
     ...     z.tofile(file)
     \end{verbatim}
 
-    Since Python uses C memory order, arrays must be transposed in NumPy to switch them to Fortran order for writing. There is also the option to create arrays in NumPy in Fortran order using the \texttt{order=`F'} keyword argument in the following NumPy command \texttt{array((nx, ny, nz), dtype=np.float64, order=`F')}. However I do not know whether this has the required effect when writing to file.
+    Since Python uses C memory order, arrays must be transposed in NumPy to switch them to Fortran order for writing. There is also the option to create arrays in NumPy in Fortran order using the \texttt{order=`F'} keyword argument in the following NumPy command \texttt{numpy.array((nx, ny, nz), dtype=numpy.float64, order=`F')}. However I do not know whether this has the required effect when writing to file.
+
+    NumPy's meshgrid function makes it easy to create grids from analytic functions. For 3D grids, you need add the keyword argument \texttt{indexing=`ij'} to keep the array sizing correct.
 
     An example of creating a suitable data file written using a Fortran code is given in \texttt{src/writedata.f90} (see Section~\ref{sec:writedata}). Note that the data file is written with stream access using the Fortran open keyword argument \texttt{access=`stream'} which allows the data files to be portable between languages.
 
@@ -253,7 +255,7 @@
         
         \begin{description}
           \item [\texttt{stepsize = 0.2}:] the distance in grid coordinates between each of the rings. This is equivalent to saying the magnetic field line through each point on a r     ing is traced a distance approximately equal to \texttt{stepsize = 0.2} in grid coordinates before the next ring is formed.
-          \item [\texttt{ringsmax = 10000}:] the maximum number of rings (excluding the first) that \texttt{ssf} will use to analyse each null's separatrix surface. If this number of rings is reached then the code will move onto the next null. For large boxes, this may need to be increased. The code will trace fieldlines approximately \texttt{stepsize} \( \times \) \texttt{ringsmax} grid points away from the nulls.
+          \item [\texttt{ringsmax = 10000}:] the maximum number of rings (excluding the first) that \texttt{ssf} will use to analyse each null's separatrix surface. If this number of rings is reached then the code will move onto the next null. For large boxes, this may need to be increased. The code will be able trace fieldlines a maximum of approximately \texttt{stepsize} \( \times \) \texttt{ringsmax} grid points away from the nulls.
         \end{description}
         
         These parameters relate to the tracing of the field lines via the Runge-Kutta-Fehlberg integration scheme.
@@ -268,11 +270,27 @@
         \item [\texttt{output/magfield-nullpos.dat}:] the null point locations in both grid and real coordinates
         \item [\texttt{output/magfield-nulldata.dat}:] the sign and spine and fan vectors for each null point
         \item [\texttt{output/magfield-ringinfo.dat}:] the number of points on each of the rings for all of the nulls
-        \item [\texttt{output/magfield-rings.dat}:] the coordinates of all the rings
+        \item [\texttt{output/magfield-rings.dat}:] the coordinates of all the rings together with break point and associativity data
         \item [\texttt{output/magfield-connectivity.dat}:] the null numbers which the separators connect and the ring and point numbers of the final ring where the separator exists
         \item [\texttt{output/magfield-separators.dat}:] the coordinates of all separators
         \item [\texttt{output/magfield-spines.dat}:] the coordinates of all the spine lines
       \end{description}
+
+    \subsection{Warnings and Errors}
+      \subsubsection{Sign Finder}
+        The Sign Finder has three warning codes about each null to be aware about.
+        \begin{description}
+          \item [1:] The null is likely to be a source or a sink -- there may be an issue with the magnetic field itself.
+          \item [2:] The null's spine vector and vector normal to the fan plane are almost parallel.
+          \item [3:] The code early on tries to make a guess on the sign of the null based on which of the points converge first. This will be flagged if the guess and the final sign do not agree -- perhaps worth checking the null.
+        \end{description}
+        Errors with individual nulls can be checked using \texttt{nullstruct.py}. See later for more details.
+      
+      \subsubsection{Separatrix Surface Finder}
+        The Separatrix Surface Finder will stop under the following circumstances:
+        \begin{enumerate}
+          \item a trace error occurs
+        \end{enumerate}
 
   \section{Heliospheric Current Sheet (hcs) and Bald Patches (bp)}
 
@@ -369,7 +387,7 @@
         \item [Option: \texttt{nring=None}:] the ring number (given the ring skipping value above) from which the fan field lines are drawn from. If \texttt{None} then the code will pick the ring a 5th of the way from the null.
       \end{description}
 
-      This procedure will plot and open the window for viewing.
+      This procedure will plot and open the window for viewing. The plot can be rotated using a left click-and-drag, zoomed by rotating middle mouse wheel and panned by a click-and-drag using the middle mouse wheel.
 
       This viewer is currently only implemented in cartesian coordinates. It will plot a spherical coordinate magnetic skeleton for example taking into account the periodic boundaries but it will be as if the three coordinates were cartesian. Also any calculated fieldlines will be done using a cartesian fieldline tracer and so will be incorrect.
 
@@ -377,7 +395,7 @@
 
       The following command will plot fieldlines from the \texttt{(n, 3)} array of points given in \texttt{startpts}
       
-      \texttt{m3d.add\_fieldlines(startpts, col=(0,0,0), colquant=None)}
+      \texttt{m3d.add\_fieldlines(startpts, col=(0,0,0), colquant=None)}.
 
       If \texttt{colquant} is given as a scalar array of the same size as the grid, the fieldlines will be coloured to vary with the quantity given in \texttt{colquant} and \texttt{col} will be ignored. Custom colormaps will be soon be added.
 
