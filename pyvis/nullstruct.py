@@ -54,8 +54,6 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2
                 plt.plot(r[0,:],r[1,:],r[2,:], 'x ', c=col[j])
 
                 if name == fnames[0]:
-                    # print('')
-                    # if not eof(10):
                     maxvec = np.fromfile(file, count=3, dtype=np.float64)
                     max1 = maxvec.copy()
                     maxvec = maxvec*rsphere
@@ -63,23 +61,17 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2
                     plt.plot([maxvec[0]],[maxvec[1]],[maxvec[2]],'x ', c='cyan', ms=xsize, mew=xthick)
 
                 if name == fnames[1]:
-                    # print('')
-                    # if not eof(10) then begin
                     minvec = np.fromfile(file, count=3, dtype=np.float64)
                     min1 = minvec.copy()
                     minvec = minvec*rsphere
                     minvec = minvec + nullpos
                     plt.plot([minvec[0]],[minvec[1]],[minvec[2]],'x ', c='green', ms=xsize, mew=xthick)
-                    # endif
 
                 if name == fnames[2]:
-                    # print('')
-                    # if not eof(10) then begin
                     spine = np.fromfile(file, count=3, dtype=np.float64)
                     spine = spine*rsphere
                     spine = spine + nullpos
                     plt.plot([spine[0]],[spine[1]],[spine[2]],'x ', c='blue', ms=xsize, mew=xthick)
-                    # endif
 
         fanpts = []
         npts = 121
