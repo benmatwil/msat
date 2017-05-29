@@ -77,7 +77,6 @@ module trace
       k5 = hvec*normalise(trilinear(rtest, bgrid))
       rtest = r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5
       k6 = hvec*normalise(trilinear(rtest, bgrid))
-      
 
       !get 4th order (y) and 5th order (z) estimates
       y = y1*k1 + y3*k3 + y4*k4 + y5*k5
