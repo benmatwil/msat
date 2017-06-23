@@ -81,7 +81,7 @@
 
       \texttt{./sf -i data/magfield.dat}
 
-      \texttt{./ssf -i data/magfield.dat}
+      \texttt{./ssfxyz -i data/magfield.dat}
 
       \item Visualising the magnetic skeleton in python
 
@@ -116,21 +116,32 @@
 
     \texttt{make}
 
-    will initiate compilation of all codes and create compiled executables \texttt{writedata}, \texttt{nf}, \texttt{sf}, \texttt{ssf}, \texttt{hcs} and \texttt{bp} and by default will compile for cartesian coordinates with OpenMP turned on.
+    will initiate compilation of all codes and create the compiled executables and by default will compile with OpenMP turned on.
+
+    \subsection{Coordinate Systems}
+      \label{sec:coord}
+
+      The code has been written for cartesian, cylindrical and spherical coordinates. However, the only code that requires a difference due to coordinate system is the Separatrix Surface Finder. Three different versions are compiled:
+      \begin{enumerate}
+        \item \texttt{ssfxyz} - cartesian \( (x, y, z) \)
+        \item \texttt{ssfrpz} - cylindrical \( (R, \phi, z) \)
+        \item \texttt{ssfrtp} - spherical \( (r, \theta, \phi) \)
+      \end{enumerate}
+      so you just need to use the appropriate executable for your data.
 
     \subsection{Options}
 
-      The main option to change at compilation time is the coordinate system of the data. To switch coordinate systems, you specify the coordinate system at in the make command. To compile in spherical coordinates, for example, you type
+      % The main option to change at compilation time is the coordinate system of the data. To switch coordinate systems, you specify the coordinate system at in the make command. To compile in spherical coordinates, for example, you type
 
-      \texttt{make coord=spherical}
+      % \texttt{make coord=spherical}
 
-      Other options are \texttt{cartesian} (default if \texttt{coord} is not specified) and \texttt{cylindrical}.
+      % Other options are \texttt{cartesian} (default if \texttt{coord} is not specified) and \texttt{cylindrical}.
 
-      Debugging mode may be enabled if required. If this mode is chosen then more data is printed to the terminal during the running of all the analysis code and all optimisations by the compiler are turned off. This makes the codes run much slower due to printing, but also because the codes are optimised less. This should hopefully not be required, but if it is is should only be used on rare occasions by those who know what they are doing! It enables Fortran debuging options. This is mode is enabled including the option \texttt{debug=on}.
+      Debugging mode may be enabled if required. If this mode is chosen then more data is printed to the terminal during the running of all the analysis code and all optimisations by the compiler are turned off. This makes the codes run much slower due to printing, but also because the codes are optimised less. This should hopefully not be required, but if it is is should only be used on rare occasions by those who know what they are doing! It enables Fortran debuging options. This mode is enabled including the option \texttt{debug=on}.
 
       OpenMP may be turned off using \texttt{openmp=off}. It is on by default. The number of processors can be selected in the params.f90 file, Fortran will request the required number of processors on execution of the programs. See section \ref{sec:params} for details on selecting numbers of processors. Not all of the codes are parallelised. They may be parallelised in future.
 
-  \section{Preparing the data}
+  \section{Preparing the Data}
     \label{sec:prep_data}
 
     All the codes require a 3D divergence-free vector field, which from now onwards will be called a magnetic field. The codes also require the grid size of the data and corresponding coordinates of the grid points. The data must be stored in a binary unformatted data file and written in the following order:
@@ -146,36 +157,34 @@
     IDL:
 
     \begin{verbatim}
-    IDL> openw, 10, `data/magfield.dat'
-    IDL> writeu, 10, long([nx, ny, nz])
-    IDL> writeu, 10, bx, by, bz
-    IDL> writeu, 10, x, y, z
-    IDL> close, 10
+    openw, 10, `data/magfield.dat'
+    writeu, 10, long([nx, ny, nz])
+    writeu, 10, bx, by, bz
+    writeu, 10, x, y, z
+    close, 10
     \end{verbatim}
     Files are required to be stream files so there is no need to use the \texttt{/f77\_unformated} keyword in IDL when opening files. This allows all files to have random access.
 
     Python:
 
     \begin{verbatim}
-    >>> with io.open(`data/magfield.dat', `wb') as file:
-    ...     numpy.array([nx, ny, nz], dtype=np.int32).tofile(file)
-    ...     bx.T.tofile(file) # transpose is required
-    ...     by.T.tofile(file) # for memory order
-    ...     bz.T.tofile(file)
-    ...     x.tofile(file)
-    ...     y.tofile(file)
-    ...     z.tofile(file)
+    with io.open(`data/magfield.dat', `wb') as file:
+        numpy.array([nx, ny, nz], dtype=np.int32).tofile(file)
+        bx.T.tofile(file) # transpose is required
+        by.T.tofile(file) # for memory order
+        bz.T.tofile(file)
+        x.tofile(file)
+        y.tofile(file)
+        z.tofile(file)
     \end{verbatim}
 
-    Since Python uses C memory order, arrays must be transposed in NumPy to switch them to Fortran order for writing. There is also the option to create arrays in NumPy in Fortran order using the \texttt{order=`F'} keyword argument in the following NumPy command \texttt{numpy.array((nx, ny, nz), dtype=numpy.float64, order=`F')}. However I do not know whether this has the required effect when writing to file.
-
-    NumPy's meshgrid function makes it easy to create grids from analytic functions. For 3D grids, you need add the keyword argument \texttt{indexing=`ij'} to keep the array sizing correct.
+    Since Python uses C memory order, arrays must be transposed in NumPy to switch them to Fortran order for writing. There is also the option to create arrays in NumPy in Fortran order using the \texttt{order=`F'} keyword argument in the following NumPy command \texttt{array((nx, ny, nz), dtype=numpy.float64, order=`F')}. However I do not know whether this has the required effect when writing to file. NumPy's \texttt{meshgrid} function makes it easy to create grids from analytic functions -- see below in section \ref{sec:pythonanal} for more details and an example.
 
     An example of creating a suitable data file written using a Fortran code is given in \texttt{src/writedata.f90} (see Section~\ref{sec:writedata}). Note that the data file is written with stream access using the Fortran open keyword argument \texttt{access=`stream'} which allows the data files to be portable between languages.
 
     The equivalent data in spherical and cylindrical coordinates can be written to a file in the usual orders \( r \), \( \theta \), \( \phi \) in spherical and \( R \), \( \phi \), \( z \) in cylindrical coordinates. The grids in the angular directions must stretch over the whole angular domain i.e. \( 0 \) to \( 2\pi \) in \( \phi \) and \( 0 \) to \( \pi \) in \( \theta \). The codes will switch on periodic boundaries on the appropriate boundaries if spherical or cylindrical coordinates are turned on whether the angular directions are complete or not. Restricted angular domains may be available in future.
 
-    \subsection{Creating a data set from an analytical expression in Fortran}
+    \subsection{Creating a Data Set from an Analytical Expression in Fortran}
       \label{sec:writedata}
 
       The code \texttt{writedata.f90} allows you to create a data set from an analytical expression. It will be compiled at the same time as the main codes. To execute type
@@ -183,20 +192,55 @@
       \texttt{./writedata}.
 
       This will save a magnetic field (by default) as \texttt{data/magfield.dat}. To change the output file name type \texttt{writedata -o newfilename.dat} and the data file will be saved as \texttt{data/newfilename.dat}
+    
+    \subsection{Creating a Data Set from an Analytical Expression in Python}
+      \label{sec:pythonanal}
 
-    \subsection{Reading in data created using Lare3D}
+      NumPy's meshgrid can be used which makes creating fields from an analytic expression very easy. But the option \texttt{indexing=`ij'} must be used otherwise the field will not be correct since the first two dimensions will be switched which is correct for plotting in Matplotlib.
+
+      The following example writes a single null point magnetic field appropriately to file of the form
+        \[ B_x = x + \frac{q - J_\parallel}{2} y \]
+        \[ B_y = \frac{q + J_\parallel}{2} x + p y \]
+        \[ B_z = J_\perp y - (p + 1) z \]
+      with \( p = 1 \), \( q = 0 \), \( J_\parallel = 1 \) and \( J_\perp = 0 \) with grids from -1 to 1 using 200 points in each direction:
+
+      \begin{verbatim}
+    nx, ny, nz = 200, 200, 200
+    xmin, xmax, ymin, ymax, zmin, zmax = -1, 1, -1, 1, -1, 1
+
+    xgrid = numpy.linspace(xmin, xmax, nx, dtype=np.float64)
+    ygrid = numpy.linspace(ymin, ymax, ny, dtype=np.float64)
+    zgrid = numpy.linspace(zmin, zmax, nz, dtype=np.float64)
+    x, y, z = numpy.meshgrid(xgrid, ygrid, zgrid, indexing=`ij')
+
+    p, q, jpar, jperp = 1, 0, 1, 0
+    bx = x + (q - jpar)*y/2
+    by = (q + jpar)*x/2 + p*y
+    bz = jperp*y - (p + 1)*z
+
+    with open(`data/magfield.dat', `wb') as datafile:
+        np.array([nx, ny, nz], dtype=np.int32).tofile(datafile)
+        bx.T.tofile(datafile)
+        by.T.tofile(datafile)
+        bz.T.tofile(datafile)
+        xgrid.tofile(datafile)
+        ygrid.tofile(datafile)
+        zgrid.tofile(datafile)
+      \end{verbatim}
+
+    \subsection{Using data created using Lare3D in IDL}
 
       Magnetic fields from Lare3D can also be used but require a bit of conversion since all the magnetic field components need to be moved to the same locations (centres of the grid cells). The following IDL code will do this conversion:
 
       \begin{verbatim}
-    IDL> d = getdata(0, /magnetic_field, /grid)
-    IDL> nx = n_elements(d.x)
-    IDL> ny = n_elements(d.y)
-    IDL> nz = n_elements(d.z)
-    IDL> bx = (d.bx[1:-1,*,*] + d.bx[0:-2,*,*])/2 ; magnetic field
-    IDL> by = (d.by[*,1:-1,*] + d.by[*,0:-2,*])/2 ; components now
-    IDL> bz = (d.bz[*,*,1:-1] + d.bz[*,*,0:-2])/2 ; at cell centres
-    IDL> x = d.x & y = d.y & z = d.z
+    d = getdata(0, /magnetic_field, /grid)
+    nx = n_elements(d.x)
+    ny = n_elements(d.y)
+    nz = n_elements(d.z)
+    bx = (d.bx[1:-1,*,*] + d.bx[0:-2,*,*])/2 ; magnetic field
+    by = (d.by[*,1:-1,*] + d.by[*,0:-2,*])/2 ; components now
+    bz = (d.bz[*,*,1:-1] + d.bz[*,*,0:-2])/2 ; at cell centres
+    x = d.x & y = d.y & z = d.z
       \end{verbatim}
 
       These variables can now be written to file as above ready for analysis. For other grids, ensure all magnetic field components are in the same locations and they can be written to file in the same way.
@@ -209,7 +253,7 @@
 
     \texttt{./sf -i data/magfield.dat}
     
-    \texttt{./ssf -i data/magfield.dat}
+    \texttt{./ssf*** -i data/magfield.dat} (replacing \texttt{***} for the appropriate coordinate system, see section \ref{sec:coord})
 
     They must be run in the above order or they will not work as the next code depends on output from the previous code. From now on, the manual will assume the magnetic field data file is called \texttt{magfield.dat}.
 
