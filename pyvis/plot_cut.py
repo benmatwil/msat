@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from . import read as rd
 import os
 from random import shuffle
+from fractions import Fraction as fr
 
 plt.ion()
 
@@ -39,7 +40,6 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
     rstr = '{:6.4f}'.format(r)
 
     def ticks(nsplit, npi):
-        from fractions import Fraction as fr
         list = []
         for i in range(nsplit+1):
             string = r'$'
@@ -60,7 +60,7 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
 
     # os.system(f'./make_cut -i {filename} -r {r}')
 
-    plt.figure(figsize=(16/2.55, 8/2.55)) # set-up for A4
+    plt.figure(figsize=(15/2.55, 7.2/2.55)) # set-up for A4
     ax = plt.gca()
     plt.xlabel('Longitude')
     plt.xlim([0, 2*np.pi])
@@ -76,8 +76,7 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
     plt.contourf(phis, thetas, plotfield, levels, cmap=colmap, extend='both', zorder=-10)
     cb = plt.colorbar(fraction=0.05, pad=0.025)
     diff = levels[-1] - levels[0]
-    cb.set_ticks(np.array([0.0, 0.25, 0.5, 0.75, 1.0])*diff + levels[0])
-    # print(np.array([0.0, 0.25, 0.5, 0.75, 1.0])*diff + levels[0])
+    cb.set_ticks(np.linspace(0, 1.0, 5)*diff + levels[0])
     cb.set_label('Magnetic Field Strength (G)')
     plt.tight_layout()
     if title == True: plt.title('Cut: ' + datafile + ' r = ' + rstr)
@@ -100,7 +99,7 @@ def spines(labels=False, ms=3):
         inull = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
         while inull > 0:
             spine = np.fromfile(spinefile, dtype=np.float64, count=3)
-            plt.plot(spine[2], spine[1], '.', c=colours[inull-1], ms=ms)
+            plt.plot(spine[2], spine[1], '.', c=colours[inull-1], ms=ms, zorder=-5)
             if labels == True:
                 plt.text(spine[2], spine[1], '{}'.format(inull), color='green')
             inull = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
@@ -112,7 +111,7 @@ def separators(labels=False, ms=3):
         null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
         while null > 0:
             sep = np.fromfile(sepfile, dtype=np.float64, count=3)
-            plt.plot(sep[2], sep[1], '*', c='yellow', ms=ms)
+            plt.plot(sep[2], sep[1], '*', c='yellow', ms=ms, zorder=-5)
             if labels == True:
                 plt.text(sep[2], sep[1], '{}'.format(null))
             null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
@@ -121,7 +120,7 @@ def separators(labels=False, ms=3):
         null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
         while null > 0:
             sep = np.fromfile(sepfile, dtype=np.float64, count=3)
-            plt.plot(sep[2], sep[1], '*', c='orange', ms=ms)
+            plt.plot(sep[2], sep[1], '*', c='orange', ms=ms, zorder=-5)
             null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
 
 #################################################################
@@ -132,7 +131,7 @@ def rings(dots=False, labels=False, lw=1):
         while inull >= 0:
             length = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
             ring = np.fromfile(ringfile, dtype=np.float64, count=3*length).reshape(-1,3)
-            plt.plot(ring[:,2], ring[:,1], c=colours[inull-1], lw=lw)
+            plt.plot(ring[:,2], ring[:,1], c=colours[inull-1], lw=lw, zorder=-5)
             if labels == True:
                 plt.text(ring[length//2,2], ring[length//2,1], '{}'.format(inull))
             if dots == True:
@@ -148,7 +147,7 @@ def hcs(dots=False, lw=1):
             length = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
             # print(length)
             line = np.fromfile(hcsfile, dtype=np.float64, count=3*length).reshape(-1,3)
-            plt.plot(line[:, 2], line[:, 1], ls=':', c='lime', lw=lw)
+            plt.plot(line[:, 2], line[:, 1], ls=':', c='lime', lw=lw, zorder=-5)
             if dots == True:
                 plt.plot(line[:, 2], line[:, 1], '.', c='blue')
             ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
@@ -167,7 +166,7 @@ def nulls(labels=False, size=1):
 def field():
     br, _, _, rads, thetas, phis = rd.field(datafile)
     levels = np.linspace(-10,10,101)
-    plt.contourf(phis, thetas, br[0,:,:], levels, cmap=plt.cm.RdBu_r, extend='both', vmax=10, vmin=-10)
+    plt.contourf(phis, thetas, br[0,:,:], levels, cmap=plt.cm.RdBu_r, extend='both', vmax=10, vmin=-10, zorder=-10)
     cb = plt.colorbar(fraction=0.05, pad=0.025)
     cb.set_ticks([-10,-5,0,5,10])
     cb.set_label('Magnetic Field Strength (G)')
