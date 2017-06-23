@@ -271,19 +271,19 @@ module common
       real(np) :: r(3)
       
 #if cylindrical
-      if (r(2) < ymin) r(2) = r(2) + ymin - ymax
-      if (r(2) > ymin) r(2) = r(2) - (ymin - ymax)
+      if (r(2) < ymin) r(2) = r(2) + (ymax - ymin)
+      if (r(2) > ymax) r(2) = r(2) - (ymax - ymin)
 #elif spherical
       if (r(2) < ymin .or. r(2) > ymax) then
         if (r(2) < ymin) r(2) = 2*ymin - r(2)
         if (r(2) > ymax) r(2) = 2*ymax - r(2)
-        if (r(3) < (zmax+zmin)/2) then
-          r(3) = r(3) + (zmax-zmin)/2
+        if (r(3) < (zmax + zmin)/2) then
+          r(3) = r(3) + (zmax - zmin)/2
         else
-          r(3) = r(3) - (zmax-zmin)/2
+          r(3) = r(3) - (zmax - zmin)/2
         endif
       endif
-      if (r(3) <= zmin) r(3) = r(3) + zmax - zmin
+      if (r(3) <= zmin) r(3) = r(3) + (zmax - zmin)
       if (r(3) >= zmax) r(3) = r(3) - (zmax - zmin)
 #endif
           
