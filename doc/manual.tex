@@ -39,7 +39,7 @@
 
     The MSAT package consists of a null finder (which locates points where \( \vec{B} = \vec{0} \)), a sign finder (which also identifies the sign of each 3D null) and a separatrix surface finder (which identifies not only the separatrix surface of each null but at the same time all the separators linking the null points). Each of these codes will be described individually later in more detail.  All these codes can be run in cartesian, cylindrical and spherical coordinate systems, although running in cylindrical coordinates is currently untested.
 
-    The null point finding package generally follows the null finding method described by \cite{Haynes2007}, but a few changes. The spine, separatrix surface and separator finders also generally follow the basic ideas described in \cite{Haynes2007}. The main differences and more details on the methods used in the codes can be found in \cite{WilliamsPhD2018}.
+    The null point finding package generally follows the null finding method described by \textcite{Haynes2007}, but a few changes. The spine, separatrix surface and separator finders also generally follow the basic ideas described in \textcite{Haynes2007}. The main differences and more details on the methods used in the codes can be found in \textcite{WilliamsPhD2018}.
 
     The MSAT package also includes codes to calculate the heliospheric current sheet and its curtains, as well as bald patches in global solar magnetic field data set that have spherical geometry.
 
@@ -196,7 +196,7 @@
     \subsection{Creating a Data Set from an Analytical Expression in Python}
       \label{sec:pythonanal}
 
-      NumPy's meshgrid can be used which makes creating fields from an analytic expression very easy. But the option \texttt{indexing=`ij'} must be used otherwise the field will not be correct since the first two dimensions will be switched which is correct for plotting in Matplotlib.
+      NumPy's \texttt{meshgrid} can be used which makes creating fields from an analytic expression very easy. But the option \texttt{indexing=`ij'} must be used otherwise the field will not be correct since the first two dimensions will be switched which is correct for plotting in Matplotlib.
 
       The following example writes a single null point magnetic field appropriately to file of the form
         \[ B_x = x + \frac{q - J_\parallel}{2} y \]
