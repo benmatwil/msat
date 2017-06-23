@@ -6,7 +6,7 @@ pngs
 *.mod
 nf
 sf
-ssf
+ssf*
 readin
 make_cut
 hcs
