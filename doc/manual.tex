@@ -75,7 +75,7 @@
 
       \item Running the skeleton analysis codes in order: the null finder, then the sign finder and finally the separatrix surface and separator finder.
 
-      In the commands below it is assumed that your is saved in a file called \texttt{magfield.dat}.
+      In the commands below it is assumed that your data is saved in a file called \texttt{magfield.dat}.
 
       \texttt{./nf -i data/magfield.dat}
 
@@ -168,8 +168,8 @@
     Python:
 
     \begin{verbatim}
-    with io.open(`data/magfield.dat', `wb') as file:
-        numpy.array([nx, ny, nz], dtype=np.int32).tofile(file)
+    with open(`data/magfield.dat', `wb') as file:
+        numpy.array([nx, ny, nz], dtype=numpy.int32).tofile(file)
         bx.T.tofile(file) # transpose is required
         by.T.tofile(file) # for memory order
         bz.T.tofile(file)
@@ -208,9 +208,9 @@
     nx, ny, nz = 200, 200, 200
     xmin, xmax, ymin, ymax, zmin, zmax = -1, 1, -1, 1, -1, 1
 
-    xgrid = numpy.linspace(xmin, xmax, nx, dtype=np.float64)
-    ygrid = numpy.linspace(ymin, ymax, ny, dtype=np.float64)
-    zgrid = numpy.linspace(zmin, zmax, nz, dtype=np.float64)
+    xgrid = numpy.linspace(xmin, xmax, nx, dtype=numpy.float64)
+    ygrid = numpy.linspace(ymin, ymax, ny, dtype=numpy.float64)
+    zgrid = numpy.linspace(zmin, zmax, nz, dtype=numpy.float64)
     x, y, z = numpy.meshgrid(xgrid, ygrid, zgrid, indexing=`ij')
 
     p, q, jpar, jperp = 1, 0, 1, 0
@@ -219,7 +219,7 @@
     bz = jperp*y - (p + 1)*z
 
     with open(`data/magfield.dat', `wb') as datafile:
-        np.array([nx, ny, nz], dtype=np.int32).tofile(datafile)
+        numpy.array([nx, ny, nz], dtype=numpy.int32).tofile(datafile)
         bx.T.tofile(datafile)
         by.T.tofile(datafile)
         bz.T.tofile(datafile)
@@ -262,7 +262,7 @@
       \item \texttt{sf} then uses these locations to look for the spine and fan vectors of each null point and can thus determine the sign of the nulls.
       \item \texttt{ssf} then uses the null locations and fan vectors to trace out separatrix surfaces for each null and identify all separators connecting null points. \texttt{ssf} also traces the spines using the same tracing algorithm and writes them to file.
     \end{enumerate}
-    The three codes work in grid coordinates (a coordinate given between 1 and \( n_x \) in the \( x \) direction for example). The output from each is all in real coordinates (a coordinate in the original coordinate system) (unless grid coordinates also given).
+    The three codes work in grid coordinates (a coordinate given between 1 and \( n_x \) in the \( x \) direction for example). The output from each is all in real coordinates (a coordinate in the original coordinate system) unless grid coordinates are also outputted.
 
     All options for these are in \texttt{params.f90} and are described here with their defaults.
     
@@ -445,16 +445,31 @@
 
       For more documentation, such as how to save the plots drawn, see the Mayavi online documentation at \texttt{http://docs.enthought.com/mayavi/mayavi/mlab.html}. Once the plotting window is open, standard Mayavi commands can be used. The Mayavi module is imported inder the name \texttt{ml} in the \texttt{model3d} module or it can be imported into the main namespace.
 
+      \subsection{Examples}
+
+      Here are listed some examples of the indexing of the output from the data reading routines as the lists of lists etc. may become confusing.
+
+      If the separators are read in using
+      
+      \texttt{seps, cons = rd.separators(`data/magfield.dat')}
+      
+      then the following indexing occurs:
+
       \begin{center}
-        \begin{tikzpicture}[remember picture,overlay]
-          \node at (0,0) {\texttt{seps\tikzmark{inull}[inull][isep]}};
-          \filldraw[fill=black] (pic cs:inull.south west) circle[radius=0.08cm] node[above] {a};
-          \filldraw[fill=black] (pic cs:inull.south east) circle[radius=0.08cm] node[above] {b};
-          \filldraw[fill=black] (pic cs:inull.north west) circle[radius=0.08cm] node[above] {c};
-          \filldraw[fill=black] (pic cs:inull.north east) circle[radius=0.08cm] node[above] {d};
-          \filldraw[fill=black] (pic cs:inull) circle[radius=0.08cm] node[above] {e};
+        \begin{tikzpicture}[remember picture]
+          \node at (0,0) {\texttt{seps[\tikzmark{inull1}inull\tikzmark{inull2}][\tikzmark{isep1}isep\tikzmark{isep2}]}};
+          \coordinate (inull) at ($(pic cs:inull1)!1/2!(pic cs:inull2) - (0,1ex)$);
+          \coordinate (isep) at ($(pic cs:isep1)!1/2!(pic cs:isep2) - (0,1ex)$);
+          \draw[<-] (inull) -- ++(0,-0.5);
+          \draw[<-] (isep) -- ++(0,-1);
+          \node[below] at ($(inull) + (0,-0.5)$) {Null index};
+          \node[below] at ($(isep) + (0,-1)$) {Separator index};
         \end{tikzpicture}
       \end{center}
+
+      This will give an array of the coordinates of the \texttt{isep}\textsuperscript{th} separator from the \texttt{inull}\textsuperscript{th} null point.
+
+      TBC...
 
   \printbibliography
 
