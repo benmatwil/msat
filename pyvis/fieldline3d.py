@@ -280,14 +280,14 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=10000, o
 
             b = trilinear3d(rt,bgrid,x,y,z)
             k5 = t*hvec*b/sqrt(b[0]**2 + b[1]**2 + b[2]**2)
-            rf = r0 + b6*k1 + c6*k2 + d6*k3 + e6*k4 + f6*k5
+            # rf = r0 + b6*k1 + c6*k2 + d6*k3 + e6*k4 + f6*k5
 
+            r4 = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
+            rt = r4.copy()
             if rt[0] < xmin or rt[0] > xmax or rt[1] < ymin or rt[1] > ymax or rt[2] < zmin or rt[2] > zmax:
                 rout = rt
                 out = True
                 break
-
-            r4 = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
 
             h = t*h
             if abs(h) < hmin:

@@ -227,14 +227,14 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
 
       b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
       k5 = t*hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
-      rf = r0 + b6*k1 + c6*k2 + d6*k3 + e6*k4 + f6*k5
-
-      if rf[0] lt xmin or rf[0] gt xmax or rf[1] lt ymin or rf[1] gt ymax or rf[2] lt zmin or rf[2] gt zmax then begin
-        rout = rf
-        out = 1 & break
-      endif
+      ; rf = r0 + b6*k1 + c6*k2 + d6*k3 + e6*k4 + f6*k5
       
       r4 = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
+
+      if r4[0] lt xmin or r4[0] gt xmax or r4[1] lt ymin or r4[1] gt ymax or r4[2] lt zmin or r4[2] gt zmax then begin
+        rout = r4
+        out = 1 & break
+      endif
 
       h = t*h
       if abs(h) lt hmin then h = hmin*h/abs(h)
