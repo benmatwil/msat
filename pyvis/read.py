@@ -45,11 +45,11 @@ def nulls(filename, simple=False):
             signs = np.fromfile(nullfile, dtype=np.int32, count=nnulls)
             spines = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls,3)
             fans = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls,3)
-            warning = np.fromfile(nullfile, dtype=np.float64, count=nnulls)
+            warning = np.fromfile(nullfile, dtype=np.int32, count=nnulls)
 
         nulls = np.recarray(nnulls, dtype=[('number',np.int32),
             ('pos',np.float64,3),('gridpos',np.float64,3),
-            ('sign',np.int32),('spine',np.float64,3),('fan',np.float64,3)])
+            ('sign',np.int32),('spine',np.float64,3),('fan',np.float64,3),('warning',np.int32)])
 
         nulls.sign = signs
         nulls.spine = spines
