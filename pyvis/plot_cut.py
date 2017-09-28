@@ -29,7 +29,7 @@ def get_colours():
 
 #################################################################
 
-def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.cm.Greys_r, nticks=4, newcolours=True):
+def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.cm.Greys_r, nticks=4, newcolours=True, linerast=False):
     global datafile, prefile, nulldata, rstr, colours
 
     datafile = filename
@@ -60,7 +60,7 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
 
     # os.system(f'./make_cut -i {filename} -r {r}')
 
-    plt.figure(figsize=(15/2.55, 7.2/2.55)) # set-up for A4
+    plt.figure(figsize=(15/2.55, 7/2.55)) # set-up for A4
     ax = plt.gca()
     plt.xlabel('Longitude')
     plt.xlim([0, 2*np.pi])
@@ -69,7 +69,10 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
     plt.ylim([np.pi, 0])
     plt.yticks(np.linspace(0, np.pi, nticks+1), ticks(nticks, 1))
 
-    ax.set_rasterization_zorder(0)
+    if linerast == False:
+        ax.set_rasterization_zorder(-6)
+    else:
+        ax.set_rasterization_zorder(0)
     br, _, _, rads, thetas, phis = rd.field(datafile)
     ir = np.where(r >= rads)[0].max()
     plotfield = br[ir, :, :] + (r - rads[ir])/(rads[ir+1] - rads[ir])*(br[ir+1, :, :] - br[ir, :, :])
@@ -77,7 +80,7 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
     cb = plt.colorbar(fraction=0.05, pad=0.025)
     diff = levels[-1] - levels[0]
     cb.set_ticks(np.linspace(0, 1.0, 5)*diff + levels[0])
-    cb.set_label('Magnetic Field Strength (G)')
+    cb.set_label('Radial Magnetic Field Strength (G)')
     plt.tight_layout()
     if title == True: plt.title('Cut: ' + datafile + ' r = ' + rstr)
 
