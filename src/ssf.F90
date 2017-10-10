@@ -270,7 +270,7 @@ program ssfinder
       endif
       nulldist = 2.0_np*h0*slowdown
       mindist = maxdist/3
-      slowdist = 2.0*nulldist
+      slowdist = 2.0_np*nulldist
       ! print*, iring, h0, nulldist, maxdist, mindist, nlines
       !$OMP END SINGLE
 
