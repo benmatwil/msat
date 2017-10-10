@@ -214,3 +214,89 @@ def add_base():
 
 def save():
     ml.savefig('figures/' + rd.prefix(filename) + '-model3d.png')
+
+def add_surface():
+    print('Adding separatrix surface rings')
+
+    rings, breaks, assocs = rd.rings(filename, allinfo=True)
+
+    cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
+
+    acc = 6
+
+    # ringlist = []
+    # trianglelist = []
+    # ptnums = [0]
+    # for lst in break1: ptnums.append(ptnums[-1] + len(lst))
+    # for ring in rings[inull]: ringlist.extend(ring.tolist())
+
+    if False:
+        for inull in nulllist:
+            ringlist = []
+            trianglelist = []
+            ptnums = [0]
+            for lst in breaks[inull]: ptnums.append(ptnums[-1] + len(lst))
+            ptnums = ptnums[:-1]
+            # print(ptnums)
+            for ring in rings[inull]: ringlist.extend(ring.tolist())
+            ringlist = np.array(ringlist)
+            print('Null {}'.format(inull+1))
+            rings1 = rings[inull][::-1]
+            breaks1 = breaks[inull][::-1]
+            assocs1 = assocs[inull][::-1]
+            ptnums = ptnums[::-1]
+            for iring, ring in enumerate(rings1[:-1]):
+                dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
+                breaks1[iring][dists > acc] = 1
+                brks = np.r_[[-1], np.where(breaks1[iring] == 1)[0], [breaks1[iring].shape[0]-1]] + 1
+                for ipt, pt in enumerate(ring):
+                    if ipt not in brks-1 and ipt != brks[-1]:
+                        if assocs1[iring][ipt] != assocs1[iring][ipt+1]:
+                            tri1 = [ptnums[iring] + ipt, ptnums[iring+1] + assocs1[iring][ipt] - 1, ptnums[iring+1] + assocs1[iring][ipt]]
+                            trianglelist.append(tri1)
+                        tri2 = [ptnums[iring] + ipt, ptnums[iring+1] + assocs1[iring][ipt], ptnums[iring] + ipt + 1]
+                        trianglelist.append(tri2)
+            # return trianglelist, ringlist, ptnums
+            ml.triangular_mesh(ringlist[:,0], ringlist[:,1], ringlist[:,2], trianglelist, color=cols[nulldata[inull].sign], tube_radius=None, opacity=0.5, mask_points=2)
+        
+    if True:
+        nskp = 20 #nskipglob
+        for inull in nulllist:
+            ringlist = []
+            trianglelist = []
+            ptnums = [0]
+            for lst in breaks[inull][::-nskp]: ptnums.append(ptnums[-1] + len(lst))
+            ptnums = ptnums[:-1]
+            # print(ptnums)
+            for ring in rings[inull][::-nskp]: ringlist.extend(ring.tolist())
+            ringlist = np.array(ringlist)
+            print('Null {}'.format(inull+1))
+            rings1 = rings[inull][::-nskp]
+            breaks1 = breaks[inull][::-nskp]
+            assocs1 = assocs[inull][::-1]
+            # ptnums = ptnums[::-1]
+            for iring, ring in enumerate(rings1[:-1]):
+                if iring/nskp - iring//nskp > 0: 
+                    dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
+                    breaks1[iring][dists > acc] = 1
+                    brks = np.r_[[-1], np.where(breaks1[iring] == 1)[0], [breaks1[iring].shape[0]-1]] + 1
+                    newass = assocs1[iring*nskp]
+                    for iskp in range(nskp):
+                        newass = assocs1[iring*nskp+iskp+1][newass-1]
+                    for ipt, pt in enumerate(ring):
+                        if ipt not in brks-1 and ipt != brks[-1]:
+                            if newass[ipt] != newass[ipt+1]:
+                                tri1 = [ptnums[iring] + ipt, ptnums[iring+1] + newass[ipt] - 1, ptnums[iring+1] + newass[ipt]]
+                                trianglelist.append(tri1)
+                            tri2 = [ptnums[iring] + ipt, ptnums[iring+1] + newass[ipt], ptnums[iring] + ipt + 1]
+                            trianglelist.append(tri2)
+            # return trianglelist, ringlist, ptnums
+            ml.triangular_mesh(ringlist[:,0], ringlist[:,1], ringlist[:,2], trianglelist, color=cols[nulldata[inull].sign], tube_radius=None, opacity=1)
+
+
+            # for ib0, ib1 in zip(brks[:-1], brks[1:]):
+            #     if ib0 != ib1:
+
+
+            # for ib0, ib1 in zip(brks[:-1], brks[1:]):
+            #     if ib0 != ib1:

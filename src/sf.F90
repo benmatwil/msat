@@ -283,7 +283,9 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
         sign = -1
       else if (nfw > nbw) then ! if nbw is smaller then it's the spine, spine going into null
         sign = 1
-      else if (nfw == nbw) then ! both are equal (i.e. 2=2) so check which converged first and then use eigenvalues as last resort
+      endif
+      print*, "I've picked the sign to be ", sign, signguess
+      if (nfw == nbw .or. sign /= signguess) then ! both are equal (i.e. 2=2) so check which converged first and then use eigenvalues as last resort
 #if debug
         print*, "Using stopped to choose"
 #endif
