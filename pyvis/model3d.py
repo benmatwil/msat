@@ -6,7 +6,8 @@ from . import fieldline3d as fl
 import sys
 
 def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
-    nullrad=1, nfanlines=40, nring=None, colquant=None):
+    nullrad=1, nfanlines=40, nring=None, colquant=None, coordsystem='cartesian'):
+    global coordsystem;p
 
     """Makes a 3D visualisation of the output from Skeleton Codes
 
@@ -51,6 +52,9 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0
         for inull in nulls:
             nulllist.append(inull-1)
 
+    if coordsystem == 'spherical':
+        add_sun()
+        box == False
     if box == True: add_box()
     if 'nulls' in addlist: add_nulls(nullrad)
     if 'fanlines' in addlist: add_fanlines(nfanlines, nring)
@@ -58,7 +62,6 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0
     if 'sepsurf' in addlist: add_sepsurf()
     if 'separators' in addlist: add_separators()
     if fieldlines is not None: add_fieldlines(fieldlines, col=linecolor, colquant=colquant)
-
 
 def add_sepsurf():
     print('Adding separatrix surface rings')
@@ -79,6 +82,8 @@ def add_sepsurf():
             brks = np.r_[[-1], np.where(breaks[inull][iring] == 1)[0], [breaks[inull][iring].shape[0]-1]] + 1
             for ib0, ib1 in zip(brks[:-1], brks[1:]):
                 if ib0 != ib1:
+                    if coordsystem == 'spherical':
+                        ring[ib0:ib1, 0], ring[ib0:ib1, 1], ring[ib0:ib1, 2] = ring[ib0:ib1, 0]*np.sin(ring[ib0:ib1, 1])*np.cos(ring[ib0:ib1, 2]), ring[ib0:ib1, 0]*np.sin(ring[ib0:ib1, 1])*np.sin(ring[ib0:ib1, 2]), ring[ib0:ib1, 0]*np.cos(ring[ib0:ib1, 1])
                     ml.plot3d(ring[ib0:ib1, 0], ring[ib0:ib1, 1], ring[ib0:ib1, 2], color=cols[nulldata[inull].sign], line_width=1, tube_radius=None)
         sys.stdout.write("\033[F")
 
@@ -113,6 +118,8 @@ def add_fanlines(nlines, nring):
             else:
                 line = line[imin:, :]
 
+            if coordsystem == 'spherical':
+                line[:, 0], line[:, 1], line[:, 2] = line[:, 0]*np.sin(line[:, 1])*np.cos(line[:, 2]), line[:, 0]*np.sin(line[:, 1])*np.sin(line[:, 2]), line[:, 0]*np.cos(line[:, 1])
             ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=cols[nulldata[inull].sign], tube_radius=None)
 
 def add_fieldlines(startpts, col=(0, 0, 0), colquant=None):
@@ -124,7 +131,10 @@ def add_fieldlines(startpts, col=(0, 0, 0), colquant=None):
         hmax = 0.5*ds
         epsilon = 1e-5
 
-        line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, boxedge=np.array([[-2.49, -2.49, -6.49], [2.49, 2.49, 8.49]]))
+        line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon)
+
+        if coordsystem == 'spherical':
+            line[:, 0], line[:, 1], line[:, 2] = line[:, 0]*np.sin(line[:, 1])*np.cos(line[:, 2]), line[:, 0]*np.sin(line[:, 1])*np.sin(line[:, 2]), line[:, 0]*np.cos(line[:, 1])
 
         if colquant is None:
             ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=col, tube_radius=None)
@@ -151,6 +161,8 @@ def add_spines():
             brks = np.r_[[0], np.where(dists > 6)[0]+1, dists.shape[0]-1]
             for ib0, ib1 in zip(brks[:-1], brks[1:]):
                 if ib0 != ib1:
+                    if coordsystem == 'spherical':
+                        spine0[ib0:ib1, 0], spine0[ib0:ib1, 1], spine0[ib0:ib1, 2] = spine0[ib0:ib1, 0]*np.sin(spine0[ib0:ib1, 1])*np.cos(spine0[ib0:ib1, 2]), spine0[ib0:ib1, 0]*np.sin(spine0[ib0:ib1, 1])*np.sin(spine0[ib0:ib1, 2]), spine0[ib0:ib1, 0]*np.cos(spine0[ib0:ib1, 1])
                     ml.plot3d(spine0[ib0:ib1, 0], spine0[ib0:ib1, 1], spine0[ib0:ib1, 2],
                         color=cols[nulldata[inull].sign], line_width=4, tube_radius=None)
 
@@ -168,6 +180,8 @@ def add_separators():
                 brks = np.r_[[0], np.where(dists > 6)[0]+1, dists.shape[0]-1]
                 for ib0, ib1 in zip(brks[:-1], brks[1:]):
                     if ib0 != ib1:
+                        if coordsystem == 'spherical':
+                            sep0[ib0:ib1, 0], sep0[ib0:ib1, 1], sep0[ib0:ib1, 2] = sep0[ib0:ib1, 0]*np.sin(sep0[ib0:ib1, 1])*np.cos(sep0[ib0:ib1, 2]), sep0[ib0:ib1, 0]*np.sin(sep0[ib0:ib1, 1])*np.sin(sep0[ib0:ib1, 2]), sep0[ib0:ib1, 0]*np.cos(sep0[ib0:ib1, 1])
                         ml.plot3d(sep0[ib0:ib1, 0], sep0[ib0:ib1, 1], sep0[ib0:ib1, 2],
                             color=(0, 0.5, 0), line_width=6, tube_radius=None)
 
@@ -186,7 +200,10 @@ def add_nulls(size):
     z = r * np.cos(theta)
 
     for inull in nulllist:
-        ml.mesh(x + nulldata[inull].pos[0], y + nulldata[inull].pos[1], z + nulldata[inull].pos[2], color=cols[nulldata[inull].sign])
+        pos = nulldata[inull].pos
+        if coordsystem == 'spherical':
+            pos[0], pos[1], pos[2] = pos[0]*np.sin(pos[1])*np.cos(pos[2]), pos[0]*np.sin(pos[1])*np.sin(pos[2]), pos[0]*np.cos(pos[1])
+        ml.mesh(x + pos[0], y + pos[1], z + pos[2], color=cols[nulldata[inull].sign])
 
 def add_box():
     print("Adding box")
@@ -300,3 +317,22 @@ def add_surface():
 
             # for ib0, ib1 in zip(brks[:-1], brks[1:]):
             #     if ib0 != ib1:
+
+def add_sun():
+    r = max([boxsize, ds])
+    r = r*size
+    ntheta = bgrid.shape[1]*1j
+    nphi = bgrid.shape[2]*1j
+    theta, phi = np.mgrid[0:np.pi:ntheta, 0:2*np.pi:nphi]
+    x = r * np.sin(theta) * np.cos(phi)
+    y = r * np.sin(theta) * np.sin(phi)
+    z = r * np.cos(theta)
+
+    ml.mesh(x, y, z, scalars=-bgrid[0,:,:,0],  colormap='Greys', vmin=-10, vmax=10)
+
+    # t = np.linspace(-1.5,1.5,101)
+    # x = np.zeros_like(t)
+    # y = np.zeros_like(t)
+    # z = t.copy()
+
+    # ml.points3d(x, y, z, color=(0,0,0))
