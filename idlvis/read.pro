@@ -85,14 +85,14 @@ function read_separators, filename, conlist=conlist
       readu, sep, length
       separator = dblarr(3, length)
       readu, sep, separator
-      coni.add(end1)
-      sepi.add(separator)
+      coni.add, end1
+      sepi.add, separator
       readu, con, start
     endif
     if inull ne start then begin
       inull++
-      conlist.add(coni)
-      seplist.add(sepi)
+      conlist.add, coni
+      seplist.add, sepi
       sepi = list()
       coni = list()
     endif
@@ -120,9 +120,9 @@ function read_spines, filename
       readu, spi, length
       spine = dblarr(3, length)
       readu, spi, spine
-      spinelisti.add(spine)
+      spinelisti.add, spine
     endfor
-    spinelist.add(spinelisti)
+    spinelist.add, spinelisti
   endforeach
 
   close, spi
@@ -154,26 +154,26 @@ function read_rings, filename, nskip=nskip, breaks=breaklist
     assoclisti = list()
     lengths = lonarr(ringsmax)
     readu, rinfo, lengths
-    iring = 0
+    iring = 0L
     while iring lt ringsmax do begin
       if lengths[iring] eq 0 then break
       assocs = lonarr(lengths[iring])
       breaks = lonarr(lengths[iring])
       rings = dblarr(3,lengths[iring])
       readu, ring, assocs, breaks, rings
-      iskip = 1
+      iskip = 1L
       while iskip + iring lt ringsmax and iskip lt nskip do begin
         skip_lun, ring, lengths[iring+iskip]*32L
         iskip++
       endwhile
       iring = iring + nskip
-      assoclisti.add(assocs)
-      breaklisti.add(breaks)
-      ringlisti.add(rings)
+      assoclisti.add, assocs
+      breaklisti.add, breaks
+      ringlisti.add, rings
     endwhile
-    assoclist.add(assoclisti)
-    ringlist.add(ringlisti)
-    breaklist.add(breaklisti)
+    assoclist.add, assoclisti
+    ringlist.add, ringlisti
+    breaklist.add, breaklisti
   endforeach
 
   close, rinfo, ring
