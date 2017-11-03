@@ -164,11 +164,12 @@ program ssfinder
     ! find number of nulls done
     read(10) ringsmax1
     inquire(unit=10, size=filesize)
-    if (restartnull == 0) thenrtnull == 0) then
+    if (nullrestart == 0) then
       istart = (filesize-4_int64)/4_int64/ringsmax1 - 10
       if (istart < 1) istart = 1
     else
-      istart = restartnull
+      istart = nullrestart
+    endif
     print*, 'Restarting from null', istart
 
     ! sort out ringinfo, rings and spine files
