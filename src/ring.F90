@@ -94,10 +94,6 @@ contains
 
     integer(int32) :: nlines
     integer(int32) :: iline, nxtline, iremove, nremove, break1
-<<<<<<< Updated upstream
-=======
-    integer(int32), dimension(:,:), allocatable :: remove1
-    logical, dimension(:,:), allocatable :: removetrue
 
     !$OMP SINGLE
     allocate(remove(nlines))
@@ -141,7 +137,6 @@ contains
     enddo
     !$OMP END SINGLE
 
-<<<<<<< Updated upstream
     ! remove points
     nremove = 0
     if (nlines > nstart .or. sum(endpoints) /= 0) then ! if the number of points isn't too small...
@@ -162,25 +157,6 @@ contains
           nremove = nremove + 1
         endif
       enddo
-=======
-    if (nlines > nstart .or. sum(endpoints) /= 0) then
-      nremove = count(remove == 0)
-      remove1 = spread(remove, 1, 3)
-      removetrue = remove1 == 0
-      ! print*, 'before', allocated(line1), allocated(line2), allocated(break), allocated(association), &
-      ! size(line1), size(line2), size(break), size(association)
-      !$OMP SECTIONS
-      !$OMP SECTION
-      line1 = reshape(pack(line1, removetrue), [3, nremove])
-      !$OMP SECTION
-      line2 = reshape(pack(line2, removetrue), [3, nremove])
-      !$OMP SECTION
-      association = reshape(pack(association, removetrue(1,:)), [nremove])
-      !$OMP SECTION
-      break = reshape(pack(break, removetrue(1,:)), [nremove])
-      !$OMP END SECTIONS
-      ! print*, allocated(line1), allocated(line2), allocated(break), allocated(association), &
-      ! size(line1), size(line2), size(break), size(association)
     endif
 
     !$OMP BARRIER
