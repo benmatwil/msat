@@ -98,7 +98,6 @@ contains
 =======
     integer(int32), dimension(:,:), allocatable :: remove1
     logical, dimension(:,:), allocatable :: removetrue
->>>>>>> Stashed changes
 
     !$OMP SINGLE
     allocate(remove(nlines))
@@ -182,7 +181,6 @@ contains
       !$OMP END SECTIONS
       ! print*, allocated(line1), allocated(line2), allocated(break), allocated(association), &
       ! size(line1), size(line2), size(break), size(association)
->>>>>>> Stashed changes
     endif
 
     !$OMP BARRIER
