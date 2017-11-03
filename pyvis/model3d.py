@@ -1,15 +1,18 @@
-# from __future__ import division
 import numpy as np
 import mayavi.mlab as ml
 from . import read as rd
 from . import fieldline3d as fl
 import sys
+import vtk
+
+# turn of warnings while vtk/mayavi compatibility is fixed
+vtk.vtkObject.GlobalWarningDisplayOff()
 
 def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
     nullrad=1, nfanlines=40, nring=None, colquant=None, coordsystem='cartesian'):
-    """Makes a 3D visualisation of the output from Magnetic Skeleton Codes Tools
+    """Makes a 3D visualisation of the output from Magnetic Skeleton Analysis Tools
 
-        fname: name of the field containing the original magnetic fieldlines
+        fname: name of the file containing the original magnetic field
         addlist: list of features to be plotted e.g. ['nulls', 'separators'] will
             only plot the nulls and separators
 
@@ -25,6 +28,7 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0
     global bgrid, xx, yy, zz, nulldata, ds, filename, nskipglob, nulllist, csystem
 
     csystem = coordsystem
+    print('Using {} coordinates'.format(coordsystem))
 
     ml.figure(bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(800, 800))
 
@@ -41,7 +45,7 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0
     yy = field[4]
     zz = field[5]
 
-    ds = min([np.diff(xx).min(), np.diff(yy).min(), np.diff(zz).min()])
+    ds = min([np.diff(xx).min(), np.diff(yy).min(), np.diff(zz).min()])/2
 
     nulldata = rd.nulls(filename)
 
@@ -72,60 +76,38 @@ def add_sepsurf():
 
     acc = 6
 
+    # new very efficient routine for plotting many lines
+    x, y, z, s, ptcons = ( [[],[]] for _ in range(5) )
+    index = [0, 0]
+
     for inull in nulllist:
-        print('Null {}'.format(inull+1))
+        print('Null {:5d}'.format(inull+1))
+        sys.stdout.write("\033[F")
+        if nulldata[inull].sign == 1:
+            il = 0
+        else:
+            il = 1
         for iring, ring in enumerate(rings[inull]):
-            print('Ring {}'.format(iring*nskipglob))
-            sys.stdout.write("\033[F")
-            dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
-            breaks[inull][iring][dists > acc] = 1
+            if csystem == 'spherical':
+                ring[:, 0], ring[:, 1], ring[:, 2] = sphr2cart(ring[:, 0], ring[:, 1], ring[:, 2])
+            x[il].append(ring[:,0])
+            y[il].append(ring[:,1])
+            z[il].append(ring[:,2])
+            s[il].append(np.zeros_like(ring[:,0]))
             brks = np.r_[[-1], np.where(breaks[inull][iring] == 1)[0], [breaks[inull][iring].shape[0]-1]] + 1
             for ib0, ib1 in zip(brks[:-1], brks[1:]):
                 if ib0 != ib1:
-                    if csystem == 'spherical':
-                        ring[ib0:ib1, 0], ring[ib0:ib1, 1], ring[ib0:ib1, 2] = ring[ib0:ib1, 0]*np.sin(ring[ib0:ib1, 1])*np.cos(ring[ib0:ib1, 2]), ring[ib0:ib1, 0]*np.sin(ring[ib0:ib1, 1])*np.sin(ring[ib0:ib1, 2]), ring[ib0:ib1, 0]*np.cos(ring[ib0:ib1, 1])
-                    ml.plot3d(ring[ib0:ib1, 0], ring[ib0:ib1, 1], ring[ib0:ib1, 2], color=cols[nulldata[inull].sign], line_width=1, tube_radius=None)
-        sys.stdout.write("\033[F")
-
-    # for inull in nulllist:
-    #     print('Null {}'.format(inull+1))
-    #     x = []
-    #     y = []
-    #     z = []
-    #     s = []
-    #     ptcons = []
-    #     index = 0
-    #     for iring, ring in enumerate(rings[inull]):
-    #         print('Ring {}'.format(iring*nskipglob))
-    #         sys.stdout.write("\033[F")
-    #         dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
-    #         breaks[inull][iring][dists > acc] = 1
-    #         brks = np.r_[[-1], np.where(breaks[inull][iring] == 1)[0], [breaks[inull][iring].shape[0]-1]] + 1
-    #         if csystem == 'spherical':
-    #             ring[:, 0], ring[:, 1], ring[:, 2] = ring[:, 0]*np.sin(ring[:, 1])*np.cos(ring[:, 2]), ring[:, 0]*np.sin(ring[:, 1])*np.sin(ring[:, 2]), ring[:, 0]*np.cos(ring[:, 1])
-    #         x.append(ring[:,0].copy())
-    #         y.append(ring[:,1])
-    #         z.append(ring[:,2])
-    #         ring[:,0] = 0
-    #         s.append(ring[:,0])
-    #         for ib0, ib1 in zip(brks[:-1], brks[1:]):
-    #             if ib0 != ib1:
-    #                 ptcons.append(np.vstack([np.arange(index+ib0, index+ib1-1), np.arange(index+ib0+1, index+ib1)]).T)
-    #         index += ring.shape[0]
-    #     # print(ptcons)
-        
-    #     x = np.hstack(x)
-    #     y = np.hstack(y)
-    #     z = np.hstack(z)
-    #     s = np.hstack(s)
-    #     ptcons = np.vstack(ptcons)
-    #     src = ml.pipeline.scalar_scatter(x, y, z, s)
-    #     src.mlab_source.dataset.lines = ptcons
-    #     src.update()
-        
-    #     lines = ml.pipeline.stripper(src)
-    #     ml.pipeline.surface(lines, color=cols[nulldata[inull].sign], line_width=1)
-        
+                    ptcons[il].append(np.vstack([np.arange(index[il]+ib0, index[il]+ib1-1), np.arange(index[il]+ib0+1, index[il]+ib1)]).T)
+            index[il] += ring.shape[0]
+    
+    for il, isign in zip(range(2), [1, -1]):
+        if len(x[il]) > 0:
+            src = ml.pipeline.scalar_scatter(np.hstack(x[il]), np.hstack(y[il]), np.hstack(z[il]), np.hstack(s[il]))
+            src.mlab_source.dataset.lines = np.vstack(ptcons[il])
+            src.update()
+            
+            lines = ml.pipeline.stripper(src)
+            ml.pipeline.surface(lines, color=cols[isign], line_width=1)
 
 def add_fanlines(nlines, nring):
     print('Adding separatrix surface field lines')
@@ -141,40 +123,44 @@ def add_fanlines(nlines, nring):
             ring = rings[inull][len(rings[inull])//5]
         else:
             ring = rings[inull][nring]
+        
         for ipt in range(0, ring.shape[0], ring.shape[0]//nlines):
             startpt = np.array([ring[ipt, 0], ring[ipt, 1], ring[ipt, 2]])
 
-            h = 0.01*ds
-            hmin = 0.001*ds
-            hmax = 0.5*ds
+            h = 5e-3
+            hmin = 5e-4
+            hmax = 0.5
             epsilon = 1e-5
 
-            line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon)
+            line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem)
+            
             dists = np.sqrt((line[:, 0] - nulldata[inull].pos[0])**2 +
                 (line[:, 1] - nulldata[inull].pos[1])**2 + (line[:, 2] - nulldata[inull].pos[2])**2)
             imin = dists.argmin()
-            if nulldata[inull].sign < 0:
+            if nulldata[inull].sign == -1:
                 line = line[0:imin+1, :]
             else:
                 line = line[imin:, :]
 
             if csystem == 'spherical':
-                line[:, 0], line[:, 1], line[:, 2] = line[:, 0]*np.sin(line[:, 1])*np.cos(line[:, 2]), line[:, 0]*np.sin(line[:, 1])*np.sin(line[:, 2]), line[:, 0]*np.cos(line[:, 1])
+                line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
             ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=cols[nulldata[inull].sign], tube_radius=None)
 
 def add_fieldlines(startpts, col=(0, 0, 0), colquant=None):
     print('Adding separatrix surface field lines')
 
-    for startpt in startpts:
-        h = 0.01*ds
-        hmin = 0.001*ds
-        hmax = 0.5*ds
+    for i, startpt in enumerate(startpts, start=1):
+        print('Calculating fieldline {}'.format(i))
+        sys.stdout.write("\033[F")
+        h = 5e-3
+        hmin = 5e-4
+        hmax = 0.5
         epsilon = 1e-5
 
-        line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon)
+        line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem)
 
         if csystem == 'spherical':
-            line[:, 0], line[:, 1], line[:, 2] = line[:, 0]*np.sin(line[:, 1])*np.cos(line[:, 2]), line[:, 0]*np.sin(line[:, 1])*np.sin(line[:, 2]), line[:, 0]*np.cos(line[:, 1])
+            line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
 
         if colquant is None:
             ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=col, tube_radius=None)
@@ -192,38 +178,65 @@ def add_spines():
     cols = {-1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0)}
 
     spines = rd.spines(filename)
-    nskip0 = nskipglob//2
+
+    x, y, z, s, ptcons = ( [[],[]] for _ in range(5) )
+    index = [0, 0]
 
     for inull in nulllist:
+        print('Null {:5d}'.format(inull+1))
+        sys.stdout.write("\033[F")
+        if nulldata[inull].sign == 1:
+            il = 0
+        else:
+            il = 1
         for spine in spines[inull]:
-            spine0 = spine[::nskip0]
-            dists = np.r_[np.sum(np.diff(spine0, axis=0)**2, axis=1), [0]]
-            brks = np.r_[[0], np.where(dists > 6)[0]+1, dists.shape[0]-1]
-            for ib0, ib1 in zip(brks[:-1], brks[1:]):
-                if ib0 != ib1:
-                    if csystem == 'spherical':
-                        spine0[ib0:ib1, 0], spine0[ib0:ib1, 1], spine0[ib0:ib1, 2] = spine0[ib0:ib1, 0]*np.sin(spine0[ib0:ib1, 1])*np.cos(spine0[ib0:ib1, 2]), spine0[ib0:ib1, 0]*np.sin(spine0[ib0:ib1, 1])*np.sin(spine0[ib0:ib1, 2]), spine0[ib0:ib1, 0]*np.cos(spine0[ib0:ib1, 1])
-                    ml.plot3d(spine0[ib0:ib1, 0], spine0[ib0:ib1, 1], spine0[ib0:ib1, 2],
-                        color=cols[nulldata[inull].sign], line_width=4, tube_radius=None)
+            if csystem == 'spherical':
+                spine[:, 0], spine[:, 1], spine[:, 2] = sphr2cart(spine[:, 0], spine[:, 1], spine[:, 2])
+            x[il].append(spine[:,0])
+            y[il].append(spine[:,1])
+            z[il].append(spine[:,2])
+            s[il].append(np.zeros_like(spine[:,0]))
+            ptcons[il].append(np.vstack([np.arange(index[il], index[il]+spine.shape[0]-1), np.arange(index[il]+1, index[il]+spine.shape[0])]).T)
+            index[il] += spine.shape[0]
+    
+    for il, isign in zip(range(2), [1, -1]):
+        if len(x[il]) > 0:
+            print(len(x))
+            src = ml.pipeline.scalar_scatter(np.hstack(x[il]), np.hstack(y[il]), np.hstack(z[il]), np.hstack(s[il]))
+            src.mlab_source.dataset.lines = np.vstack(ptcons[il])
+            src.update()
+            
+            lines = ml.pipeline.stripper(src)
+            ml.pipeline.surface(lines, color=cols[isign], line_width=4)
 
 def add_separators():
     print('Adding separators')
 
     seps, conn = rd.separators(filename)
-    nskip0 = nskipglob//2
+
+    x, y, z, s, ptcons = ( [] for _ in range(5) )
+    index = 0
 
     for inull in nulllist:
+        print('Null {:5d}'.format(inull+1))
+        sys.stdout.write("\033[F")
         for con, sep in zip(conn[inull], seps[inull]):
             if con-1 in nulllist:
-                sep0 = sep[::nskip0]
-                dists = np.r_[np.sum(np.diff(sep0, axis=0)**2, axis=1), [0]]
-                brks = np.r_[[0], np.where(dists > 6)[0]+1, dists.shape[0]-1]
-                for ib0, ib1 in zip(brks[:-1], brks[1:]):
-                    if ib0 != ib1:
-                        if csystem == 'spherical':
-                            sep0[ib0:ib1, 0], sep0[ib0:ib1, 1], sep0[ib0:ib1, 2] = sep0[ib0:ib1, 0]*np.sin(sep0[ib0:ib1, 1])*np.cos(sep0[ib0:ib1, 2]), sep0[ib0:ib1, 0]*np.sin(sep0[ib0:ib1, 1])*np.sin(sep0[ib0:ib1, 2]), sep0[ib0:ib1, 0]*np.cos(sep0[ib0:ib1, 1])
-                        ml.plot3d(sep0[ib0:ib1, 0], sep0[ib0:ib1, 1], sep0[ib0:ib1, 2],
-                            color=(0, 0.5, 0), line_width=6, tube_radius=None)
+                if csystem == 'spherical':
+                    sep[:, 0], sep[:, 1], sep[:, 2] = sphr2cart(sep[:, 0], sep[:, 1], sep[:, 2])
+                x.append(sep[:,0])
+                y.append(sep[:,1])
+                z.append(sep[:,2])
+                s.append(np.zeros_like(sep[:,0]))
+                ptcons.append(np.vstack([np.arange(index, index+sep.shape[0]-1), np.arange(index+1, index+sep.shape[0])]).T)
+                index += sep.shape[0]
+    
+    src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s))
+    src.mlab_source.dataset.lines = np.vstack(ptcons)
+    src.update()
+    
+    lines = ml.pipeline.stripper(src)
+    ml.pipeline.surface(lines, color=(0, 0.5, 0), line_width=6)
 
 def add_nulls(size):
     print("Adding nulls")
@@ -232,18 +245,25 @@ def add_nulls(size):
 
     boxsize = min([xx[-1] - xx[0], yy[-1] - yy[0], zz[-1] - zz[0]])/40
 
-    r = max([boxsize, ds])
-    r = r*size
-    theta, phi = np.mgrid[0:np.pi:16j, 0:2*np.pi:31j]
-    x = r * np.sin(theta) * np.cos(phi)
-    y = r * np.sin(theta) * np.sin(phi)
-    z = r * np.cos(theta)
-
-    for inull in nulllist:
-        pos = nulldata[inull].pos
+    for sign in [-1, 1]:
+        pos = nulldata.pos[nulldata.sign == sign]
         if csystem == 'spherical':
-            pos[0], pos[1], pos[2] = pos[0]*np.sin(pos[1])*np.cos(pos[2]), pos[0]*np.sin(pos[1])*np.sin(pos[2]), pos[0]*np.cos(pos[1])
-        ml.mesh(x + pos[0], y + pos[1], z + pos[2], color=cols[nulldata[inull].sign])
+            pos[:, 0], pos[:, 1], pos[:, 2] = sphr2cart(pos[:, 0], pos[:, 1], pos[:, 2])
+        ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[sign], scale_factor=size, resolution=32)
+
+    # r = max([boxsize, ds])
+    # r = r*size
+    # ntheta, nphi = 16, 32
+    # theta, phi = np.mgrid[0:np.pi:ntheta*1j, 0:2*np.pi:nphi*1j]
+    # x = r * np.sin(theta) * np.cos(phi)
+    # y = r * np.sin(theta) * np.sin(phi)
+    # z = r * np.cos(theta)
+
+    # for inull in nulllist:
+    #     pos = nulldata[inull].pos
+    #     if csystem == 'spherical':
+    #         pos[0], pos[1], pos[2] = sphr2cart(*pos)
+    #     ml.mesh(x + pos[0], y + pos[1], z + pos[2], color=cols[nulldata[inull].sign])
 
 def add_box():
     print("Adding box")
@@ -368,9 +388,30 @@ def add_sun():
 
     ml.mesh(x, y, z, scalars=-bgrid[0,:,:,0],  colormap='Greys', vmin=-10, vmax=10)
 
-    # t = np.linspace(-1.5,1.5,101)
-    # x = np.zeros_like(t)
-    # y = np.zeros_like(t)
-    # z = t.copy()
+    t = np.linspace(-xx.max(),xx.max(),101)
+    x = np.zeros_like(t)
+    y = np.zeros_like(t)
+    z = t.copy()
 
-    # ml.points3d(x, y, z, color=(0,0,0))
+    ml.plot3d(x, y, z, color=(0,0,0), tube_radius=None, line_width=4)
+
+def sphr2cart(rs, ts, ps):
+    return rs*np.sin(ts)*np.cos(ps), rs*np.sin(ts)*np.sin(ps), rs*np.cos(ts)
+
+# some old code from add_sepsurf
+    # for inull in nulllist:
+    #     print('Null {}'.format(inull+1))
+    #     for iring, ring in enumerate(rings[inull]):
+    #         print('Ring {}'.format(iring*nskipglob))
+    #         sys.stdout.write("\033[F")
+    #         dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
+    #         breaks[inull][iring][dists > acc] = 1
+    #         brks = np.r_[[-1], np.where(breaks[inull][iring] == 1)[0], [breaks[inull][iring].shape[0]-1]] + 1
+    #         if csystem == 'spherical':
+    #             ring[:, 0], ring[:, 1], ring[:, 2] = sphr2cart(ring[:, 0], ring[:, 1], ring[:, 2])
+    #         for ib0, ib1 in zip(brks[:-1], brks[1:]):
+    #             if ib0 != ib1:
+    #                 if csystem == 'spherical':
+    #                     ring[ib0:ib1, 0], ring[ib0:ib1, 1], ring[ib0:ib1, 2] = ring[ib0:ib1, 0]*np.sin(ring[ib0:ib1, 1])*np.cos(ring[ib0:ib1, 2]), ring[ib0:ib1, 0]*np.sin(ring[ib0:ib1, 1])*np.sin(ring[ib0:ib1, 2]), ring[ib0:ib1, 0]*np.cos(ring[ib0:ib1, 1])
+    #                 ml.plot3d(ring[ib0:ib1, 0], ring[ib0:ib1, 1], ring[ib0:ib1, 2], color=cols[nulldata[inull].sign], line_width=1, tube_radius=None)
+    #     sys.stdout.write("\033[F")
