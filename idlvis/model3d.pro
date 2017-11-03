@@ -1,4 +1,4 @@
-common shared_var, bgrid, xx, yy, zz, oModel, null, inull, ds, filename, file1
+common shared_var, bgrid, xx, yy, zz, oModel, null, inull, ds, filename
 
 pro model_add_sepsurf, nskip
   common shared_var
@@ -177,9 +177,6 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines,nskip=nskip
 
   ds = min([min(xx[1:-1]-xx[0:-2]), min(yy[1:-1]-yy[0:-2]), min(zz[1:-1]-zz[0:-2])])
 
-  file1 = strmid(fname, strlen('data/'), strlen(fname))
-  file1 = strmid(file1, 0, strlen(file1)-strlen('.dat'))
-  
   null = read_nulls(filename)
   inull = indgen(n_elements(null))
 
