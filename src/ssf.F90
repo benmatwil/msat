@@ -44,6 +44,10 @@ program ssfinder
   real(np), dimension(:,:), allocatable :: rsep, rring
   integer(int32), dimension(:), allocatable :: brk
 
+  ! for restarting
+  integer(int64) :: filesize, totalpts, filepos
+  integer(int32) :: istart, temp, ringsmax1
+
   print*,'#######################################################################'
   print*,'#                      Separatrix Surface Finder                      #'
   print*,'#######################################################################'
@@ -145,21 +149,80 @@ program ssfinder
   uptonullring = 0
   uptonullconn = 1
 
-  ! stores all info regarding size of rings
-  open(unit=10,file=trim(fileout)//'-ringinfo.dat',status='replace',access='stream')
-  ! stores all the coordinates of rings in original coordinate system
-  open(unit=20,file=trim(fileout)//'-rings.dat',status='replace',access='stream')
-  ! stores all the connection info about each separator
-  open(unit=40,file=trim(fileout)//'-connectivity.dat',status='replace',access='stream')
-  ! stores all the coordinates of the separator lines in original coordinate system
-  open(unit=50,file=trim(fileout)//'-separators.dat',status='replace',access='stream')
-  ! stores all the coordinates of the spine lines in original coordinate system
-  open(unit=60,file=trim(fileout)//'-spines.dat',status='replace',access='stream')
+  if (restart) then
+    ! stores all info regarding size of rings
+    open(unit=10,file=trim(fileout)//'-ringinfo.dat',status='old',access='stream')
+    ! stores all the coordinates of rings in original coordinate system
+    open(unit=20,file=trim(fileout)//'-rings.dat',status='old',access='stream')
+    ! stores all the connection info about each separator
+    open(unit=40,file=trim(fileout)//'-connectivity.dat',status='old',access='stream')
+    ! stores all the coordinates of the separator lines in original coordinate system
+    open(unit=50,file=trim(fileout)//'-separators.dat',status='old',access='stream')
+    ! stores all the coordinates of the spine lines in original coordinate system
+    open(unit=60,file=trim(fileout)//'-spines.dat',status='old',access='stream')
 
-  write(10) ringsmax+1
+    ! find number of nulls done
+    read(10) ringsmax1
+    inquire(unit=10, size=filesize)
+    if (restartnull == 0) thenrtnull == 0) then
+      istart = (filesize-4_int64)/4_int64/ringsmax1 - 10
+      if (istart < 1) istart = 1
+    else
+      istart = restartnull
+    print*, 'Restarting from null', istart
+
+    ! sort out ringinfo, rings and spine files
+    filepos = 1
+    totalpts = 0
+    do inull = 1, istart-1
+      read(10) nperring
+      totalpts = totalpts + sum(nperring)
+      do dir = 1, 2
+        ! print*, filepos
+        read(60, pos=filepos) ringnum
+        ! print*, inull, ringnum, filepos
+        filepos = filepos + ringnum*24_int64 + 4_int64
+      enddo
+    enddo
+    write(60, pos=filepos)
+    uptonullring = totalpts*32_int64
+    
+    ! sort out connectivity and separator files
+    filepos = 1
+    inquire(unit=40, size=filesize)
+    nseps = filesize/16_int64
+    do isep = 1, nseps
+      read(40, pos=uptonullconn) nullnum1
+      ! print*, nullnum1
+      if (nullnum1 > istart-1) then
+        write(40, pos=uptonullconn)
+        write(50, pos=filepos)
+        exit
+      endif
+      read(50, pos=filepos) ringnum
+      uptonullconn = uptonullconn + 16_int64
+      filepos = filepos + 24_int64*ringnum + 4_int64
+    enddo
+    
+  else
+    ! stores all info regarding size of rings
+    open(unit=10,file=trim(fileout)//'-ringinfo.dat',status='replace',access='stream')
+    ! stores all the coordinates of rings in original coordinate system
+    open(unit=20,file=trim(fileout)//'-rings.dat',status='replace',access='stream')
+    ! stores all the connection info about each separator
+    open(unit=40,file=trim(fileout)//'-connectivity.dat',status='replace',access='stream')
+    ! stores all the coordinates of the separator lines in original coordinate system
+    open(unit=50,file=trim(fileout)//'-separators.dat',status='replace',access='stream')
+    ! stores all the coordinates of the spine lines in original coordinate system
+    open(unit=60,file=trim(fileout)//'-spines.dat',status='replace',access='stream')
+
+    write(10) ringsmax+1
+
+    istart = 1
+  endif
 
   !$OMP PARALLEL private(iring, iline, inull)
-  do inull = 1, nnulls ! loop over all nulls
+  do inull = istart, nnulls ! loop over all nulls
     !$OMP SINGLE
     write(20, pos=uptonullring+1)
     write(40, pos=uptonullconn)

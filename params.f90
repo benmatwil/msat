@@ -12,7 +12,8 @@ module params
   integer(int32), parameter :: sig_figs = 6 ! the number of significant figures of accuracy required for the null
 
   ! spinefinder parameters
-  real(np), parameter :: rspherefact = 50.0_np ! radius factor (in grid coordinates) of sphere which to place start points (rsphere = rspherefact*10**-sig_figs)
+  real(np), parameter :: rspherefact = 50.0_np ! radius factor (in grid coordinates) of sphere 
+                                               ! on which to place start points (rsphere = rspherefact*10**-sig_figs)
   integer(int32), parameter :: nphi = 90 ! number of start points in phi direction
   integer(int32), parameter :: ntheta = nphi/2 ! number of start points in theta direction
 
@@ -23,6 +24,9 @@ module params
   real(np), parameter :: stepsize = 0.2_np ! step size h after 50 iterations (otherwise 5 times smaller)
   real(np), parameter :: tol = 1e-6_np ! tolerance of rkf45 scheme
   real(np), parameter :: stepmin = 1e-5_np ! minimum step length
+  logical, parameter :: restart = .false. ! turn on restart function of the code
+  integer(int32), parameter :: nullrestart = 0 ! which null to restart from (make sure it's correct)
+                                               ! set to 0 to let the code decide using already written data
 
   ! NO NEED TO CHANGE BEYOND HERE (basic parameters/constants)
   real(np), parameter :: pi = acos(-1.0_np)
@@ -33,7 +37,7 @@ module params
   
     subroutine filenames
 
-      character(50) :: arg, outname
+      character(100) :: arg, outname
       integer(int32) :: iarg, ic
 
       ic = 0
