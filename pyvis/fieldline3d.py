@@ -24,33 +24,19 @@ def trilinear3d(pt, grid, xx, yy, zz):
     y = (pt[1] - yy[iy])/(yy[iy+1] - yy[iy])
     z = (pt[2] - zz[iz])/(zz[iz+1] - zz[iz])
 
-    cube = grid[ix:ix+2, iy:iy+2, iz:iz+2, :]
-    square = (1 - x)*cube[0, :, :, :] + x*cube[1, :, :, :]
-    line = (1 - y)*square[0, :, :] + y*square[1, :, :]
-    return (1 - z)*line[0, :] + z*line[1, :]
-
-def trilinearscalar3d(pt, grid, xx, yy, zz):
-    ix = np.where(pt[0] > xx)[0].max()
-    iy = np.where(pt[1] > yy)[0].max()
-    iz = np.where(pt[2] > zz)[0].max()
-    
-    x = (pt[0] - xx[ix])/(xx[ix+1] - xx[ix])
-    y = (pt[1] - yy[iy])/(yy[iy+1] - yy[iy])
-    z = (pt[2] - zz[iz])/(zz[iz+1] - zz[iz])
-
-    cube = grid[ix:ix+2, iy:iy+2, iz:iz+2]
-    square = (1 - x)*cube[0, :, :] + x*cube[1, :, :]
-    line = (1 - y)*square[0, :] + y*square[1, :]
-    return (1 - z)*line[0] + z*line[1]
+    cube = grid[ix:ix+2, iy:iy+2, iz:iz+2, ...]
+    square = (1 - x)*cube[0, :, :, ...] + x*cube[1, :, :, ...]
+    line = (1 - y)*square[0, :, ...] + y*square[1, :, ...]
+    return (1 - z)*line[0, ...] + z*line[1, ...]
 
 def trilinear3d_grid(pt, grid):
     ix, iy, iz = np.floor(pt).astype(np.int)
     x, y, z = pt - np.floor(pt)
 
-    cube = grid[ix:ix+2, iy:iy+2, iz:iz+2, :]
-    square = (1 - x)*cube[0, :, :, :] + x*cube[1, :, :, :]
-    line = (1 - y)*square[0, :, :] + y*square[1, :, :]
-    return (1 - z)*line[0, :] + z*line[1, :]
+    cube = grid[ix:ix+2, iy:iy+2, iz:iz+2, ...]
+    square = (1 - x)*cube[0, :, :, ...] + x*cube[1, :, :, ...]
+    line = (1 - y)*square[0, :, ...] + y*square[1, :, ...]
+    return (1 - z)*line[0, ...] + z*line[1, ...]
     
 def getdr(r, x, y, z):
     i, j, k = np.floor(r).astype(np.int)
