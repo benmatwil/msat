@@ -90,7 +90,7 @@ def outedge(r):
     #     outedge = r[2] >= zmax or r[2] <= zmin
     return outedge
 
-def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, oneway=False, boxedge=None, coordsystem='cartesian', gridcoord=False):
+def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t_max = 1.2, oneway=False, boxedge=None, coordsystem='cartesian', gridcoord=False):
     global xmin, xmax, ymin, ymax, zmin, zmax, csystem
     # startpt[3,nl] - start point for field line
     # bgrid[nx,ny,nz,3] - magnetic field
@@ -130,7 +130,7 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, o
     r0[2] = iz + (startpt[2] - z[iz])/(z[iz+1] - z[iz])
 
     # Produce an error if the first point isn't in the box
-    if (startpt[0] < x[0] or startpt[0] > x[-1] or startpt[1] < y[0] or startpt[1] > y[-1] or startpt[2] < z[0] or startpt[2] > z[-1]):
+    if startpt[0] < x[0] or startpt[0] > x[-1] or startpt[1] < y[0] or startpt[1] > y[-1] or startpt[2] < z[0] or startpt[2] > z[-1]:
         print("Error: Start point not in range")
         print("Start point is: {} {} {}".format(startpt[0],startpt[1],startpt[2]))
         if (startpt[0] < x[0] or startpt[0] > x[-1]):
@@ -144,6 +144,9 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, o
         print("Bounds are: z[0] = {}, z[-1] = {}".format(z[0], z[-1]))
 
         return np.array([startpt[0],startpt[1],startpt[2]], dtype=np.float64)
+    elif not (hmin < h < hmax):
+        print('You need to satisfy hmin ({}) < h ({}) < hmax({})'.format(hmin, h, hmax))
+        return
 
     ###################################################
 
@@ -233,9 +236,8 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, o
             if (abs(t*h) < abs(hmin)):
                 t = abs(hmin/h)
 
-            t0 = 1.2
-            if t > t0:
-                t = t0
+            if t > t_max:
+                t = t_max
 
             rt = r0
             b = trilinear3d_grid(rt, bgrid)
@@ -306,9 +308,7 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, o
                     bounce = 1
                     break
 
-        if bounce == 1:
-            line = line[:-1]
-        elif out:
+        if out:
             rout = rt.copy()
             rin = line[-1].copy()
             if rout[0] > xmax or rout[0] < xmin:
@@ -333,9 +333,9 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, o
                 s = (zedge - rin[2])/(rout[2] - rin[2])
                 rout = np.array([s*(rout[0] - rin[0]) + rin[0], s*(rout[1] - rin[1]) + rin[1], zedge], dtype=np.float64)
             line.append(rout)
+        elif bounce == 1:
+            line = line[:-1]
 
-    line = line[::-1]
-    
     if gridcoord == False:
         for pt in line:
             ix, iy, iz = np.floor(pt).astype(np.int)
@@ -350,4 +350,4 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, o
             pt[1] = y[iy] + (pt[1] - iy)*(y[iy+1] - y[iy])
             pt[2] = z[iz] + (pt[2] - iz)*(z[iz+1] - z[iz])
     
-    return np.array(line, dtype=np.float64)
+    return np.array(line[::-1], dtype=np.float64)
