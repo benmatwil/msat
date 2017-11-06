@@ -8,7 +8,7 @@ import vtk
 # turn of warnings while vtk/mayavi compatibility is fixed
 vtk.vtkObject.GlobalWarningDisplayOff()
 
-def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
+def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
     nullrad=1, nfanlines=40, nring=None, colquant=None, coordsystem='cartesian'):
     """Makes a 3D visualisation of the output from Magnetic Skeleton Analysis Tools
 
@@ -49,11 +49,11 @@ def make(fname, addlist, nulls=None, box=True, fieldlines=None, linecolor=(0,0,0
 
     nulldata = rd.nulls(filename)
 
-    if nulls == None:
+    if null_list == None:
         nulllist = list(range(nulldata.number[-1]))
     else:
         nulllist = []
-        for inull in nulls:
+        for inull in null_list:
             nulllist.append(inull-1)
 
     if coordsystem == 'spherical':
@@ -77,6 +77,7 @@ def add_sepsurf():
     acc = 6
 
     # new very efficient routine for plotting many lines
+    # two lists, one for positive and the other for negative nulls
     x, y, z, s, ptcons = ( [[],[]] for _ in range(5) )
     index = [0, 0]
 
@@ -88,18 +89,23 @@ def add_sepsurf():
         else:
             il = 1
         for iring, ring in enumerate(rings[inull]):
+            # convert points if required
             if csystem == 'spherical':
                 ring[:, 0], ring[:, 1], ring[:, 2] = sphr2cart(ring[:, 0], ring[:, 1], ring[:, 2])
+            # add ring points to lists
             x[il].append(ring[:,0])
             y[il].append(ring[:,1])
             z[il].append(ring[:,2])
             s[il].append(np.zeros_like(ring[:,0]))
+            # use break data to plot the individual lines in each ring as the break apart
             brks = np.r_[[-1], np.where(breaks[inull][iring] == 1)[0], [breaks[inull][iring].shape[0]-1]] + 1
             for ib0, ib1 in zip(brks[:-1], brks[1:]):
                 if ib0 != ib1:
+                    # add the right indicies based on the breaks
                     ptcons[il].append(np.vstack([np.arange(index[il]+ib0, index[il]+ib1-1), np.arange(index[il]+ib0+1, index[il]+ib1)]).T)
             index[il] += ring.shape[0]
     
+    # add points to model
     for il, isign in zip(range(2), [1, -1]):
         if len(x[il]) > 0:
             src = ml.pipeline.scalar_scatter(np.hstack(x[il]), np.hstack(y[il]), np.hstack(z[il]), np.hstack(s[il]))
@@ -119,6 +125,7 @@ def add_fanlines(nlines, nring):
     for inull in nulllist:
         print('Null {}'.format(inull+1))
         sys.stdout.write("\033[F")
+        # select the right ring to trace from
         if nring == None:
             ring = rings[inull][len(rings[inull])//5]
         else:
@@ -127,13 +134,16 @@ def add_fanlines(nlines, nring):
         for ipt in range(0, ring.shape[0], ring.shape[0]//nlines):
             startpt = np.array([ring[ipt, 0], ring[ipt, 1], ring[ipt, 2]])
 
+            #choose some good parameters
             h = 5e-3
             hmin = 5e-4
             hmax = 0.5
             epsilon = 1e-5
 
+            # calculate the fieldline
             line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem)
             
+            # cut off the fieldline at the point closest to the null - only want the fan, not the spine
             dists = np.sqrt((line[:, 0] - nulldata[inull].pos[0])**2 +
                 (line[:, 1] - nulldata[inull].pos[1])**2 + (line[:, 2] - nulldata[inull].pos[2])**2)
             imin = dists.argmin()
@@ -152,11 +162,14 @@ def add_fieldlines(startpts, col=(0, 0, 0), colquant=None):
     for i, startpt in enumerate(startpts, start=1):
         print('Calculating fieldline {}'.format(i))
         sys.stdout.write("\033[F")
+
+        # choose fieldline parameters
         h = 5e-3
         hmin = 5e-4
         hmax = 0.5
         epsilon = 1e-5
 
+        # calculate the fieldline
         line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem)
 
         if csystem == 'spherical':
@@ -179,9 +192,11 @@ def add_spines():
 
     spines = rd.spines(filename)
 
+    # set up lists like rings
     x, y, z, s, ptcons = ( [[],[]] for _ in range(5) )
     index = [0, 0]
 
+    # very similar to ring algorithm without breaks
     for inull in nulllist:
         print('Null {:5d}'.format(inull+1))
         sys.stdout.write("\033[F")
@@ -214,6 +229,7 @@ def add_separators():
 
     seps, conn = rd.separators(filename)
 
+    # simpler version of spines and rings - no need for positive and negative
     x, y, z, s, ptcons = ( [] for _ in range(5) )
     index = 0
 
