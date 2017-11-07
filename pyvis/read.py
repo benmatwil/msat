@@ -1,5 +1,6 @@
 import numpy as np
 import glob
+import sys
 
 files = sorted(glob.glob('data/*.dat'))
 
@@ -166,6 +167,8 @@ def rings(filename, allinfo=False, nskip=1, null_list=None):
         with open('output/'+prefix(filename)+'-rings.dat', 'rb') as ringfile:
             ringsmax = np.asscalar(np.fromfile(ringinfo, dtype=np.int32, count=1))
             for inull in nulldata.number:
+                print('Reading rings from null {:5d}'.format(inull))
+                sys.stdout.write("\033[F")
                 assoclisti = []
                 breaklisti = []
                 ringlisti = []
