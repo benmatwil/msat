@@ -1,21 +1,60 @@
+common shared_var_fieldline3d, xmin, xmax, ymin, ymax, zmin, zmax, csystem
+
 function getdr, r, x, y, z
+  i = floor(r[0])
+  j = floor(r[1])
+  k = floor(r[2])
   
-  i = max(where(r[0] gt x, /null))
-  j = max(where(r[1] gt y, /null))
-  k = max(where(r[2] gt z, /null))
-    
   dx = x[i+1]-x[i]
   dy = y[j+1]-y[j]
   dz = z[k+1]-z[k]
   
-  xh = x[i] + dx/2
-  yh = y[j] + dy/2
-  zh = z[k] + dz/2
+  xc = x[i] + dx/2
+  yc = y[j] + dy/2
 
-  return, [dx, dy, dz]
+  if csystem eq 'spherical' then begin
+    return, [dx, xc*dy, xc*np.sin(yc)*dz]
+  endif else begin
+    return, [dx, dy, dz]
+  endelse
+
 end
 
-function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mxline, oneway=oneway, boxedge=boxedge, gridcoord=gridcoord
+pro edgecheck, r
+
+  if csystem eq 'spherical' then begin
+    if r[1] lt ymin or r[1] gt ymax then begin
+      if r[1] lt ymin then r[1] = 2*ymin - r[1]
+      if r[1] gt ymax then r[1] = 2*ymax - r[1]
+      if r[2] lt (zmax + zmin)/2 then begin
+        r[2] = r[2] + (zmax - zmin)/2
+      endif else begin
+        r[2] = r[2] - (zmax - zmin)/2
+      endelse
+    endif
+    if r[2] le zmin then r[2] = r[2] + (zmax - zmin)
+    if r[2] ge zmax then r[2] = r[2] - (zmax - zmin)
+  endif else if csystem eq 'cylindrical' then begin
+    if r[2] lt ymin then r[2] = r[2] + (ymax - ymin)
+    if r[2] gt ymax then r[2] = r[2] - (ymax - ymin)
+  endif
+ 
+end
+
+function outedge, r
+
+  outedge = r[0] ge xmax or r[0] le xmin
+  if csystem eq 'cartesian' then begin
+    outedge = outedge or r[1] ge ymax or r[1] le ymin or r[2] ge zmax or r[2] le zmin
+  endif else if csystem eq 'cylindrical' then begin
+    outedge = outedge or r[2] ge zmax or r[2] le zmin
+  endif
+  
+  return, outedge
+
+end
+
+function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mxline, t_max=t_max, oneway=oneway, boxedge=boxedge, gridcoord=gridcoord, coordsystem=coordsystem
 
   ;startpt[3,nl] - start point for field line
   ;bgrid[nx,ny,nz,3] - magnetic field 
@@ -26,6 +65,9 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
   ;hmax - maximum step length
   ;epsilon - tolerance to which we require point on field line known
 
+  if not keyword_set(coordsystem) then coordsystem = 'cartesian'
+  csystem = coordsystem
+
   ;define edges of box
   if keyword_set(boxedge) then begin
     xmin = max([boxedge[0,0],min(x)])
@@ -35,53 +77,40 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
     ymax = min([boxedge[1,1],max(y)])
     zmax = min([boxedge[1,2],max(z)])
   endif else begin
-    xmin = min(x)
-    ymin = min(y)
-    zmin = min(z)
-    xmax = max(x)
-    ymax = max(y)
-    zmax = max(z)
+    xmin = 0
+    ymin = 0
+    zmin = 0
+    xmax = n_elements(x)-1
+    ymax = n_elements(y)-1
+    zmax = n_elements(z)-1
   endelse
 
-  ;a2 = 0.25d
   b2 = 0.25d
-  ;a3 = 3d/8d
-  b3 = 3d/32d
-  c3 = 9d/32d
-  ;a4 = 12d/13d
-  b4 = 1932d/2197d
-  c4 = -7200d/2197d
-  d4 = 7296d/2197d
-  ;a5 = 1d
-  b5 = 439d/216d 
-  c5 = -8d
-  d5 = 3680d/513d
-  e5 = -845d/4104d
-  ;a6 = 0.5d 
-  b6 = -8d/27d
-  c6 = 2d 
-  d6 = -3544d/2565d
-  e6 = 1859d/4104d
-  f6 = -11d/40d
+  b3 = 3d/32d & c3 = 9d/32d
+  b4 = 1932d/2197d & c4 = -7200d/2197d & d4 = 7296d/2197d
+  b5 = 439d/216d & c5 = -8d & d5 = 3680d/513d & e5 = -845d/4104d
+  b6 = -8d/27d & c6 = 2d & d6 = -3544d/2565d & e6 = 1859d/4104d & f6 = -11d/40d
 
   ;used to determine y_i+1 from y_i if using rkf45 (4th order)
-  n1 = 25d/216d
-  n3 = 1408d/2565d
-  n4 = 2197d/4104d
-  n5 = -1d/5d
+  n1 = 25d/216d & n3 = 1408d/2565d & n4 = 2197d/4104d & n5 = -1d/5d
     
   ;used to determine y_i+1 from y_i if using rkf54 (5th order)
-  nn1 = 16d/135d
-  nn3 = 6656d/12825d
-  nn4 = 28561d/56430d
-  nn5 = -9d/50d
-  nn6 = 2d/55d
+  nn1 = 16d/135d & nn3 = 6656d/12825d & nn4 = 28561d/56430d & nn5 = -9d/50d & nn6 = 2d/55d
+
+  ix = max(where(startpt[0] ge x))
+  iy = max(where(startpt[1] ge y))
+  iz = max(where(startpt[2] ge z))
+
+  r0 = startpt
+  r0[0] = ix + (startpt[0] - x[ix])/(x[ix+1] - x[ix])
+  r0[1] = iy + (startpt[1] - y[iy])/(y[iy+1] - y[iy])
+  r0[2] = iz + (startpt[2] - z[iz])/(z[iz+1] - z[iz])
 
   x0 = startpt[0]
   y0 = startpt[1]
   z0 = startpt[2]
 
-  if (x0 lt xmin or x0 gt xmax or y0 lt ymin or y0 gt ymax or z0 lt zmin or z0 gt zmax) then begin
+  if (startpt[0] lt x[0] or startpt[0] gt x[-1] or startpt[1] lt y[0] or startpt[1] gt y[-1] or startpt[2] lt z[0] or startpt[2] gt z[-1]) then begin
     print, "Error: Start point not in range"
     print, "Start point is:", x0,y0,z0
     if (x0 lt xmin or x0 gt xmax) then print, x0, " (x0) is the issue"
@@ -92,148 +121,151 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
     print, "Bounds are: ", "zmin = ", zmin, " zmax = ", zmax
 
     return, [x0,y0,z0]
+  endif else if not (hmin < h and h < hmax) then begin
+    print, "You need to satisfy hmin < h < hmax"
   endif
 
-  if not keyword_set(mxline) then mxline = 10000
-
-  s = [0.]
-  line = startpt
+  if not keyword_set(mxline) then mxline = 50000
+  if not keyword_set(t_max) then t_max = 1.2
 
   ;##################################################
 
   if keyword_set(oneway) then ih = [h] else ih = [h,-h]
+
+  line = list(r0)
+
   foreach h, ih do begin
 
     count = 0L
     out = 0
+    bounce = 0
+    line = line[-1:0:-1]
     
     while count lt mxline do begin
 
-      if h gt 0 then jl = count else jl = 0
-      bounce = 0
-      t = s[jl]
-      r0 = line[*,jl]
+      r0 = line[-1]
       
-      ;if keyword_set(gridcoord) then begin
-      ;  dr = getdr(r0, x, y, z)
-      ;  mindist = min(dr)*h
-      ;  hvec = mindist/dr
-      ;endif else 
-      hvec = [h,h,h]
+      dr = getdr(r0, x, y, z)
+      mindist = min(dr)*h
+      hvec = mindist/dr
 
       rt = r0
-      b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
-      k1 = hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
+      b = trilinear_3d_grid(rt, bgrid)
+      k1 = hvec*b/sqrt(total(b^2))
       rt = r0 + b2*k1
 
-      if rt[0] lt xmin or rt[0] gt xmax or rt[1] lt ymin or rt[1] gt ymax or rt[2] lt zmin or rt[2] gt zmax then begin
-        rout = rt
-        out = 1 & break
+      if outedge(rt) then begin
+        out = 1
+        break
       endif
 
-      b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
-      k2 = hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
+      edgecheck, rt
+      b = trilinear_3d_grid(rt, bgrid)
+      k2 = hvec*b/sqrt(total(b^2))
       rt = r0 + b3*k1 + c3*k2
 
-      if rt[0] lt xmin or rt[0] gt xmax or rt[1] lt ymin or rt[1] gt ymax or rt[2] lt zmin or rt[2] gt zmax then begin
-        rout = rt
-        out = 1 & break
+      if outedge(rt) then begin
+        out = 1
+        break
       endif
 
-      b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
-      k3 = hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
+      edgecheck, rt
+      b = trilinear_3d_grid(rt, bgrid)
+      k3 = hvec*b/sqrt(total(b^2))
       rt = r0 + b4*k1 + c4*k2 + d4*k3
 
-      if rt[0] lt xmin or rt[0] gt xmax or rt[1] lt ymin or rt[1] gt ymax or rt[2] lt zmin or rt[2] gt zmax then begin
-        rout = rt
-        out = 1 & break
+      if outedge(rt) then begin
+        out = 1
+        break
       endif
 
-      b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
-      k4 = hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
+      edgecheck, rt
+      b = trilinear_3d_grid(rt, bgrid)
+      k4 = hvec*b/sqrt(total(b^2))
       rt = r0 + b5*k1 + c5*k2 + d5*k3 + e5*k4
 
-      if rt[0] lt xmin or rt[0] gt xmax or rt[1] lt ymin or rt[1] gt ymax or rt[2] lt zmin or rt[2] gt zmax then begin
-        rout = rt
-        out = 1 & break
+      if outedge(rt) then begin
+        out = 1
+        break
       endif
 
-      b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
-      k5 = hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
+      edgecheck, rt
+      b = trilinear_3d_grid(rt, bgrid)
+      k5 = hvec*b/sqrt(total(b^2))
       rt = r0 + b6*k1 + c6*k2 + d6*k3 + e6*k4 + f6*k5
 
-      if rt[0] lt xmin or rt[0] gt xmax or rt[1] lt ymin or rt[1] gt ymax or rt[2] lt zmin or rt[2] gt zmax then begin
-        rout = rt
-        out = 1 & break
+      if outedge(rt) then begin
+        out = 1
+        break
       endif
 
-      b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
-      k6 = hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
+      edgecheck, rt
+      b = trilinear_3d_grid(rt, bgrid)
+      k6 = hvec*b/sqrt(total(b^2))
 
+      ; 4th order estimate
       rtest4 = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
+      ; 5th order estimate
       rtest5 = r0 + nn1*k1 + nn3*k3 + nn4*k4 + nn5*k5 + nn6*k6
-
-      ;check that line is still in domain
-      if rtest4[0] lt xmin or rtest4[0] gt xmax or rtest4[1] lt ymin or rtest4[1] gt ymax or rtest4[2] lt zmin or rtest4[2] gt zmax then begin
-        rout = rtest4
-        out = 1 & break
-      endif
 
       ;optimum stepsize
       diff = rtest5 - rtest4
-      err = sqrt(diff[0]^2 + diff[1]^2 + diff[2]^2)
-      t = (epsilon*abs(h)/(2*err))^0.25d ; do we want to update this
+      err = sqrt(total(diff^2))
+      t = (epsilon*abs(h)/(2*err))^0.25d
       
       if (abs(t*h) lt abs(hmin)) then t = abs(hmin/h)
-      t0 = 1.1d
-      if (t gt t0) then t = t0
+      if (t gt t_max) then t = t_max
             
       rt = r0
-      b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
-      k1 = t*hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
+      b = trilinear_3d_grid(rt, bgrid)
+      k1 = t*hvec*b/sqrt(total(b^2))
       rt = r0 + b2*k1
 
-      if rt[0] lt xmin or rt[0] gt xmax or rt[1] lt ymin or rt[1] gt ymax or rt[2] lt zmin or rt[2] gt zmax then begin
-        rout = rt
-        out = 1 & break
+      if outedge(rt) then begin
+        out = 1
+        break
       endif
 
-      b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
-      k2 = t*hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
+      edgecheck, rt
+      b = trilinear_3d_grid(rt, bgrid)
+      k2 = t*hvec*b/sqrt(total(b^2))
       rt = r0 + b3*k1 + c3*k2
 
-      if rt[0] lt xmin or rt[0] gt xmax or rt[1] lt ymin or rt[1] gt ymax or rt[2] lt zmin or rt[2] gt zmax then begin
-        rout = rt
-        out = 1 & break
+      if outedge(rt) then begin
+        out = 1
+        break
       endif
 
-      b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
-      k3 = t*hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
+      edgecheck, rt
+      b = trilinear_3d_grid(rt, bgrid)
+      k3 = t*hvec*b/sqrt(total(b^2))
       rt = r0 + b4*k1 + c4*k2 + d4*k3
 
-      if rt[0] lt xmin or rt[0] gt xmax or rt[1] lt ymin or rt[1] gt ymax or rt[2] lt zmin or rt[2] gt zmax then begin
-        rout = rt
-        out = 1 & break
+      if outedge(rt) then begin
+        out = 1
+        break
       endif
 
-      b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
-      k4 = t*hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
+      edgecheck, rt
+      b = trilinear_3d_grid(rt, bgrid)
+      k4 = t*hvec*b/sqrt(total(b^2))
       rt = r0 + b5*k1 + c5*k2 + d5*k3 + e5*k4
 
-      if rt[0] lt xmin or rt[0] gt xmax or rt[1] lt ymin or rt[1] gt ymax or rt[2] lt zmin or rt[2] gt zmax then begin
-        rout = rt
-        out = 1 & break
+      if outedge(rt) then begin
+        out = 1
+        break
       endif
 
-      b = trilinear_3d(rt[0],rt[1],rt[2],bgrid,x,y,z)
-      k5 = t*hvec*b/sqrt(b[0]^2+b[1]^2+b[2]^2)
-      ; rf = r0 + b6*k1 + c6*k2 + d6*k3 + e6*k4 + f6*k5
+      edgecheck, rt
+      b = trilinear_3d_grid(rt, bgrid)
+      k5 = t*hvec*b/sqrt(total(b^2))
       
-      r4 = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
+      rt = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
+      edgecheck, rt
 
-      if r4[0] lt xmin or r4[0] gt xmax or r4[1] lt ymin or r4[1] gt ymax or r4[2] lt zmin or r4[2] gt zmax then begin
-        rout = r4
-        out = 1 & break
+      if outedge(rt) then begin
+        out = 1
+        break
       endif
 
       h = t*h
@@ -242,24 +274,17 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       
       count++
 
-      if h gt 0 then begin
-        s = [[s],t]
-        line = [[line],[r4]]
-      endif else begin
-        s = [t,[s]]
-        line = [[r4],[line]]
-      endelse
+      line.add(rt)
     
-      ;check line is still moving
+      ; check line is still moving
       if (count ge 2) then begin
-        if h gt 0 then il = -1 else il = 1
-          dl = line[*,il]-line[*,il-1]
-          mdl1 = sqrt(dl[0]^2+dl[1]^2+dl[2]^2)
-        if h gt 0 then il = -1 else il = 2
-          dl = line[*,il]-line[*,il-2]
-          mdl2 = sqrt(dl[0]^2+dl[1]^2+dl[2]^2)
-        if mdl1 lt hmin*0.5 then break
-        if mdl2 lt hmin*0.5 then begin
+        dl = line[-1] - line[-2]
+        mdl = sqrt(total(dl^2))
+        if mdl lt hmin*0.5 then break
+
+        dl = line[-1] - line[-3]
+        mdl = sqrt(total(dl^2))
+        if mdl lt hmin*0.5 then begin
           bounce = 1
           break
         endif
@@ -267,33 +292,45 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
 
     end
     
-    if bounce eq 1 then begin
-      if il eq -1 then line = line[*,0:-2]
-      if il eq 2 then line = line[*,1:-1]
-    endif
+    if bounce eq 1 then line = line[0:-2]
 
     if out eq 1 then begin
-      if h gt 0 then il = count-1 else il = 0
-        rin = line[*,il]
+        rin = line[-1]
+        rout = rt
       if rout[0] gt xmax or rout[0] lt xmin then begin
         if rout[0] gt xmax then xedge = xmax else xedge = xmin
-        s = (xedge-rin[0])/(rout[0]-rin[0])
-        rout = [xedge, s*(rout[1]-rin[1])+rin[1], s*(rout[2]-rin[2])+rin[2]]
+        s = (xedge - rin[0])/(rout[0] - rin[0])
+        rout = s*(rout - rin) + rin
       endif
       if rout[1] gt ymax or rout[1] lt ymin then begin
         if rout[1] gt ymax then yedge = ymax else yedge = ymin
-        s = (yedge-rin[1])/(rout[1]-rin[1])
-        rout = [s*(rout[0]-rin[0])+rin[0], yedge, s*(rout[2]-rin[2])+rin[2]]
+        s = (yedge - rin[1])/(rout[1] - rin[1])
+        rout = s*(rout - rin) + rin
       endif
       if rout[2] gt zmax or rout[2] lt zmin then begin
         if rout[2] gt zmax then zedge = zmax else zedge = zmin
-        s = (zedge-rin[2])/(rout[2]-rin[2])
-        rout = [s*(rout[0]-rin[0])+rin[0], s*(rout[1]-rin[1])+rin[1], zedge]
+        s = (zedge - rin[2])/(rout[2] - rin[2])
+        rout = s*(rout - rin) + rin
       endif
-      if h gt 0 then line = [[line],[rout]] else line = [[rout],[line]]
+      line.add(rout)
     endif
 
   endforeach
+
+  if not keyword_set(gridcoord) then begin
+    foreach pt, line do begin
+      ix = floor(pt[0])
+      iy = floor(pt[1])
+      iz = floor(pt[2])
+      if ix eq xmax then ix--
+      if iy eq ymax then iy--
+      if iz eq zmax then iz--
+
+      pt[0] = x[ix] + (pt[0] - ix)*(x[ix+1] - x[ix])
+      pt[1] = y[iy] + (pt[1] - iy)*(y[iy+1] - y[iy])
+      pt[2] = z[iz] + (pt[2] - iz)*(z[iz+1] - z[iz])
+    endforeach
+  endif
 
   return, line
 

@@ -60,43 +60,51 @@ function read_nulls, filename, simple=simple
   
 end
 
-function read_separators, filename, conlist=conlist
+function read_separators, filename, conlist=conlist, null_list=null_list, hcs=hcs
 
   nulldata = read_nulls(filename, /simple)
 
-  openr, con, 'output/'+prefix(filename)+'-connectivity.dat', /get_lun
-  openr, sep, 'output/'+prefix(filename)+'-separators.dat', /get_lun
+  if not keyword_set(hcs) then begin
+    openr, con, 'output/'+prefix(filename)+'-connectivity.dat', /get_lun
+    openr, sep, 'output/'+prefix(filename)+'-separators.dat', /get_lun
+    allnulls_list = nulldata.number
+  end else begin
+    openr, con, 'output/'+prefix(filename)+'-hcs-connectivity.dat', /get_lun
+    openr, sep, 'output/'+prefix(filename)+'-hcs-separators.dat', /get_lun
+    allnulls_list = [1, 2]
+  endelse
+
+  if not keyword_set(null_list) then null_list = allnulls_list
 
   conlist = list()
   seplist = list()
-  inull = 1
-  coni = list()
-  sepi = list()
 
   start = 0L
-  end1 = 0L
+  endnum = 0L
   length = 0L
 
   readu, con, start
-  while start ge 0 or inull le max(nulldata.number) do begin
-    if inull eq start then begin
-      readu, con, end1
-      skip_lun, con, 8
-      readu, sep, length
-      separator = dblarr(3, length)
-      readu, sep, separator
-      coni.add, end1
-      sepi.add, separator
+  foreach inull, allnulls_list do begin
+    coni = list()
+    sepi = list()
+    while start eq inull do begin
+      readu, length, sep
+      if where(inull eq null_list, /null) ne !null then begin
+        readu, con, endnum
+        coni.add(endnum)
+        skip_lun, con, 8
+        separator = dblarr(3, length)
+        readu, sep, separator
+        sepi.add(separator)
+      endif else begin
+        skip_lun, con, 12
+        skip_lun, sep, 3LL*8LL*length
+      endelse
       readu, con, start
-    endif
-    if inull ne start then begin
-      inull++
-      conlist.add, coni
-      seplist.add, sepi
-      sepi = list()
-      coni = list()
-    endif
-  endwhile
+    endwhile
+    conlist.add(coni)
+    seplist.add(sepi)
+  endforeach
 
   close, sep, con
   free_lun, sep, con
@@ -105,9 +113,11 @@ function read_separators, filename, conlist=conlist
 
 end
 
-function read_spines, filename
+function read_spines, filename, null_list=null_list
   
   nulldata = read_nulls(filename, /simple)
+
+  if not keyword_set(null_list) then null_list = allnulls_list
 
   spinelist = list()
   length = 0L
@@ -118,9 +128,13 @@ function read_spines, filename
     spinelisti = list()
     for ispine = 1, 2 do begin
       readu, spi, length
-      spine = dblarr(3, length)
-      readu, spi, spine
-      spinelisti.add, spine
+      if where(inull eq null_list, /null) ne !null then begin
+        spine = dblarr(3, length)
+        readu, spi, spine
+        spinelisti.add, spine
+      endif else begin
+        skip_lun, spi, 3LL*8LL*length
+      endelse
     endfor
     spinelist.add, spinelisti
   endforeach
@@ -132,11 +146,13 @@ function read_spines, filename
 
 end
 
-function read_rings, filename, nskip=nskip, breaks=breaklist
+function read_rings, filename, nskip=nskip, breaks=breaklist, null_list=null_list
 
   nulldata = read_nulls(filename, /simple)
 
   if not keyword_set(nskip) then nskip = 1
+
+  if not keyword_set(null_list) then null_list = allnulls_list
 
   ringlist = list()
   breaklist = list()
@@ -154,26 +170,26 @@ function read_rings, filename, nskip=nskip, breaks=breaklist
     assoclisti = list()
     lengths = lonarr(ringsmax)
     readu, rinfo, lengths
-    iring = 0L
-    while iring lt ringsmax do begin
-      if lengths[iring] eq 0 then break
-      assocs = lonarr(lengths[iring])
-      breaks = lonarr(lengths[iring])
-      rings = dblarr(3,lengths[iring])
-      readu, ring, assocs, breaks, rings
-      iskip = 1L
-      while iskip + iring lt ringsmax and iskip lt nskip do begin
-        skip_lun, ring, lengths[iring+iskip]*32L
-        iskip++
-      endwhile
-      iring = iring + nskip
-      assoclisti.add, assocs
-      breaklisti.add, breaks
-      ringlisti.add, rings
-    endwhile
-    assoclist.add, assoclisti
-    ringlist.add, ringlisti
-    breaklist.add, breaklisti
+    if where(inull eq null_list, /null) ne !null then begin
+      foreach length, lengths[where(lengths ne 0)], iring do begin
+        if iring mod nskip eq 0 then begin
+          assocs = lonarr(length)
+          breaks = lonarr(length)
+          rings = dblarr(3, length)
+          readu, ring, assocs, breaks, rings
+          breaklisti.add(breaks)
+          ringlisti.add(rings)
+          assoclisti.add(assocs)
+        endif else begin
+          skip_lun, ring, 32LL*length
+        endelse
+      endforeach
+    endif else begin
+      skip_lun, ring, 32LL*total(lengths, /integer)
+    endelse
+    ringlist.add(ringlisti)
+    breaklist.add(breaklisti)
+    assoclist.add(assoclisti)
   endforeach
 
   close, rinfo, ring
