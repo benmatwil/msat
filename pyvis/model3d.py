@@ -49,7 +49,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
 
     nulldata = rd.nulls(filename)
 
-    if null_list == None:
+    if null_list is None:
         nulllist = list(range(nulldata.number[-1]))
     else:
         nulllist = []
@@ -70,7 +70,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
 def add_sepsurf():
     print('Adding separatrix surface rings')
 
-    rings, breaks, _ = rd.rings(filename, allinfo=True, nskip=nskipglob)
+    rings, breaks, _ = rd.rings(filename, allinfo=True, nskip=nskipglob, null_list=nulllist)
 
     cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
@@ -118,7 +118,7 @@ def add_sepsurf():
 def add_fanlines(nlines, nring):
     print('Adding separatrix surface field lines')
 
-    rings = rd.rings(filename, nskip=nskipglob)
+    rings = rd.rings(filename, nskip=nskipglob, null_list=nulllist)
 
     cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
@@ -126,7 +126,7 @@ def add_fanlines(nlines, nring):
         print('Null {}'.format(inull+1))
         sys.stdout.write("\033[F")
         # select the right ring to trace from
-        if nring == None:
+        if nring is None:
             ring = rings[inull][len(rings[inull])//5]
         else:
             ring = rings[inull][nring]
@@ -190,7 +190,7 @@ def add_spines():
 
     cols = {-1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0)}
 
-    spines = rd.spines(filename)
+    spines = rd.spines(filename, null_list=nulllist)
 
     # set up lists like rings
     x, y, z, s, ptcons = ( [[],[]] for _ in range(5) )
@@ -216,7 +216,6 @@ def add_spines():
     
     for il, isign in zip(range(2), [1, -1]):
         if len(x[il]) > 0:
-            print(len(x))
             src = ml.pipeline.scalar_scatter(np.hstack(x[il]), np.hstack(y[il]), np.hstack(z[il]), np.hstack(s[il]))
             src.mlab_source.dataset.lines = np.vstack(ptcons[il])
             src.update()
@@ -227,7 +226,7 @@ def add_spines():
 def add_separators():
     print('Adding separators')
 
-    seps, conn = rd.separators(filename)
+    seps, conn = rd.separators(filename, null_list=nulllist)
 
     # simpler version of spines and rings - no need for positive and negative
     x, y, z, s, ptcons = ( [] for _ in range(5) )
