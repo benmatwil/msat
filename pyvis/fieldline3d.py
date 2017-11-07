@@ -37,7 +37,7 @@ def trilinear3d_grid(pt, grid):
     square = (1 - x)*cube[0, :, :, ...] + x*cube[1, :, :, ...]
     line = (1 - y)*square[0, :, ...] + y*square[1, :, ...]
     return (1 - z)*line[0, ...] + z*line[1, ...]
-    
+
 def getdr(r, x, y, z):
     i, j, k = np.floor(r).astype(np.int)
 
@@ -50,8 +50,10 @@ def getdr(r, x, y, z):
 
     if csystem == 'spherical':
         return np.array([dx, xc*dy, xc*np.sin(yc)*dz], dtype=np.float64)
-    else:
+    elif csystem == 'cartesian':
         return np.array([dx, dy, dz], dtype=np.float64)
+    elif cystem == 'cylindrical':
+        return np.array([dx, xc*dy, dz], dtype=np.float64)
 
 def edgecheck(r):
     if csystem == 'spherical':
@@ -64,20 +66,22 @@ def edgecheck(r):
                 r[2] = r[2] - (zmax - zmin)/2
         if r[2] <= zmin: r[2] = r[2] + (zmax - zmin)
         if r[2] >= zmax: r[2] = r[2] - (zmax - zmin)
-    # elif csystem = 'cylindrical':
-    #     if (r(2) < ymin) r(2) = r(2) + (ymax - ymin)
-    #     if (r(2) > ymax) r(2) = r(2) - (ymax - ymin)
+    elif csystem == 'cylindrical':
+        if r[2] < ymin: r[2] = r[2] + (ymax - ymin)
+        if r[2] > ymax: r[2] = r[2] - (ymax - ymin)
 
 def outedge(r):
     outedge = r[0] >= xmax or r[0] <= xmin
     if csystem == 'cartesian':
         outedge = outedge or r[1] >= ymax or r[1] <= ymin or r[2] >= zmax or r[2] <= zmin
-    # elif csystem == 'cylindrical':
-    #     outedge = r[2] >= zmax or r[2] <= zmin
+    elif csystem == 'cylindrical':
+        outedge = outedge or r[2] >= zmax or r[2] <= zmin
+    
     return outedge
 
-def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t_max = 1.2, oneway=False, boxedge=None, coordsystem='cartesian', gridcoord=False):
+def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t_max=1.2, oneway=False, boxedge=None, coordsystem='cartesian', gridcoord=False):
     global xmin, xmax, ymin, ymax, zmin, zmax, csystem
+    # need to correct this below
     # startpt[3,nl] - start point for field line
     # bgrid[nx,ny,nz,3] - magnetic field
     # x[nx],y[ny],z[nz] - grid of points on which magnetic field given
@@ -136,10 +140,7 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
 
     ###################################################
 
-    if oneway == True:
-        ih = [h]
-    else:
-        ih = [h,-h]
+    ih = [h] if oneway else [h, -h]
 
     line = [r0]
     
@@ -148,7 +149,6 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
         count = 0
         out = False
         bounce = 0
-        t = 1.0
         line = line[::-1]
 
         while count < mxline:
@@ -215,15 +215,11 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
 
             # optimum stepsize
             diff = rtest5 - rtest4
-            err = sqrt(diff[0]**2 + diff[1]**2 + diff[2]**2)
-            if err > 0:
-                t = (epsilon*abs(h)/(2*err))**0.25 # do we want to update this
+            err = sqrt(np.sum(diff**2))
+            t = (epsilon*abs(h)/(2*err))**0.25
 
-            if (abs(t*h) < abs(hmin)):
-                t = abs(hmin/h)
-
-            if t > t_max:
-                t = t_max
+            if (abs(t*h) < abs(hmin)): t = abs(hmin/h)
+            if t > t_max: t = t_max
 
             rt = r0
             b = trilinear3d_grid(rt, bgrid)
@@ -273,24 +269,23 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
                 break
 
             h = t*h
-            if abs(h) < hmin:
-                h = hmin*h/abs(h)
-            if abs(h) > hmax:
-                h = hmax*h/abs(h)
+            if abs(h) < hmin: h = hmin*h/abs(h)
+            if abs(h) > hmax: h = hmax*h/abs(h)
 
             count += 1
 
             line.append(rt)
 
-            #check line is still moving
-            if (count >= 2):
+            # check line is still moving
+            if count >= 2:
                 dl = line[-1] - line[-2]
-                mdl1 = sqrt(dl[0]**2 + dl[1]**2 + dl[2]**2)
+                mdl = sqrt(np.sum(dl**2))
                 if mdl1 < hmin*0.5:
                     break
+
                 dl = line[-1] - line[-3]
-                mdl2 = sqrt(dl[0]**2 + dl[1]**2 + dl[2]**2)
-                if mdl2 < hmin*0.5:
+                mdl = sqrt(np.sum(dl**2))
+                if mdl < hmin*0.5:
                     bounce = 1
                     break
 
@@ -298,39 +293,26 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
             rout = rt.copy()
             rin = line[-1].copy()
             if rout[0] > xmax or rout[0] < xmin:
-                if rout[0] > xmax:
-                    xedge = xmax
-                else:
-                    xedge = xmin
+                xedge = xmax if rout[0] > xmax else xmin
                 s = (xedge - rin[0])/(rout[0] - rin[0])
-                rout = np.array([xedge, s*(rout[1] - rin[1]) + rin[1], s*(rout[2] - rin[2]) + rin[2]], dtype=np.float64)
+                rout = s*(rout - rin) + rin
             if rout[1] > ymax or rout[1] < ymin:
-                if rout[1] > ymax:
-                    yedge = ymax
-                else:
-                    yedge = ymin
+                yedge = ymax if rout[1] > ymax else ymin
                 s = (yedge - rin[1])/(rout[1] - rin[1])
-                rout = np.array([s*(rout[0] - rin[0]) + rin[0], yedge, s*(rout[2] - rin[2]) + rin[2]], dtype=np.float64)
+                rout = s*(rout - rin) + rin
             if rout[2] > zmax or rout[2] < zmin:
-                if rout[2] > zmax:
-                    zedge = zmax
-                else:
-                    zedge = zmin
+                zedge = zmax if rout[2] > zmax else zmin
                 s = (zedge - rin[2])/(rout[2] - rin[2])
-                rout = np.array([s*(rout[0] - rin[0]) + rin[0], s*(rout[1] - rin[1]) + rin[1], zedge], dtype=np.float64)
+                rout = s*(rout - rin) + rin
             line.append(rout)
-        elif bounce == 1:
-            line = line[:-1]
+        elif bounce == 1: line = line[:-1]
 
     if gridcoord == False:
         for pt in line:
             ix, iy, iz = np.floor(pt).astype(np.int)
-            if ix == xmax:
-                ix -= 1
-            if iy == ymax:
-                iy -= 1
-            if iz == zmax:
-                iz -= 1
+            if ix == xmax: ix -= 1
+            if iy == ymax: iy -= 1
+            if iz == zmax: iz -= 1
 
             pt[0] = x[ix] + (pt[0] - ix)*(x[ix+1] - x[ix])
             pt[1] = y[iy] + (pt[1] - iy)*(y[iy+1] - y[iy])
