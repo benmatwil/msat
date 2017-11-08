@@ -216,7 +216,10 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
             # optimum stepsize
             diff = rtest5 - rtest4
             err = sqrt(np.sum(diff**2))
-            t = (epsilon*abs(h)/(2*err))**0.25
+            if err > 0:
+                t = (epsilon*abs(h)/(2*err))**0.25
+            else:
+                t = 1
 
             if (abs(t*h) < abs(hmin)): t = abs(hmin/h)
             if t > t_max: t = t_max
@@ -280,7 +283,7 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
             if count >= 2:
                 dl = line[-1] - line[-2]
                 mdl = sqrt(np.sum(dl**2))
-                if mdl1 < hmin*0.5:
+                if mdl < hmin*0.5:
                     break
 
                 dl = line[-1] - line[-3]
