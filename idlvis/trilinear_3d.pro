@@ -69,8 +69,8 @@ function trilinear_3d_grid, pt, grid
   z = pt[2] - iz
 
   cube = grid[ix:ix+1, iy:iy+1, iz:iz+1, *]
-  square = (1 - z)*cube[*, *, 0, *] + z*cube[*, *, 1, *]
-  line = (1 - y)*square[*, 0, *] + y*square[*, 1, *]
-  return, (1 - x)*line[0, *] + x*line[1, *]
+  square = reform((1 - z)*cube[*, *, 0, *] + z*cube[*, *, 1, *])
+  line = reform((1 - y)*square[*, 0, *] + y*square[*, 1, *])
+  return, reform((1 - x)*line[0, *] + x*line[1, *])
 
 end

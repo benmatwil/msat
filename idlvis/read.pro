@@ -68,7 +68,7 @@ function read_separators, filename, conlist=conlist, null_list=null_list, hcs=hc
     openr, con, 'output/'+prefix(filename)+'-connectivity.dat', /get_lun
     openr, sep, 'output/'+prefix(filename)+'-separators.dat', /get_lun
     allnulls_list = nulldata.number
-  end else begin
+  endif else begin
     openr, con, 'output/'+prefix(filename)+'-hcs-connectivity.dat', /get_lun
     openr, sep, 'output/'+prefix(filename)+'-hcs-separators.dat', /get_lun
     allnulls_list = [1, 2]
@@ -88,22 +88,22 @@ function read_separators, filename, conlist=conlist, null_list=null_list, hcs=hc
     coni = list()
     sepi = list()
     while start eq inull do begin
-      readu, length, sep
+      readu, sep, length
       if where(inull eq null_list, /null) ne !null then begin
         readu, con, endnum
-        coni.add(endnum)
+        coni.add, endnum
         skip_lun, con, 8
         separator = dblarr(3, length)
         readu, sep, separator
-        sepi.add(separator)
+        sepi.add, separator
       endif else begin
         skip_lun, con, 12
         skip_lun, sep, 3LL*8LL*length
       endelse
       readu, con, start
     endwhile
-    conlist.add(coni)
-    seplist.add(sepi)
+    conlist.add, coni
+    seplist.add, sepi
   endforeach
 
   close, sep, con
@@ -117,7 +117,7 @@ function read_spines, filename, null_list=null_list
   
   nulldata = read_nulls(filename, /simple)
 
-  if not keyword_set(null_list) then null_list = allnulls_list
+  if not keyword_set(null_list) then null_list = nulldata.number
 
   spinelist = list()
   length = 0L
@@ -152,7 +152,7 @@ function read_rings, filename, nskip=nskip, breaks=breaklist, null_list=null_lis
 
   if not keyword_set(nskip) then nskip = 1
 
-  if not keyword_set(null_list) then null_list = allnulls_list
+  if not keyword_set(null_list) then null_list = nulldata.number
 
   ringlist = list()
   breaklist = list()
@@ -177,9 +177,9 @@ function read_rings, filename, nskip=nskip, breaks=breaklist, null_list=null_lis
           breaks = lonarr(length)
           rings = dblarr(3, length)
           readu, ring, assocs, breaks, rings
-          breaklisti.add(breaks)
-          ringlisti.add(rings)
-          assoclisti.add(assocs)
+          breaklisti.add, breaks
+          ringlisti.add, rings
+          assoclisti.add, assocs
         endif else begin
           skip_lun, ring, 32LL*length
         endelse
@@ -187,9 +187,9 @@ function read_rings, filename, nskip=nskip, breaks=breaklist, null_list=null_lis
     endif else begin
       skip_lun, ring, 32LL*total(lengths, /integer)
     endelse
-    ringlist.add(ringlisti)
-    breaklist.add(breaklisti)
-    assoclist.add(assoclisti)
+    ringlist.add, ringlisti
+    breaklist.add, breaklisti
+    assoclist.add, assoclisti
   endforeach
 
   close, rinfo, ring

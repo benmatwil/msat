@@ -1,6 +1,8 @@
-common shared_var_fieldline3d, xmin, xmax, ymin, ymax, zmin, zmax, csystem
+common shared_var_fl3d, xmin, xmax, ymin, ymax, zmin, zmax, csystem_fl3d
 
 function getdr, r, x, y, z
+  common shared_var_fl3d
+
   i = floor(r[0])
   j = floor(r[1])
   k = floor(r[2])
@@ -12,7 +14,7 @@ function getdr, r, x, y, z
   xc = x[i] + dx/2
   yc = y[j] + dy/2
 
-  if csystem eq 'spherical' then begin
+  if csystem_fl3d eq 'spherical' then begin
     return, [dx, xc*dy, xc*np.sin(yc)*dz]
   endif else begin
     return, [dx, dy, dz]
@@ -21,8 +23,9 @@ function getdr, r, x, y, z
 end
 
 pro edgecheck, r
+  common shared_var_fl3d
 
-  if csystem eq 'spherical' then begin
+  if csystem_fl3d eq 'spherical' then begin
     if r[1] lt ymin or r[1] gt ymax then begin
       if r[1] lt ymin then r[1] = 2*ymin - r[1]
       if r[1] gt ymax then r[1] = 2*ymax - r[1]
@@ -34,7 +37,7 @@ pro edgecheck, r
     endif
     if r[2] le zmin then r[2] = r[2] + (zmax - zmin)
     if r[2] ge zmax then r[2] = r[2] - (zmax - zmin)
-  endif else if csystem eq 'cylindrical' then begin
+  endif else if csystem_fl3d eq 'cylindrical' then begin
     if r[2] lt ymin then r[2] = r[2] + (ymax - ymin)
     if r[2] gt ymax then r[2] = r[2] - (ymax - ymin)
   endif
@@ -42,11 +45,12 @@ pro edgecheck, r
 end
 
 function outedge, r
+  common shared_var_fl3d
 
   outedge = r[0] ge xmax or r[0] le xmin
-  if csystem eq 'cartesian' then begin
+  if csystem_fl3d eq 'cartesian' then begin
     outedge = outedge or r[1] ge ymax or r[1] le ymin or r[2] ge zmax or r[2] le zmin
-  endif else if csystem eq 'cylindrical' then begin
+  endif else if csystem_fl3d eq 'cylindrical' then begin
     outedge = outedge or r[2] ge zmax or r[2] le zmin
   endif
   
@@ -55,6 +59,7 @@ function outedge, r
 end
 
 function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mxline, t_max=t_max, oneway=oneway, boxedge=boxedge, gridcoord=gridcoord, coordsystem=coordsystem
+  common shared_var_fl3d
 
   ;startpt[3,nl] - start point for field line
   ;bgrid[nx,ny,nz,3] - magnetic field 
@@ -66,7 +71,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
   ;epsilon - tolerance to which we require point on field line known
 
   if not keyword_set(coordsystem) then coordsystem = 'cartesian'
-  csystem = coordsystem
+  csystem_fl3d = coordsystem
 
   ;define edges of box
   if keyword_set(boxedge) then begin
@@ -211,7 +216,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       ;optimum stepsize
       diff = rtest5 - rtest4
       err = sqrt(total(diff^2))
-      t = (epsilon*abs(h)/(2*err))^0.25d
+      if err gt 0 then t = (epsilon*abs(h)/(2*err))^0.25 else t = 1
       
       if (abs(t*h) lt abs(hmin)) then t = abs(hmin/h)
       if (t gt t_max) then t = t_max
@@ -274,7 +279,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       
       count++
 
-      line.add(rt)
+      line.add, rt
     
       ; check line is still moving
       if (count ge 2) then begin
@@ -312,13 +317,13 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
         s = (zedge - rin[2])/(rout[2] - rin[2])
         rout = s*(rout - rin) + rin
       endif
-      line.add(rout)
+      line.add, rout
     endif
 
   endforeach
 
   if not keyword_set(gridcoord) then begin
-    foreach pt, line do begin
+    foreach pt, line, ipt do begin
       ix = floor(pt[0])
       iy = floor(pt[1])
       iz = floor(pt[2])
@@ -326,12 +331,12 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       if iy eq ymax then iy--
       if iz eq zmax then iz--
 
-      pt[0] = x[ix] + (pt[0] - ix)*(x[ix+1] - x[ix])
-      pt[1] = y[iy] + (pt[1] - iy)*(y[iy+1] - y[iy])
-      pt[2] = z[iz] + (pt[2] - iz)*(z[iz+1] - z[iz])
+      line[ipt, 0] = x[ix] + (pt[0] - ix)*(x[ix+1] - x[ix])
+      line[ipt, 1] = y[iy] + (pt[1] - iy)*(y[iy+1] - y[iy])
+      line[ipt, 2] = z[iz] + (pt[2] - iz)*(z[iz+1] - z[iz])
     endforeach
   endif
-
-  return, line
+  
+  return, (transpose(line.toarray()))[*, -1:0:-1]
 
 end

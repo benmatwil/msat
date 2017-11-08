@@ -1,22 +1,35 @@
-common shared_var, bgrid, xx, yy, zz, oModel, null, inull, ds, filename
+common shared_var_model3d, bgrid, xx, yy, zz, oModel, nulldata, ds, filename, nulllist, csystem_model3d
+
+function sphr2cart, pts
+  
+  carts = pts
+  carts[0, *] = pts[0, *]*sin(pts[1, *])*cos(pts[2, *])
+  carts[1, *] = pts[0, *]*sin(pts[1, *])*sin(pts[2, *])
+  carts[2, *] = pts[0, *]*cos(pts[1, *])
+
+  return, carts
+
+end
 
 pro model_add_sepsurf, nskip
-  common shared_var
+  common shared_var_model3d
 
   print, 'Adding Separatrix surface rings'
   
   rings = read_rings(filename, breaks=breaks, nskip=nskip)
 
-  foreach i, inull do begin
+  foreach inull, nulllist do begin
 
-    if null[i].sign gt 0 then colour = [255,128,128] else begin
-      if null[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
+    if nulldata[inull].sign gt 0 then colour = [255,128,128] else begin
+      if nulldata[inull].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
     endelse
 
-    for iring = 0, n_elements(rings[i])-1 do begin
-      brks = [-1, where(breaks[i, iring] eq 1, /null), n_elements(breaks[i, iring])-1]
+    for iring = 0, n_elements(rings[inull])-1 do begin
+      brks = [-1, where(breaks[inull, iring] eq 1, /null), n_elements(breaks[inull, iring])-1]
+      ring = rings[inull, iring, *, *]
+      if csystem_model3d eq 'spherical' then ring = sphr2cart(ring)
       for ib = 0, n_elements(brks)-2 do begin
-        if brks[ib] ne brks[ib+1] then oModel -> add, obj_new("IDLgrPolyline", rings[i, iring, 0, brks[ib]+1:brks[ib+1]], rings[i, iring , 1, brks[ib]+1:brks[ib+1]], rings[i, iring, 2, brks[ib]+1:brks[ib+1]], color=colour)
+        if brks[ib] ne brks[ib+1] then oModel.add, obj_new("IDLgrPolyline", ring[0, brks[ib]+1:brks[ib+1]], ring[1, brks[ib]+1:brks[ib+1]], ring[2, brks[ib]+1:brks[ib+1]], color=colour)
       endfor
     endfor
     
@@ -24,107 +37,111 @@ pro model_add_sepsurf, nskip
 
 end
 
-pro model_add_spines, nskip
-  common shared_var
+pro model_add_spines
+  common shared_var_model3d
 
   print, 'Adding Spines'
 
   spines = read_spines(filename)
 
-  foreach i, inull do begin
-    if null[i].sign gt 0 then col = [250,0,0] else col = [0,0,250]
+  foreach inull, nulllist do begin
+    if nulldata[inull].sign gt 0 then col = [250,0,0] else col = [0,0,250]
     for dir = 0, 1 do begin
       
-      oModel -> add, obj_new("IDLgrPolyline", spines[i, dir, 0, 0:-1:nskip], spines[i, dir, 1, 0:-1:nskip], spines[i, dir, 2, 0:-1:nskip], color=col, thick=4)
+      spine = spines[inull, dir, *, *]
+      if csystem_model3d eq 'spherical' then spine = sphr2cart(spine)
+      oModel.add, obj_new("IDLgrPolyline", spine[0, *], spine[1, *], spine[2, *], color=col, thick=4)
 
     endfor
   endforeach
 end
 
-pro model_add_fanlines, nskip
-  common shared_var
+pro model_add_fanlines, nlines, nring=nring
+  common shared_var_model3d
 
   print, 'Adding Separatrix surface field lines'
-  mxline = 2000
 
   rings = read_rings(filename, nskip=nskip)
 
-  foreach i, inull do begin
-    if null[i].sign gt 0 then colour = [255,128,128] else begin
-      if null[i].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
+  foreach inull, nulllist do begin
+    if nulldata[inull].sign gt 0 then colour = [255,128,128] else begin
+      if nulldata[inull].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
     endelse
 
-    ring = rings[i, 10, *, *]
-    n = n_elements(ring)/3
+    if not keyword_set(nring) then begin
+      ring = rings[inull, n_elements(rings[inull])/5]
+    endif else begin
+      ring = rings[inull, nring]
+    endelse
 
-    if n le 150 then skip = 2 else skip = fix((n-2)/150.)
+    n = n_elements(ring)/3/nlines
 
     xf = ring[0,*]
     yf = ring[1,*]
     zf = ring[2,*]
 
-    for k = 0, n-1, n/20 do begin
-      print, k
+    for k = 0, n_elements(ring)/3, n do begin
       startpt = [xf[k],yf[k],zf[k]]
 
-      h = 0.01*ds
-      hmin = 0.001*ds
-      hmax = 0.5*ds
+      h = 0.01
+      hmin = 0.001
+      hmax = 0.5
       epsilon = 1.0d-5
 
-      line = fieldline3d(startpt,bgrid,xx,yy,zz,h,hmin,hmax,epsilon)
+      line = fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem_model3d)
 
-      dist = (line[0,*]-null[i].pos[0])^2+(line[1,*]-null[i].pos[1])^2+(line[2,*]-null[i].pos[2])^2
+      dist = (line[0,*]-nulldata[inull].pos[0])^2+(line[1,*]-nulldata[inull].pos[1])^2+(line[2,*]-nulldata[inull].pos[2])^2
       imin = where(dist eq min(dist))
-      print, imin, n_elements(line)
-      if null[i].sign lt 0 then begin
-        minloc = min(imin)
-        line = line[*, 0:minloc]
+      if nulldata[inull].sign lt 0 then begin
+        line = line[*, 0:min(imin)]
       endif else begin
-        minloc = max(imin)
-        line = line[*, minloc:-1]
+        line = line[*, max(imin):-1]
       endelse
       
-      oModel -> add, obj_new("IDLgrPolyline",line[0,*],line[1,*],line[2,*],color=colour,thick=2)
+      oModel.add, obj_new("IDLgrPolyline", line[0,*], line[1,*], line[2,*], color=colour, thick=2)
     endfor
   endforeach
 
 end
 
-pro model_add_separators, nskip
-  common shared_var
+pro model_add_separators
+  common shared_var_model3d
 
   print, 'Adding separators'
 
   seps = read_separators(filename)
 
-  foreach i, inull do begin
+  foreach inull, nulllist do begin
     
-    for isep = 0, n_elements(seps[i])-1 do begin
-      oModel -> add,obj_new("IDLgrPolyline", seps[i, isep, 0, 0:-1:nskip], seps[i, isep, 1, 0:-1:nskip], seps[i, isep, 2, 0:-1:nskip], color=[0,160,60], thick=4)
+    for isep = 0, n_elements(seps[inull])-1 do begin
+      sep = seps[inull, isep, *, *]
+      if csystem_model3d eq 'spherical' then sep = sphr2cart(sep)
+      oModel.add, obj_new("IDLgrPolyline", sep[0, *], sep[1, *], sep[2, *], color=[0,160,60], thick=4)
     endfor
 
   endforeach
 end
 
 pro model_add_nulls
-  common shared_var
+  common shared_var_model3d
 
-  radius = 10*ds
+  radius = ds
   
-  foreach i, inull do begin
+  foreach inull, nulllist do begin
     mesh_obj, 4, vert, poly, replicate(radius,21,21)
-    for j = 0, 2 do vert[j,*] = vert[j,*] + null[i].pos[j]
-    if null[i].sign gt 0 then colour = [255,0,0] else begin
-      if null[i].sign lt 0 then colour = [0,0,255] else colour = [0,255,0]
+    pos = nulldata[inull].pos
+    if csystem_model3d eq 'spherical' then pos = [pos[0]*sin(pos[1])*cos(pos[2]), pos[0]*sin(pos[1])*sin(pos[2]), pos[0]*cos(pos[1])]
+    for j = 0, 2 do vert[j,*] = vert[j,*] + pos[j]
+    if nulldata[inull].sign gt 0 then colour = [255,0,0] else begin
+      if nulldata[inull].sign lt 0 then colour = [0,0,255] else colour = [0,255,0]
     endelse
-    oModel -> add, obj_new("IDLgrPolygon",data=vert,polygons=poly,color=colour,/shading)
+    oModel.add, obj_new("IDLgrPolygon",data=vert,polygons=poly,color=colour,/shading)
   endforeach
   
 end
 
 pro model_add_box
-  common shared_var
+  common shared_var_model3d
   
   print, "Adding box"
   box = dblarr(3,2)
@@ -145,9 +162,11 @@ pro model_add_box
   oModel -> add, obj_new('IDLgrPolyline',line[*,0],line[*,1],line[*,2],color=[0,0,0])
 end
 
-function mk_model,fname,nulls=nulls,separators=separators,$
-sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines,nskip=nskip
-  common shared_var
+function mk_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf, spines=spines, box=box, fanlines=fanlines, nskip=nskip, null_list=null_list, coordsystem=coordsystem
+  common shared_var_model3d
+
+  if not keyword_set(coordsystem) then coordsystem = 'cartesian'
+  csystem_model3d = coordsystem
 
   filename = fname
 
@@ -177,16 +196,18 @@ sepsurf=sepsurf,spines=spines,box=box,fanlines=fanlines,nskip=nskip
 
   ds = min([min(xx[1:-1]-xx[0:-2]), min(yy[1:-1]-yy[0:-2]), min(zz[1:-1]-zz[0:-2])])
 
-  null = read_nulls(filename)
-  inull = indgen(n_elements(null))
+  nulldata = read_nulls(filename)
+  if not keyword_set(null_list) then null_list = indgen(n_elements(nulldata)) else null_list = null_list - 1
+  nulllist = null_list
+  ; inull = indgen(n_elements(nulldata))
 
   oModel = obj_new("IDLgrModel")
   if keyword_set(box)        then model_add_box
   if keyword_set(nulls)      then model_add_nulls
   if keyword_set(fanlines)   then model_add_fanlines, nskip
-  if keyword_set(spines)     then model_add_spines, nskip
+  if keyword_set(spines)     then model_add_spines
   if keyword_set(sepsurf)    then model_add_sepsurf, nskip
-  if keyword_set(separators) then model_add_separators, nskip
+  if keyword_set(separators) then model_add_separators
   
   return, oModel
 end
