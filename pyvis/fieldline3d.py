@@ -39,14 +39,16 @@ def trilinear3d_grid(pt, grid):
     return (1 - z)*line[0, ...] + z*line[1, ...]
 
 def getdr(r, x, y, z):
-    i, j, k = np.floor(r).astype(np.int)
+    ix, iy, iz = np.floor(r).astype(np.int)
 
-    dx = x[i+1] - x[i]
-    dy = y[j+1] - y[j]
-    dz = z[k+1] - z[k]
+    dx = x[ix+1] - x[ix]
+    dy = y[iy+1] - y[iy]
+    dz = z[iz+1] - z[iz]
 
-    xc = x[i] + dx/2
-    yc = y[j] + dy/2
+    xc = x[ix] + dx/2
+    # xc = x[ix] + (r[0] - ix)*(x[ix+1] - x[ix])
+    yc = y[iy] + dy/2
+    # yc = y[iy] + (r[1] - iy)*(y[iy+1] - y[iy])
 
     if csystem == 'spherical':
         return np.array([dx, xc*dy, xc*np.sin(yc)*dz], dtype=np.float64)
