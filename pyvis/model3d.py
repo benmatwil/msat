@@ -50,7 +50,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
     nulldata = rd.nulls(filename)
 
     if null_list is None:
-        nulllist = list(range(nulldata.number[-1]))
+        nulllist = nulldata.number - 1
     else:
         nulllist = []
         for inull in null_list:
@@ -70,7 +70,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
 def add_sepsurf():
     print('Adding separatrix surface rings')
 
-    rings, breaks, _ = rd.rings(filename, allinfo=True, nskip=nskipglob, null_list=nulllist)
+    rings, breaks, _ = rd.rings(filename, allinfo=True, nskip=nskipglob, null_list=nulllist+1)
 
     cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
@@ -115,10 +115,10 @@ def add_sepsurf():
             lines = ml.pipeline.stripper(src)
             ml.pipeline.surface(lines, color=cols[isign], line_width=1)
 
-def add_fanlines(nlines, nring):
+def add_fanlines(nlines, nring=None):
     print('Adding separatrix surface field lines')
 
-    rings = rd.rings(filename, nskip=nskipglob, null_list=nulllist)
+    rings = rd.rings(filename, nskip=nskipglob, null_list=nulllist+1)
 
     cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
@@ -135,8 +135,8 @@ def add_fanlines(nlines, nring):
             startpt = np.array([ring[ipt, 0], ring[ipt, 1], ring[ipt, 2]])
 
             #choose some good parameters
-            h = 5e-3
-            hmin = 5e-4
+            h = 1e-2
+            hmin = 1e-3
             hmax = 0.5
             epsilon = 1e-5
 
@@ -147,10 +147,7 @@ def add_fanlines(nlines, nring):
             dists = np.sqrt((line[:, 0] - nulldata[inull].pos[0])**2 +
                 (line[:, 1] - nulldata[inull].pos[1])**2 + (line[:, 2] - nulldata[inull].pos[2])**2)
             imin = dists.argmin()
-            if nulldata[inull].sign == -1:
-                line = line[0:imin+1, :]
-            else:
-                line = line[imin:, :]
+            line = line[0:imin+1, :] if nulldata[inull].sign == -1 else line[imin:, :]
 
             if csystem == 'spherical':
                 line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
@@ -164,9 +161,9 @@ def add_fieldlines(startpts, col=(0, 0, 0), colquant=None):
         sys.stdout.write("\033[F")
 
         # choose fieldline parameters
-        h = 5e-3
-        hmin = 5e-4
-        hmax = 0.5
+        h = 1e-2
+        hmin = 1e-3
+        hmax = 0.2
         epsilon = 1e-5
 
         # calculate the fieldline
@@ -190,7 +187,7 @@ def add_spines():
 
     cols = {-1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0)}
 
-    spines = rd.spines(filename, null_list=nulllist)
+    spines = rd.spines(filename, null_list=nulllist+1)
 
     # set up lists like rings
     x, y, z, s, ptcons = ( [[],[]] for _ in range(5) )
@@ -226,7 +223,7 @@ def add_spines():
 def add_separators():
     print('Adding separators')
 
-    seps, conn = rd.separators(filename, null_list=nulllist)
+    seps, conn = rd.separators(filename, null_list=nulllist+1)
 
     # simpler version of spines and rings - no need for positive and negative
     x, y, z, s, ptcons = ( [] for _ in range(5) )
