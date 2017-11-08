@@ -1,4 +1,4 @@
-function trilinear_3d,xp,yp,zp,grid,xx,yy,zz
+function trilinear3d,xp,yp,zp,grid,xx,yy,zz
 
   ;inputs
   ;(xp,yp,zp) point at which field required in x,y,z units
@@ -58,7 +58,7 @@ function trilinear_3d,xp,yp,zp,grid,xx,yy,zz
 
 end
 
-function trilinear_3d_grid, pt, grid
+function trilinear3d_grid, pt, grid
 
   ix = floor(pt[0])
   iy = floor(pt[1])
