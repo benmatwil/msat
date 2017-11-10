@@ -45,17 +45,18 @@ def getdr(r, x, y, z):
     dy = y[iy+1] - y[iy]
     dz = z[iz+1] - z[iz]
 
-    xc = x[ix] + dx/2
-    # xc = x[ix] + (r[0] - ix)*(x[ix+1] - x[ix])
-    yc = y[iy] + dy/2
-    # yc = y[iy] + (r[1] - iy)*(y[iy+1] - y[iy])
+    # xc = x[ix] + dx/2
+    # yc = y[iy] + dy/2
+
+    xp = x[ix] + (r[0] - ix)*dx
+    yp = y[iy] + (r[1] - iy)*dy
 
     if csystem == 'spherical':
-        return np.array([dx, xc*dy, xc*np.sin(yc)*dz], dtype=np.float64)
+        return np.array([dx, xp*dy, xp*np.sin(yp)*dz], dtype=np.float64)
     elif csystem == 'cartesian':
         return np.array([dx, dy, dz], dtype=np.float64)
     elif cystem == 'cylindrical':
-        return np.array([dx, xc*dy, dz], dtype=np.float64)
+        return np.array([dx, xp*dy, dz], dtype=np.float64)
 
 def edgecheck(r):
     if csystem == 'spherical':

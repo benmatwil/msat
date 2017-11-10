@@ -119,22 +119,25 @@ module trace
       real(np) :: r(3), rcheck(3) !grid cell number
       real(np) :: dx, dy, dz
       real(np) :: getdr(3)
-      integer(int32) :: i, j, k
-      real(np) :: xc, yc, zc !x, y and z at the midpoint of the cell
+      integer(int32) :: ix, iy, iz
+      real(np) :: xp, yp, zp ! x, y and z at the midpoint of the cell
 
       rcheck = r
       call edgecheck(rcheck)
 
-      i = floor(rcheck(1))
-      j = floor(rcheck(2))
-      k = floor(rcheck(3))
+      ix = floor(rcheck(1))
+      iy = floor(rcheck(2))
+      iz = floor(rcheck(3))
       
-      dx = x(i+1)-x(i)
-      dy = y(j+1)-y(j)
-      dz = z(k+1)-z(k)
+      dx = x(ix+1) - x(ix)
+      dy = y(iy+1) - y(iy)
+      dz = z(iz+1) - z(iz)
       
-      xc = x(i) + dx/2
-      yc = y(j) + dy/2
+      xp = x(ix) + (rcheck(0) - ix)*dx
+      yp = y(ix) + (rcheck(0) - iy)*dy
+
+      ! xc = x(i) + dx/2
+      ! yc = y(j) + dy/2
       ! zc = z(k) + dz/2
 
 #if cartesian
@@ -142,10 +145,10 @@ module trace
       getdr = [dx, dy, dz]
 #elif spherical
       !spherical coordinates
-      getdr = [dx, xc*dy, xc*sin(yc)*dz]
+      getdr = [dx, xp*dy, xp*sin(yp)*dz]
 #elif cylindrical
       !cylindrical coordinates
-      getdr = [dx, xc*dy, dz]
+      getdr = [dx, xp*dy, dz]
 #else
       stop 'No coordinate system selected. Please select a valid one when compiling'
 #endif

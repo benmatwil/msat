@@ -3,19 +3,19 @@ common shared_var_fl3d, xmin, xmax, ymin, ymax, zmin, zmax, csystem_fl3d
 function getdr, r, x, y, z
   common shared_var_fl3d
 
-  i = floor(r[0])
-  j = floor(r[1])
-  k = floor(r[2])
+  ix = floor(r[0])
+  iy = floor(r[1])
+  iz = floor(r[2])
   
-  dx = x[i+1]-x[i]
-  dy = y[j+1]-y[j]
-  dz = z[k+1]-z[k]
+  dx = x[ix + 1] - x[ix]
+  dy = y[iy + 1] - y[iy]
+  dz = z[iz + 1] - z[iz]
   
-  xc = x[i] + dx/2
-  yc = y[j] + dy/2
+  xp = x[i] + (r[0] - ix)*dx
+  yp = y[j] + (r[1] - iy)*dy
 
   if csystem_fl3d eq 'spherical' then begin
-    return, [dx, xc*dy, xc*np.sin(yc)*dz]
+    return, [dx, xp*dy, xp*np.sin(yp)*dz]
   endif else begin
     return, [dx, dy, dz]
   endelse
