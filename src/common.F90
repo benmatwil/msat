@@ -78,15 +78,15 @@ module common
 #endif
       endif
 
-      x = xp-nx
-      y = yp-ny
-      z = zp-nz
+      x = xp - nx
+      y = yp - ny
+      z = zp - nz
 
       do dims = 1, 3
-        cube = b(nx:nx+1,ny:ny+1,nz:nz+1,dims)
-        square = (1-z)*cube(:,:,1) + z*cube(:,:,2)
-        line = (1-y)*square(:,1) + y*square(:,2)
-        trilinear(dims) = (1-x)*line(1) + x*line(2)
+        cube = b(nx:nx+1, ny:ny+1, nz:nz+1, dims)
+        square = (1 - z)*cube(:, :, 1) + z*cube(:, :, 2)
+        line = (1 - y)*square(:, 1) + y*square(:, 2)
+        trilinear(dims) = (1 - x)*line(1) + x*line(2)
       enddo
 
     end
