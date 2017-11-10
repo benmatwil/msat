@@ -243,12 +243,13 @@ def add_separators():
                 ptcons.append(np.vstack([np.arange(index, index+sep.shape[0]-1), np.arange(index+1, index+sep.shape[0])]).T)
                 index += sep.shape[0]
     
-    src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s))
-    src.mlab_source.dataset.lines = np.vstack(ptcons)
-    src.update()
-    
-    lines = ml.pipeline.stripper(src)
-    ml.pipeline.surface(lines, color=(0, 0.5, 0), line_width=6)
+    if len(x) > 0:
+        src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s))
+        src.mlab_source.dataset.lines = np.vstack(ptcons)
+        src.update()
+        
+        lines = ml.pipeline.stripper(src)
+        ml.pipeline.surface(lines, color=(0, 0.5, 0), line_width=6)
 
 def add_nulls(size):
     print("Adding nulls")
