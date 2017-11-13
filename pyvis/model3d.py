@@ -2,6 +2,7 @@ import numpy as np
 import mayavi.mlab as ml
 from . import read as rd
 from . import fieldline3d as fl
+from __future__ import print_function, division
 import sys
 import vtk
 

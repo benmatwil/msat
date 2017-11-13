@@ -1,5 +1,6 @@
+from __future__ import print_function, division
 import numpy as np
-from math import *
+from math import sqrt
 
 # rkf45 coefficients
 b2 = 0.25
