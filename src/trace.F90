@@ -133,8 +133,8 @@ module trace
       dy = y(iy+1) - y(iy)
       dz = z(iz+1) - z(iz)
       
-      xp = x(ix) + (rcheck(0) - ix)*dx
-      yp = y(ix) + (rcheck(0) - iy)*dy
+      xp = x(ix) + (rcheck(1) - ix)*dx
+      yp = y(ix) + (rcheck(2) - iy)*dy
 
       ! xc = x(i) + dx/2
       ! yc = y(j) + dy/2
