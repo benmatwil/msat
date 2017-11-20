@@ -465,6 +465,7 @@ program ssfinder
       spine(:,1) = rnulls(:, inull)
       rspine = rnulls(:, inull) + dir*spines(:, inull)*1e-3_np ! pick a good factor
       do while (.not. outedge(rspine))
+        if (signs(inull) == 0) exit
         call add_vector(spine, rspine)
         hspine = 5e-2_np
         call trace_line(rspine, -signs(inull), hspine)
