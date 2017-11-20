@@ -114,14 +114,17 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
         zmax = z.shape[0]-1
 
     # first convert point into grid coordinates
-    ix = np.argwhere(startpt[0] >= x).max()
-    iy = np.argwhere(startpt[1] >= y).max()
-    iz = np.argwhere(startpt[2] >= z).max()
+    if gridcoord == False:
+        ix = np.argwhere(startpt[0] >= x).max()
+        iy = np.argwhere(startpt[1] >= y).max()
+        iz = np.argwhere(startpt[2] >= z).max()
 
-    r0 = np.empty_like(startpt)
-    r0[0] = ix + (startpt[0] - x[ix])/(x[ix+1] - x[ix])
-    r0[1] = iy + (startpt[1] - y[iy])/(y[iy+1] - y[iy])
-    r0[2] = iz + (startpt[2] - z[iz])/(z[iz+1] - z[iz])
+        r0 = np.empty_like(startpt)
+        r0[0] = ix + (startpt[0] - x[ix])/(x[ix+1] - x[ix])
+        r0[1] = iy + (startpt[1] - y[iy])/(y[iy+1] - y[iy])
+        r0[2] = iz + (startpt[2] - z[iz])/(z[iz+1] - z[iz])
+    else:
+        r0 = startpt.copy()
 
     # Produce an error if the first point isn't in the box
     if startpt[0] < x[0] or startpt[0] > x[-1] or startpt[1] < y[0] or startpt[1] > y[-1] or startpt[2] < z[0] or startpt[2] > z[-1]:
@@ -138,7 +141,7 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
         print("Bounds are: z[0] = {}, z[-1] = {}".format(z[0], z[-1]))
 
         return np.array([startpt[0],startpt[1],startpt[2]], dtype=np.float64)
-    elif not (hmin < h < hmax):
+    elif not (hmin < np.abs(h) < hmax):
         print('You need to satisfy hmin ({}) < h ({}) < hmax({})'.format(hmin, h, hmax))
         return
 

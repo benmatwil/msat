@@ -8,7 +8,7 @@ import os
 def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2, badtest=False):
 
     if converge == True:
-        os.system('make sf mode=debug')
+        os.system('make sf debug=on')
         os.system('./sf -i {0} -n {1:04d}'.format(filename, n) )
 
     field = rd.field(filename)
@@ -114,7 +114,7 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2
         countf = 0
         countb = 0
         for startpt in startpts:
-            h = h0
+            h = h0*10
             line = fl.fieldline3d(startpt + nullpos, bgrid, xgc,ygc,zgc, h, 0.1*h, 10*h, 0.01*h, boxedge=boxedge, oneway=True, gridcoord=True)
             plt.plot(line[:,0],line[:,1],line[:,2],c='red')
             if (line[-1,0] < boxedge[0,0] + rsphere*1e-3 or line[-1,0] > boxedge[1,0] - rsphere*1e-3 or
