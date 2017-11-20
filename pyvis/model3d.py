@@ -1,8 +1,8 @@
+from __future__ import print_function, division
 import numpy as np
 import mayavi.mlab as ml
 from . import read as rd
 from . import fieldline3d as fl
-from __future__ import print_function, division
 import sys
 import vtk
 
@@ -259,11 +259,13 @@ def add_nulls(size):
 
     boxsize = min([xx[-1] - xx[0], yy[-1] - yy[0], zz[-1] - zz[0]])/40
 
-    for sign in [-1, 1]:
+    r = max([boxsize, ds])
+
+    for sign in [-1, 0, 1]:
         pos = nulldata.pos[nulldata.sign == sign]
         if csystem == 'spherical':
             pos[:, 0], pos[:, 1], pos[:, 2] = sphr2cart(pos[:, 0], pos[:, 1], pos[:, 2])
-        ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[sign], scale_factor=size, resolution=32)
+        ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[sign], scale_factor=r, resolution=32)
 
     # r = max([boxsize, ds])
     # r = r*size
