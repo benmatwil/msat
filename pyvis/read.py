@@ -9,8 +9,7 @@ def prefix(filename):
 
 def synmap(filename):
     with open(filename, 'rb') as fieldfile:
-        nlon = np.asscalar(np.fromfile(fieldfile, count=1, dtype=np.int32))
-        nlat = np.asscalar(np.fromfile(fieldfile, count=1, dtype=np.int32))
+        nlon, nlat = np.fromfile(fieldfile, count=2, dtype=np.int32)
 
         bsyn = np.fromfile(fieldfile, count=nlon*nlat, dtype=np.float64).reshape((nlon, nlat), order='f')
 
@@ -21,9 +20,7 @@ def synmap(filename):
 
 def field(filename):
     with open(filename, 'rb') as fieldfile:
-        nrad = np.asscalar(np.fromfile(fieldfile, count=1, dtype=np.int32))
-        ntheta = np.asscalar(np.fromfile(fieldfile, count=1, dtype=np.int32))
-        nphi = np.asscalar(np.fromfile(fieldfile, count=1, dtype=np.int32))
+        nrad, ntheta, nphi = np.fromfile(fieldfile, count=3, dtype=np.int32)
 
         shape = (nrad, ntheta, nphi)
         num = nrad*ntheta*nphi
