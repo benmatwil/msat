@@ -132,13 +132,15 @@ module trace
       dx = x(ix+1) - x(ix)
       dy = y(iy+1) - y(iy)
       dz = z(iz+1) - z(iz)
-      
-      xp = x(ix) + (rcheck(1) - ix)*dx
-      yp = y(ix) + (rcheck(2) - iy)*dy
 
-      ! xc = x(i) + dx/2
-      ! yc = y(j) + dy/2
-      ! zc = z(k) + dz/2
+#if spherical || cylindrical
+      xp = x(ix) + (rcheck(1) - ix)*dx
+      yp = y(iy) + (rcheck(2) - iy)*dy
+
+      ! xp = x(ix) + dx/2
+      ! yp = y(iy) + dy/2
+      ! zp = z(iz) + dz/2
+#endif
 
 #if cartesian
       !cartesian coordinates
@@ -152,7 +154,7 @@ module trace
 #else
       stop 'No coordinate system selected. Please select a valid one when compiling'
 #endif
-      
+
     end function
 
 end module
