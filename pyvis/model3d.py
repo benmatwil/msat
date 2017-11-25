@@ -50,12 +50,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
 
     nulldata = rd.nulls(filename)
 
-    if null_list is None:
-        nulllist = nulldata.number - 1
-    else:
-        nulllist = []
-        for inull in null_list:
-            nulllist.append(inull-1)
+    set_null_list(null_list)
 
     if coordsystem == 'spherical':
         add_sun()
@@ -67,6 +62,17 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
     if 'sepsurf' in addlist: add_sepsurf()
     if 'separators' in addlist: add_separators()
     if fieldlines is not None: add_fieldlines(fieldlines, col=linecolor, colquant=colquant)
+
+def set_null_list(lst):
+    global nulllist
+    if lst is None:
+        nulllist = nulldata.number - 1
+    else:
+        nulllist = []
+        for inull in lst:
+            nulllist.append(inull-1)
+        nulllist = np.array(nulllist)
+
 
 def add_sepsurf():
     print('Adding separatrix surface rings')
@@ -252,17 +258,19 @@ def add_separators():
         lines = ml.pipeline.stripper(src)
         ml.pipeline.surface(lines, color=(0, 0.5, 0), line_width=6)
 
-def add_nulls(size):
+def add_nulls(size=1):
     print("Adding nulls")
 
     cols = {-1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0)}
 
     boxsize = min([xx[-1] - xx[0], yy[-1] - yy[0], zz[-1] - zz[0]])/40
 
-    r = max([boxsize, ds])
+    r = max([boxsize, ds])*size
+
+    nulldata1 = nulldata[nulllist]
 
     for sign in [-1, 0, 1]:
-        pos = nulldata.pos[nulldata.sign == sign]
+        pos = nulldata1.pos[nulldata1.sign == sign]
         if csystem == 'spherical':
             pos[:, 0], pos[:, 1], pos[:, 2] = sphr2cart(pos[:, 0], pos[:, 1], pos[:, 2])
         ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[sign], scale_factor=r, resolution=32)
