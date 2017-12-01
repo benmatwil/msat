@@ -1,41 +1,34 @@
 program nullfinder
 
-  use params 
+  use params
   use nf_mod
+  use common
 
   implicit none
 
-  character(len=30) :: intfmt = "(a,'(',i4,',',i4,',',i4')',a)"
-  character(len=40) :: dblfmt= "(a,'(',f9.5,',',f9.5,',',f9.5,')',a)"
+  real(np), dimension(:, :, :), allocatable :: magb
+  logical, dimension(:, :, :), allocatable :: candidates ! flags for candidate cells
 
-  real(np), allocatable, dimension(:) :: xs, ys, zs ! x,y and z coordinates of confirmed nulls
-  real(np), allocatable, dimension(:) :: xp, yp, zp
-  
-  real(np), dimension(:,:,:), allocatable :: bx, by, bz
-
-  integer(int32), dimension(:,:,:), allocatable :: candidates ! array containing coords of candidate cells (1 if candidate, 0 if not)
-  real(np), dimension(2,2,2) :: cube, cbx, cby, cbz ! arrays containing vertices surrounding a cell
+  real(np), dimension(2, 2, 2, 3) :: cube
+  real(np) :: ds
+  real(np), dimension(0:10, 0:10, 0:10, 3) :: subcube
   integer(int32) :: mincube(3)
-  real(np) :: x, y, z ! coordinates of a null
-  real(np), allocatable, dimension(:) :: xgrid, ygrid, zgrid
+  
+  real(np) :: rtri(3), rnull(3)
 
-  integer(int32) :: nx, ny, nz ! number of vertices
-  integer(int32) :: nx1, ny1, nz1 ! number of cells
+  integer(int32) :: ix, iy, iz, isig, ixsub, iysub, izsub
 
-  integer(int32) :: i, j, k
-  integer(int32) :: ii, jj, kk
-  integer(int32) :: ix, iy, iz
-
-  integer(int32) :: nnulls, nvert
-  integer(int32) :: itestx, itesty, itestz, itest
+  integer(int32) :: itest
 
   integer(int32) :: ierror
-  real(np) :: dx
-  real(np), allocatable, dimension(:,:) :: distances
+  real(np) :: bound_dist
+
+  integer(int32) :: i, j, counter
+  real(np), allocatable :: distances(:,:)
+  logical :: exitcondition
 
   print*, '#######################################################################'
   print*, '#                         Null Finding Code                           #'
-  print*, '#                      (Written by G P S Gibb)                        #'
   print*, '#######################################################################'
 
   call filenames
@@ -46,199 +39,157 @@ program nullfinder
     print*, 'Reading in data from: '//trim(filein)
 
     read(10) nx, ny, nz ! number of vertices
-    print*, ''
-    write(*, intfmt) 'Number of points in grid: (nx,ny,nz) = ', nx, ny, nz, ''
+    print*, 'Number of points in grid: ', nx, ny, nz
 
-    allocate(bx(nx,ny,nz), by(nx,ny,nz), bz(nx,ny,nz))
-    allocate(xgrid(nx), ygrid(ny), zgrid(nz))
+    allocate(bgrid(nx, ny, nz, 3), magb(nx, ny, nz))
+    allocate(x(nx), y(ny), z(nz))
 
-    read(10) bx
-    read(10) by
-    read(10) bz
-    read(10) xgrid, ygrid, zgrid
+    read(10) bgrid(:, :, :, 1)
+    read(10) bgrid(:, :, :, 2)
+    read(10) bgrid(:, :, :, 3)
+    read(10) x, y, z
 
   close(10)
 
-  print*, 'Done!'
-  print*, ''
-  print*, '-----------------------------------------------------------------------'
-  print*,  ''
+  xmax = nx
+  ymax = ny
+  zmax = nz
 
-  nx1 = nx-1 ! number of cells (not vertices)
-  ny1 = ny-1
-  nz1 = nz-1
+  magb = sqrt(sum(bgrid(:, :, :, :)**2, 4))
 
-  allocate(candidates(nx1,ny1,nz1)) ! array where candidate cells are flagged
-
-  nnulls = 0
-
-  print*, 'Checking for candidate nulls...'
+  allocate(candidates(nx-1, ny-1, nz-1)) ! array where candidate cells are flagged
+  candidates = .false.
 
   ! loop over each cell checking if bx, by and bz switch sign
-  do k = 1, nz1
-    do j = 1, ny1
-      do i = 1, nx1
-
-        candidates(i,j,k) = 0
-
+  do iz = 1, nz-1
+    do iy = 1, ny-1
+      do ix = 1, nx-1
+        
+        cube = bgrid(ix:ix+1, iy:iy+1, iz:iz+1, :)
         ! check if bx changes sign
-        cube(:,:,:) = bx(i:i+1, j:j+1, k:k+1)
-        itestx = switch(cube)
-        if (itestx == 0) cycle
-
+        if (allsame(cube(:, :, :, 1))) cycle
         ! check by changes sign
-        cube(:,:,:) = by(i:i+1, j:j+1, k:k+1)
-        itesty = switch(cube)
-        if (itesty == 0) cycle
-
+        if (allsame(cube(:, :, :, 2))) cycle
         ! check bz changes sign
-        cube(:,:,:) = bz(i:i+1, j:j+1, k:k+1)
-        itestz = switch(cube)
-        if (itestz == 0) cycle
+        if (allsame(cube(:, :, :, 3))) cycle
 
-        cube(:,:,:) = bx(i:i+1, j:j+1, k:k+1)**2 + by(i:i+1, j:j+1, k:k+1)**2 + bz(i:i+1, j:j+1, k:k+1)**2
-        if (sum(sqrt(cube)) < 8*zero) cycle
+        ! check cube isn't basically zero everywhere
+        if (sum(magb(ix:ix+1, iy:iy+1, iz:iz+1)) < 8*zero) cycle
 
-        candidates(i,j,k) = 1
-        nnulls = nnulls+1
+        candidates(ix, iy, iz) = .true.
 
       enddo
     enddo
   enddo
 
+  nnulls = count(candidates)
+
   print*, ''
-  print*, ' Number of candidate nulls found = ', nnulls
+  print*, 'Number of candidate cells = ', nnulls
 
   print*, ''
   print*, '-----------------------------------------------------------------------'
   print*, ''
 
-  print*, 'Now looping over all candidate nulls...'
-  ! now loop over candidates and test for nulls using bilinear method on faces
-  do k = 1, nz1
-    do j = 1, ny1
-      do i = 1, nx1
-        if (candidates(i,j,k) == 1) then
+  allocate(rnulls(3, 0))
 
-#if debug
-          print*, 'Grid coordinates of candidate cell', i, j, k
-#endif
+  do iz = 1, nz-1
+    do iy = 1, ny-1
+      do ix = 1, nx-1
 
-          cbx = bx(i:i+1, j:j+1, k:k+1) !bx cell
-          cby = by(i:i+1, j:j+1, k:k+1) !by cell
-          cbz = bz(i:i+1, j:j+1, k:k+1) !bz cell
+        if (candidates(ix, iy, iz)) then
           
-          call normalise(cbx, cby, cbz)
+          rnull = [ix, iy, iz]
 
-          call bilin_test(cbx, cby, cbz, itest) ! check for null within (or on face/corner/edge of) cell
-
-          if (itest == 0) then
-            candidates(i,j,k) = 0 ! if no null found remove this candidate
-#if debug
-            print*, 'CELL REJECTED'
-#endif
-          endif
-
-        endif
-      enddo
-    enddo     
-  enddo
-
-  print*, ''
-  print*, '-----------------------------------------------------------------------'
-  print*, ''
-
-  allocate(xs(0), ys(0), zs(0))
-  allocate(xp(0), yp(0), zp(0))
-
-  nnulls = sum(candidates)
-
-  ! find coordinates of null
-  write(*,"(a,i5)") 'Number of confirmed nulls = ', sum(candidates)
-  print*, ''
-  print*, "Now determining each null's location to sub-gridcell accuracy:"
-  do k = 1, nz1
-    do j = 1, ny1
-      do i = 1, nx1
-        if (candidates(i,j,k) == 1) then
-
-          cbx = bx(i:i+1, j:j+1, k:k+1)
-          cby = by(i:i+1, j:j+1, k:k+1)
-          cbz = bz(i:i+1, j:j+1, k:k+1)
-
-          call normalise(cbx, cby, cbz)
-
-          x = 0.0_np
-          y = 0.0_np
-          z = 0.0_np
-
-          dx = 1.0_np
-          do ii = 1, sig_figs
-            dx = dx/10.0_np
-            call subgrid(cbx, cby, cbz, dx, x, y, z, ierror) ! chop cell into 10x10x10 subcells, and check for nulls in each subcell
-            if (ierror == 1) exit
-          enddo
-
-          do iz = 1, 2
-            do iy = 1, 2
-              do ix = 1, 2
-                cube(ix,iy,iz) = trilinear_cell(x+(ix-1)*dx, y+(iy-1)*dx, z+(iz-1)*dx, cbx)**2 + &
-                  trilinear_cell(x+(ix-1)*dx, y+(iy-1)*dx, z+(iz-1)*dx, cby)**2 + &
-                  trilinear_cell(x+(ix-1)*dx, y+(iy-1)*dx, z+(iz-1)*dx, cbz)**2
+          ierror = 0
+          sigloop: do isig = 1, sig_figs
+            
+            ds = 10.0_np**(-isig)
+            do izsub = 0, 10
+              do iysub = 0, 10
+                do ixsub = 0, 10
+                  ! find all field values of subgrid
+                  rtri = rnull + [ixsub, iysub, izsub]*ds
+                  subcube(ixsub, iysub, izsub, :) = trilinear(rtri, bgrid)
+                enddo
               enddo
             enddo
-          enddo
 
-          mincube = minloc(cube)
+            outer: do izsub = 0, 9
+              do iysub = 0, 9
+                do ixsub = 0, 9
+                  itest = 0
+                  cube = subcube(ixsub:ixsub+1, iysub:iysub+1, izsub:izsub+1, :)
+                  ! check if bx changes sign
+                  if (allsame(cube(:, :, :, 1))) cycle
+                  ! check by changes sign
+                  if (allsame(cube(:, :, :, 2))) cycle
+                  ! check bz changes sign
+                  if (allsame(cube(:, :, :, 3))) cycle
 
-          x = x + (mincube(1) - 1)*dx
-          y = y + (mincube(2) - 1)*dx
-          z = z + (mincube(3) - 1)*dx
+                  ! run bilinear test
+                  call bilin_test(cube(:, :, :, 1), cube(:, :, :, 2), cube(:, :, :, 3), itest)
 
+                  if (itest == 1) then
+                    rnull = rnull + [ixsub, iysub, izsub]*ds
+                    exit outer
+                  endif
+                enddo
+              enddo
+            enddo outer
+            
+            if (itest == 0) then
 #if debug
-          print*, 'Null Location', i+x, j+y, k+z
+              if (isig > 1) then
+                print*, 'Candidate null in cell', ix, iy, iz
+                print*, "Don't believe this null. ERROR :("
+                print*, 'Point to', isig, 'sigfigs:', real(rnull, real32)
+                print*, '|B| at point:', sqrt(sum(trilinear(rnull, bgrid)**2))
+                print*, ''
+              endif
 #endif
+              exit sigloop
+            endif
+            
+          enddo sigloop
 
-          if (x+i < 1 + 0.1_np**sig_figs .or. x+i > size(xgrid,1) - 0.1_np**sig_figs) ierror = 1
-          if (minval(cube) > 1e-1_np**sig_figs) ierror = 1
+          if (itest == 1) then
+            ds = 10.0_np**(-sig_figs)
+            do izsub = 1, 2
+              do iysub = 1, 2
+                do ixsub = 1, 2
+                  ! find all field values of subgrid
+                  rtri = rnull + [ixsub-1, iysub-1, izsub-1]*ds
+                  cube(ixsub, iysub, izsub, :) = trilinear(rtri, bgrid)
+                enddo
+              enddo
+            enddo
 
-          if (ierror == 1) then
+            mincube = minloc(sum(cube**2, 4))
 
-            print*, i, j, k
-            print*, "Don't believe this null. Removing from list"
-            nnulls = nnulls-1
+            rnull = rnull + (mincube - 1)*ds
 
+            bound_dist = rspherefact*10**(-sig_figs)
+            
+            ! if (rnull(1) > 1 + bound_dist .and. rnull(1) < nx - bound_dist .and. &
+            !   rnull(2) > 1 + bound_dist .and. rnull(2) < ny - bound_dist .and. &
+            !   rnull(3) > 1 + bound_dist .and. rnull(3) < nz - bound_dist) then
+            !   call add_vector(rnulls, rnull)
+            ! endif
+            if (rnull(1) > 1 + bound_dist .and. rnull(1) < nx - bound_dist) then
+              call add_vector(rnulls, rnull)
 #if debug
-            print*, '|B| at point:', sqrt(trilinear_cell(x, y, z, cbx)**2 + &
-              trilinear_cell(x, y, z, cby)**2 + trilinear_cell(x, y, z, cbz)**2)
+            else
+              print*, 'Null on the boundary', int([ix, iy, iz], int16), 'Removing...'
 #endif
-
-          else
-            ! add this null to the list of nulls (in gridcell coordinates)
-            call add_element(xs, x+i)
-            call add_element(ys, y+j)
-            call add_element(zs, z+k)
-            ! add this null to the lost of nulls (in 'real' units)
-            call add_element(xp, linear(x, xgrid(i:i+1)))
-            call add_element(yp, linear(y, ygrid(j:j+1)))
-            call add_element(zp, linear(z, zgrid(k:k+1)))
-
-            cbx = bx(i:i+1, j:j+1, k:k+1)
-            cby = by(i:i+1, j:j+1, k:k+1)
-            cbz = bz(i:i+1, j:j+1, k:k+1)
-
-#if debug
-            print*, 'Null at ', i+x, j+y, k+z, ' in gridcell coordinates'
-            print*, 'Null at ', linear(x, xgrid(i:i+1)), linear(y, ygrid(j:j+1)), linear(z, zgrid(k:k+1)), ' in real units'
-            print*, '|B| at null:', sqrt(trilinear_cell(x, y, z, cbx)**2 + &
-              trilinear_cell(x, y, z, cby)**2 + trilinear_cell(x, y, z, cbz)**2)
-#endif
-
+            endif
           endif
         endif
       enddo
     enddo
   enddo
+
+  nnulls = size(rnulls, 2)
 
   print*, 'Found', nnulls, 'nulls'
 
@@ -246,73 +197,84 @@ program nullfinder
   print*, '-----------------------------------------------------------------------'
   print*, ''
 
-  print*, 'Now checking for nulls of vertices:'
-  nvert = 0
-  do k = 1, nz
-    do j = 1, ny
-      do i = 1, nx
-        if (sqrt(bx(i,j,k)**2 + by(i,j,k)**2 + bz(i,j,k)**2) < zero) then ! 0 or zero?
-          call add_element(xs, dble(i))
-          call add_element(ys, dble(j))
-          call add_element(zs, dble(k))
-          call add_element(xp, xgrid(i))
-          call add_element(yp, ygrid(j))
-          call add_element(zp, zgrid(k))
-          nvert = nvert + 1
+  do iz = 1, nz
+    do iy = 1, ny
+      do ix = 1, nx
+        if (magb(ix, iy, iz) < zero) then ! 0 or zero?
+          call add_vector(rnulls, real([ix, iy, iz], np))
         endif
       enddo
     enddo
   enddo
-  print*, 'Found', nvert, 'nulls at vertices'
-  nnulls = nnulls + nvert
+
+  nnulls = size(rnulls, 2)
+
+  print*, 'Found', size(rnulls, 2) - nnulls, 'nulls at vertices'
 
   print*, ''
   print*, '-----------------------------------------------------------------------'
   print*, ''
 
   print*, 'Now checking for duplicate nulls:'
-  call remove_duplicates(xs, ys, zs, nnulls, xp, yp, zp)
+    
+  if (nnulls > 1) then
+    exitcondition = .false.
+
+    main_while: do while (.not. exitcondition)
+      !allocate(distances(n,n))
+      do j = 1, nnulls
+        do i = j+1, nnulls
+          if (dist(rnulls(:, i), rnulls(:, j)) < 1e-4_np) then
+            print*, 'removing duplcate at index', j, dist(rnulls(:, i), rnulls(:, j))
+            call remove_vector(rnulls, j)
+            nnulls = nnulls - 1
+            cycle main_while
+          endif
+        enddo
+      enddo
+      exitcondition = .true.
+    enddo main_while
+
+    allocate(distances(nnulls, nnulls))
+
+    distances = 1e6_np
+    do j = 1, nnulls
+      do i = j+1, nnulls
+        distances(i, j) = dist(rnulls(:, i), rnulls(:, j))
+      enddo
+    enddo
+
+    print*,''
+    print*,'All null pairs with less than 1 gridcell spacing'
+    counter = 0
+    do j = 1, nnulls
+      do i = j+1, nnulls
+        if (distances(i, j) < 1) then
+          print *, i, j, distances(i, j)
+          counter = counter + 1
+        endif
+      enddo
+    enddo
+
+    deallocate(distances)
+    print*, 'Number of close-by nulls =', counter
+
+  endif
 
   print*, ''
   print*, '-----------------------------------------------------------------------'
   print*, ''
 
-  ! print*, 'Now checking for nulls right on the edge'
-  ! if (nnulls >= 1) then
-  !   i = 1
-  !   do while (i <= nnulls)
-  !     if (xs(i) < 1 + 0.1_np**sig_figs .or. xs(i) > size(xgrid,1) - 0.1_np**sig_figs) then
-  !       call remove_element(xs, i)
-  !       call remove_element(ys, i)
-  !       call remove_element(zs, i)
-  !       call remove_element(xp, i)
-  !       call remove_element(yp, i)
-  !       call remove_element(zp, i)
-  !       nnulls = nnulls - 1
-  !     else
-  !       i = i + 1
-  !     endif
-  !   enddo
-  ! endif
-
   print*, ''
   print*, 'Final number of nulls=', nnulls
-  print*, 'Is this the same?', size(xp,1)
+  print*, 'Is this the same?', size(rnulls, 2)
 
-  print*, "Now writing null positions to "//trim(fileout)//"-nullpos.dat"
+  print*, "Writing null positions to "//trim(fileout)//"-nullpos.dat"
 
-  open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream')
+  open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='replace')
     write(10) nnulls
-
-    do i = 1, nnulls
-      write(10) xs(i), ys(i), zs(i)
-    enddo
-    do i = 1, nnulls
-      write(10) xp(i), yp(i), zp(i)
-    enddo
+    write(10) rnulls
+    write(10) gtr(rnulls, x, y, z)
   close(10)
-
-  print*, ''
-  print*, 'Done!'
 
 end program
