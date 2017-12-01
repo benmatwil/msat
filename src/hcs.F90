@@ -10,7 +10,6 @@ program hcs
   implicit none
 
   integer(int64) :: tstart, tstop, count_rate !to time program
-  integer(int32) :: nx, ny, nz !size of grid
 
   real(np) :: r(3)
   real(np) :: h, h0

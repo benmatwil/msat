@@ -13,7 +13,6 @@ program ssfinder
   implicit none
 
   integer(int64) :: tstart, tstop, count_rate !to time program
-  integer(int32) :: nx, ny, nz !size of grid
 
   real(np) :: r(3)
   real(np) :: h, h0
@@ -62,7 +61,7 @@ program ssfinder
   ! read in data
   open(unit=10, file=filein, access='stream', status='old')
     read(10) nx, ny, nz ! number of vertices
-    allocate(bgrid(nx,ny,nz,3))
+    allocate(bgrid(nx, ny, nz, 3))
     allocate(x(nx), y(ny), z(nz))
     read(10) bgrid(:,:,:,1)
     read(10) bgrid(:,:,:,2)
@@ -324,7 +323,6 @@ program ssfinder
       !$OMP END DO
 
       !$OMP SINGLE
-      ! print*,'Checking at null', iring, nlines, inull
       if (iring < 50) then
         maxdist = 0.1_np*h0*slowdown
       elseif (iring < 100) then
@@ -335,7 +333,6 @@ program ssfinder
       nulldist = 2.0_np*h0*slowdown
       mindist = maxdist/3
       slowdist = 2.0_np*nulldist
-      ! print*, iring, h0, nulldist, maxdist, mindist, nlines
       !$OMP END SINGLE
 
       ! remove points from ring if necessary
@@ -366,7 +363,6 @@ program ssfinder
       !$OMP SINGLE
       nearflag = sum(nearnull)
       if (nearflag > 0) then
-        ! print*, 'slowing down, adding points near null'
         slowdown = 2.0_np
       endif
       !$OMP END SINGLE

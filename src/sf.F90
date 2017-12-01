@@ -1,5 +1,5 @@
 ! spine finder with convergence method
-program spinefinder
+program signfinder
 
 #if _OPENMP
   use omp_lib
@@ -7,13 +7,14 @@ program spinefinder
 
   use params
   use sf_mod
+  use common
 
   implicit none
 
-  real(np), dimension(:,:), allocatable :: spines, fans
-  integer(int32), dimension(:), allocatable :: signs, warnings
+  ! real(np), dimension(:,:), allocatable :: spines, fans
+  integer(int32), dimension(:), allocatable :: warnings
 
-  integer(int32) :: nnulls, nullstart, nullend, savedata = 0
+  integer(int32) :: nullstart, nullend, savedata = 0
 
   integer(int32) :: pcount, ncount, ucount
 
@@ -64,6 +65,10 @@ program spinefinder
     read(10) bgrid
   close(10)
 
+  xmax = nx
+  ymax = ny
+  zmax = nz
+
   print*, 'There are ', nnulls,' nulls to analyse'
   print*, '-----------------------------------------------------------------------------'
 
@@ -74,7 +79,7 @@ program spinefinder
     print*, 'Evaluating null', inull,' of', nnulls
 #endif
 
-    call get_properties(inull,sign,spine,fan,warning,savedata)
+    call get_properties(inull, sign, spine, fan, warning, savedata)
 
 #if debug
 #else
@@ -145,7 +150,7 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
 
   real(np), dimension(:,:), allocatable :: rconvergefw, rconvergebw, rmin
   real(np), dimension(:,:), allocatable :: rspine, rfan
-  integer(int32), dimension(:,:), allocatable :: densepos, denseposfw, denseposbw
+  integer(int32), dimension(:), allocatable :: densepos, denseposfw, denseposbw
 
   integer(int32) :: sign, warning, signguess, possign
 

@@ -110,8 +110,6 @@ program make_cut
   integer(int32) :: rc = 0
   character(6) :: rstr
 
-  ! integer(int32) :: nnulls
-  integer(int32) :: nx, ny, nz
   integer(int64) :: ig
   real(np), dimension(:), allocatable :: xg, yg, zg
 

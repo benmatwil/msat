@@ -4,31 +4,75 @@ module common
 
   implicit none
 
-  real(np), allocatable :: bgrid(:,:,:,:)
+  integer(int32) :: nx, ny, nz
+  real(np), allocatable :: bgrid(:, :, :, :)
   real(np) :: xmin, xmax, ymin, ymax, zmin, zmax
   real(np), dimension(:), allocatable :: x, y, z
   integer(int32) :: nnulls
   real(np) :: dx, dy, dz
-  real(np), allocatable, dimension(:,:) :: rnulls, rnullsalt, rnullsreal, spines, fans
+  real(np), allocatable, dimension(:,:) :: rnulls, rnullsalt, rnullsreal
+  real(np), allocatable, dimension(:,:) :: spines, fans
   integer(int32), allocatable, dimension(:) :: signs
+  
+  real(np), parameter :: pi = acos(-1.0_np)
+  real(np), parameter :: dtor = pi/180.0_np
+  character(100) :: filein, fileout
 
   contains
 
-    function trilinear(r,b)
+    subroutine filenames
+
+      character(100) :: arg, outname
+      integer(int32) :: iarg, ic
+
+      ic = 0
+      
+      if (command_argument_count() > 0) then
+        do iarg = 1, command_argument_count()
+          call get_command_argument(iarg,arg)
+          if (trim(arg) == '-i') then
+            call get_command_argument(iarg+1,arg)
+            filein = trim(arg)
+            ic = 1
+          endif
+        enddo
+      endif
+      if (ic == 0) stop 'No input file provided'
+
+      outname = 'output'
+      fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
+        //trim(outname)//'/' &
+        //trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
+      
+      ! if (oc == 0) then
+      !   fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
+      !     //trim(outname)//'/' &
+      !     //trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
+      ! else
+      !   if (index(outname, '/', .true.) /= len(trim(outname))) outname = trim(outname)//'/'
+      !   fileout = trim(outname)//trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
+      ! endif
+
+    end
+
+    !********************************************************************************
+
+    function trilinear(r, b)
       ! find the value of a function, b, at (x,y,z) using the 8 vertices and trilinear method
 
-      real(np), allocatable :: b(:,:,:,:)
-      real(np) :: r(3)
-      real(np) :: cube(2,2,2), square(2,2), line(2)
-      real(np) :: x, y, z
-      real(np) :: xp, yp, zp
       real(np) :: trilinear(3)
+      real(np), allocatable :: b(:, :, :, :)
+      real(np) :: r(3)
+      real(np) :: cube(2, 2, 2), square(2, 2), line(2)
+      real(np) :: x, y, z, xp, yp, zp
       integer(int32) :: nx, ny, nz
       integer(int32) :: dims
 
+#if ssf_code
 #if cartesian
 #else
       call edgecheck(r)
+#endif
 #endif
 
       xp = r(1)
@@ -39,6 +83,7 @@ module common
       ny = floor(yp)
       nz = floor(zp)
 
+#if ssf_code
       ! if point goes out of an edge which is not periodic, set point to be at boundary to trilinear
       ! it will go out and be removed soon
       if (outedge(r)) then
@@ -77,6 +122,20 @@ module common
         endif
 #endif
       endif
+#else
+      if (xp >= xmax) then
+        xp = xmax
+        nx = nint(xp)-1
+      endif
+      if (yp >= ymax) then
+        yp = ymax
+        ny = nint(yp)-1
+      endif
+      if (zp >= zmax) then
+        zp = zmax
+        nz = nint(zp)-1
+      endif
+#endif
 
       x = xp - nx
       y = yp - ny
@@ -93,7 +152,7 @@ module common
 
     !********************************************************************************
 
-    function dot(a,b)
+    function dot(a, b)
     ! dot product between a and b
 
       real(np), dimension(3) :: a, b
@@ -105,7 +164,7 @@ module common
 
     !********************************************************************************
 
-    function cross(a,b)
+    function cross(a, b)
     ! cross product between a and b
 
       real(np), dimension(3) :: a,b
@@ -131,7 +190,7 @@ module common
 
     !********************************************************************************
 
-    subroutine add_vector(x,vec,pos)
+    subroutine add_vector(x, vec, pos)
     ! adds an row (vec) to a nx column by ny row array at row number pos
 
       real(np), allocatable, dimension(:,:) :: x, dummy
@@ -164,7 +223,7 @@ module common
 
     !********************************************************************************
 
-    subroutine add_element(x,number,pos)
+    subroutine add_element(x, number, pos)
       
       integer(int32), allocatable, dimension(:) :: x, dummy
       integer(int32), optional :: pos
@@ -193,7 +252,7 @@ module common
 
     !********************************************************************************
 
-    subroutine remove_vector(x,pos)
+    subroutine remove_vector(x, pos)
     ! removes row number pos from an array
 
       real(np), allocatable, dimension(:,:) :: x, dummy
@@ -214,7 +273,7 @@ module common
 
     !********************************************************************************
 
-    subroutine remove_element(x,pos)
+    subroutine remove_element(x, pos)
     ! removes row number pos from an array
 
       integer(int32), allocatable, dimension(:) :: x, dummy
@@ -364,14 +423,13 @@ module common
 
     !********************************************************************************
 
-    function dist(a,b)
+    function dist(a, b)
     ! calculates the distance between two points in grid units
       
       real(np) :: dist
       real(np), dimension(3) :: a, b
 
       dist = sqrt(sum((b - a)**2))
-      ! dist = sqrt((a(1)-b(1))**2 + (a(2)-b(2))**2 + (a(3)-b(3))**2)
 
     end function
 
