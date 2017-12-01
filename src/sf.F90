@@ -11,7 +11,6 @@ program signfinder
 
   implicit none
 
-  ! real(np), dimension(:,:), allocatable :: spines, fans
   integer(int32), dimension(:), allocatable :: warnings
 
   integer(int32) :: nullstart, nullend, savedata = 0
