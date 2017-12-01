@@ -40,7 +40,7 @@ program ssfinder
   ! file writing
   integer(int64) :: ia, ib, ip, uptonullring, uptonullconn
   integer(int32) :: isep, nullnum1, nullnum2, linenum, ringnum
-  real(np), dimension(:,:), allocatable :: rsep, rring
+  real(np), dimension(:,:), allocatable :: rsep, rring, write_ring
   integer(int32), dimension(:), allocatable :: brk
 
   ! for restarting
@@ -162,6 +162,10 @@ program ssfinder
 
     ! find number of nulls done
     read(10) ringsmax1
+    if (ringsmax1 /= ringsmax) then
+      print*, "Please set ringsmax to", ringsmax1, "in params.f90"
+      stop
+    endif
     inquire(unit=10, size=filesize)
     if (nullrestart == 0) then
       istart = (filesize-4_int64)/4_int64/ringsmax1 - 10
@@ -216,14 +220,18 @@ program ssfinder
     ! stores all the coordinates of the spine lines in original coordinate system
     open(unit=60,file=trim(fileout)//'-spines.dat',status='replace',access='stream')
 
-    write(10) ringsmax+1
+    write(10) ringsmax+1, nskip, bytesize, stepsize
+    print*, ringsmax+1, nskip, bytesize, stepsize
 
     istart = 1
   endif
 
   !$OMP PARALLEL private(iring, iline, inull)
   do inull = istart, nnulls ! loop over all nulls
+
     !$OMP SINGLE
+
+    open(unit=90, status='scratch', access='stream')
     write(20, pos=uptonullring+1)
     write(40, pos=uptonullconn)
     print*, ''
@@ -268,7 +276,10 @@ program ssfinder
     slowdown = 1.0_np
     terror = 0
 
-    write(20) [(iline,iline=1,nlines)], break, gtr(line1, x, y, z)
+    write_ring = gtr(line1, x, y, z)
+    write(20) [(iline,iline=1,nlines)], break, real(write_ring, bytesize)
+    write(90) [(iline,iline=1,nlines)], break, write_ring
+    deallocate(write_ring)
 
     exitcondition = .false.
     !$OMP END SINGLE
@@ -412,15 +423,18 @@ program ssfinder
 
       !$OMP SINGLE
       nperring(iring) = nlines
-      write(20) association, break, gtr(line1, x, y, z)
+      write_ring = gtr(line1, x, y, z)
+      if (modulo(iring, nskip) == 0) write(20) association, break, real(write_ring, bytesize)
+      write(90) association, break, write_ring
+      ! if (inull == 2) print*, association
 
-      deallocate(endpoints, association)
+      deallocate(endpoints, association, write_ring)
       !$OMP END SINGLE
 
     enddo
 
     !$OMP SINGLE
-    write(10) nperring
+    write(10) nperring(::nskip)
     print*, "Tracing spines and any separators"
 
     ! trace separators...
@@ -431,8 +445,8 @@ program ssfinder
         allocate(rsep(3, ringnum+3))
         do iring = ringnum, 0, -1
           call file_position(iring, nperring, linenum, ia, ib, ip)
-          read(20, pos=uptonullring+ia) linenum
-          read(20, pos=uptonullring+ip) rsep(:,iring+2)
+          read(90, pos=ia) linenum
+          read(90, pos=ip) rsep(:,iring+2)
         enddo
         rsep(:,1) = rnullsreal(:,nullnum1)
         rsep(:,ringnum+3) = rnullsreal(:,nullnum2)
@@ -441,18 +455,6 @@ program ssfinder
         deallocate(rsep)
       enddo
     endif
-
-    ! ! write a subset of rings to 
-    ! print*, 'Writing rings'
-    ! write(30) nrings/skiprings + 1
-    ! do iring = 0, nrings-1, skiprings
-    !   call file_position(iring, nperring, 1, ia, ib, ip)
-    !   allocate(rring(3,nperring(iring)), brk(nperring(iring)))
-    !   read(90, pos=ib) brk
-    !   read(90, pos=ip) rring
-    !   write(30) nperring(iring), rring, brk
-    !   deallocate(rring, brk)
-    ! enddo
 
     ! Trace spines...
     do dir = -1, 1, 2
@@ -477,8 +479,11 @@ program ssfinder
 
     deallocate(xs, ys, zs)
     deallocate(line1, line2, break)
-    uptonullring = uptonullring + sum(int(nperring, int64))*32_int64
+    uptonullring = uptonullring + sum(int(nperring(::nskip), int64))*32_int64
     uptonullconn = uptonullconn + nseps*16_int64 ! 4*4
+
+    close(90)
+  
     !$OMP END SINGLE
 
   enddo

@@ -149,6 +149,12 @@ def spines(filename, null_list=None):
 
     return spinelist
 
+def ringinfo(filename):
+    with open('output/'+prefix(filename)+'-ringinfo.dat', 'rb') as ringinfo:
+        ringsmax, writeskip, bytesize = np.fromfile(ringinfo, dtype=np.int32, count=3)
+        stepsize, = np.fromfile(ringinfo, dtype=np.float64, count=1)
+    return ringsmax, writeskip, bytesize, stepsize
+
 def rings(filename, allinfo=False, nskip=1, null_list=None):
 
     nulldata = nulls(filename, simple=True)
@@ -162,7 +168,13 @@ def rings(filename, allinfo=False, nskip=1, null_list=None):
 
     with open('output/'+prefix(filename)+'-ringinfo.dat', 'rb') as ringinfo:
         with open('output/'+prefix(filename)+'-rings.dat', 'rb') as ringfile:
-            ringsmax = np.asscalar(np.fromfile(ringinfo, dtype=np.int32, count=1))
+            ringsmax, writeskip, bytesize = np.fromfile(ringinfo, dtype=np.int32, count=3)
+            if bytesize == 4:
+                floattype = np.float32
+            elif bytesize == 8:
+                floattype = np.float64
+            stepsize, = np.fromfile(ringinfo, dtype=np.float64, count=1)
+            if writeskip != 1: ringsmax = ringsmax//writeskip + 1
             for inull in nulldata.number:
                 print('Reading rings from null {:5d}'.format(inull))
                 sys.stdout.write("\033[F")
@@ -175,7 +187,7 @@ def rings(filename, allinfo=False, nskip=1, null_list=None):
                         if iring % nskip == 0:
                             assoclisti.append(np.fromfile(ringfile, dtype=np.int32, count=length))
                             breaklisti.append(np.fromfile(ringfile, dtype=np.int32, count=length))
-                            ringlisti.append(np.fromfile(ringfile, dtype=np.float64, count=3*length).reshape(-1, 3))
+                            ringlisti.append(np.fromfile(ringfile, dtype=floattype, count=3*length).reshape(-1, 3))
                         else:
                             # skip ring if not a multiple of nskip
                             ringfile.seek(length*32, 1)
