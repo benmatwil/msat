@@ -9,8 +9,8 @@ integer(int32) :: nseps
 
 real(np) :: maxdist, mindist, nulldist
 
-real(np), allocatable, dimension(:,:) :: line1, line2, add1, add2
-integer(int32), allocatable, dimension(:) :: break, association, remove, endpoints, nearnull
+real(np), dimension(:,:), allocatable :: line1, line2, add1, add2
+integer(int32), dimension(:), allocatable :: break, association, remove, endpoints, nearnull
 
 contains
 
@@ -20,7 +20,11 @@ contains
 
     integer(int32) :: nlines
     integer(int32) :: iline, nxtline, iadd, nadd
-    real(np) :: b(3), maxdist0
+    real(np) :: maxdist0
+
+    logical, dimension(nlines) :: add_true
+    real(np), dimension(3, nlines) :: line1_temp, line2_temp
+    integer, dimension(nlines) :: break_temp, association_temp
 
     !$OMP SINGLE
     allocate(add1(3,nlines), add2(3,nlines))
@@ -51,34 +55,65 @@ contains
     enddo
     !$OMP END DO
 
-    ! add new points
-    ! where the 'add' array has a point to be added, add this point
-    nadd = 1
-    do iline = 1, nlines
-      if (add1(1,iline) > 1e-1_np) then !if |add(:,iline)| is not zero, all points > (1,1,1)
-        iadd = iline + nadd
-        !$OMP SECTIONS
-        !$OMP SECTION
-        call add_vector(line1,add1(:,iline),iadd) !add elements to every array
-        !$OMP SECTION
-        call add_vector(line2,add2(:,iline),iadd)
-        !$OMP SECTION
-        call add_element(break,0,iadd)
-        !$OMP SECTION
-        if (iline /= nlines) then
-          call add_element(association,association(iadd-1),iadd)
-        else
-          call add_element(association,1,iadd)
-        endif
-        !$OMP END SECTIONS
-        nadd = nadd + 1
-      endif
-    enddo
+    ! ! add new points
+    ! ! where the 'add' array has a point to be added, add this point
+    ! nadd = 1
+    ! do iline = 1, nlines
+    !   if (add1(1,iline) > 1e-1_np) then !if |add(:,iline)| is not zero, all points > (1,1,1)
+    !     iadd = iline + nadd
+    !     !$OMP SECTIONS
+    !     !$OMP SECTION
+    !     call add_vector(line1,add1(:,iline),iadd) !add elements to every array
+    !     !$OMP SECTION
+    !     call add_vector(line2,add2(:,iline),iadd)
+    !     !$OMP SECTION
+    !     call add_element(break,0,iadd)
+    !     !$OMP SECTION
+    !     if (iline /= nlines) then
+    !       call add_element(association,association(iadd-1),iadd)
+    !     else
+    !       call add_element(association,1,iadd)
+    !     endif
+    !     !$OMP END SECTIONS
+    !     nadd = nadd + 1
+    !   endif
+    ! enddo
 
-    !$OMP BARRIER
+    ! !$OMP BARRIER
     !$OMP SINGLE
 
-    nlines = size(line1, 2)
+    add_true = add1(1, :) > 1e-1_np
+    if (any(add_true)) then
+      nadd = count(add_true)
+      line1_temp = line1
+      line2_temp = line2
+      break_temp = break
+      association_temp = association
+      deallocate(line1, line2, break, association)
+      allocate(line1(3, nlines+nadd), line2(3, nlines+nadd), break(nlines+nadd), association(nlines+nadd))
+      iadd = 0
+      do iline = 1, nlines
+        iadd = iadd + 1
+        line1(:, iadd) = line1_temp(:, iline)
+        line2(:, iadd) = line2_temp(:, iline)
+        break(iadd) = break_temp(iline)
+        association(iadd) = association_temp(iline)
+        if (add_true(iline)) then
+          iadd = iadd + 1
+          line1(:, iadd) = add1(:, iline)
+          line2(:, iadd) = add2(:, iline)
+          break(iadd) = 0
+          if (iline /= nlines) then
+            association(iadd) = association_temp(iline)
+          else
+            association(iadd) = 1
+          endif
+        endif
+      enddo
+    endif
+
+    nlines = nlines + nadd
+    ! nlines = size(line1, 2)
 
     deallocate(add1, add2)
 
@@ -94,6 +129,9 @@ contains
 
     integer(int32) :: nlines
     integer(int32) :: iline, nxtline, iremove, nremove, break1
+
+    logical, dimension(nlines) :: remove_false1
+    logical, dimension(3, nlines) :: remove_false2
 
     !$OMP SINGLE
     allocate(remove(nlines))
@@ -135,34 +173,43 @@ contains
         endif
       endif
     enddo
-    !$OMP END SINGLE
+    ! !$OMP END SINGLE
 
-    ! remove points
-    nremove = 0
-    if (nlines > nstart .or. sum(endpoints) /= 0) then ! if the number of points isn't too small...
-      do iline = 1, nlines
-        if (nlines <= nstart .and. sum(endpoints(iline:nlines)) == 0) exit
-        if (remove(iline) == 1) then ! if point is flagged to be removed, then remove
-          iremove = iline - nremove
-          !$OMP SECTIONS
-          !$OMP SECTION
-          call remove_vector(line1,iremove)
-          !$OMP SECTION
-          call remove_vector(line2,iremove)
-          !$OMP SECTION
-          call remove_element(association,iremove)
-          !$OMP SECTION
-          call remove_element(break,iremove)
-          !$OMP END SECTIONS
-          nremove = nremove + 1
-        endif
-      enddo
+    ! ! remove points
+    ! nremove = 0
+    ! if (nlines > nstart .or. sum(endpoints) /= 0) then ! if the number of points isn't too small...
+    !   do iline = 1, nlines
+    !     if (nlines <= nstart .and. sum(endpoints(iline:nlines)) == 0) exit
+    !     if (remove(iline) == 1) then ! if point is flagged to be removed, then remove
+    !       iremove = iline - nremove
+    !       !$OMP SECTIONS
+    !       !$OMP SECTION
+    !       call remove_vector(line1,iremove)
+    !       !$OMP SECTION
+    !       call remove_vector(line2,iremove)
+    !       !$OMP SECTION
+    !       call remove_element(association,iremove)
+    !       !$OMP SECTION
+    !       call remove_element(break,iremove)
+    !       !$OMP END SECTIONS
+    !       nremove = nremove + 1
+    !     endif
+    !   enddo
+    ! endif
+    ! !$OMP BARRIER
+    ! !$OMP SINGLE
+
+    if (nlines > nstart .or. sum(endpoints) /= 0) then
+      remove_false1 = remove == 0
+      remove_false2 = spread(remove_false1, 1, 3)
+      nlines = count(remove_false1) ! nlines - count(remove == 1)
+      line1 = reshape(pack(line1, remove_false2), [3, nlines])
+      line2 = reshape(pack(line2, remove_false2), [3, nlines])
+      association = reshape(pack(association, remove_false1), [nlines])
+      break = reshape(pack(break, remove_false1), [nlines])
     endif
 
-    !$OMP BARRIER
-    !$OMP SINGLE
-
-    nlines = size(line1, 2)
+    ! nlines = size(line1, 2)
 
     deallocate(remove)
 
