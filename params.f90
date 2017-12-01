@@ -1,73 +1,59 @@
 module params
 
-  use iso_fortran_env, only : np => real64, int32, int64
+  use iso_fortran_env
 
   implicit none
 
+  ! Global Parameters
+  ! -----------------
+  integer(int32), parameter :: np = real64
   ! Number of threads to be used by OpenMP
-  integer(int32), parameter :: nproc = 4  ! set to zero to use the environment variable OMP_NUM_THREADS
+  ! set to zero to use the environment variable OMP_NUM_THREADS
+  integer(int32), parameter :: nproc = 4
 
-  ! nullfinder parameters
-  real(np), parameter :: zero = 1e-10_np ! what the code treats as zero
-  integer(int32), parameter :: sig_figs = 6 ! the number of significant figures of accuracy required for the null
+  ! Null Finder Parameters
+  ! ----------------------
+  ! what the code treats as zero
+  ! for large regions of weak field, set zero to be a small (but larger) number i.e. 1e-12_np
+  real(np), parameter :: zero = 1e-16_np
+  ! the number of significant figures of accuracy required for the null
+  integer(int32), parameter :: sig_figs = 6
 
-  ! spinefinder parameters
-  real(np), parameter :: rspherefact = 50.0_np ! radius factor (in grid coordinates) of sphere 
-                                               ! on which to place start points (rsphere = rspherefact*10**-sig_figs)
-  integer(int32), parameter :: nphi = 90 ! number of start points in phi direction
-  integer(int32), parameter :: ntheta = nphi/2 ! number of start points in theta direction
+  ! Sign Finder Parameters
+  ! ----------------------
+  ! radius factor (in grid coordinates) of sphere on which to 
+  ! place start points (rsphere = rspherefact*10**-sig_figs)
+  real(np), parameter :: rspherefact = 50.0_np
+  ! number of start points in phi direction
+  integer(int32), parameter :: nphi = 90
+  ! number of start points in theta direction
+  integer(int32), parameter :: ntheta = nphi/2
 
-  ! ssfind parameters
-  integer(int32), parameter :: nstart = 500 ! number of startpoints in ring
-  integer(int32), parameter :: ringsmax = 10000 ! maximum number of rings
-  integer(int32), parameter :: pointsmax = 100000 ! maximum number of points in ring
-  real(np), parameter :: stepsize = 0.2_np ! step size h after 50 iterations (otherwise 5 times smaller)
-  real(np), parameter :: tol = 1e-6_np ! tolerance of rkf45 scheme
-  real(np), parameter :: stepmin = 1e-5_np ! minimum step length
-  logical, parameter :: restart = .false. ! turn on restart function of the code
-  integer(int32), parameter :: nullrestart = 0 ! which null to restart from (make sure it's correct)
-                                               ! set to 0 to let the code decide using already written data
+  ! Separatrix Surface Finder Parameters
+  ! ------------------------------------
+  ! number of startpoints in ring
+  integer(int32), parameter :: nstart = 500
+  ! maximum number of rings
+  integer(int32), parameter :: ringsmax = 50000
+  ! maximum number of points in ring
+  integer(int32), parameter :: pointsmax = 200000
+  ! step size h after 50 iterations (otherwise 5 times smaller)
+  real(np), parameter :: stepsize = 0.1_np
+  ! tolerance of rkf45 scheme
+  real(np), parameter :: tol = 1e-6_np
+  ! minimum step length
+  real(np), parameter :: stepmin = 1e-5_np
+  ! turn on restart function of the code
+  logical, parameter :: restart = .false.
+  ! which null to restart from (make sure it's correct)
+  ! set to 0 to let the code decide using already written data
+  integer(int32), parameter :: nullrestart = 0
+  ! number of rings to skip in output to file
+  ! set to 1 to write all rings to file
+  integer(int32), parameter :: nskip = 1
+  ! output bitsize of floating points numbers for rings
+  ! default real64 (double precision)
+  integer(int32), parameter :: bytesize = real64
 
-  ! NO NEED TO CHANGE BEYOND HERE (basic parameters/constants)
-  real(np), parameter :: pi = acos(-1.0_np)
-  real(np), parameter :: dtor = pi/180.0_np
-  character(100) :: filein, fileout
-
-  contains
-  
-    subroutine filenames
-
-      character(100) :: arg, outname
-      integer(int32) :: iarg, ic
-
-      ic = 0
-      
-      if (command_argument_count() > 0) then
-        do iarg = 1, command_argument_count()
-          call get_command_argument(iarg,arg)
-          if (trim(arg) == '-i') then
-            call get_command_argument(iarg+1,arg)
-            filein = trim(arg)
-            ic = 1
-          endif
-        enddo
-      endif
-      if (ic == 0) stop 'No input file provided'
-
-      outname = 'output'
-      fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
-        //trim(outname)//'/' &
-        //trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
-      
-      ! if (oc == 0) then
-      !   fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
-      !     //trim(outname)//'/' &
-      !     //trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
-      ! else
-      !   if (index(outname, '/', .true.) /= len(trim(outname))) outname = trim(outname)//'/'
-      !   fileout = trim(outname)//trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
-      ! endif
-
-    end
 
 end module
