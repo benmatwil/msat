@@ -209,9 +209,7 @@ program ssfinder
       read(10) nperring
       totalpts = totalpts + sum(nperring)
       do dir = 1, 2
-        ! print*, filepos
         read(60, pos=filepos) ringnum
-        ! print*, inull, ringnum, filepos
         filepos = filepos + ringnum*24_int64 + 4_int64
       enddo
     enddo
@@ -225,10 +223,10 @@ program ssfinder
     uptonullconn = 1
     do inull = 1, istart-1
       read(40, pos=uptonullconn) nseps
-      uptonullconn = uptonullconn + 16_int64*nseps
+      uptonullconn = uptonullconn + 16_int64*nseps + 4_int64
       do isep = 1, nseps
         read(50, pos=filepos) ringnum
-        filepos = filepos + 3_int64*8_int64*ringnum
+        filepos = filepos + 3_int64*8_int64*ringnum+ 4_int64
       enddo
     enddo
     write(40, pos=uptonullconn)

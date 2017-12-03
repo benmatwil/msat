@@ -97,13 +97,13 @@ def separators(filename, null_list=None, lines=True, connectivity=True, hcs=Fals
     
     with open(connectivityfile, 'rb') as sepinfo:
         with open(separatorsfile, 'rb') as seps:
-            start, = np.fromfile(sepinfo, dtype=np.int32, count=1)
             for inull in allnulls_list:
                 coni = []
                 sepi = []
                 if inull in null_list:
                     nseps, = np.fromfile(sepinfo, dtype=np.int32, count=1)
                     for isep in range(nseps):
+                        sepinfo.seek(4, 1)
                         coni.append(np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1)))
                         sepinfo.seek(8, 1)
                         length, = np.fromfile(seps, dtype=np.int32, count=1)
