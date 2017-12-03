@@ -350,7 +350,7 @@ module common
 
     !********************************************************************************
 
-    subroutine get_startpoints(theta,phi,xs,ys,zs)
+    subroutine get_startpoints(theta, phi, xs, ys, zs)
     ! from the theta,phi coordinates of a fan vector, produces ring of points in the fanplane
 
         real(np) :: theta, phi
@@ -358,7 +358,6 @@ module common
         integer(int32) :: i, nlines
         real(np) :: dtheta
         real(np) :: r(3)
-        real(np), parameter :: sep = 0.05_np
 
         nlines = size(xs)
 
@@ -370,28 +369,25 @@ module common
           r(2) = sin(i*dtheta)
           r(3) = 0
 
-          r = rotate(r,theta,phi)
+          r = rotate(r, theta, phi)
 
-          xs(i) = r(1)*sep
-          ys(i) = r(2)*sep
-          zs(i) = r(3)*sep
+          xs(i) = r(1)*start_dist
+          ys(i) = r(2)*start_dist
+          zs(i) = r(3)*start_dist
         enddo
 
     end subroutine
 
     !********************************************************************************
 
-    function rotate(r,theta,phi)
+    function rotate(r, theta, phi)
     ! rotates a vector (r) by a certain angle about the x-z plane (theta),
     ! then by an angle (phi) about the x-y plane
 
       real(np), dimension(3) :: r, rotate
       real(np) :: theta, phi
-      real(np) :: roty(3,3), rotz(3,3), rot(3,3)
+      real(np), dimension(3, 3) :: roty, rotz, rot
 
-      !print *, 'rotate'
-      !print*,'r in', r
-      !print*, theta/dtor,phi/dtor
       roty(1,1) = cos(-theta)
       roty(1,2) = 0
       roty(1,3) = -sin(-theta)
@@ -416,8 +412,8 @@ module common
       rotz(3,2) = 0
       rotz(3,3) = 1
 
-      rot = matmul(rotz,roty)
-      rotate = matmul(rot,r)
+      rot = matmul(rotz, roty)
+      rotate = matmul(rot, r)
 
     end
 
@@ -458,22 +454,20 @@ module common
 
     !********************************************************************************
 
-    subroutine file_position(nring,nperring,index,a,b,p)
+    subroutine file_position(nring, nperring, index, a, p)
     ! calculates the position in the temporary files of the rings and specific points
 
-      integer(int64) :: a, b, p
+      integer(int64) :: a, p
       integer(int64) :: uptoring
       integer(int32) :: nring, index
       integer(int32) :: nperring(0:)
 
       ! 1 whole ring contains 3*np vector points and np association points
-      uptoring = sum(int(nperring(0:nring-1), int64))*8
+      uptoring = sum(int(nperring(0:nring-1), int64))*7
       a = uptoring + int((index-1), int64)
-      b = uptoring + int(nperring(nring) + (index-1), int64)
-      p = uptoring + int(nperring(nring)*2 + (index-1)*6, int64)
+      p = uptoring + int(nperring(nring) + (index-1)*6, int64)
 
       a = a*4 + 1
-      b = b*4 + 1
       p = p*4 + 1
 
     end subroutine
