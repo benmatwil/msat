@@ -170,7 +170,6 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None):
     ringinfo = open('output/'+prefix(filename)+'-ringinfo.dat', 'rb')
     ringfile = open('output/'+prefix(filename)+'-rings.dat', 'rb')
     brkfile = open('output/'+prefix(filename)+'-breaks.dat', 'rb')
-    if do_assocs: assfile = open(assocs_filename, 'rb')
 
     ringsmax, writeskip, bytesize = np.fromfile(ringinfo, dtype=np.int32, count=3)
     if bytesize == 4:
@@ -178,39 +177,54 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None):
     elif bytesize == 8:
         floattype = np.float64
     stepsize, = np.fromfile(ringinfo, dtype=np.float64, count=1)
-    if writeskip > 1: ringsmax = ringsmax/writeskip + 1
+    if writeskip > 1: ringsmax = ringsmax//writeskip + 1
 
     for inull in nulldata.number:
         print('Reading rings from null {:5d}'.format(inull))
         sys.stdout.write("\033[F")
         breaklisti = []
         ringlisti = []
-        assoclisti = []
         lengths = np.fromfile(ringinfo, dtype=np.int32, count=ringsmax)
         if inull in null_list:
-            for iring, length in enumerate(lengths[lengths != 0][::writeskip]):
+            for iring, length in enumerate(lengths[lengths != 0]):
                 if iring % nskip == 0:
-                    if do_assocs: assoclisti.append(np.fromfile(assfile, dtype=np.int32, count=length))
                     breaklisti.append(np.fromfile(brkfile, dtype=np.int32, count=length))
                     ringlisti.append(np.fromfile(ringfile, dtype=floattype, count=3*length).reshape(-1, 3))
                 else:
                     # skip ring if not a multiple of nskip
                     ringfile.seek(length*3*bytesize, 1)
                     brkfile.seek(length*4, 1)
-                    if do_assocs: assfile.seek(length*4, 1)
         else:
             # skip all rings from null if not required
-            ringfile.seek(lengths.sum(dtype=np.int64)*3*bytesize, 1)
-            brkfile.seek(lengths.sum(dtype=np.int64)*4, 1)
-            if do_assocs: assfile.seek(lengths.sum(dtype=np.int64)*4, 1)
+            total = lengths.sum(dtype=np.int64)
+            ringfile.seek(total*3*bytesize, 1)
+            brkfile.seek(total*4, 1)
         ringlist.append(ringlisti)
         breaklist.append(breaklisti)
-        assoclist.append(assoclisti)
     
     ringinfo.close()
     ringfile.close()
     brkfile.close()
-    if do_assocs: assfile.close()
+
+    if do_assocs:
+        assfile = open(assocs_filename, 'rb')
+        ringinfo = open('output/'+prefix(filename)+'-ringinfo.dat', 'rb')
+        np.fromfile(ringinfo, dtype=np.int32, count=3)
+        np.fromfile(ringinfo, dtype=np.float64, count=1)
+        for inull in nulldata.number:
+            assoclisti = []
+            lengths = np.fromfile(ringinfo, dtype=np.int32, count=ringsmax)
+            if inull in null_list:
+                for iring, length in enumerate(lengths[lengths != 0]):
+                    if iring % nskip == 0:
+                        assoclisti.append(np.fromfile(assfile, dtype=np.int32, count=length))
+                    else:
+                        assfile.seek(length*4, 1)
+            else:
+                assfile.seek(lengths.sum(dtype=np.int64)*4, 1)
+            assoclist.append(assoclisti)
+        assfile.close()
+        ringinfo.close()
     
     if breaks == True and do_assocs == False:
         return ringlist, breaklist
