@@ -15,7 +15,7 @@ ifeq ($(debug),on)
 else
 	FLAGS = -O3
 endif
-FLAGS += -Jmod
+FLAGS += -Jmod -Wno-zerotrip
 
 ifeq ($(data),)
 else
