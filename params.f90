@@ -33,6 +33,8 @@ module params
   ! ------------------------------------
   ! number of startpoints in ring
   integer(int32), parameter :: nstart = 500
+  ! distance from null to start
+  real(real64), parameter :: start_dist = 0.05_np
   ! maximum number of rings
   integer(int32), parameter :: ringsmax = 50000
   ! maximum number of points in ring
@@ -53,7 +55,10 @@ module params
   integer(int32), parameter :: nskip = 1
   ! output bitsize of floating points numbers for rings
   ! default real64 (double precision)
+  ! also allows make_cut to read points in correctly
   integer(int32), parameter :: bytesize = real64
-
+  ! whether ssf outputs associations
+  ! associations only currently required for make_cut
+  logical, parameter :: assoc_output = .false.
 
 end module
