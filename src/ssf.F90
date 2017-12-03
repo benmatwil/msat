@@ -42,6 +42,7 @@ program ssfinder
   integer(int32) :: isep, nullnum1, nullnum2, linenum, ringnum
   real(np), dimension(:,:), allocatable :: rsep, rring, write_ring
   integer(int32), dimension(:), allocatable :: brk
+  character(:), allocatable :: tempfile
 
   ! for restarting
   integer(int64) :: filesize, totalpts, filepos
@@ -226,12 +227,14 @@ program ssfinder
     istart = 1
   endif
 
+  tempfile = trim(fileout)//'-rings.temp'
+
   !$OMP PARALLEL private(iring, iline, inull)
   do inull = istart, nnulls ! loop over all nulls
 
     !$OMP SINGLE
 
-    open(unit=90, status='scratch', access='stream')
+    open(unit=90, file=tempfile, status='replace', access='stream')
     write(20, pos=uptonullring+1)
     write(40, pos=uptonullconn)
     print*, ''
@@ -482,7 +485,7 @@ program ssfinder
     uptonullring = uptonullring + sum(int(nperring(::nskip), int64))*32_int64
     uptonullconn = uptonullconn + nseps*16_int64 ! 4*4
 
-    close(90)
+    close(90, status='delete')
   
     !$OMP END SINGLE
 
