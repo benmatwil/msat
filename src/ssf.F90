@@ -38,15 +38,16 @@ program ssfinder
   logical :: exitcondition, out
 
   ! file writing
-  integer(int64) :: ia, ib, ip, uptonullring, uptonullconn
-  integer(int32) :: isep, nullnum1, nullnum2, linenum, ringnum
+  integer(int64) :: ia, ip, uptonullconn
+  integer(int32) :: isep, nullnum1, nullnum2, linenum, ringnum, iskip
   real(np), dimension(:,:), allocatable :: rsep, rring, write_ring
-  integer(int32), dimension(:), allocatable :: brk
-  character(:), allocatable :: tempfile
+  integer(int32), dimension(:), allocatable :: brk, assoc_temp
+  character(:), allocatable :: tempfile, fstatus
 
   ! for restarting
   integer(int64) :: filesize, totalpts, filepos
-  integer(int32) :: istart, temp, ringsmax1
+  integer(int32) :: istart, temp, ringsmax1, nskip1, bytesize1
+  real(real64) :: stepsize1
 
   print*,'#######################################################################'
   print*,'#                      Separatrix Surface Finder                      #'
@@ -146,32 +147,57 @@ program ssfinder
   enddo
 #endif
 
-  uptonullring = 0
-  uptonullconn = 1
-
   if (restart) then
-    ! stores all info regarding size of rings
-    open(unit=10,file=trim(fileout)//'-ringinfo.dat',status='old',access='stream')
-    ! stores all the coordinates of rings in original coordinate system
-    open(unit=20,file=trim(fileout)//'-rings.dat',status='old',access='stream')
-    ! stores all the connection info about each separator
-    open(unit=40,file=trim(fileout)//'-connectivity.dat',status='old',access='stream')
-    ! stores all the coordinates of the separator lines in original coordinate system
-    open(unit=50,file=trim(fileout)//'-separators.dat',status='old',access='stream')
-    ! stores all the coordinates of the spine lines in original coordinate system
-    open(unit=60,file=trim(fileout)//'-spines.dat',status='old',access='stream')
+    fstatus = 'old'
+  else
+    fstatus = 'replace'
+  endif
+
+  ! stores all info regarding size of rings
+  open(unit=10, file=trim(fileout)//'-ringinfo.dat', status=fstatus, access='stream')
+  ! stores all the coordinates of rings in original coordinate system
+  open(unit=20, file=trim(fileout)//'-rings.dat', status=fstatus, access='stream')
+  ! stores all the associations between rings
+  if (assoc_output) open(unit=25, file=trim(fileout)//'-assocs.dat', status=fstatus, access='stream')
+  ! stores all the breaks on rings
+  open(unit=30, file=trim(fileout)//'-breaks.dat', status=fstatus, access='stream')
+  ! stores all the connection info about each separator
+  open(unit=40, file=trim(fileout)//'-connectivity.dat', status=fstatus, access='stream')
+  ! stores all the coordinates of the separator lines in original coordinate system
+  open(unit=50, file=trim(fileout)//'-separators.dat', status=fstatus, access='stream')
+  ! stores all the coordinates of the spine lines in original coordinate system
+  open(unit=60, file=trim(fileout)//'-spines.dat', status=fstatus, access='stream')
+  
+  uptonullconn = 1
+  if (restart) then
 
     ! find number of nulls done
-    read(10) ringsmax1
-    if (ringsmax1 /= ringsmax) then
-      print*, "Please set ringsmax to", ringsmax1, "in params.f90"
+    read(10) ringsmax1, nskip1, bytesize1, stepsize1
+
+    ! check the parameters used in the run are the same
+    if (ringsmax1-1 /= ringsmax .or. nskip1 /= nskip .or. bytesize1 /= bytesize .or. stepsize1 /= stepsize) then
+      print*, 'In params.f90:'
+      if (ringsmax1 /= ringsmax) print*, 'Please set ringsmax to:', ringsmax1
+      if (nskip1 /= nskip) print*, 'Please set nskip to:', nskip1
+      if (bytesize1 /= bytesize) then
+        if (bytesize1 == 4) then
+          print*, 'Please set bytesize to: real32'
+        elseif (bytesize1 == 8) then
+          print*, 'Please set bytesize to: real64'
+        endif
+      endif
+      if (stepsize1 /= stepsize) print*, 'Please set stepsize to', stepsize1
       stop
     endif
+
+    ! use filesize of ringinfo to determine how far the run got
     inquire(unit=10, size=filesize)
+    istart = (filesize-20_int64)/4_int64/ringsmax1 - 5
     if (nullrestart == 0) then
-      istart = (filesize-4_int64)/4_int64/ringsmax1 - 10
+      istart = istart - 5
       if (istart < 1) istart = 1
     else
+      if (nullrestart > istart) print*, 'Careful: Recommend starting at null number <', istart
       istart = nullrestart
     endif
     print*, 'Restarting from null', istart
@@ -190,39 +216,42 @@ program ssfinder
       enddo
     enddo
     write(60, pos=filepos)
-    uptonullring = totalpts*32_int64
+    write(20, pos=totalpts*3_int64*int(bytesize, int64)+1)
+    if (assoc_output) write(25, pos=totalpts*4_int64+1)
+    write(30, pos=totalpts*4_int64+1)
     
     ! sort out connectivity and separator files
     filepos = 1
-    inquire(unit=40, size=filesize)
-    nseps = filesize/16_int64
-    do isep = 1, nseps
-      read(40, pos=uptonullconn) nullnum1
-      ! print*, nullnum1
-      if (nullnum1 > istart-1) then
-        write(40, pos=uptonullconn)
-        write(50, pos=filepos)
-        exit
-      endif
-      read(50, pos=filepos) ringnum
-      uptonullconn = uptonullconn + 16_int64
-      filepos = filepos + 24_int64*ringnum + 4_int64
+    uptonullconn = 1
+    do inull = 1, istart-1
+      read(40, pos=uptonullconn) nseps
+      uptonullconn = uptonullconn + 16_int64*nseps
+      do isep = 1, nseps
+        read(50, pos=filepos) ringnum
+        filepos = filepos + 3_int64*8_int64*ringnum
+      enddo
     enddo
-    
-  else
-    ! stores all info regarding size of rings
-    open(unit=10,file=trim(fileout)//'-ringinfo.dat',status='replace',access='stream')
-    ! stores all the coordinates of rings in original coordinate system
-    open(unit=20,file=trim(fileout)//'-rings.dat',status='replace',access='stream')
-    ! stores all the connection info about each separator
-    open(unit=40,file=trim(fileout)//'-connectivity.dat',status='replace',access='stream')
-    ! stores all the coordinates of the separator lines in original coordinate system
-    open(unit=50,file=trim(fileout)//'-separators.dat',status='replace',access='stream')
-    ! stores all the coordinates of the spine lines in original coordinate system
-    open(unit=60,file=trim(fileout)//'-spines.dat',status='replace',access='stream')
+    write(40, pos=uptonullconn)
+    write(50, pos=filepos)
 
+    ! filepos = 1
+    ! inquire(unit=40, size=filesize)
+    ! nseps = filesize/16_int64
+    ! do isep = 1, nseps
+    !   read(40, pos=uptonullconn) nullnum1
+    !   if (nullnum1 > istart-1) then
+    !     write(40, pos=uptonullconn)
+    !     write(50, pos=filepos)
+    !     exit
+    !   endif
+    !   read(50, pos=filepos) ringnum
+    !   uptonullconn = uptonullconn + 16_int64
+    !   filepos = filepos + 24_int64*ringnum + 4_int64
+    ! enddo
+    ! write(40, pos=uptonullconn)
+
+  else
     write(10) ringsmax+1, nskip, bytesize, stepsize
-    print*, ringsmax+1, nskip, bytesize, stepsize
 
     istart = 1
   endif
@@ -235,8 +264,6 @@ program ssfinder
     !$OMP SINGLE
 
     open(unit=90, file=tempfile, status='replace', access='stream')
-    write(20, pos=uptonullring+1)
-    write(40, pos=uptonullconn)
     print*, ''
     print*, 'Null number', inull, 'of', nnulls
 
@@ -246,7 +273,7 @@ program ssfinder
     theta = acos(fans(3,inull))
     phi = atan(fans(2,inull), fans(1,inull))
     allocate(xs(nlines), ys(nlines), zs(nlines))
-    call get_startpoints(theta,phi, xs,ys,zs)
+    call get_startpoints(theta, phi, xs, ys, zs)
 
     allocate(line1(3,nlines), line2(3,nlines))
     allocate(break(nlines))
@@ -254,7 +281,7 @@ program ssfinder
     out = .false.
 
     ! add start points to first ring relative to null
-    do iline = 1, nlines !Go through each start point
+    do iline = 1, nlines ! go through each start point
       line1(1,iline) = rnulls(1,inull) + xs(iline)
       line1(2,iline) = rnulls(2,inull) + ys(iline)
       line1(3,iline) = rnulls(3,inull) + zs(iline)
@@ -280,9 +307,12 @@ program ssfinder
     terror = 0
 
     write_ring = gtr(line1, x, y, z)
-    write(20) [(iline,iline=1,nlines)], break, real(write_ring, bytesize)
-    write(90) [(iline,iline=1,nlines)], break, write_ring
+    write(20) real(write_ring, bytesize)
+    if (assoc_output) write(25) [(iline,iline=1,nlines)]
+    write(30) break
+    write(90) [(iline,iline=1,nlines)], write_ring
     deallocate(write_ring)
+    write(40) nseps
 
     exitcondition = .false.
     !$OMP END SINGLE
@@ -427,9 +457,15 @@ program ssfinder
       !$OMP SINGLE
       nperring(iring) = nlines
       write_ring = gtr(line1, x, y, z)
-      if (modulo(iring, nskip) == 0) write(20) association, break, real(write_ring, bytesize)
-      write(90) association, break, write_ring
-      ! if (inull == 2) print*, association
+      if (modulo(iring, nskip) == 0) then
+        if (bytesize == real64) then
+          write(20) write_ring
+        else
+          write(20) real(write_ring, bytesize)
+        endif
+        write(30) break
+      endif
+      write(90) association, write_ring
 
       deallocate(endpoints, association, write_ring)
       !$OMP END SINGLE
@@ -441,13 +477,13 @@ program ssfinder
     print*, "Tracing spines and any separators"
 
     ! trace separators...
-    write(40, pos=uptonullconn)
+    write(40, pos=uptonullconn) nseps
     if (nseps > 0) then
       do isep = 1, nseps
         read(40) nullnum1, nullnum2, ringnum, linenum
         allocate(rsep(3, ringnum+3))
         do iring = ringnum, 0, -1
-          call file_position(iring, nperring, linenum, ia, ib, ip)
+          call file_position(iring, nperring, linenum, ia, ip)
           read(90, pos=ia) linenum
           read(90, pos=ip) rsep(:,iring+2)
         enddo
@@ -458,6 +494,7 @@ program ssfinder
         deallocate(rsep)
       enddo
     endif
+    uptonullconn = uptonullconn + nseps*16_int64 + 4_int64 ! 4*4
 
     ! Trace spines...
     do dir = -1, 1, 2
@@ -476,15 +513,32 @@ program ssfinder
       deallocate(spine)
     enddo
 
+    if (assoc_output) then
+      do iring = nskip, nskip*(nrings/nskip), nskip
+        allocate(association(nperring(iring)))
+        call file_position(iring, nperring, 1, ia, ip)
+        read(90, pos=ia) association
+        do iskip = 1, nskip-1
+          allocate(assoc_temp(nperring(iring-iskip)))
+          call file_position(iring-iskip, nperring, 1, ia, ip)
+          read(90, pos=ia) assoc_temp
+          do iline = 1, nperring(iring)
+            association(iline) = assoc_temp(association(iline))
+          enddo
+          deallocate(assoc_temp)
+        enddo
+        write(25) association
+        deallocate(association)
+      enddo
+    endif
+
     if (nrings == ringsmax) print*, "Reached maximum number of rings"
 
     print*, 'Number of separators:', nseps, 'Number of rings:', nrings
 
     deallocate(xs, ys, zs)
     deallocate(line1, line2, break)
-    uptonullring = uptonullring + sum(int(nperring(::nskip), int64))*32_int64
-    uptonullconn = uptonullconn + nseps*16_int64 ! 4*4
-
+    
     close(90, status='delete')
   
     !$OMP END SINGLE
@@ -495,7 +549,8 @@ program ssfinder
 
   close(10)
   close(20)
-  write(40) -1
+  close(25)
+  close(30)
   close(40)
   close(50)
   close(60)
