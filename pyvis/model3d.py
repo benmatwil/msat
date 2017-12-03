@@ -77,7 +77,7 @@ def set_null_list(lst):
 def add_sepsurf():
     print('Adding separatrix surface rings')
 
-    rings, breaks, _ = rd.rings(filename, allinfo=True, nskip=nskipglob, null_list=nulllist+1)
+    rings, breaks = rd.rings(filename, breaks=True, nskip=nskipglob, null_list=nulllist+1)
 
     cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
@@ -319,7 +319,7 @@ def save():
 def add_surface():
     print('Adding separatrix surface rings')
 
-    rings, breaks, assocs = rd.rings(filename, allinfo=True)
+    rings, breaks, assocs = rd.rings(filename, breaks=True, assocs=True)
 
     cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
