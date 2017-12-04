@@ -79,31 +79,32 @@ function read_separators, filename, conlist=conlist, null_list=null_list, hcs=hc
   conlist = list()
   seplist = list()
 
-  start = 0L
   endnum = 0L
   length = 0L
+  nseps = 0L
 
-  readu, con, start
   foreach inull, allnulls_list do begin
     coni = list()
     sepi = list()
-    while start eq inull do begin
+    readu, con, nseps
+    for i = 1, nseps do begin
+      skip_lun, con, 4
+      readu, con, endnum
+      coni.add, endnum
+      skip_lun, con, 8
       readu, sep, length
-      if where(inull eq null_list, /null) ne !null then begin
-        readu, con, endnum
-        coni.add, endnum
-        skip_lun, con, 8
-        separator = dblarr(3, length)
-        readu, sep, separator
-        sepi.add, separator
-      endif else begin
-        skip_lun, con, 12
-        skip_lun, sep, 3LL*8LL*length
-      endelse
-      readu, con, start
-    endwhile
-    conlist.add, coni
-    seplist.add, sepi
+      separator = dblarr(3, length)
+      readu, sep, separator
+      sepi.add, separator
+    endfor
+    if where(inull eq null_list, /null) ne !null then begin
+      conlist.add, coni
+      seplist.add, sepi
+    endif else begin
+      conlist.add, list()
+      seplist.add, list()
+    endelse
+    
   endforeach
 
   close, sep, con
@@ -146,7 +147,7 @@ function read_spines, filename, null_list=null_list
 
 end
 
-function read_rings, filename, nskip=nskip, breaks=breaklist, null_list=null_list
+function read_rings, filename, nskip=nskip, breaks=breaklist, assocs=assoclist, null_list=null_list
 
   nulldata = read_nulls(filename, /simple)
 
@@ -156,44 +157,63 @@ function read_rings, filename, nskip=nskip, breaks=breaklist, null_list=null_lis
 
   ringlist = list()
   breaklist = list()
-  assoclist = list()
+  if do_assocs then assoclist = list()
+
+  assocs_filename = 'output/'+prefix(filename)+'-assocs.dat'
+  if keyword_set(assocs) and file_test(assocs_filename) then do_assocs = 1 else do_assocs = 0
 
   openr, rinfo, 'output/'+prefix(filename)+'-ringinfo.dat', /get_lun
   openr, ring, 'output/'+prefix(filename)+'-rings.dat', /get_lun
+  openr, brks, 'output/'+prefix(filename)+'-breaks.dat', /get_lun
+  if do_assocs then openr, ass, 'output/'+prefix(filename)+'-assocs.dat', /get_lun
 
   ringsmax = 0L
+  writeskip = 0L
+  bytesize = 0L
+  stepsize = 0D
 
-  readu, rinfo, ringsmax
+  readu, rinfo, ringsmax, writeskip, bytesize, stepsize
+  if writeskip gt 1 then ringsmax = ringsmax/writeskip + 1
   foreach inull, nulldata.number do begin
     breaklisti = list()
     ringlisti = list()
-    assoclisti = list()
+    if do_assocs then assoclisti = list()
     lengths = lonarr(ringsmax)
     readu, rinfo, lengths
     if where(inull eq null_list, /null) ne !null then begin
       foreach length, lengths[where(lengths ne 0)], iring do begin
         if iring mod nskip eq 0 then begin
-          assocs = lonarr(length)
+          if do_assocs then assocs = lonarr(length)
           breaks = lonarr(length)
-          rings = dblarr(3, length)
-          readu, ring, assocs, breaks, rings
+          if bytesize eq 4 then begin
+            rings = fltarr(3, length)
+          endif else if bytesize eq 8 then begin
+            rings = dblarr(3, length)
+          endif
+          readu, ring, rings
+          if do_assocs then readu, ass, assocs
+          readu, brks, breaks
           breaklisti.add, breaks
           ringlisti.add, rings
-          assoclisti.add, assocs
+          if do_assocs then assoclisti.add, assocs
         endif else begin
-          skip_lun, ring, 32LL*length
+          skip_lun, ring, 3LL*bytesize*length
+          skip_lun, brks, 4LL*length
+          if do_assocs then skip_lun, ass, 4LL*length
         endelse
       endforeach
     endif else begin
-      skip_lun, ring, 32LL*total(lengths, /integer)
+      skip_lun, ring, 3LL*bytesize*total(lengths, /integer)
+      skip_lun, brks, 4LL*total(lengths, /integer)
+      if do_assocs then skip_lun, ass, 4LL*total(lengths, /integer)
     endelse
     ringlist.add, ringlisti
     breaklist.add, breaklisti
-    assoclist.add, assoclisti
+    if do_assocs then assoclist.add, assoclisti
   endforeach
 
-  close, rinfo, ring
-  free_lun, rinfo, ring
+  close, rinfo, ring, brks, ass
+  free_lun, rinfo, ring, brks, ass
   
   return, ringlist
 

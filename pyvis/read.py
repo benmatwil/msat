@@ -100,17 +100,20 @@ def separators(filename, null_list=None, lines=True, connectivity=True, hcs=Fals
             for inull in allnulls_list:
                 coni = []
                 sepi = []
+                nseps, = np.fromfile(sepinfo, dtype=np.int32, count=1)
+                for isep in range(nseps):
+                    sepinfo.seek(4, 1)
+                    coni.append(np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1)))
+                    sepinfo.seek(8, 1)
+                    length, = np.fromfile(seps, dtype=np.int32, count=1)
+                    sepi.append(np.fromfile(seps, dtype=np.float64, count=3*length).reshape(-1, 3))
                 if inull in null_list:
-                    nseps, = np.fromfile(sepinfo, dtype=np.int32, count=1)
-                    for isep in range(nseps):
-                        sepinfo.seek(4, 1)
-                        coni.append(np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1)))
-                        sepinfo.seek(8, 1)
-                        length, = np.fromfile(seps, dtype=np.int32, count=1)
-                        sepi.append(np.fromfile(seps, dtype=np.float64, count=3*length).reshape(-1, 3))
-                # add data to final list, empty if null not in null_list
-                conlist.append(coni)
-                seplist.append(sepi)
+                    # add data to final list, empty if null not in null_list
+                    conlist.append(coni)
+                    seplist.append(sepi)
+                else:
+                    conlist.append([])
+                    seplist.append([])
     
     # return data based on keyword arguments
     if lines == False:
