@@ -252,28 +252,28 @@ program ssfinder
     ! get number of start points
     nlines = nstart
 
-    theta = acos(fans(3,inull))
-    phi = atan(fans(2,inull), fans(1,inull))
+    theta = acos(fans(3, inull))
+    phi = atan(fans(2, inull), fans(1, inull))
     allocate(xs(nlines), ys(nlines), zs(nlines))
     call get_startpoints(theta, phi, xs, ys, zs)
 
-    allocate(line1(3,nlines), line2(3,nlines))
+    allocate(line1(3, nlines), line2(3, nlines))
     allocate(break(nlines))
 
     out = .false.
 
     ! add start points to first ring relative to null
     do iline = 1, nlines ! go through each start point
-      line1(1,iline) = rnulls(1,inull) + xs(iline)
-      line1(2,iline) = rnulls(2,inull) + ys(iline)
-      line1(3,iline) = rnulls(3,inull) + zs(iline)
+      line1(1, iline) = rnulls(1, inull) + xs(iline)
+      line1(2, iline) = rnulls(2, inull) + ys(iline)
+      line1(3, iline) = rnulls(3, inull) + zs(iline)
       call edgecheck(line1(:,iline))
       if (outedge(line1(:,iline))) then
         factor = 0.9_np
         do while (outedge(line1(:,iline)))
-          line1(1,iline) = rnulls(1,inull) + xs(iline)*factor
-          line1(2,iline) = rnulls(2,inull) + ys(iline)*factor
-          line1(3,iline) = rnulls(3,inull) + zs(iline)*factor
+          line1(1, iline) = rnulls(1, inull) + xs(iline)*factor
+          line1(2, iline) = rnulls(2, inull) + ys(iline)*factor
+          line1(3, iline) = rnulls(3, inull) + zs(iline)*factor
           call edgecheck(line1(:,iline))
           factor = factor*0.9_np
         enddo
