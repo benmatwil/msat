@@ -232,22 +232,6 @@ program ssfinder
     write(40, pos=uptonullconn)
     write(50, pos=filepos)
 
-    ! filepos = 1
-    ! inquire(unit=40, size=filesize)
-    ! nseps = filesize/16_int64
-    ! do isep = 1, nseps
-    !   read(40, pos=uptonullconn) nullnum1
-    !   if (nullnum1 > istart-1) then
-    !     write(40, pos=uptonullconn)
-    !     write(50, pos=filepos)
-    !     exit
-    !   endif
-    !   read(50, pos=filepos) ringnum
-    !   uptonullconn = uptonullconn + 16_int64
-    !   filepos = filepos + 24_int64*ringnum + 4_int64
-    ! enddo
-    ! write(40, pos=uptonullconn)
-
   else
     write(10) ringsmax+1, nskip, bytesize, stepsize
 
