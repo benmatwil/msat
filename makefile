@@ -2,7 +2,9 @@ FC = gfortran
 
 ifeq ($(openmp),off)
 else
-	FOPENMP = -fopenmp
+	ifneq ($(debug),on)
+		FOPENMP = -fopenmp
+	endif
 endif
 
 # ifeq ($(coord),)
@@ -27,7 +29,7 @@ else
 	OUTPUTDIR = $(output)
 endif
 
-ALLEXE = writedata nf sf ssfxyz ssfrpz ssfrtp hcs bp make_cut
+ALLEXE = writedata nf sf ssfxyz ssfrpz ssfrtp hcs make_cut
 
 SSFFILES = params.f90 src/common.F90 src/trace.F90 src/ring.F90 src/ssf.F90
 
