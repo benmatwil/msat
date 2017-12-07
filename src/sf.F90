@@ -137,15 +137,18 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
 
   implicit none
   integer(int32) :: itheta, iphi, itry, ifan, idense
-  integer(int32) :: count, iconv, imin, nfw, nbw, maxcount, mincount
-  integer(int32) :: flagfw, flagbw, savedata, angleflag
+  integer(int32) :: count, iconv, imin, mincount, npts
+  integer(int32) :: flagfw, flagbw, flagspine, flagfan, flagsign
+  integer(int32) :: nfw, nbw, nspine, nfan
+  integer(int32) :: savedata, angleflag, spiral, i
+  real(np) :: av_spine(3), dotapprox
 
   real(np), allocatable :: thetas(:), phis(:)
   integer(int32), parameter :: nphi1 = nphi/3, ntheta1 = ntheta/3
   real(np) :: dphi, dtheta, angle, minmove
   real(np), dimension(3) :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
   real(np), dimension(3) :: rold, rnew, bnew, rfw1, rbw1
-  real(np) :: fact, acc, accconv, fwvalue, bwvalue
+  real(np) :: it_dist, acc, accconv, fwvalue, bwvalue
 
   real(np), dimension(:,:), allocatable :: rconvergefw, rconvergebw, rmin
   real(np), dimension(:,:), allocatable :: rspine, rfan
@@ -171,7 +174,7 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
   print*, '-----------------------------------------------------------------------------'
 #endif
 
-  allocate(rconvergefw(3,nphi*ntheta), rconvergebw(3,nphi*ntheta))
+  allocate(rconvergefw(3, nphi*ntheta), rconvergebw(3, nphi*ntheta))
 
   !set up theta and phi for sphere around null
   dphi = 360.0_np/nphi
@@ -179,8 +182,7 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
 
   minmove = 2*pi*rsphere/nphi/10
   mincount = 750
-  maxcount = 5000
-  fact = 1e-2_np*rsphere
+  it_dist = dist_mult*rsphere
   accconv = 1e-10_np*rsphere
 
   allocate(thetas(ntheta), phis(nphi))
@@ -210,11 +212,11 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
         rbw1 = rnewbw
         bnewfw = trilinear(rnewfw+rnull, bgrid)
         bnewbw = bnewfw
-        roldfw = [0,0,0]
-        roldbw = [0,0,0]
-        do count = 1, maxcount
-          call it_conv(rnull,roldfw,rnewfw,bnewfw,fact,1)
-          call it_conv(rnull,roldbw,rnewbw,bnewbw,fact,-1)
+        roldfw = [0, 0, 0]
+        roldbw = [0, 0, 0]
+        do count = 1, maxiter
+          call it_conv(rnull, roldfw, rnewfw, bnewfw, it_dist, 1)
+          call it_conv(rnull, roldbw, rnewbw, bnewbw, it_dist, -1)
           if ((modulus(rnewfw-roldfw) < accconv .or. modulus(rnewbw-roldbw) < accconv) .and. count >= mincount) exit
         enddo
         if ((modulus(rfw1-rnewfw) < minmove .or. modulus(rbw1-rnewbw) < minmove) .and. angle < 4.0_np) then
@@ -226,9 +228,9 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
         endif
         if (modulus(rnewfw-roldfw) < accconv) flagfw = flagfw + 1
         if (modulus(rnewbw-roldbw) < accconv) flagbw = flagbw + 1
-        iconv = iphi+(itheta-1)*nphi
-        rconvergefw(:,iconv) = normalise(rnewfw)
-        rconvergebw(:,iconv) = normalise(rnewbw)
+        iconv = iphi + (itheta-1)*nphi
+        rconvergefw(:, iconv) = normalise(rnewfw)
+        rconvergebw(:, iconv) = normalise(rnewbw)
       enddo
     enddo
 #if debug
@@ -244,6 +246,71 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
   print*, '    ', 'forwards: ', flagfw
   print*, '    ', 'backwards:', flagbw
 #endif
+
+  ! npts = nphi*ntheta
+
+  ! if (flagfw > 0 .or. flagbw > 0) then
+  !   ! we have convergence
+  !   if (flagfw > flagbw) then
+  !     flagspine = flagfw
+  !     flagfan = flagbw
+  !     flagsign = -1
+  !   else
+  !     flagspine = flagbw
+  !     flagfan = flagfw
+  !     flagsign = 1
+  !   else
+  !     stop 'Flags equal'
+  !   endif
+  !   if (flagspine > npts/2 .and. flagfan == 0) then
+  !     ! great convergence - should be easy to pick
+  !     flagsign = flagsign*3
+  !   elseif (flagspine > npts/2 .and. flagfan < npts/20) then
+  !     ! good convergence
+  !     flagsign = flagsign*2
+  !   endif
+  !   ! if none possible equal numbers
+  ! else
+  !   ! no points have stopped - either no convergence or spiral null, perhaps need to push convergence further?
+  !   flagsign = 0
+  ! endif
+
+  ! acc = 1e-4_np
+  ! call remove_duplicates(rconvergefw, acc, denseposfw)
+  ! call remove_duplicates(rconvergebw, acc, denseposbw)
+
+  ! nfw = size(rconvergefw, 2)
+  ! nbw = size(rconvergebw, 2)
+
+  ! if (nfw == 2 .or. nbw == 2) then
+  !   ! we have convergence
+  !   if (nfw > nbw) then
+  !     nspine = nbw
+  !     nfan = nfw
+  !     signguess = 1
+  !   else
+  !     nspine = nfw
+  !     nfan = nbw
+  !     signguess = -1
+  !   else
+  !     signguess = 0
+  !   endif
+  !   if (nfan > 20) then
+  !     ! easy to pick
+  !     signguess = signguess*3
+  !   elseif (nfan > 5) then
+  !     ! still ok to pick
+  !     signguess = signguess*2
+  !   endif
+  !   ! if none possible equal numbers 
+  ! else
+  !   if (nfw > 10*nbw)
+
+  !   ! no set has converged to two
+  ! endif
+
+
+
 
   if (flagfw < flagbw) then
     signguess = 1
@@ -268,6 +335,7 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
   ! spine should be left with 2 vectors
   ! fan left with either 2 vectors (minvec eigenvalue too small), a circle of points or just a mess
   sign = 0
+  spiral = 0
   possign = 0
   do itry = 4, 2, -1
     acc = 1e-1_np**itry
@@ -288,7 +356,9 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
       else if (nfw > nbw) then ! if nbw is smaller then it's the spine, spine going into null
         sign = 1
       endif
+#if debug
       print*, "I've picked the sign to be ", sign, signguess
+#endif
       if (nfw == nbw .or. sign /= signguess) then ! both are equal (i.e. 2=2) so check which converged first and then use eigenvalues as last resort
 #if debug
         print*, "Using stopped to choose"
@@ -326,7 +396,20 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
       spine = rspine(:,1)
       exit
     else if (itry == 2 .and. sign == 0) then
-      if (nfw > 40*nbw) then
+      if (flagfw == 0 .and. flagbw == 0) then
+        spiral = 1
+        if (nfw > nbw) then
+          rspine = rconvergebw
+          spine = rconvergebw(:,maxval(maxloc(denseposbw)))
+          rfan = rconvergefw
+          sign = 1
+        else
+          rspine = rconvergefw
+          spine = rconvergefw(:,maxval(maxloc(denseposfw)))
+          rfan = rconvergebw
+          sign = -1
+        endif
+      elseif (nfw > 40*nbw) then
         spine = rconvergebw(:,maxval(maxloc(denseposbw)))
         rspine = rconvergebw
         rfan = rconvergefw
@@ -395,9 +478,36 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
     endif
     deallocate(denseposfw, denseposbw)
   enddo
+
   ! We have picked rspine and rfan so can get rid of rconverges
   deallocate(rconvergebw, rconvergefw)
   if (possign == 0) possign = sign
+
+  if (spiral == 1) then
+    fan = normalise(cross(rfan(:, 1), rfan(:, size(rfan, 2)/2)))
+    minvec = rfan(:, size(rfan, 2)/2)
+    maxvec = rfan(:, 1)
+    ! dotapprox = abs(dot(fan, spine))
+    av_spine = [0, 0, 0]
+    do i = 1, size(rspine, 2)
+      if (dot(fan, rspine(:, i)) > 0) av_spine = av_spine + rspine(:, i)
+    enddo
+    spine = normalise(av_spine)
+    print*, maxvec
+    print*, minvec
+
+    if (savedata == 1) then
+      open(unit=10, file='output/spine.dat', access='stream', status='replace')
+        write(10) size(rspine,2), rspine, spine
+      close(10)
+      open(unit=10, file='output/maxvec.dat', access='stream', status='replace')
+        write(10) size(rfan,2), rfan, maxvec
+      close(10)
+      open(unit=10, file='output/minvec.dat', access='stream', status='replace')
+        write(10) size(rfan,2), rfan, minvec
+      close(10)
+    endif
+  endif
 
 #if debug
   print*, 'Picked a spine'
@@ -408,7 +518,7 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
     warningmessage = 'WARNING: THE TWO CHECKS DO NOT AGREE, NEEDS LOOKING INTO'
   endif
 
-  if (sign /= -2) then
+  if (sign /= -2 .and. spiral == 0) then
     if (size(rfan,2) == 2) then
       maxvec = rfan(:,1)
     else
@@ -447,9 +557,9 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
         rnew = sphere2cart(rsphere,thetas(itheta),phis(iphi))
         bnew = trilinear(rnew+rnull, bgrid)
         rold = [0,0,0]
-        do count = 1, maxcount
+        do count = 1, maxiter
           bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
-          call it_conv(rnull,rold,rnew,bnew,fact,possign)
+          call it_conv(rnull, rold, rnew, bnew, it_dist, possign)
           if (modulus(rnew-rold) < accconv .and. count >= mincount) exit
         enddo
         rmin(:,iphi+(itheta-1)*nphi1) = normalise(rnew)
@@ -517,86 +627,3 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
 #endif
 
 end subroutine
-
-! OLD CONVERGENCE METHOD
-! do while (modulus(rnewfw-roldfw) > accconv .and. modulus(rnewbw-roldbw) > accconv .and. count < maxcount) ! do enough times for spine to converge
-!   call it_conv(roldfw,rnewfw,bnewfw,fact,1)
-!   call it_conv(roldbw,rnewbw,bnewbw,fact,-1)
-!   count = count + 1
-! enddo
-
-! do while (modulus(rnew-rold) > accconv .and. count < maxcount) ! do enough times for spine to converge
-!   bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
-!   call it_conv(rold,rnew,bnew,fact,sign)
-!   count = count + 1
-! enddo
-
-
-! OLD FAN DETERMINING METHOD
-!   ! now determine the fan
-!   if (size(rfan,2) == 2) then
-!     print*, 'Only have two fan points'
-!     minvec = normalise(cross(spine,maxvec))
-!   else
-!     ! Check whether we have a ball or all points in a ring
-!     crossfan = rfan
-!     call remove_duplicates(crossfan, 1d-1, densepos)
-!     idense = maxval(maxloc(densepos))
-!     deallocate(densepos)
-!     do ifan = 1, size(crossfan,2)
-!       crossfan(:,ifan) = cross(maxvec,crossfan(:,ifan))
-!     enddo
-!     call remove_vector(crossfan, idense)
-!     ifan = 1
-!     do while (ifan <= size(crossfan,2))
-!       if (modulus(crossfan(:,ifan)) < 2d-1) then
-!         call remove_vector(crossfan, ifan)
-!       else
-!         crossfan(:,ifan) = normalise(crossfan(:,ifan))
-!         ifan = ifan+1
-!       endif
-!     enddo
-!     call remove_duplicates(crossfan,2d-1)
-!     print*, 'Size of crossfan', size(crossfan,2)
-!     if (size(crossfan,2) <= 4) then ! we have a ring, pick minvec to be vector most perpendicular
-!       print*, 'We have a ring'
-!       angleflag = 0
-!       do ifan = 1, size(rfan,2)
-!         if (acos(dot(rfan(:,ifan), maxvec))/dtor > 30) then
-!           print*, acos(dot(rfan(:,ifan), maxvec))/dtor
-!           angleflag = 1
-!         endif
-!       enddo
-!       if (angleflag == 1) then
-!         print*, 'Picking the most perpendicular point'
-!         mindot = 1
-!         do ifan = 1, size(rfan,2)
-!           dotprod = abs(dot(maxvec,rfan(:,ifan)))
-!           if (dotprod < mindot) then
-!             mindot = dotprod
-!             imin = ifan
-!           endif
-!         enddo
-!         minvec = rfan(:,imin)
-!         print*, 'Perp vec is at ', imin, 'out of a total of ', size(rfan,2)
-!       else
-!         print*, 'Taking cross product for minvec'
-!         minvec = normalise(cross(spine, maxvec))
-!       endif
-!     else ! we have a ball
-!       ifan = 1
-!       rfanperp = rfan
-!       do while (ifan <= size(rfanperp,2))
-!         dotprod = abs(dot(maxvec,rfanperp(:,ifan)))
-!         if (dotprod > 2d-1) then
-!           call remove_vector(rfanperp, ifan)
-!         else
-!           ifan = ifan + 1
-!         endif
-!       enddo
-!       if (allocated(densepos)) deallocate(densepos)
-!       call remove_duplicates(rfanperp, 5d-2, densepos)
-!       minvec = rfanperp(:,maxval(maxloc(densepos)))
-!     endif
-!   endif
-! endif

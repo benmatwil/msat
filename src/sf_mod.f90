@@ -29,16 +29,18 @@ module sf_mod
     ! removes vectors with accur distance away from another vector to reduce to "unique" vectors
     implicit none
     
-    real(np), allocatable :: vecarray(:,:)
+    real(np), allocatable :: vecarray(:, :)
     real(np) :: accur
     integer(int32), allocatable, optional :: nclose(:)
     integer(int32), allocatable :: dummy(:)
-    integer(int32) :: i, j, n, nclosei, ny
+    integer(int32) :: i, j, n, nclosei, ny, count_before, k
+    logical, dimension(:), allocatable :: keep_point
+    integer(int32), dimension(:), allocatable :: remove_pt
     
     n = size(vecarray,2)
     i = 1
 
-    if (present(nclose)) allocate(nclose(1))
+    if (present(nclose)) allocate(nclose(0))
     
     do while (i < n)
       j = i + 1
@@ -55,7 +57,7 @@ module sf_mod
       i = i + 1
       if (present(nclose)) call add_element(nclose, nclosei)
     enddo
-    
+
     if (present(nclose)) then
       ny = size(nclose,1)
       dummy = nclose
@@ -64,20 +66,50 @@ module sf_mod
       deallocate(dummy)
     endif
 
+    ! n = size(vecarray,2)
+    ! allocate(keep_point(n), remove_pt(n))
+    ! keep_point = .true.
+    ! remove_pt = 0
+
+    ! k = 1
+    ! do i = 1, n
+    !   do j = i+1, n
+    !     if (keep_point(j)) then
+    !       if (modulus(vecarray(:, i)-vecarray(:, j)) < accur) then
+    !         keep_point(j) = .false.
+    !         remove_pt = k
+    !       endif
+    !     endif
+    !   enddo
+    !   if (count(keep_point(:)) < count_before) then
+    !     k = k + 1
+    !     count_before = count(keep_point(:))
+    !   endif
+    ! enddo
+
+    ! n = count(keep_point(:))
+    ! vecarray = reshape(pack(vecarray, spread(keep_point, 1, 3)), [3, n])
+    ! if (present(nclose)) then
+    !   allocate(nclose(n))
+    !   do i = 1, n
+    !     nclose(i) = count(remove_pt == i)
+    !   enddo
+    ! endif
+
     end
   
   !********************************************************************************
 
-  subroutine it_conv(rnull, rold, rnew, bnew, fact, dir)
+  subroutine it_conv(rnull, rold, rnew, bnew, it_dist, dir)
     
     implicit none
     
     real(np), dimension(3) :: rnull, rold, rnew, bnew
-    real(np) :: fact
+    real(np) :: it_dist
     integer(int32) :: dir
     
     rold = rnew
-    rnew = rnew + dir*fact*normalise(bnew)
+    rnew = rnew + dir*it_dist*normalise(bnew)
     rnew = rsphere*normalise(rnew)
     bnew = trilinear(rnew+rnull, bgrid)
     
