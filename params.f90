@@ -3,6 +3,9 @@ module params
   use iso_fortran_env
 
   implicit none
+  ! File containing all changeable parameters in the MSAT package.
+  ! It is not recommended to change the majority unless absolutely needed.
+  ! Full descriptions of each are available in the MSAT manual
 
   ! Global Parameters
   ! -----------------
@@ -28,6 +31,10 @@ module params
   integer(int32), parameter :: nphi = 90
   ! number of start points in theta direction
   integer(int32), parameter :: ntheta = nphi/2
+  ! maximum number of iterations for convergence method
+  integer(int32), parameter :: maxiter = 20000
+  ! multiple of rsphere distance to move points at each iteration
+  real(np), parameter :: dist_mult = 2e-2_np
 
   ! Separatrix Surface Finder Parameters
   ! ------------------------------------
@@ -59,6 +66,6 @@ module params
   integer(int32), parameter :: bytesize = real64
   ! whether ssf outputs associations
   ! associations only currently required for make_cut
-  logical, parameter :: assoc_output = .false.
+  logical, parameter :: assoc_output = .true.
 
 end module
