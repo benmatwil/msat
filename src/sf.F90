@@ -136,12 +136,15 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
   use sf_mod
 
   implicit none
-  integer(int32) :: itheta, iphi, itry, ifan, idense
+  integer(int32) :: itheta, iphi, itry, ifan, idense, ispine
   integer(int32) :: count, iconv, imin, mincount, npts
   integer(int32) :: flagfw, flagbw, flagspine, flagfan, flagsign
   integer(int32) :: nfw, nbw, nspine, nfan
-  integer(int32) :: savedata, angleflag, spiral, i
-  real(np) :: av_spine(3), dotapprox
+  integer(int32) :: savedata, angleflag, i
+  real(np) :: av_spine(3), dotapprox, mindot, dotprod
+  real(np), dimension(:), allocatable :: dotprods
+
+  logical :: spiral
 
   real(np), allocatable :: thetas(:), phis(:)
   integer(int32), parameter :: nphi1 = nphi/3, ntheta1 = ntheta/3
@@ -152,7 +155,7 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
 
   real(np), dimension(:,:), allocatable :: rconvergefw, rconvergebw, rmin
   real(np), dimension(:,:), allocatable :: rspine, rfan
-  integer(int32), dimension(:), allocatable :: densepos, denseposfw, denseposbw
+  integer(int32), dimension(:), allocatable :: densepos, denseposfw, denseposbw, denseposspine, denseposfan
 
   integer(int32) :: sign, warning, signguess, possign
 
@@ -180,8 +183,8 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
   dphi = 360.0_np/nphi
   dtheta = 180.0_np/ntheta
 
-  minmove = 2*pi*rsphere/nphi/10
-  mincount = 750
+  minmove = 2*pi*rsphere/nphi/50
+  mincount = 500
   it_dist = dist_mult*rsphere
   accconv = 1e-10_np*rsphere
 
@@ -206,7 +209,7 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
     do itheta = 1, ntheta
       do iphi = 1, nphi
         count = 0
-        rnewfw = sphere2cart(rsphere,thetas(itheta),phis(iphi))
+        rnewfw = sphere2cart(rsphere, thetas(itheta), phis(iphi))
         rnewbw = rnewfw
         rfw1 = rnewfw
         rbw1 = rnewbw
@@ -247,7 +250,179 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
   print*, '    ', 'backwards:', flagbw
 #endif
 
-  ! npts = nphi*ntheta
+  npts = nphi*ntheta
+  spiral = .false.
+  if (flagfw > 0.9*npts .or. flagbw > 0.9*npts) then
+    ! great convergence
+
+    if (flagfw > flagbw) then
+      sign = -1
+      call move_alloc(rconvergefw, rspine)
+      call move_alloc(rconvergebw, rfan)
+    else
+      sign = 1
+      call move_alloc(rconvergebw, rspine)
+      call move_alloc(rconvergefw, rfan)
+    endif
+
+    nspine = size(rspine, 2)
+    nfan = size(rfan, 2)
+
+    acc = 1e-6_np
+    call remove_duplicates(rspine, acc, denseposspine)
+    call remove_duplicates(rfan, acc, denseposfan)
+
+    if (nspine == 2) then
+      spine = rspine(:, 1)
+    else
+      spine = rspine(:, maxval(maxloc(denseposspine)))
+    endif
+
+    if (nfan == 2) then
+      maxvec = rfan(:, 1)
+    else
+      maxvec = rfan(:, maxval(maxloc(denseposfan)))
+    endif
+
+    allocate(dotprods(nfan))
+
+    do ifan = 1, nfan
+      dotprods(ifan) = abs(dot(maxvec, rfan(:, ifan)))
+    enddo
+
+    if (any(dotprods < 0.1)) then
+
+      minvec = rfan(:, maxval(minloc(dotprods)))
+      
+    else
+
+      allocate(thetas(ntheta1), phis(nphi1), rmin(3,nphi1*ntheta1))
+
+      dphi = 360.0_np/nphi1
+      dtheta = 180.0_np/ntheta1
+
+      ! maxiter = 1000
+
+      do iphi = 1, nphi1
+        phis(iphi) = (iphi-1)*dphi + angle
+      enddo
+      do itheta = 1, ntheta1
+        thetas(itheta) = (itheta-0.5_np)*dtheta + angle
+      enddo
+
+      phis = phis*dtor
+      thetas = thetas*dtor
+
+      do itheta = 1, ntheta1
+        do iphi = 1, nphi1
+          rnew = sphere2cart(rsphere,thetas(itheta),phis(iphi))
+          bnew = trilinear(rnew+rnull, bgrid)
+          rold = [0,0,0]
+          do count = 1, maxiter/10
+            bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
+            call it_conv(rnull, rold, rnew, bnew, it_dist, sign)
+            if (modulus(rnew-rold) < accconv .and. count >= mincount) exit
+          enddo
+          rmin(:,iphi+(itheta-1)*nphi1) = normalise(rnew)
+        enddo
+      enddo
+      call remove_duplicates(rmin, acc, densepos)
+      minvec = rmin(:, maxval(maxloc(densepos)))
+
+      deallocate(thetas, phis)
+
+    endif
+
+  elseif (flagfw == 0 .and. flagbw == 0) then
+    ! probably high current - no points converged
+
+    spiral = .true.
+    print*, 'Sprial null point'
+
+    ! need to decide on a sign
+
+    acc = 1e-3_np
+    call remove_duplicates(rconvergefw, acc, denseposfw)
+    call remove_duplicates(rconvergebw, acc, denseposbw)
+
+    if (size(rconvergefw, 2) > size(rconvergebw, 2)) then
+      sign = 1
+      call move_alloc(rconvergebw, rspine)
+      call move_alloc(rconvergefw, rfan)
+      ! call move_alloc(denseposbw, denseposspine)
+      ! call move_alloc(denseposfw, denseposfan)
+    else
+      sign = -1
+      call move_alloc(rconvergefw, rspine)
+      call move_alloc(rconvergebw, rfan)
+      ! call move_alloc(denseposfw, denseposspine)
+      ! call move_alloc(denseposbw, denseposfan)
+    endif
+
+    maxvec = rfan(:, 1)
+
+    ! mindot = 1
+    ! imin = 1
+
+    allocate(dotprods(nfan))
+
+    do ifan = 1, nfan
+      dotprods(ifan) = abs(dot(maxvec, rfan(:, ifan)))
+    enddo
+
+    minvec = rfan(:, maxval(minloc(dotprods)))
+
+    ! do ifan = 2, size(rfan, 2)
+    !   dotprod = abs(dot(maxvec, rfan(:, ifan)))
+    !   if (dotprod < mindot) then
+    !     mindot = dotprod
+    !     imin = ifan
+    !   endif
+    ! enddo
+
+    ! minvec = rfan(:, imin)
+
+    fan = normalise(cross(maxvec, minvec))
+    
+    av_spine = [0, 0, 0]
+    do ispine = 1, size(rspine, 2)
+      if (dot(fan, rspine(:, ispine)) > 0) av_spine = av_spine + rspine(:, ispine)
+    enddo
+    spine = normalise(av_spine)
+
+  else
+    ! this perhaps will happen with maxvec and spine eigenvalues almost identical
+    stop
+
+  endif
+
+  deallocate(rspine, rfan)
+
+  ! if (spiral == 1) then
+  !   fan = normalise(cross(rfan(:, 1), rfan(:, size(rfan, 2)/2)))
+  !   minvec = rfan(:, size(rfan, 2)/2)
+  !   maxvec = rfan(:, 1)
+  !   ! dotapprox = abs(dot(fan, spine))
+  !   av_spine = [0, 0, 0]
+  !   do i = 1, size(rspine, 2)
+  !     if (dot(fan, rspine(:, i)) > 0) av_spine = av_spine + rspine(:, i)
+  !   enddo
+  !   spine = normalise(av_spine)
+  !   print*, maxvec
+  !   print*, minvec
+
+  !   if (savedata == 1) then
+  !     open(unit=10, file='output/spine.dat', access='stream', status='replace')
+  !       write(10) size(rspine,2), rspine, spine
+  !     close(10)
+  !     open(unit=10, file='output/maxvec.dat', access='stream', status='replace')
+  !       write(10) size(rfan,2), rfan, maxvec
+  !     close(10)
+  !     open(unit=10, file='output/minvec.dat', access='stream', status='replace')
+  !       write(10) size(rfan,2), rfan, minvec
+  !     close(10)
+  !   endif
+  ! endif
 
   ! if (flagfw > 0 .or. flagbw > 0) then
   !   ! we have convergence
@@ -312,263 +487,238 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
 
 
 
-  if (flagfw < flagbw) then
-    signguess = 1
-  else if (flagfw > flagbw) then
-    signguess = -1
-  else
-    signguess = 0
-  endif
+!   if (flagfw < flagbw) then
+!     signguess = 1
+!   else if (flagfw > flagbw) then
+!     signguess = -1
+!   else
+!     signguess = 0
+!   endif
 
-#if debug
-  if (signguess == 1) then
-    print*, "Guess: spine is backwards"
-  elseif (signguess == -1) then
-    print*, "Guess: spine is forwards"
-  else
-    print*, "Guess: not sure on spine"
-  endif
-#endif
+! #if debug
+!   if (signguess == 1) then
+!     print*, "Guess: spine is backwards"
+!   elseif (signguess == -1) then
+!     print*, "Guess: spine is forwards"
+!   else
+!     print*, "Guess: not sure on spine"
+!   endif
+! #endif
 
-  ! Now working on a unit sphere of points
-  ! remove duplicate vectors which are a distance 1e-4 apart
-  ! spine should be left with 2 vectors
-  ! fan left with either 2 vectors (minvec eigenvalue too small), a circle of points or just a mess
-  sign = 0
-  spiral = 0
-  possign = 0
-  do itry = 4, 2, -1
-    acc = 1e-1_np**itry
-#if debug
-    print*, 'Removing to accuracy', acc
-#endif
-    call remove_duplicates(rconvergefw, acc, denseposfw)
-    call remove_duplicates(rconvergebw, acc, denseposbw)
-    nfw = size(rconvergefw,2)
-    nbw = size(rconvergebw,2)
-    ! first determine the spine and which is which
-    if (nfw <= 2 .or. nbw <= 2) then ! if one of the reductions only has two vectors, can guarantee one is spine
-#if debug
-      print*, "Using converged to choose"
-#endif
-      if (nfw < nbw) then ! if nfw is smaller then it's the spine, spine going out of null
-        sign = -1
-      else if (nfw > nbw) then ! if nbw is smaller then it's the spine, spine going into null
-        sign = 1
-      endif
-#if debug
-      print*, "I've picked the sign to be ", sign, signguess
-#endif
-      if (nfw == nbw .or. sign /= signguess) then ! both are equal (i.e. 2=2) so check which converged first and then use eigenvalues as last resort
-#if debug
-        print*, "Using stopped to choose"
-#endif
-        if (flagfw < flagbw) then ! backwards converged points stopped first
-          sign = 1
-        else if (flagfw > flagbw) then ! forwards converged points stopped first
-          sign = -1
-        else ! still don't know, check the eigenvalues as a last resort - not ideal but rare
-#if debug
-          print*, "Using eigenvalues to choose"
-#endif
-          bwvalue = dot(trilinear(rsphere*rconvergebw(:,1) + rnull, bgrid), rconvergebw(:,1))
-          fwvalue = dot(trilinear(rsphere*rconvergefw(:,1) + rnull, bgrid), rconvergefw(:,1))
-#if debug
-          print*, 'Eigenvalue on backward vector:', bwvalue
-          print*, 'Eigenvalue on forward vector: ', fwvalue
-#endif
-          if (abs(bwvalue) > abs(fwvalue)) then
-            sign = 1
-          else
-            sign = -1
-          endif
-        endif
-      endif
-      if (sign == 1) then
-        rspine = rconvergebw
-        rfan = rconvergefw
-        densepos = denseposfw
-      else
-        rspine = rconvergefw
-        rfan = rconvergebw
-        densepos = denseposbw
-      endif
-      spine = rspine(:,1)
-      exit
-    else if (itry == 2 .and. sign == 0) then
-      if (flagfw == 0 .and. flagbw == 0) then
-        spiral = 1
-        if (nfw > nbw) then
-          rspine = rconvergebw
-          spine = rconvergebw(:,maxval(maxloc(denseposbw)))
-          rfan = rconvergefw
-          sign = 1
-        else
-          rspine = rconvergefw
-          spine = rconvergefw(:,maxval(maxloc(denseposfw)))
-          rfan = rconvergebw
-          sign = -1
-        endif
-      elseif (nfw > 40*nbw) then
-        spine = rconvergebw(:,maxval(maxloc(denseposbw)))
-        rspine = rconvergebw
-        rfan = rconvergefw
-        densepos = denseposfw
-        sign = 1
-      elseif (nbw > 40*nfw) then
-        spine = rconvergefw(:,maxval(maxloc(denseposfw)))
-        rspine = rconvergefw
-        rfan = rconvergebw
-        densepos = denseposbw
-        sign = -1
-      else
-        warning = 1
-        if (nfw > 5*nbw) then
-          spine = rconvergebw(:,maxval(maxloc(denseposbw)))
-          rspine = rconvergebw
-          rfan = rconvergefw
-          densepos = denseposfw
-          sign = 0
-          possign = 1
-        elseif (nbw > 5*nfw) then
-          spine = rconvergefw(:,maxval(maxloc(denseposfw)))
-          rspine = rconvergefw
-          rfan = rconvergebw
-          densepos = denseposbw
-          sign = 0
-          possign = -1
-        else
-          ! if still no reduction leaves two
-          ! try using that the spine should be the densest accumulation of points
-          ! also likely we have a source or a sink so div(B) is non-zero
-          nfw = maxval(denseposfw)
-          nbw = maxval(denseposbw)
-#if debug
-          print*, 'Density of densest points'
-          print*, '    ', 'Forwards ', maxloc(denseposfw), nfw
-          print*, '    ', 'Backwards', maxloc(denseposbw), nbw
-#endif
-          if (nfw < nbw) then
-            spine = rconvergebw(:,maxval(maxloc(denseposbw)))
-            rfan = rconvergefw
-            rspine = rconvergebw
-            densepos = denseposfw
-            sign = 0
-            possign = 1
-          else if (nbw < nfw) then
-            spine = rconvergefw(:,maxval(maxloc(denseposfw)))
-            rfan = rconvergebw
-            rspine = rconvergefw
-            densepos = denseposbw
-            sign = 0
-            possign = -1
-          else ! not sure how to to decide in this case, haven't found a case like this yet...
-            print*, "Uh oh, can't decide, error!"
-            open(unit=10, file=fileout(1:index(fileout, '/', .true.))//'spine.dat', access='stream', status='replace')
-              write(10) size(rconvergefw,2), rconvergefw
-            close(10)
-            open(unit=10, file=fileout(1:index(fileout, '/', .true.))//'maxvec.dat', access='stream', status='replace')
-              write(10) size(rconvergebw,2), rconvergebw
-            close(10)
-            possign = 0
-            sign = -2
-          endif
-        endif
-      endif
-    endif
-    deallocate(denseposfw, denseposbw)
-  enddo
+!   ! Now working on a unit sphere of points
+!   ! remove duplicate vectors which are a distance 1e-4 apart
+!   ! spine should be left with 2 vectors
+!   ! fan left with either 2 vectors (minvec eigenvalue too small), a circle of points or just a mess
+!   sign = 0
+!   ! spiral = 0
+!   possign = 0
+!   do itry = 6, 6, -1
+!     acc = 1e-1_np**itry
+! #if debug
+!     print*, 'Removing to accuracy', acc
+! #endif
+!     call remove_duplicates(rconvergefw, acc, denseposfw)
+!     call remove_duplicates(rconvergebw, acc, denseposbw)
+!     nfw = size(rconvergefw,2)
+!     nbw = size(rconvergebw,2)
+!     print*, nfw, nbw
+!     ! first determine the spine and which is which
+!     if (nfw <= 2 .or. nbw <= 2) then ! if one of the reductions only has two vectors, can guarantee one is spine
+! #if debug
+!       print*, "Using converged to choose"
+! #endif
+!       if (nfw < nbw) then ! if nfw is smaller then it's the spine, spine going out of null
+!         sign = -1
+!       else if (nfw > nbw) then ! if nbw is smaller then it's the spine, spine going into null
+!         sign = 1
+!       endif
+! #if debug
+!       print*, "I've picked the sign to be ", sign, signguess
+! #endif
+!       if (nfw == nbw .or. sign /= signguess) then ! both are equal (i.e. 2=2) so check which converged first and then use eigenvalues as last resort
+! #if debug
+!         print*, "Using stopped to choose"
+! #endif
+!         if (flagfw < flagbw) then ! backwards converged points stopped first
+!           sign = 1
+!         else if (flagfw > flagbw) then ! forwards converged points stopped first
+!           sign = -1
+!         else ! still don't know, check the eigenvalues as a last resort - not ideal but rare
+! #if debug
+!           print*, "Using eigenvalues to choose"
+! #endif
+!           bwvalue = dot(trilinear(rsphere*rconvergebw(:,1) + rnull, bgrid), rconvergebw(:,1))
+!           fwvalue = dot(trilinear(rsphere*rconvergefw(:,1) + rnull, bgrid), rconvergefw(:,1))
+! #if debug
+!           print*, 'Eigenvalue on backward vector:', bwvalue
+!           print*, 'Eigenvalue on forward vector: ', fwvalue
+! #endif
+!           if (abs(bwvalue) > abs(fwvalue)) then
+!             sign = 1
+!           else
+!             sign = -1
+!           endif
+!         endif
+!       endif
+!       if (sign == 1) then
+!         rspine = rconvergebw
+!         rfan = rconvergefw
+!         densepos = denseposfw
+!       else
+!         rspine = rconvergefw
+!         rfan = rconvergebw
+!         densepos = denseposbw
+!       endif
+!       spine = rspine(:,1)
+!       exit
+!     else if (itry == 6 .and. sign == 0) then
+!       if (flagfw == 0 .and. flagbw == 0) then
+!         spiral = .true.
+!         if (nfw > nbw) then
+!           rspine = rconvergebw
+!           spine = rconvergebw(:,maxval(maxloc(denseposbw)))
+!           rfan = rconvergefw
+!           sign = 1
+!         else
+!           rspine = rconvergefw
+!           spine = rconvergefw(:,maxval(maxloc(denseposfw)))
+!           rfan = rconvergebw
+!           sign = -1
+!         endif
+!       elseif (nfw > 40*nbw) then
+!         spine = rconvergebw(:,maxval(maxloc(denseposbw)))
+!         rspine = rconvergebw
+!         rfan = rconvergefw
+!         densepos = denseposfw
+!         sign = 1
+!       elseif (nbw > 40*nfw) then
+!         spine = rconvergefw(:,maxval(maxloc(denseposfw)))
+!         rspine = rconvergefw
+!         rfan = rconvergebw
+!         densepos = denseposbw
+!         sign = -1
+!       else
+!         warning = 1
+!         if (nfw > 5*nbw) then
+!           spine = rconvergebw(:,maxval(maxloc(denseposbw)))
+!           rspine = rconvergebw
+!           rfan = rconvergefw
+!           densepos = denseposfw
+!           sign = 0
+!           possign = 1
+!         elseif (nbw > 5*nfw) then
+!           spine = rconvergefw(:,maxval(maxloc(denseposfw)))
+!           rspine = rconvergefw
+!           rfan = rconvergebw
+!           densepos = denseposbw
+!           sign = 0
+!           possign = -1
+!         else
+!           ! if still no reduction leaves two
+!           ! try using that the spine should be the densest accumulation of points
+!           ! also likely we have a source or a sink so div(B) is non-zero
+!           nfw = maxval(denseposfw)
+!           nbw = maxval(denseposbw)
+! #if debug
+!           print*, 'Density of densest points'
+!           print*, '    ', 'Forwards ', maxloc(denseposfw), nfw
+!           print*, '    ', 'Backwards', maxloc(denseposbw), nbw
+! #endif
+!           if (nfw < nbw) then
+!             spine = rconvergebw(:,maxval(maxloc(denseposbw)))
+!             rfan = rconvergefw
+!             rspine = rconvergebw
+!             densepos = denseposfw
+!             sign = 0
+!             possign = 1
+!           else if (nbw < nfw) then
+!             spine = rconvergefw(:,maxval(maxloc(denseposfw)))
+!             rfan = rconvergebw
+!             rspine = rconvergefw
+!             densepos = denseposbw
+!             sign = 0
+!             possign = -1
+!           else ! not sure how to to decide in this case, haven't found a case like this yet...
+!             print*, "Uh oh, can't decide, error!"
+!             open(unit=10, file=fileout(1:index(fileout, '/', .true.))//'spine.dat', access='stream', status='replace')
+!               write(10) size(rconvergefw,2), rconvergefw
+!             close(10)
+!             open(unit=10, file=fileout(1:index(fileout, '/', .true.))//'maxvec.dat', access='stream', status='replace')
+!               write(10) size(rconvergebw,2), rconvergebw
+!             close(10)
+!             possign = 0
+!             sign = -2
+!           endif
+!         endif
+!       endif
+!     endif
+!     deallocate(denseposfw, denseposbw)
+!   enddo
 
-  ! We have picked rspine and rfan so can get rid of rconverges
-  deallocate(rconvergebw, rconvergefw)
-  if (possign == 0) possign = sign
+!   ! We have picked rspine and rfan so can get rid of rconverges
+!   deallocate(rconvergebw, rconvergefw)
+!   if (possign == 0) possign = sign
 
-  if (spiral == 1) then
-    fan = normalise(cross(rfan(:, 1), rfan(:, size(rfan, 2)/2)))
-    minvec = rfan(:, size(rfan, 2)/2)
-    maxvec = rfan(:, 1)
-    ! dotapprox = abs(dot(fan, spine))
-    av_spine = [0, 0, 0]
-    do i = 1, size(rspine, 2)
-      if (dot(fan, rspine(:, i)) > 0) av_spine = av_spine + rspine(:, i)
-    enddo
-    spine = normalise(av_spine)
-    print*, maxvec
-    print*, minvec
+! #if debug
+!   print*, 'Picked a spine'
+! #endif
 
-    if (savedata == 1) then
-      open(unit=10, file='output/spine.dat', access='stream', status='replace')
-        write(10) size(rspine,2), rspine, spine
-      close(10)
-      open(unit=10, file='output/maxvec.dat', access='stream', status='replace')
-        write(10) size(rfan,2), rfan, maxvec
-      close(10)
-      open(unit=10, file='output/minvec.dat', access='stream', status='replace')
-        write(10) size(rfan,2), rfan, minvec
-      close(10)
-    endif
-  endif
+!   if (sign /= signguess .and. sign /= 0) then
+!     warning = 3
+!     warningmessage = 'WARNING: THE TWO CHECKS DO NOT AGREE, NEEDS LOOKING INTO'
+!   endif
 
-#if debug
-  print*, 'Picked a spine'
-#endif
+! #if debug
+!     print*, 'Final number of converged'
+!     print*, '    ','spines:', size(rspine,2)
+!     print*, '    ','fans:  ', size(rfan,2)
+! #endif
 
-  if (sign /= signguess .and. sign /= 0) then
-    warning = 3
-    warningmessage = 'WARNING: THE TWO CHECKS DO NOT AGREE, NEEDS LOOKING INTO'
-  endif
+!   if (sign /= -2 .and. spiral == 0) then
+!     if (size(rfan,2) == 2) then
+!       maxvec = rfan(:,1)
+!     else
+!       !call remove_duplicates(rfan, 1e-2_np, densepos)
+!       maxvec = rfan(:,maxval(maxloc(densepos)))
+!     endif
+!     deallocate(densepos)
 
-  if (sign /= -2 .and. spiral == 0) then
-    if (size(rfan,2) == 2) then
-      maxvec = rfan(:,1)
-    else
-      !call remove_duplicates(rfan, 1e-2_np, densepos)
-      maxvec = rfan(:,maxval(maxloc(densepos)))
-    endif
-    deallocate(densepos)
+!     ! Working on a sphere of size rsphere
+!     accconv = accconv*2
+!     ! loop over each point to find converged point
 
-#if debug
-    print*, 'Final number of converged'
-    print*, '    ','spines:', size(rspine,2)
-    print*, '    ','fans:  ', size(rfan,2)
-#endif
+!     allocate(thetas(ntheta1), phis(nphi1), rmin(3,nphi1*ntheta1))
 
-    ! Working on a sphere of size rsphere
-    accconv = accconv*2
-    ! loop over each point to find converged point
+!     dphi = 360.0_np/nphi1
+!     dtheta = 180.0_np/ntheta1
 
-    allocate(thetas(ntheta1), phis(nphi1), rmin(3,nphi1*ntheta1))
+!     do iphi = 1, nphi1
+!       phis(iphi) = (iphi-1)*dphi + angle
+!     enddo
+!     do itheta = 1, ntheta1
+!       thetas(itheta) = (itheta-0.5_np)*dtheta + angle
+!     enddo
 
-    dphi = 360.0_np/nphi1
-    dtheta = 180.0_np/ntheta1
+!     phis = phis*dtor
+!     thetas = thetas*dtor
 
-    do iphi = 1, nphi1
-      phis(iphi) = (iphi-1)*dphi + angle
-    enddo
-    do itheta = 1, ntheta1
-      thetas(itheta) = (itheta-0.5_np)*dtheta + angle
-    enddo
+!     do itheta = 1, ntheta1
+!       do iphi = 1, nphi1
+!         rnew = sphere2cart(rsphere,thetas(itheta),phis(iphi))
+!         bnew = trilinear(rnew+rnull, bgrid)
+!         rold = [0,0,0]
+!         do count = 1, maxiter
+!           bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
+!           call it_conv(rnull, rold, rnew, bnew, it_dist, possign)
+!           if (modulus(rnew-rold) < accconv .and. count >= mincount) exit
+!         enddo
+!         rmin(:,iphi+(itheta-1)*nphi1) = normalise(rnew)
+!       enddo
+!     enddo
+!     call remove_duplicates(rmin, acc, densepos)
+!     minvec = rmin(:,maxval(maxloc(densepos)))
 
-    phis = phis*dtor
-    thetas = thetas*dtor
-
-    do itheta = 1, ntheta1
-      do iphi = 1, nphi1
-        rnew = sphere2cart(rsphere,thetas(itheta),phis(iphi))
-        bnew = trilinear(rnew+rnull, bgrid)
-        rold = [0,0,0]
-        do count = 1, maxiter
-          bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
-          call it_conv(rnull, rold, rnew, bnew, it_dist, possign)
-          if (modulus(rnew-rold) < accconv .and. count >= mincount) exit
-        enddo
-        rmin(:,iphi+(itheta-1)*nphi1) = normalise(rnew)
-      enddo
-    enddo
-    call remove_duplicates(rmin, acc, densepos)
-    minvec = rmin(:,maxval(maxloc(densepos)))
-
-    deallocate(thetas, phis)
+!     deallocate(thetas, phis)
 
 #if debug
     print*, 'Maxvec is:'
@@ -593,19 +743,25 @@ subroutine get_properties(inull,sign,spine,fan,warning,savedata)
       open(unit=10, file='output/maxvec.dat', access='stream', status='replace')
         write(10) size(rfan,2), rfan, maxvec
       close(10)
-      open(unit=10, file='output/minvec.dat', access='stream', status='replace')
-        write(10) size(rmin,2), rmin, minvec
-      close(10)
+      if (spiral) then
+        open(unit=10, file='output/minvec.dat', access='stream', status='replace')
+          write(10) 0, rmin, minvec
+        close(10)
+      else
+        open(unit=10, file='output/minvec.dat', access='stream', status='replace')
+          write(10) size(rmin,2), rmin, minvec
+        close(10)
+      endif
     endif
 
-  else
-    sign = 0
-    spine = [1,0,0]
-    fan = [1,0,0]
-  endif
+  ! else
+  !   sign = 0
+  !   spine = [1,0,0]
+  !   fan = [1,0,0]
+  ! endif
 
   if (warning == 1) warningmessage = 'WARNING: NULL LIKELY A SOURCE OR SINK'
-  if (abs(90-acos(dot(fan,spine))/dtor) < 1e1_np) then
+  if (abs(90 - acos(dot(fan, spine))/dtor) < 1e1_np) then
     warningmessage = 'WARNING: SPINE AND FAN STRONGLY INCLINED'
     if (warning /= 1) warning = 2
   endif
