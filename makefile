@@ -38,7 +38,13 @@ cartesian: nf sfxyz ssfxyz
 
 cylindrical: nf sfrpz ssfrpz
 
-spherical: nf sfrtp ssfrtp
+spherical: nf sfrtp ssfrtp hcs
+
+xyz: cartesian
+
+rpz: cylindrical
+
+rtp: spherical
 	
 writedata : params.f90 src/writedata.f90
 	$(FC) $(FLAGS) $^ -o $@
