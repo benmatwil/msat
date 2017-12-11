@@ -18,20 +18,17 @@ module trace
 
   contains
 
-    subroutine trace_line(r,sign,h)
+    subroutine trace_line(r, sign, htotal)
     ! traces a line from 'r' for 'nsteps' integration steps in the direction along the line as specified by 'sign'. Each step is of length h
-      real(np), dimension(3) :: r, r0, r1
+      real(np), dimension(3) :: r
       integer(int32) :: sign
-      real(np) :: h, hdum, stepdist
+      real(np) :: htotal, h, hdum, stepdist
 
-      stepdist = h
       hdum = 0.0_np
-      r0 = r
 
-      do while (hdum < stepdist .and. .not. outedge(r))
-        h = sign*(stepdist-hdum)
+      do while (hdum < htotal .and. .not. outedge(r))
+        h = sign*(htotal - hdum)
         call rk45(r, h)
-        ! call edgecheck(r0)
         hdum = hdum + abs(h)
       enddo
       
