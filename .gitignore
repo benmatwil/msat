@@ -5,7 +5,7 @@ pngs
 *.pdf
 *.mod
 nf
-sf
+sf*
 ssf*
 readin
 make_cut
