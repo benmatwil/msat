@@ -162,7 +162,7 @@ module sf_mod
 
     logical :: converge_minvec
 
-    integer(int32), parameter :: nphi1 = nphi/3, ntheta1 = ntheta/3
+    integer(int32), parameter :: nphi1 = nphi/2, ntheta1 = ntheta/2
     real(np) :: dphi, dtheta, angle, minmove
     real(np), dimension(3) :: roldfw, rnewfw, bnewfw, roldbw, rnewbw, bnewbw
     real(np), dimension(3) :: rold, rnew, bnew, rfw1, rbw1
@@ -384,11 +384,24 @@ module sf_mod
           else
             warning = 3
             ! perhaps need to switch them over
-            swap = fan
-            fan = spine
+            swap = maxvec
+            maxvec = spine
             spine = swap
-            call move_alloc(rspine, rfan)
+            call move_alloc(rspine, rconvergefw)
+            call move_alloc(rfan, rspine)
+            call move_alloc(rconvergefw, rfan)
             sign = -1*sign
+
+            nspine = size(rspine, 2)
+            nfan = size(rfan, 2)
+#if debug
+        print*, 'Uh-oh! Swapping!'
+        print*, '    Spine:', nspine
+        print*, '    Fan:  ', nfan
+#endif
+            if (3*nspine < nfan) then
+              warning = 0
+            endif
           endif
         endif
 
@@ -399,11 +412,16 @@ module sf_mod
         enddo
 
         if (any(dotprods < 0.1)) then
+#if debug
+        print*, 'Using perpendicular for minvec'
+#endif
 
           minvec = rfan(:, maxval(minloc(dotprods)))
           
         else
-
+#if debug
+        print*, 'Converging minvec'
+#endif
           converge_minvec = .true.
 
           allocate(rmin(3, nphi1*ntheta1))
@@ -438,31 +456,31 @@ module sf_mod
     ! Save data if there is a problematic null for inspection
     if (savedata) then
       if (sign /= 0) then
-        open(unit=10, file='output/spine.dat', access='stream', status='replace')
-          write(10) size(rspine, 2), rspine, spine
-        close(10)
-        open(unit=10, file='output/maxvec.dat', access='stream', status='replace')
-          write(10) size(rfan, 2), rfan, maxvec
-        close(10)
+        open(unit=30, file='output/spine.dat', access='stream', status='replace')
+          write(30) size(rspine, 2), rspine, spine
+        close(30)
+        open(unit=31, file='output/maxvec.dat', access='stream', status='replace')
+          write(31) size(rfan, 2), rfan, maxvec
+        close(31)
         if (converge_minvec) then
-          open(unit=10, file='output/minvec.dat', access='stream', status='replace')
-            write(10) size(rmin, 2), rmin, minvec
-          close(10)
+          open(unit=32, file='output/minvec.dat', access='stream', status='replace')
+            write(32) size(rmin, 2), rmin, minvec
+          close(32)
         else
-          open(unit=10, file='output/minvec.dat', access='stream', status='replace')
-            write(10) 0, minvec
-          close(10)
+          open(unit=32, file='output/minvec.dat', access='stream', status='replace')
+            write(32) 0, minvec
+          close(32)
         endif
       else
-        open(unit=10, file='output/spine.dat', access='stream', status='replace')
-          write(10) 0, spine
-        close(10)
-        open(unit=10, file='output/maxvec.dat', access='stream', status='replace')
-          write(10) 0, maxvec
-        close(10)
-        open(unit=10, file='output/minvec.dat', access='stream', status='replace')
-          write(10) 0, minvec
-        close(10)
+        open(unit=30, file='output/spine.dat', access='stream', status='replace')
+          write(30) 0, spine
+        close(30)
+        open(unit=31, file='output/maxvec.dat', access='stream', status='replace')
+          write(31) 0, maxvec
+        close(31)
+        open(unit=32, file='output/minvec.dat', access='stream', status='replace')
+          write(32) 0, minvec
+        close(32)
       endif
     endif
 
@@ -487,19 +505,18 @@ module sf_mod
     print*, '--------------------------'
     print*, 'Sign:   ', sign
     print*, 'Warning:', warning, trim(warningmessage)
-    print*, 'Spine: ', spine
-    print*, 'Fan:   ', fan
-    print*, 'Maxvec:', maxvec
-    print*, 'Minvec:', minvec
-    print*, 'Tilt:  ', abs(90 - acos(dot(fan,spine))/dtor)
+    print*, 'Spine:  ', spine
+    print*, 'Fan:    ', fan
+    print*, 'Maxvec: ', maxvec
+    print*, 'Minvec: ', minvec
+    print*, 'Tilt:   ', abs(90 - acos(dot(fan,spine))/dtor)
     print*, 'Dot products of:'
     print*, '  min and max             ', '  max and spine           ', '  min and spine'
     print*, dot(minvec, maxvec), dot(maxvec, spine), dot(minvec, spine)
 #else
-    print*, 'Null', inull,' of', nnulls
-    print*, 'Sign:   ', sign
-    print*, 'Warning:', warning
-    print*, 'Tilt:', abs(90 - acos(dot(fan, spine))/dtor)
+    print('(A, I5, A, I5)'), ' Null', inull, ' of', nnulls
+    print('(A, I5, A, I2, A, F6.2)'), ' Sign:', sign, '    Warning:', warning, '     Tilt:', abs(90 - acos(dot(fan, spine))/dtor)
+    print*, '-----------------------------------------'
 #endif
 
   end subroutine
