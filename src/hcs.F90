@@ -31,10 +31,12 @@ program hcs
   real(np) :: bvec(3), ds
 
   ! file writing
-  integer(int64) :: ia, ib, ip, uptonullring, uptonullconn
-  integer(int32) :: isep, nullnum1, nullnum2, linenum, ringnum
-  real(np), dimension(:,:), allocatable :: rsep, rring
-  integer(int32), dimension(:), allocatable :: brk
+  integer(int64) :: ia, ip, uptonullconn
+  integer(int32) :: isep, nullnum1, nullnum2, linenum, ringnum, iskip
+  real(np), dimension(:,:), allocatable :: rsep, rring, write_ring
+  integer(int32), dimension(:), allocatable :: assoc_temp
+  character(:), allocatable :: tempfile
+  integer(int32) :: nseps1
 
   print*,'#######################################################################'
   print*,'#                      Separatrix Surface Finder                      #'
@@ -134,13 +136,16 @@ program hcs
   enddo
 #endif
 
-  uptonullring = 0
-  uptonullconn = 1
+  uptonullconn = 5
 
   ! stores all info regarding size of rings
   open(unit=10,file=trim(fileout)//'-hcs-ringinfo.dat',status='replace',access='stream')
   ! stores all the coordinates of rings in original coordinate system
   open(unit=20,file=trim(fileout)//'-hcs-rings.dat',status='replace',access='stream')
+  ! stores all the associations between rings
+  if (assoc_output) open(unit=25, file=trim(fileout)//'-hcs-assocs.dat', status='replace', access='stream')
+  ! stores all the breaks on rings
+  open(unit=30, file=trim(fileout)//'-hcs-breaks.dat', status='replace', access='stream')
   ! stores all the connection info about each separator
   open(unit=40,file=trim(fileout)//'-hcs-connectivity.dat',status='replace',access='stream')
   ! stores all the coordinates of the separator lines in original coordinate system
@@ -255,13 +260,18 @@ program hcs
     ! deallocate(pordered)
   enddo
 
-  write(10) ringsmax+1
+  write(10) ringsmax+1, nskip, bytesize, stepsize, int((ubound(npoints, 1) - 1)*2, int32)
 
   ! ihcs = 1
   ! need to substract a tiny amount of the r coord
   pordered(1, :) = pordered(1, :) - 1e-6_np
 
   print*, 'There are ', ubound(npoints, 1) - 1, 'components of the hcs'
+
+  tempfile = trim(fileout)//'-hcs-rings.temp'
+
+  nseps1 = 0
+  write(40) nseps1
 
   !$OMP PARALLEL private(iring, iline, dir, ihcs)
 
@@ -278,9 +288,9 @@ program hcs
       else
         print*, 'Tracing backwards'
       endif
+
+      open(unit=90, file=tempfile, status='replace', access='stream')
       
-      write(20, pos=uptonullring+1)
-      write(40, pos=uptonullconn)
       ! get number of start points
       line1 = pordered(:, npoints(ihcs)+1:npoints(ihcs+1))
       line2 = line1
@@ -292,13 +302,18 @@ program hcs
 
       break = 0
       break(nlines) = 1
-      nseps = 0
       nperring = 0
       nperring(0) = nlines
       slowdown = 1.0_np
       terror = 0
 
-      write(20) [(iline,iline=1,nlines)], break, gtr(line1, x, y, z)
+      write_ring = gtr(line1, x, y, z)
+      write(20) real(write_ring, bytesize)
+      if (assoc_output) write(25) [(iline,iline=1,nlines)]
+      write(30) break
+      write(90) [(iline,iline=1,nlines)], write_ring
+      deallocate(write_ring)
+      nseps = 0
 
       exitcondition = .false.
       !$OMP END SINGLE
@@ -397,7 +412,7 @@ program hcs
         !$OMP END SINGLE
 
         ! determine if any lines are separators
-        if (nearflag > 0) call sep_detect(nlines,ihcs,iring,dir)
+        if (nearflag > 0) call sep_detect(nlines, 0, iring, dir)
 
         !$OMP SINGLE
 
@@ -428,32 +443,62 @@ program hcs
 
         !$OMP SINGLE
         nperring(iring) = nlines
-        write(20) association, break, gtr(line1, x, y, z)
+        write_ring = gtr(line1, x, y, z)
+        if (modulo(iring, nskip) == 0) then
+          if (bytesize == real64) then
+            write(20) write_ring
+          else
+            write(20) real(write_ring, bytesize)
+          endif
+          write(30) break
+        endif
+        write(90) association, write_ring
 
-        deallocate(endpoints, association)
+        deallocate(endpoints, association, write_ring)
         !$OMP END SINGLE
 
       enddo
 
       !$OMP SINGLE
-      write(10) nperring
+      write(10) nperring(::nskip)
 
       ! trace separators...
+      print*, "Tracing separators"
       write(40, pos=uptonullconn)
       if (nseps > 0) then
-        print*, "Tracing separators"
         do isep = 1, nseps
           read(40) nullnum1, nullnum2, ringnum, linenum
           allocate(rsep(3, ringnum+2))
           do iring = ringnum, 0, -1
-            call file_position(iring, nperring, linenum, ia, ib, ip)
-            read(20, pos=uptonullring+ia) linenum
-            read(20, pos=uptonullring+ip) rsep(:,iring+1)
+            call file_position(iring, nperring, linenum, ia, ip)
+            read(90, pos=ia) linenum
+            read(90, pos=ip) rsep(:,iring+1)
           enddo
           rsep(:,ringnum+2) = rnullsreal(:,nullnum2)
           write(50) ringnum+2
           write(50) rsep
           deallocate(rsep)
+        enddo
+      endif
+      nseps1 = nseps1 + nseps
+      uptonullconn = uptonullconn + nseps*16_int64
+
+      if (assoc_output) then
+        do iring = nskip, nskip*(nrings/nskip), nskip
+          allocate(association(nperring(iring)))
+          call file_position(iring, nperring, 1, ia, ip)
+          read(90, pos=ia) association
+          do iskip = 1, nskip-1
+            allocate(assoc_temp(nperring(iring-iskip)))
+            call file_position(iring-iskip, nperring, 1, ia, ip)
+            read(90, pos=ia) assoc_temp
+            do iline = 1, nperring(iring)
+              association(iline) = assoc_temp(association(iline))
+            enddo
+            deallocate(assoc_temp)
+          enddo
+          write(25) association
+          deallocate(association)
         enddo
       endif
 
@@ -462,8 +507,8 @@ program hcs
       print*, 'number of separators=', nseps, 'number of rings', nrings
 
       deallocate(line1, line2, break)
-      uptonullring = uptonullring + sum(int(nperring, int64))*32_int64
-      uptonullconn = uptonullconn + nseps*16_int64 ! 4*4
+
+      close(90, status='delete')
       !$OMP END SINGLE
 
     enddo
@@ -473,7 +518,7 @@ program hcs
 
   close(10)
   close(20)
-  write(40) -1
+  write(40, pos=1) nseps1
   close(40)
   close(50)
 
