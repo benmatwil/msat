@@ -11,8 +11,8 @@ function getdr, r, x, y, z
   dy = y[iy + 1] - y[iy]
   dz = z[iz + 1] - z[iz]
   
-  xp = x[i] + (r[0] - ix)*dx
-  yp = y[j] + (r[1] - iy)*dy
+  xp = x[ix] + (r[0] - ix)*dx
+  yp = y[iy] + (r[1] - iy)*dy
 
   if csystem_fl3d eq 'spherical' then begin
     return, [dx, xp*dy, xp*np.sin(yp)*dz]
