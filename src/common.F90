@@ -210,9 +210,11 @@ module common
         position = ny+1
       endif
 
-      dummy = x
+      call move_alloc(x, dummy)
 
-      deallocate(x)
+      ! dummy = x
+
+      ! deallocate(x)
       allocate(x(nx,ny+1))
 
       x(:,1:position-1) = dummy(:,1:position-1)
@@ -239,9 +241,11 @@ module common
         position = nx+1
       endif
 
-      dummy = x
+      call move_alloc(x, dummy)
 
-      deallocate(x)
+      ! dummy = x
+
+      ! deallocate(x)
       allocate(x(nx+1))
 
       x(1:position-1) = dummy(1:position-1)
@@ -261,9 +265,11 @@ module common
       nx = size(x,1)
       ny = size(x,2)
 
-      dummy = x
+      call move_alloc(x, dummy)
 
-      deallocate(x)
+      ! dummy = x
+
+      ! deallocate(x)
       allocate(x(nx,ny-1))
 
       x(:,1:pos-1) = dummy(:,1:pos-1)
@@ -281,9 +287,11 @@ module common
 
       nx = size(x)
 
-      dummy = x
+      call move_alloc(x, dummy)
 
-      deallocate(x)
+      ! dummy = x
+
+      ! deallocate(x)
       allocate(x(nx-1))
 
       x(1:pos-1) = dummy(1:pos-1)

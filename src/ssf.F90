@@ -41,7 +41,7 @@ program ssfinder
   integer(int64) :: ia, ip, uptonullconn
   integer(int32) :: isep, nullnum1, nullnum2, linenum, ringnum, iskip
   real(np), dimension(:,:), allocatable :: rsep, rring, write_ring
-  integer(int32), dimension(:), allocatable :: brk, assoc_temp
+  integer(int32), dimension(:), allocatable :: assoc_temp
   character(:), allocatable :: tempfile, fstatus
 
   ! for restarting
@@ -65,9 +65,7 @@ program ssfinder
     read(10) nx, ny, nz ! number of vertices
     allocate(bgrid(nx, ny, nz, 3))
     allocate(x(nx), y(ny), z(nz))
-    read(10) bgrid(:,:,:,1)
-    read(10) bgrid(:,:,:,2)
-    read(10) bgrid(:,:,:,3)
+    read(10) bgrid
     read(10) x, y, z
   close(10)
 
@@ -456,9 +454,9 @@ program ssfinder
 
     !$OMP SINGLE
     write(10) nperring(::nskip)
-    print*, "Tracing spines and any separators"
-
+    
     ! trace separators...
+    print*, "Tracing spines and any separators"
     write(40, pos=uptonullconn) nseps
     if (nseps > 0) then
       do isep = 1, nseps
@@ -469,8 +467,8 @@ program ssfinder
           read(90, pos=ia) linenum
           read(90, pos=ip) rsep(:,iring+2)
         enddo
-        rsep(:,1) = rnullsreal(:,nullnum1)
-        rsep(:,ringnum+3) = rnullsreal(:,nullnum2)
+        rsep(:, 1) = rnullsreal(:,nullnum1)
+        rsep(:, ringnum+3) = rnullsreal(:,nullnum2)
         write(50) ringnum+3
         write(50) rsep
         deallocate(rsep)
