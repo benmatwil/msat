@@ -20,15 +20,15 @@ module params
   ! for large regions of weak field, set zero to be a small (but larger) number i.e. 1e-12_np
   real(np), parameter :: zero = 1e-16_np
   ! the number of significant figures of accuracy required for the null
-  integer(int32), parameter :: sig_figs = 6
+  integer(int32), parameter :: sig_figs = 8
 
   ! Sign Finder Parameters
   ! ----------------------
   ! radius factor (in grid coordinates) of sphere on which to 
   ! place start points (rsphere = rspherefact*10**-sig_figs)
-  real(np), parameter :: rspherefact = 50.0_np
+  real(np), parameter :: rspherefact = 100.0_np
   ! number of start points in phi direction
-  integer(int32), parameter :: nphi = 90
+  integer(int32), parameter :: nphi = 50
   ! number of start points in theta direction
   integer(int32), parameter :: ntheta = nphi/2
   ! maximum number of iterations for convergence method
@@ -40,8 +40,8 @@ module params
   ! ------------------------------------
   ! number of startpoints in ring
   integer(int32), parameter :: nstart = 500
-  ! distance from null to start
-  real(real64), parameter :: start_dist = 0.05_np
+  ! distance from null to start ring
+  real(real64), parameter :: start_dist = 0.01_np
   ! maximum number of rings
   integer(int32), parameter :: ringsmax = 50000
   ! maximum number of points in ring
