@@ -22,7 +22,7 @@ module trace
     ! traces a line from 'r' for 'nsteps' integration steps in the direction along the line as specified by 'sign'. Each step is of length h
       real(np), dimension(3) :: r
       integer(int32) :: sign
-      real(np) :: htotal, h, hdum, stepdist
+      real(np) :: htotal, h, hdum
 
       hdum = 0.0_np
 
