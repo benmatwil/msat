@@ -85,7 +85,7 @@ def separators(filename, null_list=None, lines=True, connectivity=True, hcs=Fals
         # filenames for the hcs
         connectivityfile = 'output/'+prefix(filename)+'-hcs-connectivity.dat'
         separatorsfile = 'output/'+prefix(filename)+'-hcs-separators.dat'
-        allnulls_list = [1, 2] # need to fix this
+        allnulls_list = [1] # need to fix this
     
     # if none set, read in data for all nulls
     if null_list is None:
@@ -153,26 +153,37 @@ def ringinfo(filename):
         stepsize, = np.fromfile(ringinfo, dtype=np.float64, count=1)
     return ringsmax, writeskip, bytesize, stepsize
 
-def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None):
+def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=False):
 
     nulldata = nulls(filename, simple=True)
 
     ringlist = []
     breaklist = []
-    assoclist = []
+    if assocs: assoclist = []
 
-    if null_list is None:
+    if null_list is None and hcs == False:
         null_list = nulldata.number
+    elif hcs == True:
+        null_list = [0, 1]
 
-    assocs_filename = 'output/'+prefix(filename)+'-assocs.dat'
+    if hcs:
+        assocs_filename = 'output/'+prefix(filename)+'-hcs-assocs.dat'
+        info_filename = 'output/'+prefix(filename)+'-hcs-ringinfo.dat'
+        ring_filename = 'output/'+prefix(filename)+'-hcs-rings.dat'
+        break_filename = 'output/'+prefix(filename)+'-hcs-breaks.dat'
+    else:
+        assocs_filename = 'output/'+prefix(filename)+'-assocs.dat'
+        info_filename = 'output/'+prefix(filename)+'-ringinfo.dat'
+        ring_filename = 'output/'+prefix(filename)+'-rings.dat'
+        break_filename = 'output/'+prefix(filename)+'-breaks.dat'
     
     assoc_exist = os.path.isfile(assocs_filename)
     if assocs == True and assoc_exist == False: print('Not reading in associations: file does not exist')
     do_assocs = assocs == True and assoc_exist == True
 
-    ringinfo = open('output/'+prefix(filename)+'-ringinfo.dat', 'rb')
-    ringfile = open('output/'+prefix(filename)+'-rings.dat', 'rb')
-    brkfile = open('output/'+prefix(filename)+'-breaks.dat', 'rb')
+    ringinfo = open(info_filename, 'rb')
+    ringfile = open(ring_filename, 'rb')
+    brkfile = open(break_filename, 'rb')
 
     ringsmax, writeskip, bytesize = np.fromfile(ringinfo, dtype=np.int32, count=3)
     if bytesize == 4:
@@ -180,9 +191,15 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None):
     elif bytesize == 8:
         floattype = np.float64
     stepsize, = np.fromfile(ringinfo, dtype=np.float64, count=1)
+    if hcs: n_hcs, = np.fromfile(ringinfo, dtype=np.int32, count=1)
     if writeskip > 1: ringsmax = ringsmax//writeskip + 1
 
-    for inull in nulldata.number:
+    if hcs:
+        to_do = range(n_hcs)
+    else:
+        to_do = nulldata.number
+
+    for inull in to_do:
         print('Reading rings from null {:5d}'.format(inull))
         sys.stdout.write("\033[F")
         breaklisti = []
@@ -211,7 +228,7 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None):
 
     if do_assocs:
         assfile = open(assocs_filename, 'rb')
-        ringinfo = open('output/'+prefix(filename)+'-ringinfo.dat', 'rb')
+        ringinfo = open(info_filename, 'rb')
         np.fromfile(ringinfo, dtype=np.int32, count=3)
         np.fromfile(ringinfo, dtype=np.float64, count=1)
         for inull in nulldata.number:
