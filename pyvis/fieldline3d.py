@@ -75,16 +75,16 @@ def edgecheck(r):
         if r[2] > ymax: r[2] = r[2] - (ymax - ymin)
 
 def outedge(r):
-    outedge = r[0] >= xmax or r[0] <= xmin
+    outedge = r[0] >= xmax_box or r[0] <= xmin_box
     if csystem == 'cartesian':
-        outedge = outedge or r[1] >= ymax or r[1] <= ymin or r[2] >= zmax or r[2] <= zmin
+        outedge = outedge or r[1] >= ymax_box or r[1] <= ymin_box or r[2] >= zmax_box or r[2] <= zmin_box
     elif csystem == 'cylindrical':
-        outedge = outedge or r[2] >= zmax or r[2] <= zmin
+        outedge = outedge or r[2] >= zmax_box or r[2] <= zmin_box
     
     return outedge
 
 def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t_max=1.2, oneway=False, boxedge=None, coordsystem='cartesian', gridcoord=False):
-    global xmin, xmax, ymin, ymax, zmin, zmax, csystem
+    global xmin, xmax, ymin, ymax, zmin, zmax, xmin_box, xmax_box, ymin_box, ymax_box, zmin_box, zmax_box, csystem
     # need to correct this below
     # startpt[3,nl] - start point for field line
     # bgrid[nx,ny,nz,3] - magnetic field
@@ -98,20 +98,18 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
     csystem = coordsystem
 
     # define edges of box
+    xmin, ymin, zmin = 0, 0, 0
+    xmax, ymax, zmax = x.shape[0]-1, y.shape[0]-1, z.shape[0]-1
     if boxedge is not None:
-        xmin = max([boxedge[0,0],x.min()])
-        ymin = max([boxedge[0,1],y.min()])
-        zmin = max([boxedge[0,2],z.min()])
-        xmax = min([boxedge[1,0],x.max()])
-        ymax = min([boxedge[1,1],y.max()])
-        zmax = min([boxedge[1,2],z.max()])
+        xmin_box = max([boxedge[0,0],x.min()])
+        ymin_box = max([boxedge[0,1],y.min()])
+        zmin_box = max([boxedge[0,2],z.min()])
+        xmax_box = min([boxedge[1,0],x.max()])
+        ymax_box = min([boxedge[1,1],y.max()])
+        zmax_box = min([boxedge[1,2],z.max()])
     else:
-        xmin = 0
-        ymin = 0
-        zmin = 0
-        xmax = x.shape[0]-1
-        ymax = y.shape[0]-1
-        zmax = z.shape[0]-1
+        xmin_box, ymin_box, zmin_box = xmin, ymin, zmin
+        xmax_box, ymax_box, zmax_box = xmax, ymax, zmax
 
     # first convert point into grid coordinates
     if gridcoord == False:
