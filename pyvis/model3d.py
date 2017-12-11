@@ -289,7 +289,6 @@ def add_separators(hcs=False):
     for inull in to_do:
         print('Null {:5d}'.format(inull+1))
         sys.stdout.write("\033[F")
-        print(inull)
         for con, sep in zip(conn[inull], seps[inull]):
             if con-1 in nulllist:
                 if csystem == 'spherical':
