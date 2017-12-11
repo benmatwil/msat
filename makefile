@@ -7,11 +7,6 @@ else
 	endif
 endif
 
-# ifeq ($(coord),)
-# 	coord = cartesian
-# endif
-# DEFINECOORD = -D$(coord)
-
 ifeq ($(debug),on)
 	FLAGS = -O0 -g -fbounds-check -Ddebug
 else
@@ -29,11 +24,21 @@ else
 	OUTPUTDIR = $(output)
 endif
 
-ALLEXE = writedata nf sf ssfxyz ssfrpz ssfrtp hcs make_cut
+ALLEXE = writedata nf sfxyz sfrpz sfrtp ssfxyz ssfrpz ssfrtp hcs make_cut
 
 SSFFILES = params.f90 src/common.F90 src/trace.F90 src/ring.F90 src/ssf.F90
 
 all: $(ALLEXE) check
+
+sf: sfxyz sfrpz sfrtp
+
+ssf: ssfxyz ssfrpz ssfrtp
+
+cartesian: nf sfxyz ssfxyz
+
+cylindrical: nf sfrpz ssfrpz
+
+spherical: nf sfrtp ssfrtp
 	
 writedata : params.f90 src/writedata.f90
 	$(FC) $(FLAGS) $^ -o $@
@@ -41,8 +46,14 @@ writedata : params.f90 src/writedata.f90
 nf : params.f90 src/common.F90 src/nf_mod.F90 src/nf.F90
 	$(FC) $(FLAGS) $^ -o $@
 
-sf : params.f90 src/common.F90 src/sf_mod.f90 src/sf.F90
-	$(FC) $(FLAGS) $(FOPENMP) $^ -o $@
+sfxyz : params.f90 src/common.F90 src/trace.F90 src/sf_mod.F90 src/sf.F90
+	$(FC) $(FLAGS) -Dcartesian $(FOPENMP) $^ -o $@
+
+sfrpz : params.f90 src/common.F90 src/trace.F90 src/sf_mod.F90 src/sf.F90
+	$(FC) $(FLAGS) -Dcylindrical $(FOPENMP) $^ -o $@
+
+sfrtp : params.f90 src/common.F90 src/trace.F90 src/sf_mod.F90 src/sf.F90
+	$(FC) $(FLAGS) -Dspherical $(FOPENMP) $^ -o $@
 
 ssfxyz : $(SSFFILES)
 	$(FC) $(FLAGS) -Dcartesian -Dssf_code $(FOPENMP) $^ -o $@
@@ -91,8 +102,8 @@ tidy:
 
 ###########################################################
 
-nfnew : params.f90 nfnew_mod.f90 nfnew.f90
-	$(FC) $(FLAGS) -g $^ -o $@
+# nfnew : params.f90 nfnew_mod.f90 nfnew.f90
+# 	$(FC) $(FLAGS) -g $^ -o $@
 
 # writedata_ws_em : params.f90 writedata_ws_em.f90
 # 	$(FC) $(FLAGS) params.f90 writedata_ws_em.f90 -o writedata_ws_em
