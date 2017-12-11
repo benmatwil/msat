@@ -5,11 +5,18 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os
 
-def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2, badtest=False):
+def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=5e-2, badtest=False, coordsystem='cartesian'):
 
     if converge == True:
-        os.system('make sf debug=on')
-        os.system('./sf -i {0} -n {1:04d}'.format(filename, n) )
+        
+        if coordsystem == 'cartesian':
+            coord = 'xyz'
+        elif coordsystem == 'cylindrical':
+            coord = 'rpz'
+        elif coordsystem == 'spherical':
+            coord = 'rtp'
+        os.system('make sf{} debug=on'.format(coord))
+        os.system('./sf{0} -i {1} -n {2:04d}'.format(coord, filename, n) )
 
     field = rd.field(filename)
     bgrid = np.zeros((field[0].shape[0], field[0].shape[1], field[0].shape[2], 3), dtype=np.float64)
@@ -32,9 +39,9 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2
     xsize = 20
     xthick = 5
 
-    plt.figure(figsize=(12,12), tight_layout=True)
+    plt.figure(figsize=(12, 12), tight_layout=True)
     plt.axes(projection='3d')
-    plt.plot([nullpos[0]],[nullpos[1]],[nullpos[2]], 'rx ', ms=xsize, mew=xthick)
+    plt.plot([nullpos[0]], [nullpos[1]], [nullpos[2]], 'rx ', ms=xsize, mew=xthick)
 
     plt.axis('off')
 
@@ -51,27 +58,27 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2
                 for i in range(3):
                     r[i,:] = r[i,:] + nullpos[i]
 
-                plt.plot(r[0,:],r[1,:],r[2,:], 'x ', c=col[j])
+                plt.plot(r[0, :], r[1, :], r[2, :], 'x ', c=col[j])
 
                 if name == fnames[0]:
                     maxvec = np.fromfile(file, count=3, dtype=np.float64)
                     max1 = maxvec.copy()
                     maxvec = maxvec*rsphere
                     maxvec = maxvec + nullpos
-                    plt.plot([maxvec[0]],[maxvec[1]],[maxvec[2]],'x ', c='cyan', ms=xsize, mew=xthick)
+                    plt.plot([maxvec[0]], [maxvec[1]], [maxvec[2]],'x ', c='cyan', ms=xsize, mew=xthick)
 
                 if name == fnames[1]:
                     minvec = np.fromfile(file, count=3, dtype=np.float64)
                     min1 = minvec.copy()
                     minvec = minvec*rsphere
                     minvec = minvec + nullpos
-                    plt.plot([minvec[0]],[minvec[1]],[minvec[2]],'x ', c='green', ms=xsize, mew=xthick)
+                    plt.plot([minvec[0]], [minvec[1]], [minvec[2]],'x ', c='green', ms=xsize, mew=xthick)
 
                 if name == fnames[2]:
                     spine = np.fromfile(file, count=3, dtype=np.float64)
                     spine = spine*rsphere
                     spine = spine + nullpos
-                    plt.plot([spine[0]],[spine[1]],[spine[2]],'x ', c='blue', ms=xsize, mew=xthick)
+                    plt.plot([spine[0]], [spine[1]], [spine[2]],'x ', c='blue', ms=xsize, mew=xthick)
 
         fanpts = []
         npts = 121
@@ -83,7 +90,7 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2
 
         spineline = np.array([spine, 2*nullpos - spine])
         plt.plot(spineline[:,0], spineline[:,1], spineline[:,2], c='blue')
-
+    
     boxedge = np.zeros((2,3), dtype=np.float64)
     for i in range(3):
         boxedge[:,i] = np.array([nullpos[i] - rsphere, nullpos[i] + rsphere])
@@ -116,7 +123,7 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2
         for startpt in startpts:
             h = h0
             line = fl.fieldline3d(startpt + nullpos, bgrid, xgc,ygc,zgc, h, 0.1*h, 10*h, 0.01*h, boxedge=boxedge, oneway=True, gridcoord=True)
-            plt.plot(line[:,0],line[:,1],line[:,2],c='red')
+            plt.plot(line[:,0], line[:,1], line[:,2], c='red')
             if (line[-1,0] < boxedge[0,0] + rsphere*1e-3 or line[-1,0] > boxedge[1,0] - rsphere*1e-3 or
                 line[-1,1] < boxedge[0,1] + rsphere*1e-3 or line[-1,1] > boxedge[1,1] - rsphere*1e-3 or
                 line[-1,2] < boxedge[0,2] + rsphere*1e-3 or line[-1,2] > boxedge[1,2] - rsphere*1e-3):
@@ -124,7 +131,7 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=3e-2
 
             h = h0
             line = fl.fieldline3d(startpt + nullpos, bgrid, xgc,ygc,zgc, -h, 0.1*h, 10*h, 0.01*h, boxedge=boxedge, oneway=True, gridcoord=True)
-            plt.plot(line[:,0],line[:,1],line[:,2],c='orange')
+            plt.plot(line[:,0], line[:,1], line[:,2], c='orange')
             if (line[0,0] < boxedge[0,0] + rsphere*1e-3 or line[0,0] > boxedge[1,0] - rsphere*1e-3 or
                 line[0,1] < boxedge[0,1] + rsphere*1e-3 or line[0,1] > boxedge[1,1] - rsphere*1e-3 or
                 line[0,2] < boxedge[0,2] + rsphere*1e-3 or line[0,2] > boxedge[1,2] - rsphere*1e-3):
