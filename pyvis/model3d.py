@@ -122,6 +122,51 @@ def add_sepsurf():
             lines = ml.pipeline.stripper(src)
             ml.pipeline.surface(lines, color=cols[isign], line_width=1)
 
+def add_hcs():
+    print('Adding heliospheric current sheet curtain surface rings')
+
+    rings, breaks = rd.rings(filename, breaks=True, nskip=nskipglob, null_list=nulllist+1, hcs=True)
+
+    cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
+
+    acc = 6
+
+    # new very efficient routine for plotting many lines
+    # two lists, one for positive and the other for negative nulls
+    x, y, z, s, ptcons = ( [] for _ in range(5) )
+    index = 0
+
+    for inull in range(2):
+        print('Null {:5d}'.format(inull+1))
+        sys.stdout.write("\033[F")
+        for iring, ring in enumerate(rings[inull]):
+            # convert points if required
+            if csystem == 'spherical':
+                ring[:, 0], ring[:, 1], ring[:, 2] = sphr2cart(ring[:, 0], ring[:, 1], ring[:, 2])
+            # add ring points to lists
+            x.append(ring[:, 0])
+            y.append(ring[:, 1])
+            z.append(ring[:, 2])
+            s.append(np.zeros_like(ring[:, 0]))
+            # use break data to plot the individual lines in each ring as the break apart
+            brks = np.r_[[-1], np.where(breaks[inull][iring] == 1)[0], [breaks[inull][iring].shape[0]-1]] + 1
+            for ib0, ib1 in zip(brks[:-1], brks[1:]):
+                if ib0 != ib1:
+                    # add the right indicies based on the breaks
+                    ptcons.append(np.vstack([np.arange(index+ib0, index+ib1-1), np.arange(index+ib0+1, index+ib1)]).T)
+            index += ring.shape[0]
+    
+    # add points to model
+    if len(x) > 0:
+        src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s))
+        src.mlab_source.dataset.lines = np.vstack(ptcons)
+        src.update()
+        
+        lines = ml.pipeline.stripper(src)
+        ml.pipeline.surface(lines, color=(0, 1, 0), line_width=1)
+    
+    ml.plot3d(rings[0][0][:, 0], rings[0][0][:, 1], rings[0][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None)
+
 def add_fanlines(nlines, nring=None):
     print('Adding separatrix surface field lines')
 
@@ -227,18 +272,24 @@ def add_spines():
             lines = ml.pipeline.stripper(src)
             ml.pipeline.surface(lines, color=cols[isign], line_width=4)
 
-def add_separators():
+def add_separators(hcs=False):
     print('Adding separators')
 
-    seps, conn = rd.separators(filename, null_list=nulllist+1)
+    seps, conn = rd.separators(filename, null_list=nulllist+1, hcs=hcs)
 
     # simpler version of spines and rings - no need for positive and negative
     x, y, z, s, ptcons = ( [] for _ in range(5) )
     index = 0
 
-    for inull in nulllist:
+    if hcs:
+        to_do = [0]
+    else:
+        to_do = nulllist
+
+    for inull in to_do:
         print('Null {:5d}'.format(inull+1))
         sys.stdout.write("\033[F")
+        print(inull)
         for con, sep in zip(conn[inull], seps[inull]):
             if con-1 in nulllist:
                 if csystem == 'spherical':
