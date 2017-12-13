@@ -27,7 +27,7 @@ program hcs
   integer(int32) :: ihcs, it, nnt, nnp, imin, jp, nsplit
   integer(int32), dimension(:), allocatable :: npoints
   real(np), dimension(:), allocatable :: tgrid, pgrid, line, diffs, dists
-  real(np), dimension(:,:), allocatable :: points, pordered
+  real(np), dimension(:,:), allocatable :: points, pordered, ind_line
   real(np) :: bvec(3), ds
 
   ! file writing
@@ -214,57 +214,49 @@ program hcs
   enddo
 
   ! sort points
-  ds = 0.2_np ! need to think about this
-  allocate(pordered(3, 0))
+  ds = 0.05_np ! need to think about this
+  ! allocate(pordered(3, 0))
+  pordered = points
+  pordered = 0
   allocate(npoints(1))
   npoints(1) = 0
+  ihcs = 0
+
   do while (size(points, 2) > 0)
-    call add_vector(pordered, points(:, 1))
+    allocate(ind_line(3, 1))
+    ind_line(:, 1) = points(:, 1)
     call remove_vector(points, 1)
-    ! add points in the "forward" direction
-    ip = 1
-    do while (size(points, 2) > 0)
-      allocate(dists(size(points, 2)))
-      do jp = 1, size(points, 2)
-        dists(jp) = sum((points(:,jp) - pordered(:, ip))**2)
+    do dir = 1, 2
+      do while (size(points, 2) > 0)
+        allocate(dists(size(points, 2)))
+        do jp = 1, size(points, 2)
+          dists(jp) = sum((points(:, jp) - ind_line(:, size(ind_line, 2)))**2)
+        enddo
+        imin = minloc(dists, 1)
+        mindist = dists(imin)
+        deallocate(dists)
+        if (mindist < ds) then
+          call add_vector(ind_line, points(:, imin))
+          call remove_vector(points, imin)
+        else
+          exit
+        endif
       enddo
-      imin = minloc(dists, 1)
-      mindist = dists(imin)
-      deallocate(dists)
-      if (mindist < ds) then
-        call add_vector(pordered, points(:, imin))
-        call remove_vector(points, imin)
-      else
-        exit
-      endif
-      ip = ip + 1
+      ind_line = ind_line(:, size(ind_line, 2):1:-1)
     enddo
-    ! add points in the "backward" direction
-    do while (size(points, 2) > 0)
-      allocate(dists(size(points, 2)))
-      do jp = 1, size(points, 2)
-        dists(jp) = sum((points(:, jp) - pordered(:, 1))**2)
-      enddo
-      imin = minloc(dists, 1)
-      mindist = dists(imin)
-      deallocate(dists)
-      if (mindist < ds) then
-        call add_vector(pordered, points(:, imin), 1)
-        call remove_vector(points, imin)
-      else
-        exit
-      endif
-    enddo
-    call add_element(npoints, size(pordered, 2))
-    ! write(1) size(pordered, 2), pordered
-    ! deallocate(pordered)
+    pordered(:, count(pordered(1, :) > 0)+1:count(pordered(1, :) > 0)+size(ind_line, 2)) = ind_line
+    deallocate(ind_line)
+    call add_element(npoints, count(pordered(1, :) > 0))
   enddo
 
-  write(10) ringsmax+1, nskip, bytesize, stepsize, int((ubound(npoints, 1) - 1)*2, int32)
-
-  ! ihcs = 1
   ! need to substract a tiny amount of the r coord
   pordered(1, :) = pordered(1, :) - 1e-6_np
+
+  open(unit=80, file='output/hcs_start.dat', access='stream', status='replace')
+    write(80) size(pordered, 2), gtr(pordered, x, y, z), size(npoints, 1), npoints
+  close(80)
+
+  write(10) ringsmax+1, nskip, bytesize, stepsize, int((ubound(npoints, 1) - 1)*2, int32)
 
   print*, 'There are ', ubound(npoints, 1) - 1, 'components of the hcs'
 
@@ -403,7 +395,7 @@ program hcs
 
         !$OMP SINGLE
         do iline = 1, nlines
-          call edgecheck(line1(:,iline))
+          call edgecheck(line1(:, iline))
         enddo
         !$OMP END SINGLE
 
