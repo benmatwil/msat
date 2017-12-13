@@ -405,7 +405,7 @@ program ssfinder
       !$OMP END SINGLE
 
       ! determine if any lines are separators
-      if (nearflag > 0) call sep_detect(nlines,inull,iring,signs(inull))
+      if (nearflag > 0) call sep_detect(nlines, inull, iring, signs(inull))
 
       !$OMP SINGLE
 
