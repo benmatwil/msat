@@ -184,7 +184,7 @@ module common
       real(np), dimension(3) :: a
       real(np), dimension(3) :: normalise
 
-      normalise = a/sqrt(dot(a,a))
+      normalise = a/modulus(a)
 
     end
 
@@ -306,7 +306,7 @@ module common
       real(np), dimension(3) :: a
       real(np) :: modulus
 
-      modulus = sqrt(dot(a,a))
+      modulus = sqrt(dot(a, a))
 
     end function
 
