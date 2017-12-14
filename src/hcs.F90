@@ -320,7 +320,6 @@ program hcs
 #if debug
       print*, iring, nlines
 #endif
-
         !$OMP END SINGLE
 
         !$OMP WORKSHARE
@@ -330,7 +329,7 @@ program hcs
         !$OMP DO private(r, h, out)
         do iline = 1, nlines ! loop over all points in ring (in parallel do)
 
-          r = line1(:,iline)
+          r = line1(:, iline)
           h = h0
 
           call trace_line(r, dir, h) ! trace line by a distance of h
