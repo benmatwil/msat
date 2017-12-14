@@ -23,8 +23,8 @@ contains
     real(np) :: maxdist0
 
     logical, dimension(nlines) :: add_true
-    real(np), dimension(3, nlines) :: line1_temp, line2_temp
-    integer, dimension(nlines) :: break_temp, association_temp
+    real(np), dimension(:, :), allocatable :: line1_temp, line2_temp
+    integer, dimension(:), allocatable :: break_temp, association_temp
 
     !$OMP SINGLE
     allocate(add1(3,nlines), add2(3,nlines))
@@ -81,15 +81,13 @@ contains
 
     ! !$OMP BARRIER
     !$OMP SINGLE
-
     add_true = add1(1, :) > 1e-1_np
     if (any(add_true)) then
       nadd = count(add_true)
-      line1_temp = line1
-      line2_temp = line2
-      break_temp = break
-      association_temp = association
-      deallocate(line1, line2, break, association)
+      call move_alloc(line1, line1_temp)
+      call move_alloc(line2, line2_temp)
+      call move_alloc(break, break_temp)
+      call move_alloc(association, association_temp)
       allocate(line1(3, nlines+nadd), line2(3, nlines+nadd), break(nlines+nadd), association(nlines+nadd))
       iadd = 0
       do iline = 1, nlines
@@ -110,10 +108,8 @@ contains
           endif
         endif
       enddo
+      nlines = nlines + nadd
     endif
-
-    nlines = nlines + nadd
-    ! nlines = size(line1, 2)
 
     deallocate(add1, add2)
 
