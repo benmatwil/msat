@@ -55,40 +55,39 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
     if coordsystem == 'spherical':
         add_sun()
         box = False
-    if box == True: add_box()
+    if box: add_box()
     if 'nulls' in addlist: add_nulls(nullrad)
     if 'fanlines' in addlist: add_fanlines(nfanlines, nring)
     if 'spines' in addlist: add_spines()
     if 'sepsurf' in addlist: add_sepsurf()
     if 'separators' in addlist: add_separators()
+    if 'hcs' in addlist: add_hcs()
+    if 'hcs_sep' in addlist: add_separators(hcs=True)
     if fieldlines is not None: add_fieldlines(fieldlines, col=linecolor, colquant=colquant)
 
 def set_null_list(lst):
     global nulllist
     if lst is None:
-        nulllist = nulldata.number - 1
+        nulllist = nulldata.number
     else:
-        nulllist = []
-        for inull in lst:
-            nulllist.append(inull-1)
-        nulllist = np.array(nulllist)
+        if max(lst) > nulldata.number.max() or min(lst) < 1:
+            print('Invalid list')
+        nulllist = np.array(lst)
 
 
 def add_sepsurf():
     print('Adding separatrix surface rings')
 
-    rings, breaks = rd.rings(filename, breaks=True, nskip=nskipglob, null_list=nulllist+1)
+    rings, breaks = rd.rings(filename, breaks=True, nskip=nskipglob, null_list=nulllist)
 
     cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
-
-    acc = 6
 
     # new very efficient routine for plotting many lines
     # two lists, one for positive and the other for negative nulls
     x, y, z, s, ptcons = ( [[],[]] for _ in range(5) )
     index = [0, 0]
 
-    for inull in nulllist:
+    for inull in nulllist-1:
         print('Null {:5d}'.format(inull+1))
         sys.stdout.write("\033[F")
         if nulldata[inull].sign == 1:
@@ -125,19 +124,17 @@ def add_sepsurf():
 def add_hcs():
     print('Adding heliospheric current sheet curtain surface rings')
 
-    rings, breaks = rd.rings(filename, breaks=True, nskip=nskipglob, null_list=nulllist+1, hcs=True)
+    rings, breaks = rd.rings(filename, breaks=True, nskip=nskipglob, hcs=True)
 
     cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
     acc = 6
 
-    # new very efficient routine for plotting many lines
-    # two lists, one for positive and the other for negative nulls
     x, y, z, s, ptcons = ( [] for _ in range(5) )
     index = 0
 
-    for inull in range(2):
-        print('Null {:5d}'.format(inull+1))
+    for inull in range(len(rings)):
+        print('Null {:5d}'.format(inull//2+1))
         sys.stdout.write("\033[F")
         for iring, ring in enumerate(rings[inull]):
             # convert points if required
@@ -165,16 +162,17 @@ def add_hcs():
         lines = ml.pipeline.stripper(src)
         ml.pipeline.surface(lines, color=(0, 1, 0), line_width=1)
     
-    ml.plot3d(rings[0][0][:, 0], rings[0][0][:, 1], rings[0][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None)
+    for inull in range(0, len(rings), 2):
+        ml.plot3d(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None)
 
 def add_fanlines(nlines, nring=None):
     print('Adding separatrix surface field lines')
 
-    rings = rd.rings(filename, nskip=nskipglob, null_list=nulllist+1)
+    rings = rd.rings(filename, nskip=nskipglob, null_list=nulllist)
 
     cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
-    for inull in nulllist:
+    for inull in nulllist-1:
         print('Null {}'.format(inull+1))
         sys.stdout.write("\033[F")
         # select the right ring to trace from
@@ -239,14 +237,14 @@ def add_spines():
 
     cols = {-1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0)}
 
-    spines = rd.spines(filename, null_list=nulllist+1)
+    spines = rd.spines(filename, null_list=nulllist)
 
     # set up lists like rings
     x, y, z, s, ptcons = ( [[],[]] for _ in range(5) )
     index = [0, 0]
 
     # very similar to ring algorithm without breaks
-    for inull in nulllist:
+    for inull in nulllist-1:
         print('Null {:5d}'.format(inull+1))
         sys.stdout.write("\033[F")
         if nulldata[inull].sign == 1:
@@ -275,7 +273,7 @@ def add_spines():
 def add_separators(hcs=False):
     print('Adding separators')
 
-    seps, conn = rd.separators(filename, null_list=nulllist+1, hcs=hcs)
+    seps, conn = rd.separators(filename, null_list=nulllist, hcs=hcs)
 
     # simpler version of spines and rings - no need for positive and negative
     x, y, z, s, ptcons = ( [] for _ in range(5) )
@@ -284,13 +282,13 @@ def add_separators(hcs=False):
     if hcs:
         to_do = [0]
     else:
-        to_do = nulllist
+        to_do = nulllist-1
 
     for inull in to_do:
         print('Null {:5d}'.format(inull+1))
         sys.stdout.write("\033[F")
         for con, sep in zip(conn[inull], seps[inull]):
-            if con-1 in nulllist:
+            if con in nulllist:
                 if csystem == 'spherical':
                     sep[:, 0], sep[:, 1], sep[:, 2] = sphr2cart(sep[:, 0], sep[:, 1], sep[:, 2])
                 x.append(sep[:,0])
@@ -317,7 +315,7 @@ def add_nulls(size=1):
 
     r = max([boxsize, ds])*size
 
-    nulldata1 = nulldata[nulllist]
+    nulldata1 = nulldata[nulllist-1]
 
     for sign in [-1, 0, 1]:
         pos = nulldata1.pos[nulldata1.sign == sign]
@@ -382,7 +380,7 @@ def add_surface():
     # for ring in rings[inull]: ringlist.extend(ring.tolist())
 
     if False:
-        for inull in nulllist:
+        for inull in nulllist-1:
             ringlist = []
             trianglelist = []
             ptnums = [0]
@@ -412,7 +410,7 @@ def add_surface():
         
     if True:
         nskp = 20 #nskipglob
-        for inull in nulllist:
+        for inull in nulllist-1:
             ringlist = []
             trianglelist = []
             ptnums = [0]
@@ -471,21 +469,3 @@ def add_sun():
 
 def sphr2cart(rs, ts, ps):
     return rs*np.sin(ts)*np.cos(ps), rs*np.sin(ts)*np.sin(ps), rs*np.cos(ts)
-
-# some old code from add_sepsurf
-    # for inull in nulllist:
-    #     print('Null {}'.format(inull+1))
-    #     for iring, ring in enumerate(rings[inull]):
-    #         print('Ring {}'.format(iring*nskipglob))
-    #         sys.stdout.write("\033[F")
-    #         dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
-    #         breaks[inull][iring][dists > acc] = 1
-    #         brks = np.r_[[-1], np.where(breaks[inull][iring] == 1)[0], [breaks[inull][iring].shape[0]-1]] + 1
-    #         if csystem == 'spherical':
-    #             ring[:, 0], ring[:, 1], ring[:, 2] = sphr2cart(ring[:, 0], ring[:, 1], ring[:, 2])
-    #         for ib0, ib1 in zip(brks[:-1], brks[1:]):
-    #             if ib0 != ib1:
-    #                 if csystem == 'spherical':
-    #                     ring[ib0:ib1, 0], ring[ib0:ib1, 1], ring[ib0:ib1, 2] = ring[ib0:ib1, 0]*np.sin(ring[ib0:ib1, 1])*np.cos(ring[ib0:ib1, 2]), ring[ib0:ib1, 0]*np.sin(ring[ib0:ib1, 1])*np.sin(ring[ib0:ib1, 2]), ring[ib0:ib1, 0]*np.cos(ring[ib0:ib1, 1])
-    #                 ml.plot3d(ring[ib0:ib1, 0], ring[ib0:ib1, 1], ring[ib0:ib1, 2], color=cols[nulldata[inull].sign], line_width=1, tube_radius=None)
-    #     sys.stdout.write("\033[F")

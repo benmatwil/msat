@@ -21,19 +21,19 @@ def synmap(filename):
 
 def field(filename):
     with open(filename, 'rb') as fieldfile:
-        nrad, ntheta, nphi = np.fromfile(fieldfile, count=3, dtype=np.int32)
+        nx, ny, nz = np.fromfile(fieldfile, count=3, dtype=np.int32)
 
-        shape = (nrad, ntheta, nphi)
-        num = nrad*ntheta*nphi
-        br = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
-        bt = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
-        bp = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
+        shape = (nx, ny, nz)
+        num = nx*ny*nz
+        bx = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
+        by = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
+        bz = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
 
-        rads = np.fromfile(fieldfile, count=nrad, dtype=np.float64)
-        thetas = np.fromfile(fieldfile, count=ntheta, dtype=np.float64)
-        phis = np.fromfile(fieldfile, count=nphi, dtype=np.float64)
+        x = np.fromfile(fieldfile, count=nx, dtype=np.float64)
+        y = np.fromfile(fieldfile, count=ny, dtype=np.float64)
+        z = np.fromfile(fieldfile, count=nz, dtype=np.float64)
 
-    return br, bt, bp, rads, thetas, phis
+    return bx, by, bz, x, y, z
 
 def nulls(filename, simple=False):
     with open('output/'+prefix(filename)+'-nullpos.dat', 'rb') as nullfile:
@@ -161,11 +161,6 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=Fal
     breaklist = []
     if assocs: assoclist = []
 
-    if null_list is None and hcs == False:
-        null_list = nulldata.number
-    elif hcs == True:
-        null_list = [0, 1]
-
     if hcs:
         assocs_filename = 'output/'+prefix(filename)+'-hcs-assocs.dat'
         info_filename = 'output/'+prefix(filename)+'-hcs-ringinfo.dat'
@@ -178,8 +173,8 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=Fal
         break_filename = 'output/'+prefix(filename)+'-breaks.dat'
     
     assoc_exist = os.path.isfile(assocs_filename)
-    if assocs == True and assoc_exist == False: print('Not reading in associations: file does not exist')
-    do_assocs = assocs == True and assoc_exist == True
+    if assocs and not assoc_exist: print('Not reading in associations: file does not exist')
+    do_assocs = assocs and assoc_exist
 
     ringinfo = open(info_filename, 'rb')
     ringfile = open(ring_filename, 'rb')
@@ -192,35 +187,45 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=Fal
         floattype = np.float64
     stepsize, = np.fromfile(ringinfo, dtype=np.float64, count=1)
     if hcs: n_hcs, = np.fromfile(ringinfo, dtype=np.int32, count=1)
-    if writeskip > 1: ringsmax = ringsmax//writeskip + 1
+    ringsmax = np.ceil(ringsmax/writeskip).astype(np.int)
 
     if hcs:
-        to_do = range(n_hcs)
+        to_do = range(1, n_hcs//2+1)
+        ndir = 2
+        name = 'hcs'
     else:
         to_do = nulldata.number
+        ndir = 1
+        name = 'null'
+
+    if null_list is None and not hcs:
+        null_list = nulldata.number
+    elif hcs:
+        null_list = to_do
 
     for inull in to_do:
-        print('Reading rings from null {:5d}'.format(inull))
+        print('Reading rings from {} {:5d}'.format(name, inull))
         sys.stdout.write("\033[F")
-        breaklisti = []
-        ringlisti = []
-        lengths = np.fromfile(ringinfo, dtype=np.int32, count=ringsmax)
-        if inull in null_list:
-            for iring, length in enumerate(lengths[lengths != 0]):
-                if iring % nskip == 0:
-                    breaklisti.append(np.fromfile(brkfile, dtype=np.int32, count=length))
-                    ringlisti.append(np.fromfile(ringfile, dtype=floattype, count=3*length).reshape(-1, 3))
-                else:
-                    # skip ring if not a multiple of nskip
-                    ringfile.seek(length*3*bytesize, 1)
-                    brkfile.seek(length*4, 1)
-        else:
-            # skip all rings from null if not required
-            total = lengths.sum(dtype=np.int64)
-            ringfile.seek(total*3*bytesize, 1)
-            brkfile.seek(total*4, 1)
-        ringlist.append(ringlisti)
-        breaklist.append(breaklisti)
+        for dir in range(ndir):
+            breaklisti = []
+            ringlisti = []
+            lengths = np.fromfile(ringinfo, dtype=np.int32, count=ringsmax)
+            if inull in null_list:
+                for iring, length in enumerate(lengths[lengths != 0]):
+                    if iring % nskip == 0:
+                        breaklisti.append(np.fromfile(brkfile, dtype=np.int32, count=length))
+                        ringlisti.append(np.fromfile(ringfile, dtype=floattype, count=3*length).reshape(-1, 3))
+                    else:
+                        # skip ring if not a multiple of nskip
+                        ringfile.seek(length*3*bytesize, 1)
+                        brkfile.seek(length*4, 1)
+            else:
+                # skip all rings from null if not required
+                total = lengths.sum(dtype=np.int64)
+                ringfile.seek(total*3*bytesize, 1)
+                brkfile.seek(total*4, 1)
+            ringlist.append(ringlisti)
+            breaklist.append(breaklisti)
     
     ringinfo.close()
     ringfile.close()
