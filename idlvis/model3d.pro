@@ -191,9 +191,9 @@ pro model_add_box
   oModel -> add, obj_new('IDLgrPolyline',line[*,0],line[*,1],line[*,2],color=[0,0,0])
 end
 
-pro save
+pro save, dimensions=dimensions
 
-  write_png, 'figures/' + rd.prefix(filename) + '-model3d.png', tvrd(/true)
+  xobjview_write_image, 'figures/' + rd.prefix(filename) + '-model3d.png', 'png', dimensions=dimensions
 
 end
 
