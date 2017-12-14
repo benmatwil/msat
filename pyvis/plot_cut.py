@@ -99,62 +99,66 @@ def all(labels=False, ms=3):
 
 def spines(labels=False, ms=3):
     with open('output/'+prefile+'-spines-cut_'+rstr+'.dat', 'rb') as spinefile:
-        inull = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
-        while inull > 0:
+        npts, = np.fromfile(spinefile, dtype=np.int32, count=1)
+        for _ in range(npts):
+            inull, = np.fromfile(spinefile, dtype=np.int32, count=1)
             spine = np.fromfile(spinefile, dtype=np.float64, count=3)
             plt.plot(spine[2], spine[1], '.', c=colours[inull-1], ms=ms, zorder=-5)
             if labels == True:
                 plt.text(spine[2], spine[1], '{}'.format(inull), color='green')
-            inull = np.asscalar(np.fromfile(spinefile, dtype=np.int32, count=1))
 
 #################################################################
 
 def separators(labels=False, ms=3):
     with open('output/'+prefile+'-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
-        null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
-        while null > 0:
+        npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
+        for _ in range(npts):
+            start, end = np.fromfile(sepfile, dtype=np.int32, count=2)
             sep = np.fromfile(sepfile, dtype=np.float64, count=3)
             plt.plot(sep[2], sep[1], '*', c='yellow', ms=ms, zorder=-5)
             if labels == True:
-                plt.text(sep[2], sep[1], '{}'.format(null))
-            null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
+                plt.text(sep[2], sep[1], '{}'.format(start))
 
     with open('output/'+prefile+'-hcs-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
-        null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
-        while null > 0:
+        npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
+        for _ in range(npts):
+            end = np.fromfile(sepfile, dtype=np.int32, count=1)
             sep = np.fromfile(sepfile, dtype=np.float64, count=3)
             plt.plot(sep[2], sep[1], '*', c='orange', ms=ms, zorder=-5)
-            null = np.asscalar(np.fromfile(sepfile, dtype=np.int32, count=1))
+            
 
 #################################################################
 
 def rings(dots=False, labels=False, lw=1):
     with open('output/'+prefile+'-rings-cut_'+rstr+'.dat', 'rb') as ringfile:
-        inull = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
-        while inull >= 0:
-            length = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
+        nlines, = np.fromfile(ringfile, dtype=np.int32, count=1)
+        for _ in range(nlines):
+            inull, = np.fromfile(ringfile, dtype=np.int32, count=1)
+            length, = np.fromfile(ringfile, dtype=np.int32, count=1)
             ring = np.fromfile(ringfile, dtype=np.float64, count=3*length).reshape(-1,3)
             plt.plot(ring[:,2], ring[:,1], c=colours[inull-1], lw=lw, zorder=-5)
             if labels == True:
                 plt.text(ring[length//2,2], ring[length//2,1], '{}'.format(inull))
             if dots == True:
                 plt.plot(ring[:,2], ring[:,1], '.', c='green')
-            inull = np.asscalar(np.fromfile(ringfile, dtype=np.int32, count=1))
 
 #################################################################
 
 def hcs(dots=False, lw=1):
     with open('output/'+prefile+'-hcs-cut_'+rstr+'.dat', 'rb') as hcsfile:
-        ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
-        while ihcs >= 0:
-            length = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
-            # print(length)
+        nlines, = np.fromfile(hcsfile, dtype=np.int32, count=1)
+        print(nlines)
+        if float(rstr) > 2.49:
+            skip = 2
+        else:
+            skip = 1
+        for _ in range(0, nlines, skip):
+            ihcs, = np.fromfile(hcsfile, dtype=np.int32, count=1)
+            length = np.fromfile(hcsfile, dtype=np.int32, count=1)
             line = np.fromfile(hcsfile, dtype=np.float64, count=3*length).reshape(-1,3)
             plt.plot(line[:, 2], line[:, 1], ls=':', c='lime', lw=lw, zorder=-5)
             if dots == True:
                 plt.plot(line[:, 2], line[:, 1], '.', c='blue')
-            ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
-            if float(rstr) > 2.49: ihcs = -1
 
 #################################################################
 
