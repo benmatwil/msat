@@ -24,7 +24,7 @@ def field(filename):
         nx, ny, nz = np.fromfile(fieldfile, count=3, dtype=np.int32)
 
         shape = (nx, ny, nz)
-        num = nx*ny*nz
+        num = np.asscalar(nx)*np.asscalar(ny)*np.asscalar(nz)
         bx = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
         by = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
         bz = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
