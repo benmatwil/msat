@@ -56,13 +56,9 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
         add_sun()
         box = False
     if box: add_box()
-    if 'nulls' in addlist: add_nulls(nullrad)
-    if 'fanlines' in addlist: add_fanlines(nfanlines, nring)
-    if 'spines' in addlist: add_spines()
-    if 'sepsurf' in addlist: add_sepsurf()
-    if 'separators' in addlist: add_separators()
-    if 'hcs' in addlist: add_hcs()
-    if 'hcs_sep' in addlist: add_separators(hcs=True)
+
+    add_structures(*addlist, nullrad=nullrad, nfanlines=nfanlines, nring=nring)
+
     if fieldlines is not None: add_fieldlines(fieldlines, col=linecolor, colquant=colquant)
 
 def set_null_list(lst):
@@ -74,8 +70,17 @@ def set_null_list(lst):
             print('Invalid list')
         nulllist = np.array(lst)
 
+def add_structures(*args, **kwargs):
+    if 'nulls' in args: add_nulls(size=kwargs['nullrad'])
+    if 'sepsurf_flines' in args: add_sepsurf_flines(kwargs['nfanlines'], kwargs['nring'])
+    if 'spines' in args: add_spines()
+    if 'sepsurf_rings' in args: add_sepsurf_rings()
+    if 'separators' in args: add_separators()
+    if 'hcs_rings' in args: add_hcs_rings()
+    if 'hcs_flines' in args: add_hcs_flines()
+    if 'hcs_sep' in args: add_separators(hcs=True)
 
-def add_sepsurf():
+def add_sepsurf_rings():
     print('Adding separatrix surface rings')
 
     rings, breaks = rd.rings(filename, breaks=True, nskip=nskipglob, null_list=nulllist)
@@ -121,20 +126,16 @@ def add_sepsurf():
             lines = ml.pipeline.stripper(src)
             ml.pipeline.surface(lines, color=cols[isign], line_width=1)
 
-def add_hcs():
+def add_hcs_rings():
     print('Adding heliospheric current sheet curtain surface rings')
 
     rings, breaks = rd.rings(filename, breaks=True, nskip=nskipglob, hcs=True)
-
-    cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
-
-    acc = 6
 
     x, y, z, s, ptcons = ( [] for _ in range(5) )
     index = 0
 
     for inull in range(len(rings)):
-        print('Null {:5d}'.format(inull//2+1))
+        print('HCS {:5d}'.format(inull//2+1))
         sys.stdout.write("\033[F")
         for iring, ring in enumerate(rings[inull]):
             # convert points if required
@@ -165,26 +166,35 @@ def add_hcs():
     for inull in range(0, len(rings), 2):
         ml.plot3d(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None)
 
-def add_fanlines(nlines, nring=None):
+def add_sepsurf_flines(nlines, nring=None):
     print('Adding separatrix surface field lines')
 
     rings = rd.rings(filename, nskip=nskipglob, null_list=nulllist)
 
     cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
+    x, y, z, s, ptcons = ( [[], []] for _ in range(5) )
+    index = [0, 0]
+
     for inull in nulllist-1:
         print('Null {}'.format(inull+1))
         sys.stdout.write("\033[F")
+
+        if nulldata[inull].sign == 1:
+            il = 0
+        else:
+            il = 1
+
         # select the right ring to trace from
         if nring is None:
             ring = rings[inull][len(rings[inull])//5]
         else:
             ring = rings[inull][nring]
         
-        for ipt in range(0, ring.shape[0], ring.shape[0]//nlines):
-            startpt = np.array([ring[ipt, 0], ring[ipt, 1], ring[ipt, 2]])
-
-            #choose some good parameters
+        nskip = len(ring[:, 0])//nlines
+        
+        for startpt in ring[::nskip, :]:
+            # choose some good parameters
             h = 1e-2
             hmin = 1e-3
             hmax = 0.5
@@ -201,7 +211,77 @@ def add_fanlines(nlines, nring=None):
 
             if csystem == 'spherical':
                 line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
-            ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=cols[nulldata[inull].sign], tube_radius=None)
+            
+            x[il].append(line[:, 0])
+            y[il].append(line[:, 1])
+            z[il].append(line[:, 2])
+            length = len(line[:, 0])
+            s[il].append(np.zeros(length))
+            ptcons[il].append(np.vstack([np.arange(index[il], index[il]+length-1), np.arange(index[il]+1, index[il]+length)]).T)
+            index[il] += length
+    
+    # add points to model
+    for il, isign in zip(range(2), [1, -1]):
+        if len(x[il]) > 0:
+            src = ml.pipeline.scalar_scatter(np.hstack(x[il]), np.hstack(y[il]), np.hstack(z[il]), np.hstack(s[il]))
+            src.mlab_source.dataset.lines = np.vstack(ptcons[il])
+            src.update()
+            
+            lines = ml.pipeline.stripper(src)
+            ml.pipeline.surface(lines, color=cols[isign], line_width=1)
+
+def add_hcs_flines(nlines=100):
+    print('Adding heliospheric current sheet curtain surface field lines')
+
+    rings = rd.rings(filename, nskip=nskipglob, hcs=True)
+
+    x, y, z, s, ptcons = ( [] for _ in range(5) )
+    index = 0
+
+    for inull in range(0, len(rings), 2):
+        print('HCS {:5d}'.format(inull//2+1))
+        sys.stdout.write("\033[F")
+
+        iring = 1
+        nskip = len(rings[inull][iring][:, 0])//nlines
+
+        for idir in range(2):
+            for startpt in rings[inull+idir][iring][::nskip, :]:
+                # choose some good parameters
+                h = 2e-2
+                hmin = h*0.1
+                hmax = h*10
+                epsilon = h*0.01
+
+                # calculate the fieldline
+                line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem)
+                imax = np.argmax(line[:, 0])
+                if idir == 1:
+                    line = line[:imax+1, :]
+                else:
+                    line = line[imax:, :]
+
+                line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
+
+                x.append(line[:, 0])
+                y.append(line[:, 1])
+                z.append(line[:, 2])
+                length = len(line[:, 0])
+                s.append(np.zeros(length))
+                ptcons.append(np.vstack([np.arange(index, index+length-1), np.arange(index+1, index+length)]).T)
+                index += length
+        
+    if len(x) > 0:
+        src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s))
+        src.mlab_source.dataset.lines = np.vstack(ptcons)
+        src.update()
+        
+        lines = ml.pipeline.stripper(src)
+        ml.pipeline.surface(lines, color=(0, 1, 0), line_width=1)
+                
+    for inull in range(0, len(rings), 2):
+        rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2] = sphr2cart(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2])
+        ml.plot3d(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None)
 
 def add_fieldlines(startpts, col=(0, 0, 0), colquant=None):
     print('Adding separatrix surface field lines')
