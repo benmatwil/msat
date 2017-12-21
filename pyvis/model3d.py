@@ -541,7 +541,7 @@ def add_sun():
 
     ml.mesh(x, y, z, scalars=-bgrid[0,:,:,0],  colormap='Greys', vmin=-10, vmax=10)
 
-    t = np.linspace(-xx.max(),xx.max(),101)
+    t = np.linspace(-xx.max(), xx.max(), 101)
     x = np.zeros_like(t)
     y = np.zeros_like(t)
     z = t.copy()
