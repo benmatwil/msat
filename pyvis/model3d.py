@@ -190,10 +190,13 @@ def add_sepsurf_flines(nlines, nring=None):
         if nring is None:
             ring = rings[inull][len(rings[inull])//5]
         else:
-            ring = rings[inull][nring]
-        
+            if type(nring) is int:
+                ring = rings[inull][nring]
+            elif type(nring) is float:
+                ring = rings[inull][np.floor(nring*len(rings[inull]))]
+
         nskip = len(ring[:, 0])//nlines
-        
+
         for startpt in ring[::nskip, :]:
             # choose some good parameters
             h = 1e-2
@@ -203,7 +206,7 @@ def add_sepsurf_flines(nlines, nring=None):
 
             # calculate the fieldline
             line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem)
-            
+
             # cut off the fieldline at the point closest to the null - only want the fan, not the spine
             dists = np.sqrt((line[:, 0] - nulldata[inull].pos[0])**2 +
                 (line[:, 1] - nulldata[inull].pos[1])**2 + (line[:, 2] - nulldata[inull].pos[2])**2)
