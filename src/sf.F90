@@ -15,8 +15,6 @@ program signfinder
 
   integer(int32) :: nullstart, nullend
 
-  integer(int32) :: pcount, ncount, ucount
-
   integer(int32) :: sign, warning
   real(np), dimension(3) :: spine, fan
 
@@ -71,6 +69,10 @@ program signfinder
   zmax = nz
 
   allocate(spines(3, nnulls), fans(3, nnulls), signs(nnulls), warnings(nnulls))
+  spines = 0
+  fans = 0
+  signs = 0
+  warnings = 0
 
   ! now loop over each null and characterise
   !$omp parallel do private(inull, sign, spine, fan, warning)
@@ -92,20 +94,17 @@ program signfinder
     write(10) signs, spines, fans, warnings
   close(10)
 
-  pcount = 0
-  ucount = 0
-  ncount = 0
   do inull = 1, nnulls
-    if (warning /= 0) print*, 'Warning on null', inull, ':', warnings(inull)
-    if (signs(inull) .eq. 1) pcount = pcount+1
-    if (signs(inull) .eq. -1) ncount = ncount+1
-    if (signs(inull) .eq. 0) ucount = ucount+1
+    if (warnings(inull) /= 0) print*, 'Warning on null', inull, ':', warnings(inull)
   enddo
 
   print*, 'Total number of nulls:', nnulls
-  print*, 'Positive', pcount
-  print*, 'Negative', ncount
-  print*, 'Unknown', ucount
-  print*, 'Warning', count(warnings > 0)
+  print*, 'Positive', count(signs == 1)
+  print*, 'Negative', count(signs == -1)
+  print*, 'Unknown', count(signs == 0)
+  print*, 'Warning 1:', count(warnings == 1)
+  print*, 'Warning 2:', count(warnings == 2)
+  print*, 'Warning 3:', count(warnings == 3)
+  print*, 'Warning 4:', count(warnings == 4)
 
 end program
