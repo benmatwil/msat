@@ -364,6 +364,11 @@ def add_separators(hcs=False):
     index = 0
 
     if hcs:
+        linecol = (1.0, 0.6470588235294118, 0.0)
+    else:
+        linecol = (1, 1, 0) #(0, 0.5, 0)
+
+    if hcs:
         to_do = [0]
     else:
         to_do = nulllist-1
@@ -388,7 +393,7 @@ def add_separators(hcs=False):
         src.update()
         
         lines = ml.pipeline.stripper(src)
-        ml.pipeline.surface(lines, color=(0, 0.5, 0), line_width=6)
+        ml.pipeline.surface(lines, color=linecol, line_width=6)
 
 def add_nulls(size=1):
     print("Adding nulls")
