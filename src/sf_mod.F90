@@ -174,6 +174,7 @@ module sf_mod
     integer(int32), dimension(:), allocatable :: densepos, denseposfw, denseposbw, denseposspine, denseposfan
     real(np), dimension(3) :: av_spine, swap
     real(np), dimension(:), allocatable :: dotprods, dotprodsfw, dotprodsbw
+    real(np) :: eigen_spine, eigen_fan
     logical :: dotprodfw_big
 
     integer(int32) :: inull
@@ -209,7 +210,7 @@ module sf_mod
       minmove = 2*pi*rsphere/nphi/50
       mincount = 500
       it_dist = dist_mult*rsphere
-      accconv = 1e-10_np*rsphere
+      accconv = 1e-9_np*rsphere
 
       angle = 0
       main: do
@@ -357,9 +358,21 @@ module sf_mod
         acc = 1e-6_np
         call remove_duplicates(rspine, acc, denseposspine)
         call remove_duplicates(rfan, acc, denseposfan)
-
+        
         nspine = size(rspine, 2)
         nfan = size(rfan, 2)
+        
+        if (nspine == 2 .and. nfan == 2) then
+          eigen_spine = dot(rspine(:, 1), trilinear(rspine(:, 1)*rsphere + rnull, bgrid))
+          eigen_fan = dot(rfan(:, 1), trilinear(rfan(:, 1)*rsphere + rnull, bgrid))
+          if (abs(eigen_fan) > abs(eigen_spine)) then
+            rconvergefw = rspine
+            call move_alloc(rfan, rspine)
+            call move_alloc(rconvergefw, rfan)
+            sign = -1*sign
+          endif
+        endif
+        
 #if debug
         print*, 'Number of unique points'
         print*, '    Spine:', nspine
@@ -444,6 +457,39 @@ module sf_mod
           enddo
           call remove_duplicates(rmin, acc, densepos)
           minvec = rmin(:, maxval(maxloc(densepos)))
+          
+          if (abs(dot(minvec, maxvec)) > 0.9) then
+            sign = -1*sign
+            rconvergefw = rfan
+            call move_alloc(rspine, rfan)
+            call move_alloc(rconvergefw, rspine)
+            
+            swap = spine
+            spine = maxvec
+            maxvec = swap
+            deallocate(rmin, densepos)
+            allocate(rmin(3, nphi1*ntheta1))
+
+            dphi = 2*pi/nphi1
+            dtheta = pi/ntheta1
+
+            do itheta = 1, ntheta1
+              do iphi = 1, nphi1
+                rnew = sphere2cart(rsphere, (itheta-0.5_np)*dtheta + angle, (iphi-1)*dphi + angle)
+                bnew = trilinear(rnew+rnull, bgrid)
+                rold = [0,0,0]
+                do count = 1, maxiter/10
+                  bnew = bnew - dot(bnew, normalise(maxvec))*normalise(maxvec)
+                  call it_conv(rnull, rold, rnew, bnew, it_dist, sign)
+                  if (modulus(rnew-rold) < accconv .and. count >= mincount) exit
+                enddo
+                rmin(:,iphi+(itheta-1)*nphi1) = normalise(rnew)
+              enddo
+            enddo
+            call remove_duplicates(rmin, acc, densepos)
+            minvec = rmin(:, maxval(maxloc(densepos)))
+            
+          endif
 
         endif
 
