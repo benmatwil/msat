@@ -36,6 +36,7 @@ module make_cut_mod
       enddo
     enddo
     imindist = minloc(dists)
+    
     if (dists(imindist(1), imindist(2)) > disttol*10) then
       exit_status = .true.
     else
@@ -114,14 +115,16 @@ program make_cut
 
   integer(int64) :: ia, ip, uptorings, uptoassoc, uptoring1, uptoring2
   integer(int32) :: inull, jnull, iring, iline, nextline, flag, ihcs, ipt, isep
-  integer(int32) :: nrings, npoints, nlines, nseps, ncomp
+  integer(int32) :: nrings, npoints, nlines, nseps, ncomp, nskip_file
   integer(int32), dimension(:), allocatable :: association
   integer(int32), dimension(:), allocatable :: nperring
   real(np), dimension(:, :), allocatable :: line, line2, points, pordered
   real(np) :: s, point(3)
-  logical :: iexist, exit_status
+  logical :: iexist, exit_status, do_hcs = .true., do_all_ssf = .true.
 
   integer(int32) :: nspine, dir
+
+  call filenames
 
   if (command_argument_count() > 0) then
     do iarg = 1, command_argument_count()
@@ -130,6 +133,13 @@ program make_cut
         call get_command_argument(iarg+1,arg)
         read(arg,*) r0
         rc = 1
+        print*, 'Making cut at '// trim(arg) //' for file '//filein
+      endif
+      if (trim(arg) == '--no-hcs') then
+        do_hcs = .false.
+      endif
+      if (trim(arg) == '--only-hcs') then
+        do_all_ssf = .false.
       endif
     enddo
   endif
@@ -139,90 +149,21 @@ program make_cut
 
   write(rstr,'(F6.4)') r0
 
-  call filenames
-
   open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
     read(10) nnulls
   close(10)
 
   open(unit=10, file=filein, access='stream', status='old')
-    read(10), nx, ny, nz !number of vertices
+    read(10) nx, ny, nz !number of vertices
     allocate(xg(nx), yg(ny), zg(nz))
     ig = 3_int64*4_int64 + 3_int64*int(nx, int64)*int(ny, int64)*int(nz, int64)*8_int64 + 1_int64
     read(10, pos=ig) xg, yg, zg
   close(10)
 
-  !********************************************************************************
-
-  ! for each separator, check whether we cross r=r0 and add point to file
-  print*, 'Separators'
-  open(unit=80, file=trim(fileout)//'-separators-cut_'//rstr//'.dat', access='stream', status='replace')
-  open(unit=20, file=trim(fileout)//'-connectivity.dat', access='stream', status='old')
-  open(unit=30, file=trim(fileout)//'-separators.dat', access='stream', status='old')
-
-  ipt = 0
-  write(80) ipt
-  do inull = 1, nnulls
-    read(20) nseps
-    do isep = 1, nseps
-      read(20) flag, flag
-      read(30) npoints
-      allocate(line(3, npoints))
-      read(30) line
-      do iline = 1, npoints-1
-        nextline = iline+1
-        if ((line(1, iline) - r0)*(line(1, nextline) - r0) < 0) then
-          s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
-          point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
-          write(80) inull, flag, point
-          ipt = ipt + 1
-        endif
-      enddo
-      read(20) flag, flag
-      deallocate(line)
-    enddo
-  enddo
-  
-  write(80, pos=1) ipt
-  close(80)
-  close(30)
-  close(20)
+  ds = maxval([maxval(yg(2:ny) - yg(1:ny-1)), maxval(zg(2:nz) - zg(1:nz-1))])
 
   !********************************************************************************
-
-  ! for each separator, check whether we cross r=r0 and add point to file
-  open(unit=80, file=trim(fileout)//'-hcs-separators-cut_'//rstr//'.dat', access='stream', status='replace')
-  open(unit=20, file=trim(fileout)//'-hcs-connectivity.dat', access='stream', status='old')
-  open(unit=30, file=trim(fileout)//'-hcs-separators.dat', access='stream', status='old')
-  
-  ipt = 0
-  write(80) ipt
-  read(20) nseps
-  do isep = 1, nseps
-    read(20) inull, flag
-    read(30) npoints
-    allocate(line(3,npoints))
-    read(30) line
-    do iline = 1, npoints-1
-      nextline = iline+1
-      if ((line(1, iline) - r0)*(line(1, nextline) - r0) < 0) then
-        s = (r0 - line(1, iline))/(line(1 ,nextline) - line(1, iline))
-        point = line(:, iline) + s*(line(:, nextline) - line(:, iline))
-        write(80) flag, point
-        ipt = ipt + 1
-      endif
-    enddo
-    read(20) flag, flag
-    deallocate(line)
-  enddo
-  
-  write(80, pos=1) ipt
-  close(80)
-  close(30)
-  close(20)
-
-  !********************************************************************************
-  
+    
   ! for each spine, check whether we cross r=r0 and add point to file
   print*, 'Spines'
   open(unit=80, file=trim(fileout)//'-spines-cut_'//rstr//'.dat', access='stream', status='replace')
@@ -258,181 +199,256 @@ program make_cut
 
   !********************************************************************************
 
-  ds = maxval([maxval(yg(2:ny) - yg(1:ny-1)), maxval(zg(2:nz) - zg(1:nz-1))])
+  if (do_all_ssf) then
+    ! for each separator, check whether we cross r=r0 and add point to file
+    print*, 'Separators'
+    open(unit=80, file=trim(fileout)//'-separators-cut_'//rstr//'.dat', access='stream', status='replace')
+    open(unit=20, file=trim(fileout)//'-connectivity.dat', access='stream', status='old')
+    open(unit=30, file=trim(fileout)//'-separators.dat', access='stream', status='old')
 
-  print*, 'Rings'
-  open(unit=80, file=trim(fileout)//'-rings-cut_'//rstr//'.dat', access='stream', status='replace')
-  open(unit=40, file=trim(fileout)//'-ringinfo.dat', access='stream', status='old')
-  open(unit=50, file=trim(fileout)//'-rings.dat', access='stream', status='old')
-  inquire(file=trim(fileout)//'-assocs.dat', exist=iexist)
-  if (iexist) then
-    open(unit=55, file=trim(fileout)//'-assocs.dat', access='stream', status='old')
-  else
-    stop "Associations file does not exist."
-  endif
-
-  nlines = 0
-
-  write(80) nlines
-
-  read(40) nrings
-  allocate(nperring(0:nrings-1))
-  read(40), nrings, nrings, nrings, nrings
-
-  uptoassoc = 0
-  uptorings = 0
-  do inull = 1, nnulls
-    if (mod(inull, 20) == 0) print*, inull
-    allocate(points(3,0))
-    read(40) nperring
-    nrings = count(nperring > 0) - 1 ! index of nperring starts at 0
-    do iring = nrings, 1, -1
-
-      uptoring1 = sum(int(nperring(0:iring-2), int64))
-      uptoring2 = uptoring1 + nperring(iring-1)
-      
-      allocate(association(nperring(iring)))
-      ia = uptoassoc + uptoring2*4_int64 + 1
-      read(55, pos=ia) association
-      
-      if (iring == nrings) then
-        allocate(line(3, nperring(iring)))
-        ip = uptorings + uptoring2*24_int64 + 1
-        read(50, pos=ip) line
-      endif
-
-      allocate(line2(3, nperring(iring-1)))
-      ip = uptorings + uptoring1*24_int64 + 1
-      read(50, pos=ip) line2
-
-      do iline = 1, nperring(iring)
-        if ((line(1, iline) - r0)*(line2(1, association(iline)) - r0) < 0) then
-          if (abs(line(3, iline) - line2(3, association(iline))) < 1) then
-            ! find point in between at r0 and add to line
-            s = (r0 - line(1, iline))/(line2(1, association(iline)) - line(1, iline))
-            point = line(:, iline) + s*(line2(:, association(iline)) - line(:, iline))
-            call add_vector(points, point)
+    ipt = 0
+    write(80) ipt
+    do inull = 1, nnulls
+      read(20) nseps
+      do isep = 1, nseps
+        read(20) flag, flag
+        read(30) npoints
+        allocate(line(3, npoints))
+        read(30) line
+        do iline = 1, npoints-1
+          nextline = iline+1
+          if ((line(1, iline) - r0)*(line(1, nextline) - r0) < 0) then
+            s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
+            point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
+            write(80) inull, flag, point
+            ipt = ipt + 1
           endif
-        endif
+        enddo
+        read(20) flag, flag
+        deallocate(line)
       enddo
-      call move_alloc(line2, line)
-      deallocate(association)
-    enddo
-    deallocate(line)
-    uptoring1 = sum(int(nperring, int64))
-    uptoassoc = uptoassoc + uptoring1*4_int64
-    uptorings = uptorings + uptoring1*24_int64
-
-    do while (size(points, 2) > 0)
-      
-      call sortpoints(points, pordered, ds/3, exit_status)
-      if (exit_status) then
-        exit
-      else
-        write(80) inull, size(pordered, 2), pordered
-        nlines = nlines + 1
-        deallocate(pordered)
-      endif
-
     enddo
     
-    deallocate(points)
-  enddo
-  write(80, pos=1) nlines
-  close(80)
-  close(40)
-  close(50)
-  close(55)
-  deallocate(nperring)
+    write(80, pos=1) ipt
+    close(80)
+    close(30)
+    close(20)
 
-  print*, 'Finished null rings'
+    !********************************************************************************
+
+    ! for each separator, check whether we cross r=r0 and add point to file
+    open(unit=80, file=trim(fileout)//'-hcs-separators-cut_'//rstr//'.dat', access='stream', status='replace')
+    open(unit=20, file=trim(fileout)//'-hcs-connectivity.dat', access='stream', status='old')
+    open(unit=30, file=trim(fileout)//'-hcs-separators.dat', access='stream', status='old')
+    
+    ipt = 0
+    write(80) ipt
+    read(20) nseps
+    do isep = 1, nseps
+      read(20) inull, flag
+      read(30) npoints
+      allocate(line(3,npoints))
+      read(30) line
+      do iline = 1, npoints-1
+        nextline = iline+1
+        if ((line(1, iline) - r0)*(line(1, nextline) - r0) < 0) then
+          s = (r0 - line(1, iline))/(line(1 ,nextline) - line(1, iline))
+          point = line(:, iline) + s*(line(:, nextline) - line(:, iline))
+          write(80) flag, point
+          ipt = ipt + 1
+        endif
+      enddo
+      read(20) flag, flag
+      deallocate(line)
+    enddo
+    
+    write(80, pos=1) ipt
+    close(80)
+    close(30)
+    close(20)
+
+    !********************************************************************************
+
+    print*, 'Rings'
+    open(unit=80, file=trim(fileout)//'-rings-cut_'//rstr//'.dat', access='stream', status='replace')
+    open(unit=40, file=trim(fileout)//'-ringinfo.dat', access='stream', status='old')
+    open(unit=50, file=trim(fileout)//'-rings.dat', access='stream', status='old')
+    inquire(file=trim(fileout)//'-assocs.dat', exist=iexist)
+    if (iexist) then
+      open(unit=55, file=trim(fileout)//'-assocs.dat', access='stream', status='old')
+    else
+      stop "Associations file does not exist."
+    endif
+
+    nlines = 0
+
+    write(80) nlines
+
+    read(40) nrings
+    read(40) nskip_file
+    allocate(nperring(0:ceiling(real(nrings)/nskip_file-1)))
+    read(40) nrings, nrings, nrings
+
+    uptoassoc = 0
+    uptorings = 0
+    do inull = 1, nnulls
+      if (mod(inull, 1000) == 0) print*, inull
+      allocate(points(3,0))
+      read(40) nperring
+      nrings = count(nperring > 0) - 1 ! index of nperring starts at 0
+      do iring = nrings, 1, -1
+
+        uptoring1 = sum(int(nperring(0:iring-2), int64))
+        uptoring2 = uptoring1 + nperring(iring-1)
+        
+        allocate(association(nperring(iring)))
+        ia = uptoassoc + uptoring2*4_int64 + 1
+        read(55, pos=ia) association
+        
+        if (iring == nrings) then
+          allocate(line(3, nperring(iring)))
+          ip = uptorings + uptoring2*24_int64 + 1
+          read(50, pos=ip) line
+        endif
+
+        allocate(line2(3, nperring(iring-1)))
+        ip = uptorings + uptoring1*24_int64 + 1
+        read(50, pos=ip) line2
+
+        do iline = 1, nperring(iring)
+          if ((line(1, iline) - r0)*(line2(1, association(iline)) - r0) < 0) then
+            if (abs(line(3, iline) - line2(3, association(iline))) < 1) then
+              ! find point in between at r0 and add to line
+              s = (r0 - line(1, iline))/(line2(1, association(iline)) - line(1, iline))
+              point = line(:, iline) + s*(line2(:, association(iline)) - line(:, iline))
+              call add_vector(points, point)
+            endif
+          endif
+        enddo
+        call move_alloc(line2, line)
+        deallocate(association)
+      enddo
+      deallocate(line)
+      uptoring1 = sum(int(nperring, int64))
+      uptoassoc = uptoassoc + uptoring1*4_int64
+      uptorings = uptorings + uptoring1*24_int64
+
+      do while (size(points, 2) > 0)
+
+        call sortpoints(points, pordered, ds/3, exit_status)
+        if (exit_status) then
+          exit
+        else
+          write(80) inull, size(pordered, 2), pordered
+          nlines = nlines + 1
+          deallocate(pordered)
+        endif
+
+      enddo
+      
+      deallocate(points)
+    enddo
+    write(80, pos=1) nlines
+    close(80)
+    close(40)
+    close(50)
+    close(55)
+    deallocate(nperring)
+
+    print*, 'Finished null rings'
+  
+  endif
 
   !********************************************************************************
 
-  ! for hcs
-  open(unit=80, file=trim(fileout)//'-hcs-cut_'//rstr//'.dat', access='stream', status='replace')
-  open(unit=40, file=trim(fileout)//'-hcs-ringinfo.dat', access='stream', status='old')
-  open(unit=50, file=trim(fileout)//'-hcs-rings.dat', access='stream', status='old')
-  inquire(file=trim(fileout)//'-hcs-assocs.dat', exist=iexist)
-  if (iexist) then
-    open(unit=55, file=trim(fileout)//'-hcs-assocs.dat', access='stream', status='old')
-  else
-    stop "HCS Associations file does not exist."
-  endif
+  if (do_hcs) then
+    ! for hcs
+    open(unit=80, file=trim(fileout)//'-hcs-cut_'//rstr//'.dat', access='stream', status='replace')
+    open(unit=40, file=trim(fileout)//'-hcs-ringinfo.dat', access='stream', status='old')
+    open(unit=50, file=trim(fileout)//'-hcs-rings.dat', access='stream', status='old')
+    inquire(file=trim(fileout)//'-hcs-assocs.dat', exist=iexist)
+    if (iexist) then
+      open(unit=55, file=trim(fileout)//'-hcs-assocs.dat', access='stream', status='old')
+    else
+      stop "HCS Associations file does not exist."
+    endif
 
-  nlines = 0
-  write(80) nlines
-  
-  read(40) nrings
-  allocate(nperring(0:nrings-1))
-
-  read(40), nrings, nrings, nrings, nrings, ncomp
-  
-  uptoassoc = 0
-  uptorings = 0
-
-  ! uptonull = 0
-  do ihcs = 1, ncomp
-    allocate(points(3, 0))
-    read(40) nperring
-
-    nrings = count(nperring > 0) - 1
-    do iring = nrings, 1, -1
-
-      uptoring1 = sum(int(nperring(0:iring-2), int64))
-      uptoring2 = uptoring1 + nperring(iring-1)
-
-      ia = uptoassoc + uptoring2*4_int64 + 1
-      ip = uptorings + uptoring2*24_int64 + 1
+    nlines = 0
+    write(80) nlines
     
-      allocate(association(nperring(iring)), line(3, nperring(iring)))
-      read(55, pos=ia) association
-      read(50, pos=ip) line
+    read(40) nrings
+    read(40) nskip_file
+    allocate(nperring(0:ceiling(real(nrings)/nskip_file-1)))
 
-      ip = uptorings + uptoring1*24_int64 + 1
+    read(40) nrings, nrings, nrings, ncomp
+    
+    uptoassoc = 0
+    uptorings = 0
 
-      allocate(line2(3,nperring(iring-1)))
-      read(50, pos=ip) line2
+    ! uptonull = 0
+    do ihcs = 1, ncomp
+      allocate(points(3, 0))
+      read(40) nperring
 
-      do iline = 1, nperring(iring)
-        if ((line(1, iline) - r0)*(line2(1, association(iline)) - r0) < 0) then
-          if (abs(line(3, iline) - line2(3, association(iline))) < 1) then
-            ! find point in between at r0 and add to line
-            s = (r0 - line(1, iline))/(line2(1, association(iline)) - line(1, iline))
-            point = line(:, iline) + s*(line2(:, association(iline)) - line(:, iline))
-            call add_vector(points, point)
-          endif
-        endif
-      enddo
-      deallocate(line, line2, association)
-    enddo
-    uptoring1 = sum(int(nperring, int64))
-    uptoassoc = uptoassoc + uptoring1*4_int64
-    uptorings = uptorings + uptoring1*24_int64
+      nrings = count(nperring > 0) - 1
+      do iring = nrings, 1, -1
 
-    print*, 'sorting hcs points'
-    print*, size(points, 2)
+        uptoring1 = sum(int(nperring(0:iring-2), int64))
+        uptoring2 = uptoring1 + nperring(iring-1)
 
-    do while (size(points, 2) > 0)
+        ia = uptoassoc + uptoring2*4_int64 + 1
+        ip = uptorings + uptoring2*24_int64 + 1
       
-      call sortpoints(points, pordered, ds/3, exit_status)
-      if (exit_status) then
-        exit
-      else
-        write(80) int(0, int32), size(pordered, 2), pordered
-        nlines = nlines + 1
-        deallocate(pordered)
-      endif
+        allocate(association(nperring(iring)), line(3, nperring(iring)))
+        read(55, pos=ia) association
+        read(50, pos=ip) line
 
+        ip = uptorings + uptoring1*24_int64 + 1
+
+        allocate(line2(3,nperring(iring-1)))
+        read(50, pos=ip) line2
+
+        do iline = 1, nperring(iring)
+          if ((line(1, iline) - r0)*(line2(1, association(iline)) - r0) < 0) then
+            if (abs(line(3, iline) - line2(3, association(iline))) < 1) then
+              ! find point in between at r0 and add to line
+              s = (r0 - line(1, iline))/(line2(1, association(iline)) - line(1, iline))
+              point = line(:, iline) + s*(line2(:, association(iline)) - line(:, iline))
+              call add_vector(points, point)
+            endif
+          endif
+        enddo
+        deallocate(line, line2, association)
+      enddo
+      uptoring1 = sum(int(nperring, int64))
+      uptoassoc = uptoassoc + uptoring1*4_int64
+      uptorings = uptorings + uptoring1*24_int64
+
+      print*, 'sorting hcs points'
+      print*, size(points, 2)
+
+      do while (size(points, 2) > 0)
+
+        call sortpoints(points, pordered, ds/3, exit_status)
+        if (exit_status) then
+          exit
+        else
+          write(80) int(0, int32), size(pordered, 2), pordered
+          nlines = nlines + 1
+          deallocate(pordered)
+        endif
+
+      enddo
+
+      deallocate(points)
     enddo
 
-    deallocate(points)
-  enddo
-  write(80, pos=1) nlines
-  close(80)
-  close(40)
-  close(50)
-  close(55)
-  deallocate(nperring)
+    write(80, pos=1) nlines
+    close(80)
+    close(40)
+    close(50)
+    close(55)
+    deallocate(nperring)
+  endif
 
 end program
