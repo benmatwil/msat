@@ -3,7 +3,7 @@ import igraph as ig
 import networkx as nx
 import os
 
-def plot(filename, layout='fr', labels=False, save=False, vsize=10, errors=False, show=True):
+def plot(filename, layout='fr', labels=False, save=False, vsize=10, errors=False, show=True, hcs=False):
     print('Filename is {}'.format(filename))
     nulls = rd.nulls(filename)
     con = rd.separators(filename, lines=False)
@@ -45,7 +45,7 @@ def plot(filename, layout='fr', labels=False, save=False, vsize=10, errors=False
     #     for jnull in cnulls:
     #         g.add_edge(inull, jnull-1, color=g.vs[inull]['color'])
 
-    if os.path.isfile('output/'+prefile+'-hcs-connectivity.dat'):
+    if os.path.isfile('output/'+prefile+'-hcs-connectivity.dat') and hcs:
         conhcs = rd.separators(filename, lines=False, hcs=True)
         for ihcs, connect in enumerate(conhcs):
             if len(connect) > 0:
@@ -91,7 +91,7 @@ def newplot(filename):
         for iremove in toremove:
             con[inull-1].remove(iremove)
 
-    if os.path.isfile('output/'+prefile+'-hcs-connectivity.dat'):
+    if os.path.isfile('output/'+prefile+'-hcs-connectivity.dat') and hcs:
         conhcs = rd.separators(filename, lines=False, hcs=True)
         for ihcs, connect in enumerate(conhcs, start=1):
             if len(connect) > 0:
