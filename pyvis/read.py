@@ -5,8 +5,12 @@ import os.path
 
 files = sorted(glob.glob('data/*.dat'))
 
+outprefix = 'output'
+
 def prefix(filename):
-    return filename[5:-4]
+    dot = filename[::-1].find('.')
+    slash = filename[::-1].find('/')
+    return filename[-slash:-dot-1]
 
 def synmap(filename):
     with open(filename, 'rb') as fieldfile:
@@ -36,7 +40,7 @@ def field(filename):
     return bx, by, bz, x, y, z
 
 def nulls(filename, simple=False):
-    with open('output/'+prefix(filename)+'-nullpos.dat', 'rb') as nullfile:
+    with open(outprefix+'/'+prefix(filename)+'-nullpos.dat', 'rb') as nullfile:
         # get three data sets from the null finder file
         nnulls, = np.fromfile(nullfile, dtype=np.int32, count=1)
         gridpos = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
@@ -44,7 +48,7 @@ def nulls(filename, simple=False):
 
     if simple == False:
         # if you want the sign finder data too...
-        with open('output/'+prefix(filename)+'-nulldata.dat', 'rb') as nullfile:
+        with open(outprefix+'/'+prefix(filename)+'-nulldata.dat', 'rb') as nullfile:
             nnulls, = np.fromfile(nullfile, dtype=np.int32, count=1)
             signs = np.fromfile(nullfile, dtype=np.int32, count=nnulls)
             spines = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
@@ -78,13 +82,13 @@ def separators(filename, null_list=None, lines=True, connectivity=True, hcs=Fals
 
     if hcs == False:
         # filenames for the nulls
-        connectivityfile = 'output/'+prefix(filename)+'-connectivity.dat'
-        separatorsfile = 'output/'+prefix(filename)+'-separators.dat'
+        connectivityfile = outprefix+'/'+prefix(filename)+'-connectivity.dat'
+        separatorsfile = outprefix+'/'+prefix(filename)+'-separators.dat'
         allnulls_list = nulldata.number
     else:
         # filenames for the hcs
-        connectivityfile = 'output/'+prefix(filename)+'-hcs-connectivity.dat'
-        separatorsfile = 'output/'+prefix(filename)+'-hcs-separators.dat'
+        connectivityfile = outprefix+'/'+prefix(filename)+'-hcs-connectivity.dat'
+        separatorsfile = outprefix+'/'+prefix(filename)+'-hcs-separators.dat'
         allnulls_list = [1] # need to fix this
     
     # if none set, read in data for all nulls
@@ -133,7 +137,7 @@ def spines(filename, null_list=None):
 
     spinelist = []
 
-    with open('output/'+prefix(filename)+'-spines.dat', 'rb') as spinefile:
+    with open(outprefix+'/'+prefix(filename)+'-spines.dat', 'rb') as spinefile:
         for inull in nulldata.number:
             spinelisti = []
             for ispine in range(2): # spine in each direction
@@ -148,7 +152,7 @@ def spines(filename, null_list=None):
     return spinelist
 
 def ringinfo(filename):
-    with open('output/'+prefix(filename)+'-ringinfo.dat', 'rb') as ringinfo:
+    with open(outprefix+'/'+prefix(filename)+'-ringinfo.dat', 'rb') as ringinfo:
         ringsmax, writeskip, bytesize = np.fromfile(ringinfo, dtype=np.int32, count=3)
         stepsize, = np.fromfile(ringinfo, dtype=np.float64, count=1)
     return ringsmax, writeskip, bytesize, stepsize
@@ -162,15 +166,15 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=Fal
     if assocs: assoclist = []
 
     if hcs:
-        assocs_filename = 'output/'+prefix(filename)+'-hcs-assocs.dat'
-        info_filename = 'output/'+prefix(filename)+'-hcs-ringinfo.dat'
-        ring_filename = 'output/'+prefix(filename)+'-hcs-rings.dat'
-        break_filename = 'output/'+prefix(filename)+'-hcs-breaks.dat'
+        assocs_filename = outprefix+'/'+prefix(filename)+'-hcs-assocs.dat'
+        info_filename = outprefix+'/'+prefix(filename)+'-hcs-ringinfo.dat'
+        ring_filename = outprefix+'/'+prefix(filename)+'-hcs-rings.dat'
+        break_filename = outprefix+'/'+prefix(filename)+'-hcs-breaks.dat'
     else:
-        assocs_filename = 'output/'+prefix(filename)+'-assocs.dat'
-        info_filename = 'output/'+prefix(filename)+'-ringinfo.dat'
-        ring_filename = 'output/'+prefix(filename)+'-rings.dat'
-        break_filename = 'output/'+prefix(filename)+'-breaks.dat'
+        assocs_filename = outprefix+'/'+prefix(filename)+'-assocs.dat'
+        info_filename = outprefix+'/'+prefix(filename)+'-ringinfo.dat'
+        ring_filename = outprefix+'/'+prefix(filename)+'-rings.dat'
+        break_filename = outprefix+'/'+prefix(filename)+'-breaks.dat'
     
     assoc_exist = os.path.isfile(assocs_filename)
     if assocs and not assoc_exist: print('Not reading in associations: file does not exist')
