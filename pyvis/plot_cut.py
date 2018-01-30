@@ -60,7 +60,7 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
 
     # os.system(f'./make_cut -i {filename} -r {r}')
 
-    plt.figure(figsize=(15/2.55, 7/2.55)) # set-up for A4
+    plt.figure(figsize=(15/2.55, 6.6/2.55)) # set-up for A4
     ax = plt.gca()
     plt.xlabel('Longitude')
     plt.xlim([0, 2*np.pi])
@@ -80,7 +80,7 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
     cb = plt.colorbar(fraction=0.05, pad=0.025)
     diff = levels[-1] - levels[0]
     cb.set_ticks(np.linspace(0, 1.0, 5)*diff + levels[0])
-    cb.set_label('Radial Magnetic Field Strength (G)')
+    cb.set_label('Radial Field Strength (G)')
     plt.tight_layout()
     if title == True: plt.title('Cut: ' + datafile + ' r = ' + rstr)
 
@@ -122,7 +122,7 @@ def separators(labels=False, ms=3):
     with open('output/'+prefile+'-hcs-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
         npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
         for _ in range(npts):
-            end = np.fromfile(sepfile, dtype=np.int32, count=1)
+            end, = np.fromfile(sepfile, dtype=np.int32, count=1)
             sep = np.fromfile(sepfile, dtype=np.float64, count=3)
             plt.plot(sep[2], sep[1], '*', c='orange', ms=ms, zorder=-5)
             
@@ -154,17 +154,30 @@ def hcs(dots=False, lw=1):
             skip = 1
         for _ in range(0, nlines, skip):
             ihcs, = np.fromfile(hcsfile, dtype=np.int32, count=1)
-            length = np.fromfile(hcsfile, dtype=np.int32, count=1)
+            length, = np.fromfile(hcsfile, dtype=np.int32, count=1)
             line = np.fromfile(hcsfile, dtype=np.float64, count=3*length).reshape(-1,3)
-            plt.plot(line[:, 2], line[:, 1], ls=':', c='lime', lw=lw, zorder=-5)
+            plt.plot(line[:, 2], line[:, 1], ls=':', c='lime', lw=lw, zorder=-0.5)
             if dots == True:
                 plt.plot(line[:, 2], line[:, 1], '.', c='blue')
 
+# def hcs(dots=False, lw=1):
+#     with open('output/'+prefile+'-hcs-cut_'+rstr+'.dat', 'rb') as hcsfile:
+#         ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
+#         while ihcs >= 0:
+#             length = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
+#             # print(length)
+#             line = np.fromfile(hcsfile, dtype=np.float64, count=3*length).reshape(-1,3)
+#             plt.plot(line[:, 2], line[:, 1], ls=':', c='lime', lw=lw, zorder=-0.5)
+#             if dots == True:
+#                 plt.plot(line[:, 2], line[:, 1], '.', c='blue')
+#             ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
+#             if float(rstr) > 2.49: ihcs = -1
+
 #################################################################
 
-def nulls(labels=False, size=1):
+def nulls(labels=False, size=1, zorder=-1):
     for i in range(nulldata.shape[0]):
-        plt.plot(nulldata.pos[i, 2], nulldata.pos[i, 1], '.', color=colours[i], ms=size)
+        plt.plot(nulldata.pos[i, 2], nulldata.pos[i, 1], '.', color=colours[i], ms=size, zorder=zorder)
         if labels == True:
             plt.text(nulldata.pos[i,2], nulldata.pos[i,1], '{}, {:04f}'.format(i, nulldata.pos[i,0]))
 
