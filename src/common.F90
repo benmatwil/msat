@@ -26,7 +26,8 @@ module common
       integer(int32) :: iarg, ic
 
       ic = 0
-      
+      outname = 'output'
+
       if (command_argument_count() > 0) then
         do iarg = 1, command_argument_count()
           call get_command_argument(iarg,arg)
@@ -34,12 +35,15 @@ module common
             call get_command_argument(iarg+1,arg)
             filein = trim(arg)
             ic = 1
+          elseif (trim(arg) == '-o') then
+            call get_command_argument(iarg+1,arg)
+            outname = trim(arg)
           endif
         enddo
       endif
       if (ic == 0) stop 'No input file provided'
 
-      outname = 'output'
+      
       fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
         //trim(outname)//'/' &
         //trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
