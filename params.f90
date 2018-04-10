@@ -46,6 +46,8 @@ module params
   integer(int32), parameter :: ringsmax = 50000
   ! maximum number of points in ring
   integer(int32), parameter :: pointsmax = 200000
+  ! number of consectutive rings which are the same size which stop ssf
+  integer(int32), parameter :: samemax = 1000
   ! step size h after 50 iterations (otherwise 5 times smaller)
   real(np), parameter :: stepsize = 0.1_np
   ! tolerance of rkf45 scheme

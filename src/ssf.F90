@@ -426,13 +426,20 @@ program ssfinder
         exitcondition = .true.
       endif
 
+      if (iring - samemax - 1 > 0) then
+        if (all(nperring(iring - samemax - 1:iring-1) == nperring(iring-1))) then
+          print*, 'Ring seems to have stopped growing', iring
+          print*, "Maybe there's a null that hasn't been found"
+          exitcondition = .true.
+        endif
+      endif
+
       if (exitcondition) deallocate(endpoints, association)
+
+      nrings = iring
       !$OMP END SINGLE
 
-      if (exitcondition) then
-        nrings = iring
-        exit
-      endif
+      if (exitcondition) exit
 
       !$OMP SINGLE
       nperring(iring) = nlines
@@ -456,7 +463,7 @@ program ssfinder
     write(10) nperring(::nskip)
     
     ! trace separators...
-    print*, "Tracing spines and any separators"
+    print*, "Tracing spines and any separators and dealing with rings"
     write(40, pos=uptonullconn) nseps
     if (nseps > 0) then
       do isep = 1, nseps
@@ -482,7 +489,9 @@ program ssfinder
       allocate(spine(3,1))
       spine(:,1) = rnulls(:, inull)
       rspine = rnulls(:, inull) + dir*spines(:, inull)*1e-3_np ! pick a good factor
-      do while (.not. outedge(rspine))
+      iring = 0
+      do while (.not. outedge(rspine) .and. iring < ringsmax)
+        iring = iring + 1
         if (signs(inull) == 0) exit
         call add_vector(spine, rspine)
         hspine = 5e-2_np

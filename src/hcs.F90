@@ -424,13 +424,19 @@ program hcs
           exitcondition = .true.
         endif
 
+        if (iring - samemax - 1 > 0) then
+          if (all(nperring(iring - samemax - 1:iring-1) == nperring(iring-1))) then
+            print*, 'Ring seems to have stopped growing', iring
+            print*, "Maybe there's a null that hasn't been found"
+            exitcondition = .true.
+          endif
+        endif
+
         if (exitcondition) deallocate(endpoints, association)
+        nrings = iring
         !$OMP END SINGLE
 
-        if (exitcondition) then
-          nrings = iring
-          exit
-        endif
+        if (exitcondition) exit
 
         !$OMP SINGLE
         nperring(iring) = nlines
