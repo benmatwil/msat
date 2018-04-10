@@ -4,7 +4,6 @@ import networkx as nx
 import os
 
 def plot(filename, layout='fr', labels=False, save=False, vsize=10, errors=False, show=True, hcs=False):
-    print('Filename is {}'.format(filename))
     nulls = rd.nulls(filename)
     con = rd.separators(filename, lines=False)
     prefile = rd.prefix(filename)
