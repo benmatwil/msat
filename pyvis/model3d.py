@@ -10,8 +10,11 @@ import matplotlib.pyplot
 # turn of warnings while vtk/mayavi compatibility is fixed
 vtk.vtkObject.GlobalWarningDisplayOff()
 
+filename = None
+
 def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
-    nullrad=1, nfanlines=40, nring=None, colquant=None, coordsystem='cartesian'):
+    nullrad=1, nfanlines=40, nring=None, colquant=None, coordsystem='cartesian', no_nulls=False,
+    sun=True, outdir=None):
     """Makes a 3D visualisation of the output from Magnetic Skeleton Analysis Tools
 
         fname: name of the file containing the original magnetic field
@@ -36,25 +39,27 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
 
     nskipglob = nskip
 
+    if outdir is not None:
+        rd.outprefix = outdir
+
+    if fname != filename:
+        field = rd.field(fname)
+        bgrid = np.zeros(field[0].shape + (3,), dtype=np.float64)
+        for i in range(3):
+            bgrid[:, :, :, i] = field[i]
+        xx = field[3]
+        yy = field[4]
+        zz = field[5]
+        ds = min([np.diff(xx).min(), np.diff(yy).min(), np.diff(zz).min()])/2
+    
     filename = fname
 
-    field = rd.field(filename)
-    bgrid = np.zeros(field[0].shape + (3,), dtype=np.float64)
-    for i in range(3):
-        bgrid[:, :, :, i] = field[i]
-
-    xx = field[3]
-    yy = field[4]
-    zz = field[5]
-
-    ds = min([np.diff(xx).min(), np.diff(yy).min(), np.diff(zz).min()])/2
-
-    nulldata = rd.nulls(filename)
-
-    set_null_list(null_list)
+    if not no_nulls:
+        nulldata = rd.nulls(filename)
+        set_null_list(null_list)
 
     if coordsystem == 'spherical':
-        add_sun()
+        if sun: add_sun()
         box = False
     if box: add_box()
 
@@ -354,7 +359,12 @@ def add_spines():
             lines = ml.pipeline.stripper(src)
             ml.pipeline.surface(lines, color=cols[isign], line_width=4)
 
-def add_separators(hcs=False):
+def add_separators(hcs=False, colour=None):
+    """
+    Add separators to model
+    hcs: controls whether null or hcs separators
+    colour: override custom colours
+    """
     print('Adding separators')
 
     seps, conn = rd.separators(filename, null_list=nulllist, hcs=hcs)
@@ -364,9 +374,12 @@ def add_separators(hcs=False):
     index = 0
 
     if hcs:
-        linecol = (1.0, 0.6470588235294118, 0.0)
+        linecol = (1.0, 0.6470588235294118, 0.0) # orange
     else:
-        linecol = (1, 1, 0) #(0, 0.5, 0)
+        linecol = (1, 1, 0) # yellow
+    
+    if colour is not None:
+        linecol = colour
 
     if hcs:
         to_do = [0]
@@ -402,8 +415,10 @@ def add_nulls(size=1):
 
     boxsize = min([xx[-1] - xx[0], yy[-1] - yy[0], zz[-1] - zz[0]])/40
 
+    # find a nice size for the radius of the null points
     r = max([boxsize, ds])*size
 
+    # pick out only the nulls required
     nulldata1 = nulldata[nulllist-1]
 
     for sign in [-1, 0, 1]:
@@ -428,15 +443,18 @@ def add_nulls(size=1):
 
 def add_box():
     print("Adding box")
-    box = np.zeros((3, 2), dtype=np.float64)
-    box[:, 0] = np.array([xx.min(), yy.min(), zz.min()])
-    box[:, 1] = np.array([xx.max(), yy.max(), zz.max()])
-    line = np.array([[0,0,0],[1,0,0],[1,0,1],[1,0,0],[1,1,0],[1,1,1],[1,1,0],
-        [0,1,0],[0,1,1],[0,1,0],[0,0,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1],[0,0,1]], dtype=np.float64)
+    # create line with all corners to be normalised
+    line = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 1],
+                     [1, 0, 0], [1, 1, 0], [1, 1, 1],
+                     [1, 1, 0], [0, 1, 0], [0, 1, 1],
+                     [0, 1, 0], [0, 0, 0], [0, 0, 1],
+                     [1, 0, 1], [1, 1, 1], [0, 1, 1],
+                     [0, 0, 1]], dtype=np.float64)
 
-    line[:,0] = line[:,0]*(box[0,1] - box[0,0]) + box[0,0]
-    line[:,1] = line[:,1]*(box[1,1] - box[1,0]) + box[1,0]
-    line[:,2] = line[:,2]*(box[2,1] - box[2,0]) + box[2,0]
+    # rescale line to form box around the proper coordinate system
+    line[:, 0] = line[:, 0]*(xx[-1] - xx[0]) + xx[0]
+    line[:, 1] = line[:, 1]*(yy[-1] - yy[0]) + yy[0]
+    line[:, 2] = line[:, 2]*(zz[-1] - zz[0]) + zz[0]
 
     # dist = min([n_elements(xx), n_elements(yy), n_elements(zz)])*ds/5
     # oModel -> add, obj_new('idlgrtext', 'x', locations=[box[0,0]+dist,box[1,0],box[2,0]], /onglass)
@@ -445,10 +463,45 @@ def add_box():
 
     ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=(0,0,0), tube_radius=None, line_width=1)
 
-def add_base():
-    y, z = np.mgrid[yy[0]:yy[-1]:yy.shape[0]*1j, zz[0]:zz[-1]:zz.shape[0]*1j]
-    x = np.ones_like(y)*xx[0]
-    base = ml.mesh(x, y, z, scalars=-bgrid[0,:,:,0], colormap='Greys', vmin=-10, vmax=10)
+def add_base(coord, pos, vmin=-10, vmax=10):
+    """
+    Adds a magnetogram on the side of the box
+    coord: 'x', 'y' or 'z'
+    pos: 'top' or 'bottom'
+    """
+    if csystem != 'cartesian':
+        print('Note: Designed for cartesian coordinates')
+
+    if pos == 'top':
+        ipos = -1
+    elif pos == 'bottom':
+        ipos = 0
+    
+    if coord == "x":
+        y, z = np.meshgrid(yy, zz, indexing='ij')
+        x = np.ones_like(y)*xx[ipos]
+        base = ml.mesh(x, y, z, scalars=-bgrid[ipos, :, :, 0], colormap='Greys', vmin=vmin, vmax=vmax)
+    elif coord == "y":
+        x, z = np.meshgrid(xx, zz, indexing='ij')
+        y = np.ones_like(x)*yy[ipos]
+        base = ml.mesh(x, y, z, scalars=-bgrid[:, ipos, :, 1], colormap='Greys', vmin=vmin, vmax=vmax)
+    elif coord == "z":
+        x, y = np.meshgrid(xx, yy, indexing='ij')
+        z = np.ones_like(y)*zz[ipos]
+        base = ml.mesh(x, y, z, scalars=-bgrid[:, :, ipos, 2], colormap='Greys', vmin=vmin, vmax=vmax)
+
+def add_sun():
+    # make theta, phi grids of bgrid coords and create the coords of sphere
+    theta, phi = np.meshgrid(yy, zz, indexing='ij')
+    x = np.sin(theta) * np.cos(phi)
+    y = np.sin(theta) * np.sin(phi)
+    z = np.cos(theta)
+
+    # -bgrid because otherwise want reversed colourtable
+    ml.mesh(x, y, z, scalars=-bgrid[0, :, :, 0],  colormap='Greys', vmin=-10, vmax=10)
+
+    # make z-axis
+    ml.plot3d([0, 0], [0, 0], [-xx.max(), xx.max()], color=(0,0,0), tube_radius=None, line_width=4)
 
 def save():
     ml.savefig('figures/' + rd.prefix(filename) + '-model3d.png')
@@ -468,7 +521,7 @@ def add_surface():
     # for lst in break1: ptnums.append(ptnums[-1] + len(lst))
     # for ring in rings[inull]: ringlist.extend(ring.tolist())
 
-    if False:
+    if True:
         for inull in nulllist-1:
             ringlist = []
             trianglelist = []
@@ -497,7 +550,7 @@ def add_surface():
             # return trianglelist, ringlist, ptnums
             ml.triangular_mesh(ringlist[:,0], ringlist[:,1], ringlist[:,2], trianglelist, color=cols[nulldata[inull].sign], tube_radius=None, opacity=0.5, mask_points=2)
         
-    if True:
+    if False:
         nskp = 20 #nskipglob
         for inull in nulllist-1:
             ringlist = []
@@ -539,22 +592,6 @@ def add_surface():
             # for ib0, ib1 in zip(brks[:-1], brks[1:]):
             #     if ib0 != ib1:
 
-def add_sun():
-    ntheta = bgrid.shape[1]*1j
-    nphi = bgrid.shape[2]*1j
-    theta, phi = np.mgrid[0:np.pi:ntheta, 0:2*np.pi:nphi]
-    x = np.sin(theta) * np.cos(phi)
-    y = np.sin(theta) * np.sin(phi)
-    z = np.cos(theta)
-
-    ml.mesh(x, y, z, scalars=-bgrid[0,:,:,0],  colormap='Greys', vmin=-10, vmax=10)
-
-    t = np.linspace(-xx.max(), xx.max(), 101)
-    x = np.zeros_like(t)
-    y = np.zeros_like(t)
-    z = t.copy()
-
-    ml.plot3d(x, y, z, color=(0,0,0), tube_radius=None, line_width=4)
-
 def sphr2cart(rs, ts, ps):
+    # convert r, theta, phi to x, y, z
     return rs*np.sin(ts)*np.cos(ps), rs*np.sin(ts)*np.sin(ps), rs*np.cos(ts)
