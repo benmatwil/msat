@@ -58,6 +58,7 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
 
     if output_dir is not None:
         outprefix = output_dir
+        rd.outprefix = outprefix
 
     nulldata = rd.nulls(datafile)
 
@@ -78,6 +79,7 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
         ax.set_rasterization_zorder(-6)
     else:
         ax.set_rasterization_zorder(0)
+        
     br, _, _, rads, thetas, phis = rd.field(datafile)
     ir = np.where(r >= rads)[0].max()
     plotfield = br[ir, :, :] + (r - rads[ir])/(rads[ir+1] - rads[ir])*(br[ir+1, :, :] - br[ir, :, :])
