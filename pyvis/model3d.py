@@ -28,7 +28,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
         box: if True (default), plots a box otherwise set to False
         fieldlines: provide a numpy array of shape (3, n) of start points and it will trace magnetic field lines
         linecolor: color of fieldlines (defaults to black)
-        nskip: how many rings to skip in plotting (also skips points in spines and separators for speed)"""
+        nskip: how many rings to skip in plotting"""
 
     global bgrid, xx, yy, zz, nulldata, ds, filename, nskipglob, nulllist, csystem
 
