@@ -236,39 +236,6 @@ program make_cut
 
     !********************************************************************************
 
-    ! for each separator, check whether we cross r=r0 and add point to file
-    open(unit=80, file=trim(fileout)//'-hcs-separators-cut_'//rstr//'.dat', access='stream', status='replace')
-    open(unit=20, file=trim(fileout)//'-hcs-connectivity.dat', access='stream', status='old')
-    open(unit=30, file=trim(fileout)//'-hcs-separators.dat', access='stream', status='old')
-    
-    ipt = 0
-    write(80) ipt
-    read(20) nseps
-    do isep = 1, nseps
-      read(20) inull, flag
-      read(30) npoints
-      allocate(line(3,npoints))
-      read(30) line
-      do iline = 1, npoints-1
-        nextline = iline+1
-        if ((line(1, iline) - r0)*(line(1, nextline) - r0) < 0) then
-          s = (r0 - line(1, iline))/(line(1 ,nextline) - line(1, iline))
-          point = line(:, iline) + s*(line(:, nextline) - line(:, iline))
-          write(80) flag, point
-          ipt = ipt + 1
-        endif
-      enddo
-      read(20) flag, flag
-      deallocate(line)
-    enddo
-    
-    write(80, pos=1) ipt
-    close(80)
-    close(30)
-    close(20)
-
-    !********************************************************************************
-
     print*, 'Rings'
     open(unit=80, file=trim(fileout)//'-rings-cut_'//rstr//'.dat', access='stream', status='replace')
     open(unit=40, file=trim(fileout)//'-ringinfo.dat', access='stream', status='old')
@@ -328,7 +295,7 @@ program make_cut
         call move_alloc(line2, line)
         deallocate(association)
       enddo
-      deallocate(line)
+      if (allocated(line)) deallocate(line)
       uptoring1 = sum(int(nperring, int64))
       uptoassoc = uptoassoc + uptoring1*4_int64
       uptorings = uptorings + uptoring1*24_int64
@@ -379,7 +346,6 @@ program make_cut
     read(40) nrings
     read(40) nskip_file
     allocate(nperring(0:ceiling(real(nrings)/nskip_file-1)))
-
     read(40) nrings, nrings, nrings, ncomp
     
     uptoassoc = 0
@@ -449,6 +415,39 @@ program make_cut
     close(50)
     close(55)
     deallocate(nperring)
+
+  !********************************************************************************
+
+    ! for each hcs separator, check whether we cross r=r0 and add point to file
+    open(unit=80, file=trim(fileout)//'-hcs-separators-cut_'//rstr//'.dat', access='stream', status='replace')
+    open(unit=20, file=trim(fileout)//'-hcs-connectivity.dat', access='stream', status='old')
+    open(unit=30, file=trim(fileout)//'-hcs-separators.dat', access='stream', status='old')
+    
+    ipt = 0
+    write(80) ipt
+    read(20) nseps
+    do isep = 1, nseps
+      read(20) inull, flag
+      read(30) npoints
+      allocate(line(3,npoints))
+      read(30) line
+      do iline = 1, npoints-1
+        nextline = iline+1
+        if ((line(1, iline) - r0)*(line(1, nextline) - r0) < 0) then
+          s = (r0 - line(1, iline))/(line(1 ,nextline) - line(1, iline))
+          point = line(:, iline) + s*(line(:, nextline) - line(:, iline))
+          write(80) flag, point
+          ipt = ipt + 1
+        endif
+      enddo
+      read(20) flag, flag
+      deallocate(line)
+    enddo
+    
+    write(80, pos=1) ipt
+    close(80)
+    close(30)
+    close(20)
   endif
 
 end program
