@@ -7,7 +7,7 @@ from fractions import Fraction as fr
 
 plt.ion()
 
-# cols = {-1:'blue', 0:'green', 1:'red'}
+outprefix = 'output'
 
 def get_colours():
     negcolors, poscolors = plt.get_cmap('Blues'), plt.get_cmap('Reds')
@@ -29,16 +29,6 @@ def get_colours():
 
 #################################################################
 
-def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.cm.Greys_r, nticks=4, newcolours=True, linerast=False):
-    global datafile, prefile, nulldata, rstr, colours
-
-    datafile = filename
-    prefile = rd.prefix(filename)
-
-    nulldata = rd.nulls(datafile)
-
-    rstr = '{:6.4f}'.format(r)
-
     def ticks(nsplit, npi):
         list = []
         for i in range(nsplit+1):
@@ -57,6 +47,21 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
                 string = string + r'\pi$'
             list.append(string)
         return list
+
+#################################################################
+
+def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.cm.Greys_r, nticks=4, newcolours=True, linerast=False, output_dir=None):
+    global datafile, prefile, nulldata, rstr, colours
+
+    datafile = filename
+    prefile = rd.prefix(filename)
+
+    if output_dir is not None:
+        outprefix = output_dir
+
+    nulldata = rd.nulls(datafile)
+
+    rstr = '{:6.4f}'.format(r)
 
     # os.system(f'./make_cut -i {filename} -r {r}')
 
@@ -98,7 +103,7 @@ def all(labels=False, ms=3):
 #################################################################
 
 def spines(labels=False, ms=3):
-    with open('output/'+prefile+'-spines-cut_'+rstr+'.dat', 'rb') as spinefile:
+    with open(outprefix+'/'+prefile+'-spines-cut_'+rstr+'.dat', 'rb') as spinefile:
         npts, = np.fromfile(spinefile, dtype=np.int32, count=1)
         for _ in range(npts):
             inull, = np.fromfile(spinefile, dtype=np.int32, count=1)
@@ -110,7 +115,7 @@ def spines(labels=False, ms=3):
 #################################################################
 
 def separators(labels=False, ms=3):
-    with open('output/'+prefile+'-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
+    with open(outprefix+'/'+prefile+'-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
         npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
         for _ in range(npts):
             start, end = np.fromfile(sepfile, dtype=np.int32, count=2)
@@ -119,18 +124,17 @@ def separators(labels=False, ms=3):
             if labels == True:
                 plt.text(sep[2], sep[1], '{}'.format(start))
 
-    with open('output/'+prefile+'-hcs-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
+    with open(outprefix+'/'+prefile+'-hcs-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
         npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
         for _ in range(npts):
             end, = np.fromfile(sepfile, dtype=np.int32, count=1)
             sep = np.fromfile(sepfile, dtype=np.float64, count=3)
             plt.plot(sep[2], sep[1], '*', c='orange', ms=ms, zorder=-5)
             
-
 #################################################################
 
 def rings(dots=False, labels=False, lw=1):
-    with open('output/'+prefile+'-rings-cut_'+rstr+'.dat', 'rb') as ringfile:
+    with open(outprefix+'/'+prefile+'-rings-cut_'+rstr+'.dat', 'rb') as ringfile:
         nlines, = np.fromfile(ringfile, dtype=np.int32, count=1)
         for _ in range(nlines):
             inull, = np.fromfile(ringfile, dtype=np.int32, count=1)
@@ -145,7 +149,7 @@ def rings(dots=False, labels=False, lw=1):
 #################################################################
 
 def hcs(dots=False, lw=1):
-    with open('output/'+prefile+'-hcs-cut_'+rstr+'.dat', 'rb') as hcsfile:
+    with open(outprefix+'/'+prefile+'-hcs-cut_'+rstr+'.dat', 'rb') as hcsfile:
         nlines, = np.fromfile(hcsfile, dtype=np.int32, count=1)
         print(nlines)
         if float(rstr) > 2.49:
@@ -159,19 +163,6 @@ def hcs(dots=False, lw=1):
             plt.plot(line[:, 2], line[:, 1], ls=':', c='lime', lw=lw, zorder=-0.5)
             if dots == True:
                 plt.plot(line[:, 2], line[:, 1], '.', c='blue')
-
-# def hcs(dots=False, lw=1):
-#     with open('output/'+prefile+'-hcs-cut_'+rstr+'.dat', 'rb') as hcsfile:
-#         ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
-#         while ihcs >= 0:
-#             length = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
-#             # print(length)
-#             line = np.fromfile(hcsfile, dtype=np.float64, count=3*length).reshape(-1,3)
-#             plt.plot(line[:, 2], line[:, 1], ls=':', c='lime', lw=lw, zorder=-0.5)
-#             if dots == True:
-#                 plt.plot(line[:, 2], line[:, 1], '.', c='blue')
-#             ihcs = np.asscalar(np.fromfile(hcsfile, dtype=np.int32, count=1))
-#             if float(rstr) > 2.49: ihcs = -1
 
 #################################################################
 
