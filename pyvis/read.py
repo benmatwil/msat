@@ -46,7 +46,7 @@ def nulls(filename, simple=False):
         gridpos = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
         pos = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
 
-    if simple == False:
+    if not simple:
         # if you want the sign finder data too...
         with open(outprefix+'/'+prefix(filename)+'-nulldata.dat', 'rb') as nullfile:
             nnulls, = np.fromfile(nullfile, dtype=np.int32, count=1)
@@ -57,8 +57,8 @@ def nulls(filename, simple=False):
 
         # create the right record array
         nulls = np.recarray(nnulls, dtype=[('number',np.int32),
-            ('pos',np.float64,3), ('gridpos',np.float64,3),
-            ('sign',np.int32), ('spine',np.float64,3), ('fan',np.float64,3), ('warning',np.int32)])
+            ('pos', np.float64, 3), ('gridpos', np.float64, 3), ('sign', np.int32),
+            ('spine', np.float64, 3), ('fan', np.float64, 3), ('warning', np.int32)])
 
         # fill the array
         nulls.sign = signs
@@ -67,8 +67,8 @@ def nulls(filename, simple=False):
         nulls.warning = warning
     else:
         # just the null finder data
-        nulls = np.recarray(nnulls, dtype=[('number',np.int32),
-            ('pos',np.float64,3), ('gridpos',np.float64,3)])
+        nulls = np.recarray(nnulls, dtype=[('number', np.int32),
+            ('pos', np.float64, 3), ('gridpos', np.float64, 3)])
 
     nulls.number = np.arange(nnulls, dtype=np.int32)+1
     nulls.pos = pos
@@ -80,7 +80,7 @@ def separators(filename, null_list=None, lines=True, connectivity=True, hcs=Fals
     # read in null data
     nulldata = nulls(filename, simple=True)
 
-    if hcs == False:
+    if not hcs:
         # filenames for the nulls
         connectivityfile = outprefix+'/'+prefix(filename)+'-connectivity.dat'
         separatorsfile = outprefix+'/'+prefix(filename)+'-separators.dat'
@@ -120,9 +120,9 @@ def separators(filename, null_list=None, lines=True, connectivity=True, hcs=Fals
                     seplist.append([])
     
     # return data based on keyword arguments
-    if lines == False:
+    if not lines:
         return conlist
-    elif connectivity == False:
+    elif not connectivity:
         return seplist
     else:
         return seplist, conlist
@@ -255,11 +255,11 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=Fal
         assfile.close()
         ringinfo.close()
     
-    if breaks == True and do_assocs == False:
+    if breaks and not do_assocs:
         return ringlist, breaklist
-    if breaks == False and do_assocs == True:
+    if not breaks and do_assocs:
         return ringlist, assoclist
-    if breaks == True and do_assocs == True:
+    if breaks and do_assocs:
         return ringlist, breaklist, assoclist
     else:
         return ringlist
