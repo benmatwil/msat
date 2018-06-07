@@ -83,7 +83,7 @@ def outedge(r):
     
     return outedge
 
-def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t_max=1.2, oneway=False, boxedge=None, coordsystem='cartesian', gridcoord=False):
+def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t_max=1.2, oneway=False, boxedge=None, coordsystem='cartesian', gridcoord=False, stop_criteria=True):
     global xmin, xmax, ymin, ymax, zmin, zmax, xmin_box, xmax_box, ymin_box, ymax_box, zmin_box, zmax_box, csystem
     # need to correct this below
     # startpt[3,nl] - start point for field line
@@ -284,6 +284,7 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
 
             line.append(rt)
 
+            if stop_criteria:
             # check line is still moving
             if count >= 2:
                 dl = line[-1] - line[-2]
