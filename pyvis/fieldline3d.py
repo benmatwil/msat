@@ -56,7 +56,7 @@ def getdr(r, x, y, z):
         return np.array([dx, xp*dy, xp*np.sin(yp)*dz], dtype=np.float64)
     elif csystem == 'cartesian':
         return np.array([dx, dy, dz], dtype=np.float64)
-    elif cystem == 'cylindrical':
+    elif csystem == 'cylindrical':
         return np.array([dx, xp*dy, dz], dtype=np.float64)
 
 def edgecheck(r):
