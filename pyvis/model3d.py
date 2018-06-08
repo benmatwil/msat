@@ -158,7 +158,7 @@ def add_hcs_rings():
     index = 0
 
     for inull in range(len(rings)):
-        print('HCS {:5d}'format(inull//2+1))
+        print('HCS {:5d}'.format(inull//2+1))
         sys.stdout.write("\033[F")
         for iring, ring in enumerate(rings[inull]):
             # convert points if required
