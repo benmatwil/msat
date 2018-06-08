@@ -37,6 +37,7 @@ module params
   real(np), parameter :: dist_mult = 2e-2_np
 
   ! Separatrix Surface Finder Parameters
+  ! (Most of these also apply to HCS)
   ! ------------------------------------
   ! number of startpoints in ring
   integer(int32), parameter :: nstart = 500
