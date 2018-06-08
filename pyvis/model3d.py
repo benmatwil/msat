@@ -51,7 +51,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
         yy = field[4]
         zz = field[5]
         ds = min([np.diff(xx).min(), np.diff(yy).min(), np.diff(zz).min()])/2
-    
+
     periodic_check = False
     if periodicity is not None:
         periodic_dist = 1e100
@@ -109,21 +109,21 @@ def add_sepsurf_rings():
     nulls = nulldata[nulllist-1]
 
     for isign in [-1, 1]:
-    # new very efficient routine for plotting many lines
-    # two lists, one for positive and the other for negative nulls
+        # new very efficient routine for plotting many lines
+        # two lists, one for positive and the other for negative nulls
         x, y, z, s, ptcons = ( [] for _ in range(5) )
         index = 0
         for inull in nulls.number[nulls.sign == isign]:
             print('Null {:5d}'.format(inull))
-        sys.stdout.write("\033[F")
+            sys.stdout.write("\033[F")
             inull1 = inull - 1
             for iring, ring in enumerate(rings[inull1]):
-            # convert points if required
-            if csystem == 'spherical':
-                ring[:, 0], ring[:, 1], ring[:, 2] = sphr2cart(ring[:, 0], ring[:, 1], ring[:, 2])
+                # convert points if required
+                if csystem == 'spherical':
+                    ring[:, 0], ring[:, 1], ring[:, 2] = sphr2cart(ring[:, 0], ring[:, 1], ring[:, 2])
                 elif csystem == 'cylindrical':
                     ring[:, 0], ring[:, 1], ring[:, 2] = cyl2cart(ring[:, 0], ring[:, 1], ring[:, 2])
-            # add ring points to lists
+                # add ring points to lists
                 x.append(ring[:, 0])
                 y.append(ring[:, 1])
                 z.append(ring[:, 2])
@@ -131,12 +131,12 @@ def add_sepsurf_rings():
                 if periodic_check:
                     # use distances between consectutive points to detect extra breaks for periodicity
                     dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
-            # use break data to plot the individual lines in each ring as the break apart
+                    # use break data to plot the individual lines in each ring as the break apart
                     brks = np.unique(np.r_[-1, np.where(breaks[inull1][iring] == 1)[0], np.where(dists > 0.9*periodic_dist)[0], ring.shape[0]-1])
                 else:
                     # use break data to plot the individual lines in each ring as the break apart
                     brks = np.unique(np.r_[-1, np.where(breaks[inull1][iring] == 1)[0], ring.shape[0]-1])
-            for ib0, ib1 in zip(brks[:-1], brks[1:]):
+                for ib0, ib1 in zip(brks[:-1], brks[1:]):
                     # add the right indicies based on the breaks
                     ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1), np.arange(index+ib0+2, index+ib1+1)]).T)
                 index += ring.shape[0]
@@ -172,7 +172,7 @@ def add_hcs_rings():
             # use break data to plot the individual lines in each ring as the break apart
             brks = np.unique(np.r_[[-1], np.where(breaks[inull][iring] == 1)[0], [ring.shape[0]-1]])
             for ib0, ib1 in zip(brks[:-1], brks[1:]):
-                    # add the right indicies based on the breaks
+                # add the right indicies based on the breaks
                 ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1), np.arange(index+ib0+2, index+ib1+1)]).T)
             index += ring.shape[0]
     
@@ -353,10 +353,10 @@ def add_spines():
         index = 0
         for inull in nulls.number[nulls.sign == isign]:
             print('Null {:5d}'.format(inull))
-        sys.stdout.write("\033[F")
+            sys.stdout.write("\033[F")
             for spine in spines[inull-1]:
-            if csystem == 'spherical':
-                spine[:, 0], spine[:, 1], spine[:, 2] = sphr2cart(spine[:, 0], spine[:, 1], spine[:, 2])
+                if csystem == 'spherical':
+                    spine[:, 0], spine[:, 1], spine[:, 2] = sphr2cart(spine[:, 0], spine[:, 1], spine[:, 2])
                 elif csystem == 'cylindical':
                     spine[:, 0], spine[:, 1], spine[:, 2] = cyl2cart(spine[:, 0], spine[:, 1], spine[:, 2])
                 x.append(spine[:, 0])
@@ -379,7 +379,7 @@ def add_spines():
             
             lines = ml.pipeline.stripper(src)
             ml.pipeline.surface(lines, color=cols[isign], line_width=4)
-
+    
 def add_separators(hcs=False, colour=None):
     """
     Add separators to model
@@ -421,7 +421,7 @@ def add_separators(hcs=False, colour=None):
                 z.append(sep[:, 2])
                 s.append(np.zeros_like(sep[:, 0]))
                 if csystem == 'spherical' or csystem == 'cylindical' or not periodic_check:
-                ptcons.append(np.vstack([np.arange(index, index+sep.shape[0]-1), np.arange(index+1, index+sep.shape[0])]).T)
+                    ptcons.append(np.vstack([np.arange(index, index+sep.shape[0]-1), np.arange(index+1, index+sep.shape[0])]).T)
                 else:
                     dists = np.r_[np.sum(np.diff(sep, axis=0)**2, axis=1), [0]]
                     brks = np.unique(np.r_[[-1], np.where(dists > 0.9*periodic_dist)[0], dists.shape[0]-1])
@@ -491,7 +491,7 @@ def add_box():
     # # oModel -> add, obj_new('idlgrtext', 'z', locations=[box[0,0],box[1,0],box[2,0]+dist], /onglass)
 
     # ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=(0,0,0), tube_radius=None, line_width=1)
-
+    
     ml.outline(extent=[*xx[[0, -1]], *yy[[0, -1]], *zz[[0, -1]]], color=(0,0,0))
 
 def add_base(coord, pos, vmin=-10, vmax=10):
@@ -614,45 +614,6 @@ def add_surface():
                             trianglelist.append(tri2)
             # return trianglelist, ringlist, ptnums
             ml.triangular_mesh(ringlist[:,0], ringlist[:,1], ringlist[:,2], trianglelist, color=cols[nulldata[inull].sign], tube_radius=None, opacity=1)
-
-
-            # for ib0, ib1 in zip(brks[:-1], brks[1:]):
-            #     if ib0 != ib1:
-
-
-            # for ib0, ib1 in zip(brks[:-1], brks[1:]):
-            #     if ib0 != ib1:
-
-def sphr2cart(rs, ts, ps):
-    # convert (r, theta, phi) to (x, y, z)
-    return rs*np.sin(ts)*np.cos(ps), rs*np.sin(ts)*np.sin(ps), rs*np.cos(ts)
-            assocs1 = assocs[inull][::-1]
-            # ptnums = ptnums[::-1]
-            for iring, ring in enumerate(rings1[:-1]):
-                if iring/nskp - iring//nskp > 0: 
-                    dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
-                    breaks1[iring][dists > acc] = 1
-                    brks = np.r_[[-1], np.where(breaks1[iring] == 1)[0], [breaks1[iring].shape[0]-1]] + 1
-                    newass = assocs1[iring*nskp]
-                    for iskp in range(nskp):
-                        newass = assocs1[iring*nskp+iskp+1][newass-1]
-                    for ipt, pt in enumerate(ring):
-                        if ipt not in brks-1 and ipt != brks[-1]:
-                            if newass[ipt] != newass[ipt+1]:
-                                tri1 = [ptnums[iring] + ipt, ptnums[iring+1] + newass[ipt] - 1, ptnums[iring+1] + newass[ipt]]
-                                trianglelist.append(tri1)
-                            tri2 = [ptnums[iring] + ipt, ptnums[iring+1] + newass[ipt], ptnums[iring] + ipt + 1]
-                            trianglelist.append(tri2)
-            # return trianglelist, ringlist, ptnums
-            ml.triangular_mesh(ringlist[:,0], ringlist[:,1], ringlist[:,2], trianglelist, color=cols[nulldata[inull].sign], tube_radius=None, opacity=1)
-
-
-            # for ib0, ib1 in zip(brks[:-1], brks[1:]):
-            #     if ib0 != ib1:
-
-
-            # for ib0, ib1 in zip(brks[:-1], brks[1:]):
-            #     if ib0 != ib1:
 
 def sphr2cart(rs, ts, ps):
     # convert (r, theta, phi) to (x, y, z)
