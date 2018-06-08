@@ -87,7 +87,7 @@
 
       First you need to start python:
 
-      \texttt{python}
+      \texttt{ipython}
 
       \texttt{import pyvis.model3d as m3d}
 
@@ -139,7 +139,7 @@
 
       Debugging mode may be enabled if required. If this mode is chosen then more data is printed to the terminal during the running of all the analysis code and all optimisations by the compiler are turned off. This makes the codes run much slower due to printing, but also because the codes are optimised less. This should hopefully not be required, but if it is is should only be used on rare occasions by those who know what they are doing! It enables Fortran debuging options. This mode is enabled including the option \texttt{debug=on}.
 
-      OpenMP may be turned off using \texttt{openmp=off}. It is on by default. The number of processors can be selected in the params.f90 file, Fortran will request the required number of processors on execution of the programs. See section \ref{sec:params} for details on selecting numbers of processors. Not all of the codes are parallelised. They may be parallelised in future.
+      OpenMP may be turned off using \texttt{openmp=off}. It is on by default. The number of processors can be selected in the \texttt{params.f90} file, Fortran will request the required number of processors on execution of the programs. See section \ref{sec:params} for details on selecting numbers of processors. Not all of the codes are parallelised. They may be parallelised in future.
 
   \section{Preparing the Data}
     \label{sec:prep_data}
