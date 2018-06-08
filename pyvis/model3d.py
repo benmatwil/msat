@@ -444,24 +444,26 @@ def add_nulls(size=1):
 def add_box():
     print("Adding box")
     # create line with all corners to be normalised
-    line = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 1],
-                     [1, 0, 0], [1, 1, 0], [1, 1, 1],
-                     [1, 1, 0], [0, 1, 0], [0, 1, 1],
-                     [0, 1, 0], [0, 0, 0], [0, 0, 1],
-                     [1, 0, 1], [1, 1, 1], [0, 1, 1],
-                     [0, 0, 1]], dtype=np.float64)
+    # line = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 1],
+    #                  [1, 0, 0], [1, 1, 0], [1, 1, 1],
+    #                  [1, 1, 0], [0, 1, 0], [0, 1, 1],
+    #                  [0, 1, 0], [0, 0, 0], [0, 0, 1],
+    #                  [1, 0, 1], [1, 1, 1], [0, 1, 1],
+    #                  [0, 0, 1]], dtype=np.float64)
 
-    # rescale line to form box around the proper coordinate system
-    line[:, 0] = line[:, 0]*(xx[-1] - xx[0]) + xx[0]
-    line[:, 1] = line[:, 1]*(yy[-1] - yy[0]) + yy[0]
-    line[:, 2] = line[:, 2]*(zz[-1] - zz[0]) + zz[0]
+    # # rescale line to form box around the proper coordinate system
+    # line[:, 0] = line[:, 0]*(xx[-1] - xx[0]) + xx[0]
+    # line[:, 1] = line[:, 1]*(yy[-1] - yy[0]) + yy[0]
+    # line[:, 2] = line[:, 2]*(zz[-1] - zz[0]) + zz[0]
 
-    # dist = min([n_elements(xx), n_elements(yy), n_elements(zz)])*ds/5
-    # oModel -> add, obj_new('idlgrtext', 'x', locations=[box[0,0]+dist,box[1,0],box[2,0]], /onglass)
-    # oModel -> add, obj_new('idlgrtext', 'y', locations=[box[0,0],box[1,0]+dist,box[2,0]], /onglass)
-    # oModel -> add, obj_new('idlgrtext', 'z', locations=[box[0,0],box[1,0],box[2,0]+dist], /onglass)
+    # # dist = min([n_elements(xx), n_elements(yy), n_elements(zz)])*ds/5
+    # # oModel -> add, obj_new('idlgrtext', 'x', locations=[box[0,0]+dist,box[1,0],box[2,0]], /onglass)
+    # # oModel -> add, obj_new('idlgrtext', 'y', locations=[box[0,0],box[1,0]+dist,box[2,0]], /onglass)
+    # # oModel -> add, obj_new('idlgrtext', 'z', locations=[box[0,0],box[1,0],box[2,0]+dist], /onglass)
 
-    ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=(0,0,0), tube_radius=None, line_width=1)
+    # ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=(0,0,0), tube_radius=None, line_width=1)
+
+    ml.outline(extent=[*xx[[0, -1]], *yy[[0, -1]], *zz[[0, -1]]], color=(0,0,0))
 
 def add_base(coord, pos, vmin=-10, vmax=10):
     """
