@@ -69,5 +69,16 @@ module params
   ! whether ssf outputs associations
   ! associations only currently required for make_cut
   logical, parameter :: assoc_output = .true.
+  ! allow changes in default periodicity
+  logical, parameter :: adjust_cartesian_periodicity = .true.
+  logical, parameter :: adjust_cylindical_periodicity = .false.
+  logical, parameter :: adjust_spherical_periodicity = .false.
+  ! turn on and off periodicity in x, y, z, theta and phi
+  ! these do nothing if adjust_***_periodicities is .false.
+  logical, parameter :: periodic_x = .false.
+  logical, parameter :: periodic_y = .false.
+  logical, parameter :: periodic_z = .true.
+  logical, parameter :: periodic_theta = .false.
+  logical, parameter :: periodic_phi = .false.
 
 end module

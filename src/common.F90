@@ -73,10 +73,7 @@ module common
       integer(int32) :: dims
 
 #if ssf_code
-#if cartesian
-#else
       call edgecheck(r)
-#endif
 #endif
 
       xp = r(1)
@@ -322,14 +319,34 @@ module common
 
       real(np) :: r(3)
       logical :: outedge
-      
-      outedge = .false.
-      outedge = outedge .or. r(1) >= xmax .or. r(1) <= xmin
+
 #if cartesian
-      outedge = outedge .or. r(2) >= ymax .or. r(2) <= ymin .or. r(3) >= zmax .or. r(3) <= zmin
-#elif cylindrical
-      outedge = outedge .or. r(3) >= zmax .or. r(3) <= zmin
+      if (adjust_cartesian_periodicity) then
+        outedge = .false.
+        if (.not. periodic_x) outedge = outedge .or. r(1) >= xmax .or. r(1) <= xmin
+        if (.not. periodic_y) outedge = outedge .or. r(2) >= ymax .or. r(2) <= ymin
+        if (.not. periodic_z) outedge = outedge .or. r(3) >= zmax .or. r(3) <= zmin
+      else
+        outedge = &
+          r(1) >= xmax .or. r(1) <= xmin .or. &
+          r(2) >= ymax .or. r(2) <= ymin .or. &
+          r(3) >= zmax .or. r(3) <= zmin
+      endif
 #endif
+#if cylindrical
+      outedge = &
+        r(1) >= xmax .or. r(1) <= xmin .or. r(3) >= zmax .or. r(3) <= zmin
+      if (adjust_cylindrical_periodicity) then
+        if (.not. periodic_phi) outedge = outedge .or. r(2) >= ymax .or. r(2) <= ymin
+      endif
+#endif
+#if spherical
+      outedge = r(1) >= xmax .or. r(1) <= xmin
+      if (adjust_spherical_periodicity) then
+        if (.not. periodic_theta) outedge = outedge .or. r(2) >= ymax .or. r(2) <= ymin
+        if (.not. periodic_phi) outedge = outedge .or. r(3) >= zmax .or. r(3) <= zmin
+      endif
+#endif      
       
     end function  
 
@@ -337,25 +354,69 @@ module common
 
     subroutine edgecheck(r)
     ! determines if the point r is outwith the computational box across a 
-    ! periodic boundary and moves if necessary
+    ! periodic boundary and moves it if necessary
 
       real(np) :: r(3)
-      
-#if cylindrical
-      if (r(2) < ymin) r(2) = r(2) + (ymax - ymin)
-      if (r(2) > ymax) r(2) = r(2) - (ymax - ymin)
-#elif spherical
-      if (r(2) < ymin .or. r(2) > ymax) then
-        if (r(2) < ymin) r(2) = 2*ymin - r(2)
-        if (r(2) > ymax) r(2) = 2*ymax - r(2)
-        if (r(3) < (zmax + zmin)/2) then
-          r(3) = r(3) + (zmax - zmin)/2
-        else
-          r(3) = r(3) - (zmax - zmin)/2
+
+#if cartesian
+      if (adjust_cartesian_periodicity) then
+        if (periodic_x) then
+          if (r(1) <= xmin) r(1) = r(1) + (xmax - xmin)
+          if (r(1) >= xmax) r(1) = r(1) - (xmax - xmin)
+        endif
+        if (periodic_y) then
+          if (r(2) <= ymin) r(2) = r(2) + (ymax - ymin)
+          if (r(2) >= ymax) r(2) = r(2) - (ymax - ymin)
+        endif
+        if (periodic_z) then
+          if (r(3) <= zmin) then
+            r(3) = r(3) + (zmax - zmin)
+          endif
+          if (r(3) >= zmax) r(3) = r(3) - (zmax - zmin)
         endif
       endif
-      if (r(3) <= zmin) r(3) = r(3) + (zmax - zmin)
-      if (r(3) >= zmax) r(3) = r(3) - (zmax - zmin)
+#endif
+#if cylindrical
+      if (adjust_cylindrical_periodicity) then
+        if (periodic_phi) then
+          if (r(2) < ymin) r(2) = r(2) + (ymax - ymin)
+          if (r(2) > ymax) r(2) = r(2) - (ymax - ymin)
+        endif
+      else
+        if (r(2) < ymin) r(2) = r(2) + (ymax - ymin)
+        if (r(2) > ymax) r(2) = r(2) - (ymax - ymin)
+      endif
+#endif
+#if spherical
+      if (adjust_spherical_periodicity) then
+        if (periodic_theta) then
+          if (r(2) < ymin .or. r(2) > ymax) then
+            if (r(2) < ymin) r(2) = 2*ymin - r(2)
+            if (r(2) > ymax) r(2) = 2*ymax - r(2)
+            if (r(3) < (zmax + zmin)/2) then
+              r(3) = r(3) + (zmax - zmin)/2
+            else
+              r(3) = r(3) - (zmax - zmin)/2
+            endif
+          endif
+        endif
+        if (periodic_phi) then
+          if (r(3) <= zmin) r(3) = r(3) + (zmax - zmin)
+          if (r(3) >= zmax) r(3) = r(3) - (zmax - zmin)
+        endif
+      else
+        if (r(2) < ymin .or. r(2) > ymax) then
+          if (r(2) < ymin) r(2) = 2*ymin - r(2)
+          if (r(2) > ymax) r(2) = 2*ymax - r(2)
+          if (r(3) < (zmax + zmin)/2) then
+            r(3) = r(3) + (zmax - zmin)/2
+          else
+            r(3) = r(3) - (zmax - zmin)/2
+          endif
+        endif
+        if (r(3) <= zmin) r(3) = r(3) + (zmax - zmin)
+        if (r(3) >= zmax) r(3) = r(3) - (zmax - zmin)
+      endif
 #endif
           
     end subroutine
@@ -363,7 +424,7 @@ module common
     !********************************************************************************
 
     subroutine get_startpoints(theta, phi, xs, ys, zs)
-    ! from the theta,phi coordinates of a fan vector, produces ring of points in the fanplane
+    ! from the theta, phi coordinates of a fan vector, produces ring of points in the fanplane
 
         real(np) :: theta, phi
         real(np), dimension(:) :: xs, ys, zs
