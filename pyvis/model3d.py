@@ -292,7 +292,7 @@ def add_hcs_flines(nlines=100):
         rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2] = sphr2cart(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2])
         ml.plot3d(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None)
 
-def add_fieldlines(startpts, col=(0, 0, 0), colquant=None):
+def add_fieldlines(startpts, col=(0, 0, 0), colquant=None, lw=2):
     print('Adding separatrix surface field lines')
 
     for i, startpt in enumerate(startpts, start=1):
