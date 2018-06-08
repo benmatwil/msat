@@ -312,14 +312,14 @@ def add_fieldlines(startpts, col=(0, 0, 0), colquant=None, lw=2):
             line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
 
         if colquant is None:
-            ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=col, tube_radius=None)
+            ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=col, tube_radius=None, line_width=lw)
         else:
             vals = np.zeros(line.shape[0], dtype=np.float64)
 
             for iline, pt in enumerate(line):
                 vals[iline] = fl.trilinearscalar3d(pt, colquant, xx, yy, zz)
 
-            ml.plot3d(line[:, 0], line[:, 1], line[:, 2], vals, tube_radius=None, colormap='jet')
+            ml.plot3d(line[:, 0], line[:, 1], line[:, 2], vals, tube_radius=None, colormap='jet', line_width=lw)
 
 def add_spines():
     print('Adding spines')
