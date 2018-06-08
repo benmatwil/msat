@@ -9,6 +9,8 @@ endif
 
 ifeq ($(debug),on)
 	FLAGS = -O0 -g -fbounds-check -Ddebug
+else ifeq ($(debug),basic)
+	FLAGS = -O0 -g
 else
 	FLAGS = -O3
 endif
@@ -85,7 +87,7 @@ check:
 #	@echo "Current number of OpenMP threads: $(OMP_NUM_THREADS)"
 #	@echo "Using coordinate system: $(coord)"
 
-doc: doc/manual.tex
+doc:
 	pdflatex --output-directory=doc doc/manual
 	@biber doc/manual
 	@pdflatex --output-directory=doc doc/manual
@@ -104,7 +106,7 @@ clean:
 tidy:
 	@rm -rf output/*.dat
 
-.PHONY: check
+.PHONY: check doc
 
 ###########################################################
 
