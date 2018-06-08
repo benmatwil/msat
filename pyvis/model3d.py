@@ -593,5 +593,40 @@ def add_surface():
             #     if ib0 != ib1:
 
 def sphr2cart(rs, ts, ps):
-    # convert r, theta, phi to x, y, z
+    # convert (r, theta, phi) to (x, y, z)
     return rs*np.sin(ts)*np.cos(ps), rs*np.sin(ts)*np.sin(ps), rs*np.cos(ts)
+            assocs1 = assocs[inull][::-1]
+            # ptnums = ptnums[::-1]
+            for iring, ring in enumerate(rings1[:-1]):
+                if iring/nskp - iring//nskp > 0: 
+                    dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
+                    breaks1[iring][dists > acc] = 1
+                    brks = np.r_[[-1], np.where(breaks1[iring] == 1)[0], [breaks1[iring].shape[0]-1]] + 1
+                    newass = assocs1[iring*nskp]
+                    for iskp in range(nskp):
+                        newass = assocs1[iring*nskp+iskp+1][newass-1]
+                    for ipt, pt in enumerate(ring):
+                        if ipt not in brks-1 and ipt != brks[-1]:
+                            if newass[ipt] != newass[ipt+1]:
+                                tri1 = [ptnums[iring] + ipt, ptnums[iring+1] + newass[ipt] - 1, ptnums[iring+1] + newass[ipt]]
+                                trianglelist.append(tri1)
+                            tri2 = [ptnums[iring] + ipt, ptnums[iring+1] + newass[ipt], ptnums[iring] + ipt + 1]
+                            trianglelist.append(tri2)
+            # return trianglelist, ringlist, ptnums
+            ml.triangular_mesh(ringlist[:,0], ringlist[:,1], ringlist[:,2], trianglelist, color=cols[nulldata[inull].sign], tube_radius=None, opacity=1)
+
+
+            # for ib0, ib1 in zip(brks[:-1], brks[1:]):
+            #     if ib0 != ib1:
+
+
+            # for ib0, ib1 in zip(brks[:-1], brks[1:]):
+            #     if ib0 != ib1:
+
+def sphr2cart(rs, ts, ps):
+    # convert (r, theta, phi) to (x, y, z)
+    return rs*np.sin(ts)*np.cos(ps), rs*np.sin(ts)*np.sin(ps), rs*np.cos(ts)
+
+def cyl2cart(Rs, ps, zs):
+    # convert (R, phi, z) to (x, y, z)
+    return Rs*np.cos(ps), Rs*np.sin(ps), zs
