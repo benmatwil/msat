@@ -493,15 +493,15 @@ def add_base(coord, pos, vmin=-10, vmax=10):
 def add_sun():
     # make theta, phi grids of bgrid coords and create the coords of sphere
     theta, phi = np.meshgrid(yy, zz, indexing='ij')
-    x = np.sin(theta) * np.cos(phi)
-    y = np.sin(theta) * np.sin(phi)
-    z = np.cos(theta)
+    x = xx[0] * np.sin(theta) * np.cos(phi)
+    y = xx[0] * np.sin(theta) * np.sin(phi)
+    z = xx[0] * np.cos(theta)
 
     # -bgrid because otherwise want reversed colourtable
     ml.mesh(x, y, z, scalars=-bgrid[0, :, :, 0],  colormap='Greys', vmin=-10, vmax=10)
 
     # make z-axis
-    ml.plot3d([0, 0], [0, 0], [-xx.max(), xx.max()], color=(0,0,0), tube_radius=None, line_width=4)
+    ml.plot3d([0, 0], [0, 0], [-xx.max(), xx.max()], color=(0, 0, 0), tube_radius=None, line_width=4)
 
 def save():
     ml.savefig('figures/' + rd.prefix(filename) + '-model3d.png')
