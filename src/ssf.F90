@@ -12,7 +12,7 @@ program ssfinder
 
   implicit none
 
-  integer(int64) :: tstart, tstop, count_rate !to time program
+  integer(int64) :: tstart, tstop, count_rate ! to time program
 
   real(np) :: r(3)
   real(np) :: h, h0
@@ -28,7 +28,8 @@ program ssfinder
   ! spine tracer
   real(np), dimension(3) :: rspine
   real(np), dimension(:,:), allocatable :: spine
-  real(np) :: hspine
+  real(np), parameter :: hspine = 0.5_np*stepsize
+  integer(int32), parameter :: spinemax = 10*ringsmax
   integer(int32) :: dir
 
   integer(int32) :: nlines
@@ -300,7 +301,10 @@ program ssfinder
     do iring = 1, ringsmax ! loop over number of rings we want
 
       if (signs(inull) .eq. 0) then ! skip null which is uncharacterised
-        print*,'Null has zero sign'
+        !$OMP SINGLE
+        print*,'Null has zero sign -- Stopping'
+        !$OMP END SINGLE
+        nrings = 1
         exit
       endif
       
@@ -473,6 +477,7 @@ program ssfinder
           call file_position(iring, nperring, linenum, ia, ip)
           read(90, pos=ia) linenum
           read(90, pos=ip) rsep(:,iring+2)
+          ! print*,  ip
         enddo
         rsep(:, 1) = rnullsreal(:,nullnum1)
         rsep(:, ringnum+3) = rnullsreal(:,nullnum2)
@@ -490,11 +495,10 @@ program ssfinder
       spine(:,1) = rnulls(:, inull)
       rspine = rnulls(:, inull) + dir*spines(:, inull)*1e-3_np ! pick a good factor
       iring = 0
-      do while (.not. outedge(rspine) .and. iring < ringsmax)
+      do while (.not. outedge(rspine) .and. iring < spinemax)
         iring = iring + 1
         if (signs(inull) == 0) exit
         call add_vector(spine, rspine)
-        hspine = 5e-2_np
         call trace_line(rspine, -signs(inull), hspine)
         call edgecheck(rspine)
       enddo
