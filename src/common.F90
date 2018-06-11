@@ -45,7 +45,6 @@ module common
         enddo
       endif
       if (ic == 0) stop 'No input file provided'
-
       
       fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
         //trim(outname)//'/' &
