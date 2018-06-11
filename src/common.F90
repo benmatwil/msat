@@ -38,6 +38,9 @@ module common
           elseif (trim(arg) == '-o') then
             call get_command_argument(iarg+1,arg)
             outname = trim(arg)
+          elseif (trim(arg) == '--params') then
+            call print_params
+            stop
           endif
         enddo
       endif
@@ -48,14 +51,40 @@ module common
         //trim(outname)//'/' &
         //trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
       
-      ! if (oc == 0) then
-      !   fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
-      !     //trim(outname)//'/' &
-      !     //trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
-      ! else
-      !   if (index(outname, '/', .true.) /= len(trim(outname))) outname = trim(outname)//'/'
-      !   fileout = trim(outname)//trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
-      ! endif
+    end
+
+    subroutine print_params
+
+      print*, 'np =', np
+      print*, 'nproc =', nproc
+      print*, 'zero =', zero
+      print*, 'sig_figs =', sig_figs
+      print*, 'rspherefact =', rspherefact
+      print*, 'nphi =', nphi
+      print*, 'ntheta =', ntheta
+      print*, 'maxiter =', maxiter
+      print*, 'dist_mult =', dist_mult
+      print*, 'nstart =', nstart
+      print*, 'start_dist =', start_dist
+      print*, 'ringsmax =', ringsmax
+      print*, 'pointsmax =', pointsmax
+      print*, 'samemax =', samemax
+      print*, 'stepsize =', stepsize
+      print*, 'tol =', tol
+      print*, 'stepmin =', stepmin 
+      print*, 'restart =', restart
+      print*, 'nullrestart =', nullrestart
+      print*, 'nskip =', nskip
+      print*, 'bytesize =', bytesize
+      print*, 'assoc_output =', assoc_output
+      print*, 'adjust_cartesian_periodicity =', adjust_cartesian_periodicity
+      print*, 'adjust_cylindrical_periodicity =', adjust_cylindrical_periodicity
+      print*, 'adjust_spherical_periodicity =', adjust_spherical_periodicity
+      print*, 'periodic_x =', periodic_x
+      print*, 'periodic_y =', periodic_y
+      print*, 'periodic_z =', periodic_z
+      print*, 'periodic_theta =', periodic_theta
+      print*, 'periodic_phi =', periodic_phi
 
     end
 
