@@ -29,24 +29,24 @@ def get_colours():
 
 #################################################################
 
-    def ticks(nsplit, npi):
-        list = []
-        for i in range(nsplit+1):
-            string = r'$'
-            fract = fr(npi*i,nsplit)
-            if fract.numerator == 0:
-                string = r'$0$'
-            elif fract.denominator != 1:
-                string = string + r'\frac{'
-                if fract.numerator != 1:
-                    string = string + str(fract.numerator) 
-                string = string + r'\pi' + r'}{' + str(fract.denominator) + r'}$'
-            else:
-                if fract.numerator != 1:
-                    string = string + str(fract.numerator)
-                string = string + r'\pi$'
-            list.append(string)
-        return list
+def ticks(nsplit, npi):
+    list = []
+    for i in range(nsplit+1):
+        string = r'$'
+        fract = fr(npi*i,nsplit)
+        if fract.numerator == 0:
+            string = r'$0$'
+        elif fract.denominator != 1:
+            string = string + r'\frac{'
+            if fract.numerator != 1:
+                string = string + str(fract.numerator) 
+            string = string + r'\pi' + r'}{' + str(fract.denominator) + r'}$'
+        else:
+            if fract.numerator != 1:
+                string = string + str(fract.numerator)
+            string = string + r'\pi$'
+        list.append(string)
+    return list
 
 #################################################################
 
@@ -68,10 +68,10 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
 
     plt.figure(figsize=(15/2.55, 6.6/2.55)) # set-up for A4
     ax = plt.gca()
-    plt.xlabel('Longitude')
+    plt.xlabel(r'Longitude, \(\phi\)')
     plt.xlim([0, 2*np.pi])
     plt.xticks(np.linspace(0, 2*np.pi, nticks+1), ticks(nticks, 2))
-    plt.ylabel('Latitude')
+    plt.ylabel(r'Colatitude, \(\theta\)')
     plt.ylim([np.pi, 0])
     plt.yticks(np.linspace(0, np.pi, nticks+1), ticks(nticks, 1))
 
