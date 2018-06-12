@@ -124,6 +124,8 @@ program make_cut
 
   integer(int32) :: nspine, dir
 
+  integer(int64) :: tstart, tstop, count_rate !to time program
+
   call filenames
 
   if (command_argument_count() > 0) then
@@ -159,6 +161,8 @@ program make_cut
     ig = 3_int64*4_int64 + 3_int64*int(nx, int64)*int(ny, int64)*int(nz, int64)*8_int64 + 1_int64
     read(10, pos=ig) xg, yg, zg
   close(10)
+
+  call system_clock(tstart,count_rate) ! to time how long it takes
 
   ds = maxval([maxval(yg(2:ny) - yg(1:ny-1)), maxval(zg(2:nz) - zg(1:nz-1))])
 
@@ -449,5 +453,8 @@ program make_cut
     close(30)
     close(20)
   endif
+
+  call system_clock(tstop, count_rate)
+  print*, 'Time taken:', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"
 
 end program
