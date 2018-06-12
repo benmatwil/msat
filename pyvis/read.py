@@ -40,39 +40,38 @@ def field(filename):
     return bx, by, bz, x, y, z
 
 def nulls(filename, simple=False):
+    # create datatypes depending on simple or not
+    if simple:
+        dtype = [('number', np.int32),
+            ('pos', np.float64, 3),
+            ('gridpos', np.float64, 3)]
+    else:
+        dtype = [('number',np.int32),
+            ('pos', np.float64, 3),
+            ('gridpos', np.float64, 3),
+            ('sign', np.int32),
+            ('spine', np.float64, 3),
+            ('fan', np.float64, 3),
+            ('warning', np.int32)]
+
     with open(outprefix+'/'+prefix(filename)+'-nullpos.dat', 'rb') as nullfile:
         # get three data sets from the null finder file
         nnulls, = np.fromfile(nullfile, dtype=np.int32, count=1)
-        gridpos = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
-        pos = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
+        # create record array
+        nulls = np.recarray(nnulls, dtype=dtype)
+        # start reading and storing data
+        nulls.gridpos = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
+        nulls.pos = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
+        nulls.number = np.arange(1, nnulls+1)
 
     if not simple:
         # if you want the sign finder data too...
         with open(outprefix+'/'+prefix(filename)+'-nulldata.dat', 'rb') as nullfile:
             nnulls, = np.fromfile(nullfile, dtype=np.int32, count=1)
-            signs = np.fromfile(nullfile, dtype=np.int32, count=nnulls)
-            spines = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
-            fans = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
-            warning = np.fromfile(nullfile, dtype=np.int32, count=nnulls)
-
-        # create the right record array
-        nulls = np.recarray(nnulls, dtype=[('number',np.int32),
-            ('pos', np.float64, 3), ('gridpos', np.float64, 3), ('sign', np.int32),
-            ('spine', np.float64, 3), ('fan', np.float64, 3), ('warning', np.int32)])
-
-        # fill the array
-        nulls.sign = signs
-        nulls.spine = spines
-        nulls.fan = fans
-        nulls.warning = warning
-    else:
-        # just the null finder data
-        nulls = np.recarray(nnulls, dtype=[('number', np.int32),
-            ('pos', np.float64, 3), ('gridpos', np.float64, 3)])
-
-    nulls.number = np.arange(nnulls, dtype=np.int32)+1
-    nulls.pos = pos
-    nulls.gridpos = gridpos
+            nulls.sign = np.fromfile(nullfile, dtype=np.int32, count=nnulls)
+            nulls.spine = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
+            nulls.fan = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
+            nulls.warning = np.fromfile(nullfile, dtype=np.int32, count=nnulls)
 
     return nulls
 
