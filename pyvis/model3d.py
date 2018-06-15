@@ -13,9 +13,10 @@ vtk.vtkObject.GlobalWarningDisplayOff()
 filename = None
 
 sign_names = {-1:'Neg', 0:'Zero', 1:'Pos'}
+
 def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
     nullrad=1, nfanlines=40, nring=None, colquant=None, coordsystem='cartesian', no_nulls=False,
-    sun=True, outdir=None, periodicity=None):
+    sun=True, outdir=None, periodicity=''):
     """Makes a 3D visualisation of the output from Magnetic Skeleton Analysis Tools
 
         fname: name of the file containing the original magnetic field
@@ -31,7 +32,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
         linecolor: color of fieldlines (defaults to black)
         nskip: how many rings to skip in plotting"""
 
-    global bgrid, xx, yy, zz, nulldata, ds, filename, nskipglob, nulllist, csystem, periodic_check, periodic_dist
+    global bgrid, xx, yy, zz, nulldata, ds, filename, nskipglob, nulllist, csystem, periodic_check, periodic_dist, periodic_global
 
     csystem = coordsystem
     print('Using {} coordinates'.format(coordsystem))
@@ -54,7 +55,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
         ds = min([np.diff(xx).min(), np.diff(yy).min(), np.diff(zz).min()])/2
 
     periodic_check = False
-    if periodicity is not None:
+    if periodicity != '':
         periodic_dist = 1e100
         if 'x' in periodicity:
             periodic_check = True
@@ -65,6 +66,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
         if 'z' in periodicity:
             periodic_check = True
             periodic_dist = min((periodic_dist, (zz[-1] - zz[0])**2))
+    periodic_global = periodicity
 
     filename = fname
 
@@ -79,7 +81,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
         box = False
     if box: add_box()
 
-    if fieldlines is not None: add_fieldlines(fieldlines, col=linecolor, colquant=colquant)
+    if fieldlines is not None: add_fieldlines(fieldlines, col=linecolor)
 
 def set_null_list(lst):
     global nulllist
@@ -201,45 +203,45 @@ def add_sepsurf_flines(nlines, nring=None):
         x, y, z, s, ptcons = ( [] for _ in range(5) )
         index = 0
         for inull in nulls.number[nulls.sign == isign]-1:
-        print('Null {}'.format(inull+1))
-        sys.stdout.write("\033[F")
+            print('Null {}'.format(inull+1))
+            sys.stdout.write("\033[F")
 
-        # select the right ring to trace from
-        if nring is None:
-            ring = rings[inull][len(rings[inull])//5]
-        else:
-            if type(nring) is int:
-                ring = rings[inull][nring]
-            elif type(nring) is float:
-                ring = rings[inull][np.floor(nring*len(rings[inull]))]
+            # select the right ring to trace from
+            if nring is None:
+                ring = rings[inull][len(rings[inull])//5]
+            else:
+                if type(nring) is int:
+                    ring = rings[inull][nring]
+                elif type(nring) is float:
+                    ring = rings[inull][np.floor(nring*len(rings[inull]))]
 
-        nskip = len(ring[:, 0])//nlines
+            nskip = len(ring[:, 0])//nlines
 
             for ipt, startpt in enumerate(ring[::nskip, :], start=1):
-            # choose some good parameters
-            h = 1e-2
-            hmin = 1e-3
-            hmax = 0.5
-            epsilon = 1e-5
+                # choose some good parameters
+                h = 1e-2
+                hmin = 1e-3
+                hmax = 0.5
+                epsilon = 1e-5
 
-            # calculate the fieldline
+                # calculate the fieldline
                 line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem, periodicity=periodic_global)
 
-            # cut off the fieldline at the point closest to the null - only want the fan, not the spine
-            dists = np.sqrt((line[:, 0] - nulldata[inull].pos[0])**2 +
-                (line[:, 1] - nulldata[inull].pos[1])**2 + (line[:, 2] - nulldata[inull].pos[2])**2)
-            imin = dists.argmin()
-            line = line[0:imin+1, :] if nulldata[inull].sign == -1 else line[imin:, :]
+                # cut off the fieldline at the point closest to the null - only want the fan, not the spine
+                dists = np.sqrt((line[:, 0] - nulldata[inull].pos[0])**2 +
+                    (line[:, 1] - nulldata[inull].pos[1])**2 + (line[:, 2] - nulldata[inull].pos[2])**2)
+                imin = dists.argmin()
+                line = line[0:imin+1, :] if nulldata[inull].sign == -1 else line[imin:, :]
 
-            if csystem == 'spherical':
-                line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
+                if csystem == 'spherical':
+                    line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
                 elif csystem == 'cylindrical':
                     line[:, 0], line[:, 1], line[:, 2] = cyl2cart(line[:, 0], line[:, 1], line[:, 2])
-            
+                
                 x.append(line[:, 0])
                 y.append(line[:, 1])
                 z.append(line[:, 2])
-            length = len(line[:, 0])
+                length = len(line[:, 0])
                 s.append(np.zeros(length))
                 if csystem == 'spherical' or csystem == 'cylindical' or not periodic_check:
                     ptcons.append(np.vstack([np.arange(index, index+length-1), np.arange(index+1, index+length)]).T)
@@ -250,7 +252,7 @@ def add_sepsurf_flines(nlines, nring=None):
                         ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1), np.arange(index+ib0+2, index+ib1+1)]).T)
                 index += length
     
-    # add points to model
+        # add points to model
         if len(x) > 0:
             src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s))
             src.mlab_source.dataset.lines = np.vstack(ptcons)
@@ -353,7 +355,7 @@ def add_fieldlines(startpts, col=(0, 0, 0), lw=2):
         src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s))
         src.mlab_source.dataset.lines = np.vstack(ptcons)
         src.update()
-
+        
         lines = ml.pipeline.stripper(src)
         ml.pipeline.surface(lines, color=col, line_width=lw, name='Fieldlines')
 
