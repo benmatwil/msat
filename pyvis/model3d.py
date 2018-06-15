@@ -495,10 +495,18 @@ def add_nulls(size=1):
     #     ml.mesh(x + pos[0], y + pos[1], z + pos[2], color=cols[nulldata[inull].sign])
 
 def change_null_size(size):
+    # not working properly... also removes outline
+    objs = ml.gcf().children
+    count_remove = 0
+    for obj in objs:
+        if 'Nulls' in obj.name:
+            count_remove += 1
+    while count_remove > 0:
     objs = ml.gcf().children
     for obj in objs:
         if 'Nulls' in obj.name:
             obj.remove()
+                count_remove -= 1
     
     add_nulls(size)
 
