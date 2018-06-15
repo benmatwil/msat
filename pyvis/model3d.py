@@ -114,11 +114,10 @@ def add_sepsurf_rings():
         # two lists, one for positive and the other for negative nulls
         x, y, z, s, ptcons = ( [] for _ in range(5) )
         index = 0
-        for inull in nulls.number[nulls.sign == isign]:
-            print('Null {:5d}'.format(inull))
+        for inull in nulls.number[nulls.sign == isign]-1:
+            print('Null {:5d}'.format(inull+1))
             sys.stdout.write("\033[F")
-            inull1 = inull - 1
-            for iring, ring in enumerate(rings[inull1]):
+            for iring, ring in enumerate(rings[inull]):
                 # convert points if required
                 if csystem == 'spherical':
                     ring[:, 0], ring[:, 1], ring[:, 2] = sphr2cart(ring[:, 0], ring[:, 1], ring[:, 2])
@@ -133,10 +132,10 @@ def add_sepsurf_rings():
                     # use distances between consectutive points to detect extra breaks for periodicity
                     dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
                     # use break data to plot the individual lines in each ring as the break apart
-                    brks = np.unique(np.r_[-1, np.where(breaks[inull1][iring] == 1)[0], np.where(dists > 0.9*periodic_dist)[0], ring.shape[0]-1])
+                    brks = np.unique(np.r_[-1, np.where(breaks[inull][iring] == 1)[0], np.where(dists > 0.9*periodic_dist)[0], ring.shape[0]-1])
                 else:
                     # use break data to plot the individual lines in each ring as the break apart
-                    brks = np.unique(np.r_[-1, np.where(breaks[inull1][iring] == 1)[0], ring.shape[0]-1])
+                    brks = np.unique(np.r_[-1, np.where(breaks[inull][iring] == 1)[0], ring.shape[0]-1])
                 for ib0, ib1 in zip(brks[:-1], brks[1:]):
                     # add the right indicies based on the breaks
                     ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1), np.arange(index+ib0+2, index+ib1+1)]).T)
