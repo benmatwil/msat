@@ -163,7 +163,7 @@ def add_hcs_rings():
         for iring, ring in enumerate(rings[inull]):
             # convert points if required
             if csystem == 'spherical':
-                ring[:, 0], ring[:, .1], ring[:, 2] = sphr2cart(ring[:, 0], ring[:, 1], ring[:, 2])
+                ring[:, 0], ring[:, 1], ring[:, 2] = sphr2cart(ring[:, 0], ring[:, 1], ring[:, 2])
             # add ring points to lists
             x.append(ring[:, 0])
             y.append(ring[:, 1])
