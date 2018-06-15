@@ -12,6 +12,7 @@ vtk.vtkObject.GlobalWarningDisplayOff()
 
 filename = None
 
+sign_names = {-1:'Neg', 0:'Zero', 1:'Pos'}
 def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
     nullrad=1, nfanlines=40, nring=None, colquant=None, coordsystem='cartesian', no_nulls=False,
     sun=True, outdir=None, periodicity=None):
@@ -147,7 +148,7 @@ def add_sepsurf_rings():
             src.update()
             
             lines = ml.pipeline.stripper(src)
-            ml.pipeline.surface(lines, color=cols[isign], line_width=1)
+            ml.pipeline.surface(lines, color=cols[isign], line_width=1, name=sign_names[isign]+'SeparatrixRings')
 
 def add_hcs_rings():
     print('Adding heliospheric current sheet curtain surface rings')
@@ -183,10 +184,10 @@ def add_hcs_rings():
         src.update()
         
         lines = ml.pipeline.stripper(src)
-        ml.pipeline.surface(lines, color=(0, 1, 0), line_width=1)
+        ml.pipeline.surface(lines, color=(0, 1, 0), line_width=1, name='HCSRings')
     
     for inull in range(0, len(rings), 2):
-        ml.plot3d(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None)
+        ml.plot3d(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None, name='HCSBase')
 
 def add_sepsurf_flines(nlines, nring=None):
     print('Adding separatrix surface field lines')
@@ -400,7 +401,7 @@ def add_spines():
             src.update()
             
             lines = ml.pipeline.stripper(src)
-            ml.pipeline.surface(lines, color=cols[isign], line_width=4)
+            ml.pipeline.surface(lines, color=cols[isign], line_width=4, name=sign_names[isign]+'Spines')
     
 def add_separators(hcs=False, colour=None):
     """
@@ -457,7 +458,7 @@ def add_separators(hcs=False, colour=None):
         src.update()
         
         lines = ml.pipeline.stripper(src)
-        ml.pipeline.surface(lines, color=linecol, line_width=6)
+        ml.pipeline.surface(lines, color=linecol, line_width=6, name='Separators')
 
 def add_nulls(size=1):
     print("Adding nulls")
@@ -476,7 +477,7 @@ def add_nulls(size=1):
         pos = nulldata1.pos[nulldata1.sign == sign]
         if csystem == 'spherical':
             pos[:, 0], pos[:, 1], pos[:, 2] = sphr2cart(pos[:, 0], pos[:, 1], pos[:, 2])
-        ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[sign], scale_factor=r, resolution=32)
+        ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[sign], scale_factor=r, resolution=32, name=sign_names[sign]+'Nulls')
 
     # r = max([boxsize, ds])
     # r = r*size
@@ -559,10 +560,10 @@ def add_sun():
     z = xx[0] * np.cos(theta)
 
     # -bgrid because otherwise want reversed colourtable
-    ml.mesh(x, y, z, scalars=-bgrid[0, :, :, 0],  colormap='Greys', vmin=-10, vmax=10)
+    ml.mesh(x, y, z, scalars=-bgrid[0, :, :, 0],  colormap='Greys', vmin=-10, vmax=10, name='Solar surface')
 
     # make z-axis
-    ml.plot3d([0, 0], [0, 0], [-xx.max(), xx.max()], color=(0, 0, 0), tube_radius=None, line_width=4)
+    ml.plot3d([0, 0], [0, 0], [-xx.max(), xx.max()], color=(0, 0, 0), tube_radius=None, line_width=4, name='Z-axis')
 
 def save():
     ml.savefig('figures/' + rd.prefix(filename) + '-model3d.png')
