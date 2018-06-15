@@ -492,6 +492,14 @@ def add_nulls(size=1):
     #         pos[0], pos[1], pos[2] = sphr2cart(*pos)
     #     ml.mesh(x + pos[0], y + pos[1], z + pos[2], color=cols[nulldata[inull].sign])
 
+def change_null_size(size):
+    objs = ml.gcf().children
+    for obj in objs:
+        if 'Nulls' in obj.name:
+            obj.remove()
+    
+    add_nulls(size)
+
 def add_box():
     print("Adding box")
     # create line with all corners to be normalised
