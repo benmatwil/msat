@@ -46,9 +46,6 @@ def getdr(r, x, y, z):
     dy = y[iy+1] - y[iy]
     dz = z[iz+1] - z[iz]
 
-    # xc = x[ix] + dx/2
-    # yc = y[iy] + dy/2
-
     xp = x[ix] + (r[0] - ix)*dx
     yp = y[iy] + (r[1] - iy)*dy
 
@@ -60,42 +57,93 @@ def getdr(r, x, y, z):
         return np.array([dx, xp*dy, dz], dtype=np.float64)
 
 def edgecheck(r):
-    if csystem == 'spherical':
-        if r[1] < ymin or r[1] > ymax:
-            if r[1] < ymin: r[1] = 2*ymin - r[1]
-            if r[1] > ymax: r[1] = 2*ymax - r[1]
-            if r[2] < (zmax + zmin)/2:
-                r[2] = r[2] + (zmax - zmin)/2
-            else:
-                r[2] = r[2] - (zmax - zmin)/2
-        if r[2] <= zmin: r[2] = r[2] + (zmax - zmin)
-        if r[2] >= zmax: r[2] = r[2] - (zmax - zmin)
-    elif csystem == 'cylindrical':
-        if r[2] < ymin: r[2] = r[2] + (ymax - ymin)
-        if r[2] > ymax: r[2] = r[2] - (ymax - ymin)
+    # need to implement periodic_t, periodic_p
+    if periodic_switch:
+        if csystem == 'spherical':
+            if periodic_t:
+                if r[1] < ymin or r[1] > ymax:
+                    if r[1] < ymin: r[1] = 2*ymin - r[1]
+                    if r[1] > ymax: r[1] = 2*ymax - r[1]
+                    if r[2] < (zmax + zmin)/2:
+                        r[2] = r[2] + (zmax - zmin)/2
+                    else:
+                        r[2] = r[2] - (zmax - zmin)/2
+            if periodic_p:
+                if r[2] <= zmin: r[2] = r[2] + (zmax - zmin)
+                if r[2] >= zmax: r[2] = r[2] - (zmax - zmin)
+        elif csystem == 'cartesian':
+            if periodic_x:
+                if r[0] <= xmin: r[0] = r[0] + (xmax - xmin)
+                if r[0] >= xmax: r[0] = r[0] - (xmax - xmin)
+            if periodic_y:
+                if r[1] <= ymin: r[1] = r[1] + (ymax - ymin)
+                if r[1] >= ymax: r[1] = r[1] - (ymax - ymin)
+            if periodic_z:
+                if r[2] <= zmin: r[2] = r[2] + (zmax - zmin)
+                if r[2] >= zmax: r[2] = r[2] - (zmax - zmin)
+        elif csystem == 'cylindrical':
+            if periodic_p:
+                if r[2] < ymin: r[2] = r[2] + (ymax - ymin)
+                if r[2] > ymax: r[2] = r[2] - (ymax - ymin)
 
 def outedge(r):
-    outedge = r[0] >= xmax_box or r[0] <= xmin_box
-    if csystem == 'cartesian':
-        outedge = outedge or r[1] >= ymax_box or r[1] <= ymin_box or r[2] >= zmax_box or r[2] <= zmin_box
-    elif csystem == 'cylindrical':
-        outedge = outedge or r[2] >= zmax_box or r[2] <= zmin_box
-    
+    # need to implement periodic_t, periodic_p
+    if periodic_switch:
+        if csystem == 'cartesian':
+            outedge = False
+            if not periodic_x:
+                outedge = outedge or r[0] >= xmax_box or r[0] <= xmin_box
+            if not periodic_y:
+                outedge = outedge or r[1] >= ymax_box or r[1] <= ymin_box
+            if not periodic_z:
+                outedge = outedge or r[2] >= zmax_box or r[2] <= zmin_box
+        elif csystem == 'spherical':
+            outedge = r[0] >= xmax_box or r[0] <= xmin_box
+            if not periodic_t:
+                outedge = outedge or r[1] >= ymax_box or r[1] <= ymin_box
+            if not periodic_p:
+                outedge = outedge or r[2] >= zmax_box or r[2] <= zmin_box
+        elif csystem == 'cylindrical':
+            outedge = r[0] >= xmax_box or r[0] <= xmin_box or r[2] >= zmax_box or r[2] <= zmin_box
+            if not periodic_p:
+                outedge = outedge or r[1] >= ymax_box or r[1] <= ymin_box
+    else:
+        outedge = r[0] >= xmax_box or r[0] <= xmin_box or r[1] >= ymax_box or r[1] <= ymin_box or r[2] >= zmax_box or r[2] <= zmin_box
+        
     return outedge
 
-def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t_max=1.2, oneway=False, boxedge=None, coordsystem='cartesian', gridcoord=False, stop_criteria=True):
-    global xmin, xmax, ymin, ymax, zmin, zmax, xmin_box, xmax_box, ymin_box, ymax_box, zmin_box, zmax_box, csystem
-    # need to correct this below
-    # startpt[3,nl] - start point for field line
-    # bgrid[nx,ny,nz,3] - magnetic field
-    # x[nx],y[ny],z[nz] - grid of points on which magnetic field given
+def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t_max=1.2, oneway=False, boxedge=None, coordsystem='cartesian', gridcoord=False, stop_criteria=True, periodicity=''):
+    """
+    Calculates 3D field line which goes through the point startpt
+    startpt - 3 element, 1D array as start point for field line calculation
+    bgrid - magnetic field array of shape (nx, ny, nz, 3)
+    x, y, z - 1D arrays of grid points on which magnetic field given
 
-    # h - initial step length
-    # hmin - minimum step length
-    # hmax - maximum step length
-    # epsilon - tolerance to which we require point on field line known
+    h - initial step length
+    hmin - minimum step length
+    hmax - maximum step length
+    epsilon - tolerance to which we require point on field line known
+
+    maxline - maximum number of points on a fieldline in each direction
+    t_max - maximum value of correction factor in RKF45 method
+    oneway - whether to only calculate field in one direction (sign of h)
+    boxedge - use a smaller domain than edge of the grids x, y and z
+    coordsystem - set the coordinate system of the magnetic field grid
+    gridcoord - use grid coordinates as input and output to routine
+    stop_critieria - use the stopping criteria to detect if field line has stopped inside domain
+    periodicity - set the periodicity of the grid e.g. 'xy' for periodicity in both x and y direction
+    """
+    global xmin, xmax, ymin, ymax, zmin, zmax, xmin_box, xmax_box, ymin_box, ymax_box, zmin_box, zmax_box, csystem
+    global periodic_x, periodic_y, periodic_z, periodic_t, periodic_p, periodic_switch
     
     csystem = coordsystem
+
+    periodic_x = True if 'x' in periodicity else False
+    periodic_y = True if 'y' in periodicity else False
+    periodic_z = True if 'z' in periodicity else False
+    periodic_p = False if 'p' in periodicity else True
+    periodic_t = False if 't' in periodicity else True
+    periodic_switch = periodic_x or periodic_y or periodic_z or periodic_p or periodic_t
 
     # define edges of box
     xmin, ymin, zmin = 0, 0, 0
@@ -285,18 +333,18 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
             line.append(rt)
 
             if stop_criteria:
-            # check line is still moving
-            if count >= 2:
-                dl = line[-1] - line[-2]
-                mdl = sqrt(np.sum(dl**2))
-                if mdl < hmin*0.5:
-                    break
+                # check line is still moving
+                if count >= 2:
+                    dl = line[-1] - line[-2]
+                    mdl = sqrt(np.sum(dl**2))
+                    if mdl < hmin*0.5:
+                        break
 
-                dl = line[-1] - line[-3]
-                mdl = sqrt(np.sum(dl**2))
-                if mdl < hmin*0.5:
-                    bounce = 1
-                    break
+                    dl = line[-1] - line[-3]
+                    mdl = sqrt(np.sum(dl**2))
+                    if mdl < hmin*0.5:
+                        bounce = 1
+                        break
 
         if out:
             rout = rt.copy()
