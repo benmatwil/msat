@@ -195,17 +195,14 @@ def add_sepsurf_flines(nlines, nring=None):
 
     cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
 
-    x, y, z, s, ptcons = ( [[], []] for _ in range(5) )
-    index = [0, 0]
+    nulls = nulldata[nulllist-1]
 
-    for inull in nulllist-1:
+    for isign in [-1, 1]:
+        x, y, z, s, ptcons = ( [] for _ in range(5) )
+        index = 0
+        for inull in nulls.number[nulls.sign == isign]-1:
         print('Null {}'.format(inull+1))
         sys.stdout.write("\033[F")
-
-        if nulldata[inull].sign == 1:
-            il = 0
-        else:
-            il = 1
 
         # select the right ring to trace from
         if nring is None:
@@ -218,7 +215,7 @@ def add_sepsurf_flines(nlines, nring=None):
 
         nskip = len(ring[:, 0])//nlines
 
-        for startpt in ring[::nskip, :]:
+            for ipt, startpt in enumerate(ring[::nskip, :], start=1):
             # choose some good parameters
             h = 1e-2
             hmin = 1e-3
@@ -226,7 +223,7 @@ def add_sepsurf_flines(nlines, nring=None):
             epsilon = 1e-5
 
             # calculate the fieldline
-            line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem)
+                line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem, periodicity=periodic_global)
 
             # cut off the fieldline at the point closest to the null - only want the fan, not the spine
             dists = np.sqrt((line[:, 0] - nulldata[inull].pos[0])**2 +
@@ -236,24 +233,31 @@ def add_sepsurf_flines(nlines, nring=None):
 
             if csystem == 'spherical':
                 line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
+                elif csystem == 'cylindrical':
+                    line[:, 0], line[:, 1], line[:, 2] = cyl2cart(line[:, 0], line[:, 1], line[:, 2])
             
-            x[il].append(line[:, 0])
-            y[il].append(line[:, 1])
-            z[il].append(line[:, 2])
+                x.append(line[:, 0])
+                y.append(line[:, 1])
+                z.append(line[:, 2])
             length = len(line[:, 0])
-            s[il].append(np.zeros(length))
-            ptcons[il].append(np.vstack([np.arange(index[il], index[il]+length-1), np.arange(index[il]+1, index[il]+length)]).T)
-            index[il] += length
+                s.append(np.zeros(length))
+                if csystem == 'spherical' or csystem == 'cylindical' or not periodic_check:
+                    ptcons.append(np.vstack([np.arange(index, index+length-1), np.arange(index+1, index+length)]).T)
+                else:
+                    dists = np.r_[np.sum(np.diff(line, axis=0)**2, axis=1), 0]
+                    brks = np.unique(np.r_[-1, np.where(dists > 0.9*periodic_dist)[0], dists.shape[0]-1])
+                    for ib0, ib1 in zip(brks[:-1], brks[1:]):
+                        ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1), np.arange(index+ib0+2, index+ib1+1)]).T)
+                index += length
     
     # add points to model
-    for il, isign in zip(range(2), [1, -1]):
-        if len(x[il]) > 0:
-            src = ml.pipeline.scalar_scatter(np.hstack(x[il]), np.hstack(y[il]), np.hstack(z[il]), np.hstack(s[il]))
-            src.mlab_source.dataset.lines = np.vstack(ptcons[il])
+        if len(x) > 0:
+            src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s))
+            src.mlab_source.dataset.lines = np.vstack(ptcons)
             src.update()
             
             lines = ml.pipeline.stripper(src)
-            ml.pipeline.surface(lines, color=cols[isign], line_width=1)
+            ml.pipeline.surface(lines, color=cols[isign], line_width=1, name=sign_names[isign]+'SeparatrixFieldlines')
 
 def add_hcs_flines(nlines=100):
     print('Adding heliospheric current sheet curtain surface field lines')
@@ -302,14 +306,17 @@ def add_hcs_flines(nlines=100):
         src.update()
         
         lines = ml.pipeline.stripper(src)
-        ml.pipeline.surface(lines, color=(0, 1, 0), line_width=1)
+        ml.pipeline.surface(lines, color=(0, 1, 0), line_width=1, name='HCSFieldlines')
                 
     for inull in range(0, len(rings), 2):
         rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2] = sphr2cart(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2])
-        ml.plot3d(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None)
+        ml.plot3d(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None, name='HCSBase')
 
-def add_fieldlines(startpts, col=(0, 0, 0), colquant=None, lw=2):
+def add_fieldlines(startpts, col=(0, 0, 0), lw=2):
     print('Adding separatrix surface field lines')
+
+    x, y, z, s, ptcons = ( [] for _ in range(5) )
+    index = 0
 
     for i, startpt in enumerate(startpts, start=1):
         print('Calculating fieldline {}'.format(i))
@@ -322,20 +329,35 @@ def add_fieldlines(startpts, col=(0, 0, 0), colquant=None, lw=2):
         epsilon = 1e-5
 
         # calculate the fieldline
-        line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem)
+        line = fl.fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem, periodicity=periodic_global)
 
         if csystem == 'spherical':
             line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
 
-        if colquant is None:
-            ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=col, tube_radius=None, line_width=lw)
+        x.append(line[:, 0])
+        y.append(line[:, 1])
+        z.append(line[:, 2])
+        length = len(line[:, 0])
+        s.append(np.zeros(length))
+        if csystem == 'spherical' or csystem == 'cylindical' or not periodic_check:
+            ptcons.append(np.vstack([np.arange(index, index+length-1), np.arange(index+1, index+length)]).T)
         else:
-            vals = np.zeros(line.shape[0], dtype=np.float64)
+            dists = np.r_[np.sum(np.diff(line, axis=0)**2, axis=1), 0]
+            brks = np.unique(np.r_[-1, np.where(dists > 0.9*periodic_dist)[0], dists.shape[0]-1])
+            for ib0, ib1 in zip(brks[:-1], brks[1:]):
+                ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1), np.arange(index+ib0+2, index+ib1+1)]).T)
+        index += length
+    
+    # add points to model
+    if len(x) > 0:
+        src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s))
+        src.mlab_source.dataset.lines = np.vstack(ptcons)
+        src.update()
 
-            for iline, pt in enumerate(line):
-                vals[iline] = fl.trilinearscalar3d(pt, colquant, xx, yy, zz)
+        lines = ml.pipeline.stripper(src)
+        ml.pipeline.surface(lines, color=col, line_width=lw, name='Fieldlines')
 
-            ml.plot3d(line[:, 0], line[:, 1], line[:, 2], vals, tube_radius=None, colormap='jet', line_width=lw)
+        # ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=col, tube_radius=None, line_width=lw)
 
 def add_spines():
     print('Adding spines')
