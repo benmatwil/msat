@@ -104,7 +104,7 @@ def separators(filename, null_list=None, lines=True, connectivity=True, hcs=Fals
                 coni = []
                 sepi = []
                 nseps, = np.fromfile(sepinfo, dtype=np.int32, count=1)
-                for isep in range(nseps):
+                for _ in range(nseps):
                     sepinfo.seek(4, 1)
                     coni.append(np.asscalar(np.fromfile(sepinfo, dtype=np.int32, count=1)))
                     sepinfo.seek(8, 1)
@@ -139,7 +139,7 @@ def spines(filename, null_list=None):
     with open(outprefix+'/'+prefix(filename)+'-spines.dat', 'rb') as spinefile:
         for inull in nulldata.number:
             spinelisti = []
-            for ispine in range(2): # spine in each direction
+            for _ in range(2): # spine in each direction
                 length, = np.fromfile(spinefile, dtype=np.int32, count=1)
                 if inull in null_list:
                     spinelisti.append(np.fromfile(spinefile, dtype=np.float64, count=3*length).reshape(-1, 3))
@@ -188,7 +188,7 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=Fal
         floattype = np.float32
     elif bytesize == 8:
         floattype = np.float64
-    stepsize, = np.fromfile(ringinfo, dtype=np.float64, count=1)
+    _ = np.fromfile(ringinfo, dtype=np.float64, count=1)
     if hcs: n_hcs, = np.fromfile(ringinfo, dtype=np.int32, count=1)
     ringsmax = np.ceil(ringsmax/writeskip).astype(np.int)
 
@@ -209,7 +209,7 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=Fal
     for inull in to_do:
         print('Reading rings from {} {:5d}'.format(name, inull))
         sys.stdout.write("\033[F")
-        for dir in range(ndir):
+        for _ in range(ndir):
             breaklisti = []
             ringlisti = []
             lengths = np.fromfile(ringinfo, dtype=np.int32, count=ringsmax)
@@ -291,7 +291,7 @@ def cut_separators(r, filename, hcs=False):
         with open(outprefix+'/'+prefix(filename)+'-separators-cut_'+'{:6.4f}.dat'.format(r), 'rb') as sepfile:
             npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
             for _ in range(npts):
-                start, end = np.fromfile(sepfile, dtype=np.int32, count=2)
+                _, end = np.fromfile(sepfile, dtype=np.int32, count=2)
                 null_nums.append(end)
                 sep = np.fromfile(sepfile, dtype=np.float64, count=3)
                 sep_pts.append(sep)
@@ -314,7 +314,7 @@ def cut_hcs(r, filename):
     with open(outprefix+'/'+prefix(filename)+'-hcs-cut_{:6.4f}.dat'.format(r), 'rb') as hcsfile:
         nlines, = np.fromfile(hcsfile, dtype=np.int32, count=1)
         for _ in range(0, nlines):
-            ihcs, = np.fromfile(hcsfile, dtype=np.int32, count=1)
+            _ = np.fromfile(hcsfile, dtype=np.int32, count=1)
             length, = np.fromfile(hcsfile, dtype=np.int32, count=1)
             lines.append(np.fromfile(hcsfile, dtype=np.float64, count=3*length).reshape(-1,3))
     
