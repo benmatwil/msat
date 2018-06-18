@@ -13,6 +13,8 @@ module params
   ! Number of threads to be used by OpenMP
   ! set to zero to use the environment variable OMP_NUM_THREADS
   integer(int32), parameter :: nproc = 4
+  ! The default directory name to output data to
+  character(*), parameter :: default_output = 'output'
 
   ! Null Finder Parameters
   ! ----------------------

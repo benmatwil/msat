@@ -16,17 +16,18 @@ module common
   
   real(np), parameter :: pi = acos(-1.0_np)
   real(np), parameter :: dtor = pi/180.0_np
-  character(100) :: filein, fileout
+  character(:), allocatable :: filein, fileout
 
   contains
 
     subroutine filenames
 
-      character(100) :: arg, outname
+      character(100) :: arg
+      character(:), allocatable :: outname
       integer(int32) :: iarg, ic
 
       ic = 0
-      outname = 'output'
+      outname = default_outname
 
       if (command_argument_count() > 0) then
         do iarg = 1, command_argument_count()
@@ -37,6 +38,7 @@ module common
             ic = 1
           elseif (trim(arg) == '-o') then
             call get_command_argument(iarg+1,arg)
+            deallocate(outname)
             outname = trim(arg)
           elseif (trim(arg) == '--params') then
             call print_params
