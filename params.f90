@@ -73,7 +73,9 @@ module params
   ! associations only currently required for make_cut
   logical, parameter :: assoc_output = .true.
   ! allow changes in default periodicity
-  logical, parameter :: adjust_cartesian_periodicity = .true.
+  ! default is no periodicity in cartesian and
+  ! periodic theta, phi in cylindrical/spherical
+  logical, parameter :: adjust_cartesian_periodicity = .false.
   logical, parameter :: adjust_cylindrical_periodicity = .false.
   logical, parameter :: adjust_spherical_periodicity = .false.
   ! turn on and off periodicity in x, y, z, theta and phi
