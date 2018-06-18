@@ -27,7 +27,7 @@ module common
       integer(int32) :: iarg, ic
 
       ic = 0
-      outname = default_outname
+      outname = default_output
 
       if (command_argument_count() > 0) then
         do iarg = 1, command_argument_count()
