@@ -378,8 +378,8 @@ module sf_mod
         print*, '    Spine:', nspine
         print*, '    Fan:  ', nfan
 #endif
-
-        if (nspine == 2) then
+! print*, size(rspine)
+        if (nspine <= 2) then
           spine = rspine(:, 1)
         else
           spine = rspine(:, maxval(maxloc(denseposspine)))
@@ -461,6 +461,9 @@ module sf_mod
           if (abs(dot(minvec, maxvec)) > 0.9) then
             sign = -1*sign
             rconvergefw = rfan
+#if debug
+            print*, 'Min-/max-vec close... switching sign'
+#endif
             call move_alloc(rspine, rfan)
             call move_alloc(rconvergefw, rspine)
             
