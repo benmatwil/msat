@@ -119,15 +119,19 @@ module sf_mod
 
   !********************************************************************************
 
-  function zero_null(rnull)
+  function sign_source_sink(rnull)
     ! put a ball of points around null and trace field lines to check for source/sink
 
     logical :: zero_null
-    integer :: iphi, itheta, isink, itrace, dir
+    integer :: sign_source_sink
+    integer :: iphi, itheta, isink, isink_bw, isink_fw, itrace, dir
     real(np), dimension(3) :: rtrace, rstart, rnull
 
     isink = 0
     zero_null = .false.
+    sign_source_sink = 0
+    isink_fw = 0
+    isink_bw = 0
 
     ! put a ball of points around null and trace field lines to check for source/sink
     do iphi = 1, 3
@@ -140,11 +144,16 @@ module sf_mod
             if (modulus(rtrace - rnull) > rsphere) exit
           enddo
           if (modulus(rtrace - rnull) < rsphere/10) isink = isink + 1
+          if (modulus(rtrace - rnull) < rsphere/10 .and. dir == -1) isink_bw = isink_bw + 1
+          if (modulus(rtrace - rnull) < rsphere/10 .and. dir == 1) isink_fw = isink_fw + 1
         enddo
       enddo
     enddo
 
     if (isink >= 5) zero_null = .true.
+    if (isink_fw >= 5) sign_source_sink = 2
+    if (isink_bw >= 5) sign_source_sink = -2
+    print*, sign_source_sink, isink_fw, isink_bw
     
   end function
 
@@ -179,7 +188,7 @@ module sf_mod
 
     integer(int32) :: inull
     real(np), dimension(3) :: rnull, spine, fan, maxvec, minvec
-    integer(int32) :: sign, warning
+    integer(int32) :: sign, warning, sign_0
     character(:), allocatable :: warningmessage
 
 #if debug
@@ -195,11 +204,13 @@ module sf_mod
 
     warning = 0
     warningmessage = ''
+
+    sign_0 = sign_source_sink(rnull)
     
-    if (zero_null(rnull)) then
+    if (abs(sign_0) == 2) then
       spine = 0
       fan = 0
-      sign = 0
+      sign = sign_0
     else
       allocate(rconvergefw(3, nphi*ntheta), rconvergebw(3, nphi*ntheta))
 
@@ -533,7 +544,7 @@ module sf_mod
       endif
     endif
 
-    if (sign == 0) then
+    if (abs(sign) == 2) then
       warningmessage = 'NULL LIKELY A SOURCE OR SINK'
     else
       if (warning == 4) then

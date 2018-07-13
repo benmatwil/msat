@@ -101,7 +101,7 @@ program signfinder
   print*, 'Total number of nulls:', nnulls
   print*, 'Positive', count(signs == 1)
   print*, 'Negative', count(signs == -1)
-  print*, 'Unknown', count(signs == 0)
+  print*, 'Unknown', count(abs(signs) /= 1)
   print*, 'Warning 1:', count(warnings == 1)
   print*, 'Warning 2:', count(warnings == 2)
   print*, 'Warning 3:', count(warnings == 3)
