@@ -1,4 +1,4 @@
-!common functions, subroutine and variables for ssfind
+! common functions, subroutine and variables for ssfind
 module common
   use params
 
