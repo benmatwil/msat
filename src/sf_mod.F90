@@ -153,7 +153,6 @@ module sf_mod
     if (isink >= 5) zero_null = .true.
     if (isink_fw >= 5) sign_source_sink = 2
     if (isink_bw >= 5) sign_source_sink = -2
-    print*, sign_source_sink, isink_fw, isink_bw
     
   end function
 
