@@ -300,9 +300,9 @@ program ssfinder
 
     do iring = 1, ringsmax ! loop over number of rings we want
 
-      if (signs(inull) .eq. 0) then ! skip null which is uncharacterised
+      if (abs(signs(inull)) /= 1) then ! skip null which is uncharacterised
         !$OMP SINGLE
-        print*,'Null has zero sign -- Stopping'
+        print*,'Null has zero sign -- skipping'
         !$OMP END SINGLE
         nrings = 1
         exit
