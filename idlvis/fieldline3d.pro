@@ -155,7 +155,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       hvec = mindist/dr
 
       rt = r0
-      b = trilinear_3d_grid(rt, bgrid)
+      b = trilinear3d_grid(rt, bgrid)
       k1 = hvec*b/sqrt(total(b^2))
       rt = r0 + b2*k1
 
@@ -165,7 +165,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       endif
 
       edgecheck, rt
-      b = trilinear_3d_grid(rt, bgrid)
+      b = trilinear3d_grid(rt, bgrid)
       k2 = hvec*b/sqrt(total(b^2))
       rt = r0 + b3*k1 + c3*k2
 
@@ -175,7 +175,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       endif
 
       edgecheck, rt
-      b = trilinear_3d_grid(rt, bgrid)
+      b = trilinear3d_grid(rt, bgrid)
       k3 = hvec*b/sqrt(total(b^2))
       rt = r0 + b4*k1 + c4*k2 + d4*k3
 
@@ -185,7 +185,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       endif
 
       edgecheck, rt
-      b = trilinear_3d_grid(rt, bgrid)
+      b = trilinear3d_grid(rt, bgrid)
       k4 = hvec*b/sqrt(total(b^2))
       rt = r0 + b5*k1 + c5*k2 + d5*k3 + e5*k4
 
@@ -195,7 +195,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       endif
 
       edgecheck, rt
-      b = trilinear_3d_grid(rt, bgrid)
+      b = trilinear3d_grid(rt, bgrid)
       k5 = hvec*b/sqrt(total(b^2))
       rt = r0 + b6*k1 + c6*k2 + d6*k3 + e6*k4 + f6*k5
 
@@ -205,7 +205,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       endif
 
       edgecheck, rt
-      b = trilinear_3d_grid(rt, bgrid)
+      b = trilinear3d_grid(rt, bgrid)
       k6 = hvec*b/sqrt(total(b^2))
 
       ; 4th order estimate
@@ -222,7 +222,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       if (t gt t_max) then t = t_max
             
       rt = r0
-      b = trilinear_3d_grid(rt, bgrid)
+      b = trilinear3d_grid(rt, bgrid)
       k1 = t*hvec*b/sqrt(total(b^2))
       rt = r0 + b2*k1
 
@@ -232,7 +232,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       endif
 
       edgecheck, rt
-      b = trilinear_3d_grid(rt, bgrid)
+      b = trilinear3d_grid(rt, bgrid)
       k2 = t*hvec*b/sqrt(total(b^2))
       rt = r0 + b3*k1 + c3*k2
 
@@ -242,7 +242,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       endif
 
       edgecheck, rt
-      b = trilinear_3d_grid(rt, bgrid)
+      b = trilinear3d_grid(rt, bgrid)
       k3 = t*hvec*b/sqrt(total(b^2))
       rt = r0 + b4*k1 + c4*k2 + d4*k3
 
@@ -252,7 +252,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       endif
 
       edgecheck, rt
-      b = trilinear_3d_grid(rt, bgrid)
+      b = trilinear3d_grid(rt, bgrid)
       k4 = t*hvec*b/sqrt(total(b^2))
       rt = r0 + b5*k1 + c5*k2 + d5*k3 + e5*k4
 
@@ -262,7 +262,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       endif
 
       edgecheck, rt
-      b = trilinear_3d_grid(rt, bgrid)
+      b = trilinear3d_grid(rt, bgrid)
       k5 = t*hvec*b/sqrt(total(b^2))
       
       rt = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
