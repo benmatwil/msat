@@ -151,10 +151,18 @@ def spines(filename, null_list=None):
     return spinelist
 
 def ringinfo(filename):
+    
+    nulldata = nulls(filename, simple=True)
+    
     with open(outprefix+'/'+prefix(filename)+'-ringinfo.dat', 'rb') as ringinfo:
         ringsmax, writeskip, bytesize = np.fromfile(ringinfo, dtype=np.int32, count=3)
         stepsize, = np.fromfile(ringinfo, dtype=np.float64, count=1)
-    return ringsmax, writeskip, bytesize, stepsize
+        ringsmax1 = np.ceil(ringsmax/writeskip).astype(np.int)
+        ringnums = []
+        for _ in nulldata.number:
+            ringnums.append(np.fromfile(ringinfo, dtype=np.int32, count=ringsmax1))
+    
+    return ringsmax, writeskip, bytesize, stepsize, ringnums
 
 def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=False):
 
