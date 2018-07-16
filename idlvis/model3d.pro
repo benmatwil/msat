@@ -20,8 +20,8 @@ pro model_add_sepsurf, nskip
 
   foreach inull, nulllist-1 do begin
 
-    if nulldata[inull].sign gt 0 then colour = [255,128,128] else begin
-      if nulldata[inull].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
+    if nulldata[inull].sign gt 0 then colour = [255, 128, 128] else begin
+      if nulldata[inull].sign lt 0 then colour = [128, 128, 255] else colour = [128, 255, 128]
     endelse
 
     for iring = 0, n_elements(rings[inull])-1 do begin
@@ -67,7 +67,7 @@ pro model_add_spines
   spines = read_spines(filename, null_list=nulllist)
 
   foreach inull, nulllist-1 do begin
-    if nulldata[inull].sign gt 0 then col = [250,0,0] else col = [0,0,250]
+    if nulldata[inull].sign gt 0 then col = [250, 0, 0] else col = [0, 0, 250]
     for dir = 0, 1 do begin
       
       spine = spines[inull, dir, *, *]
@@ -86,8 +86,8 @@ pro model_add_fanlines, nlines, nring=nring
   rings = read_rings(filename, nskip=nskip, null_list=nulllist)
 
   foreach inull, nulllist-1 do begin
-    if nulldata[inull].sign gt 0 then colour = [255,128,128] else begin
-      if nulldata[inull].sign lt 0 then colour = [128,128,255] else colour = [128,255,128]
+    if nulldata[inull].sign gt 0 then colour = [255, 128, 128] else begin
+      if nulldata[inull].sign lt 0 then colour = [128, 128, 255] else colour = [128, 255, 128]
     endelse
 
     if not keyword_set(nring) then begin
@@ -98,9 +98,9 @@ pro model_add_fanlines, nlines, nring=nring
 
     n = n_elements(ring)/3/nlines
 
-    xf = ring[0,*]
-    yf = ring[1,*]
-    zf = ring[2,*]
+    xf = ring[0, *]
+    yf = ring[1, *]
+    zf = ring[2, *]
 
     for k = 0, n_elements(ring)/3 - 1, n do begin
       startpt = [xf[k], yf[k], zf[k]]
@@ -122,7 +122,7 @@ pro model_add_fanlines, nlines, nring=nring
 
       if csystem_model3d eq 'spherical' then line = sphr2cart(line)
       
-      oModel.add, obj_new("IDLgrPolyline", line[0,*], line[1,*], line[2,*], color=colour, thick=2)
+      oModel.add, obj_new("IDLgrPolyline", line[0, *], line[1, *], line[2, *], color=colour, thick=2)
     endfor
   endforeach
 
@@ -142,7 +142,7 @@ pro model_add_separators, hcs=hcs
     for isep = 0, n_elements(seps[inull])-1 do begin
       sep = seps[inull, isep, *, *]
       if csystem_model3d eq 'spherical' then sep = sphr2cart(sep)
-      oModel.add, obj_new("IDLgrPolyline", sep[0, *], sep[1, *], sep[2, *], color=[0,160,60], thick=4)
+      oModel.add, obj_new("IDLgrPolyline", sep[0, *], sep[1, *], sep[2, *], color=[0, 160, 60], thick=4)
     endfor
 
   endforeach
@@ -160,11 +160,11 @@ pro model_add_nulls, size=size
     mesh_obj, 4, vert, poly, replicate(radius,21,21)
     pos = nulldata[inull].pos
     if csystem_model3d eq 'spherical' then pos = [pos[0]*sin(pos[1])*cos(pos[2]), pos[0]*sin(pos[1])*sin(pos[2]), pos[0]*cos(pos[1])]
-    for j = 0, 2 do vert[j,*] = vert[j,*] + pos[j]
-    if nulldata[inull].sign gt 0 then colour = [255,0,0] else begin
-      if nulldata[inull].sign lt 0 then colour = [0,0,255] else colour = [0,255,0]
+    for j = 0, 2 do vert[j, *] = vert[j, *] + pos[j]
+    if nulldata[inull].sign gt 0 then colour = [255, 0, 0] else begin
+      if nulldata[inull].sign lt 0 then colour = [0, 0, 255] else colour = [0, 255, 0]
     endelse
-    oModel.add, obj_new("IDLgrPolygon",data=vert,polygons=poly,color=colour,/shading)
+    oModel.add, obj_new("IDLgrPolygon", data=vert, polygons=poly, color=colour, /shading)
   endforeach
   
 end
@@ -174,21 +174,21 @@ pro model_add_box
   
   print, "Adding box"
   box = dblarr(3,2)
-  box[*,0] = [min(xx),min(yy),min(zz)] 
-  box[*,1] = [max(xx),max(yy),max(zz)]
+  box[*,0] = [min(xx), min(yy), min(zz)] 
+  box[*,1] = [max(xx), max(yy), max(zz)]
   line = double(transpose([[0,0,0],[1,0,0],[1,0,1],[1,0,0],[1,1,0],[1,1,1],[1,1,0], $
     [0,1,0],[0,1,1],[0,1,0],[0,0,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1],[0,0,1]]))
   
-  line[*,0] = line[*,0]*(box[0,1] - box[0,0]) + box[0,0]
-  line[*,1] = line[*,1]*(box[1,1] - box[1,0]) + box[1,0]
-  line[*,2] = line[*,2]*(box[2,1] - box[2,0]) + box[2,0]
+  line[*, 0] = line[*, 0]*(box[0, 1] - box[0, 0]) + box[0, 0]
+  line[*, 1] = line[*, 1]*(box[1, 1] - box[1, 0]) + box[1, 0]
+  line[*, 2] = line[*, 2]*(box[2, 1] - box[2, 0]) + box[2, 0]
 
   dist = min([n_elements(xx), n_elements(yy), n_elements(zz)])*ds/5
-  oModel -> add, obj_new('idlgrtext', 'x', locations=[box[0,0]+dist,box[1,0],box[2,0]], /onglass)
-  oModel -> add, obj_new('idlgrtext', 'y', locations=[box[0,0],box[1,0]+dist,box[2,0]], /onglass)
-  oModel -> add, obj_new('idlgrtext', 'z', locations=[box[0,0],box[1,0],box[2,0]+dist], /onglass)
+  oModel.add, obj_new('idlgrtext', 'x', locations=[box[0,0]+dist,box[1,0],box[2,0]], /onglass)
+  oModel.add, obj_new('idlgrtext', 'y', locations=[box[0,0],box[1,0]+dist,box[2,0]], /onglass)
+  oModel.add, obj_new('idlgrtext', 'z', locations=[box[0,0],box[1,0],box[2,0]+dist], /onglass)
   
-  oModel -> add, obj_new('IDLgrPolyline',line[*,0],line[*,1],line[*,2],color=[0,0,0])
+  oModel.add, obj_new('IDLgrPolyline',line[*,0],line[*,1],line[*,2],color=[0,0,0])
 end
 
 pro save, dimensions=dimensions
@@ -229,7 +229,7 @@ function mk_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf, h
   zz = field.z
   field = !null
 
-  ds = min([min(xx[1:-1]-xx[0:-2]), min(yy[1:-1]-yy[0:-2]), min(zz[1:-1]-zz[0:-2])])
+  ds = min([min(xx[1:-1] - xx[0:-2]), min(yy[1:-1] - yy[0:-2]), min(zz[1:-1] - zz[0:-2])])
 
   nulldata = read_nulls(filename)
   set_null_list, null_list
