@@ -243,9 +243,6 @@ module common
 
       call move_alloc(x, dummy)
 
-      ! dummy = x
-
-      ! deallocate(x)
       allocate(x(nx,ny+1))
 
       x(:,1:position-1) = dummy(:,1:position-1)
@@ -274,9 +271,6 @@ module common
 
       call move_alloc(x, dummy)
 
-      ! dummy = x
-
-      ! deallocate(x)
       allocate(x(nx+1))
 
       x(1:position-1) = dummy(1:position-1)
@@ -298,9 +292,6 @@ module common
 
       call move_alloc(x, dummy)
 
-      ! dummy = x
-
-      ! deallocate(x)
       allocate(x(nx,ny-1))
 
       x(:,1:pos-1) = dummy(:,1:pos-1)
@@ -320,9 +311,6 @@ module common
 
       call move_alloc(x, dummy)
 
-      ! dummy = x
-
-      ! deallocate(x)
       allocate(x(nx-1))
 
       x(1:pos-1) = dummy(1:pos-1)
