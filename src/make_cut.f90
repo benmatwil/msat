@@ -124,8 +124,9 @@ program make_cut
 
   integer(int32) :: nspine, dir
 
-  integer(int64) :: tstart, tstop, count_rate !to time program
+  integer(int64) :: tstart, tstop, count_rate ! to time program
 
+  integer(int32) :: iprint
   call filenames
 
   if (command_argument_count() > 0) then
@@ -162,7 +163,9 @@ program make_cut
     read(10, pos=ig) xg, yg, zg
   close(10)
 
-  call system_clock(tstart,count_rate) ! to time how long it takes
+  iprint = 10**(floor(log10(0.25_np*nnulls)))
+
+  call system_clock(tstart, count_rate) ! to time how long it takes
 
   ds = maxval([maxval(yg(2:ny) - yg(1:ny-1)), maxval(zg(2:nz) - zg(1:nz-1))])
 
@@ -263,8 +266,7 @@ program make_cut
     uptoassoc = 0
     uptorings = 0
     do inull = 1, nnulls
-      if (mod(inull, 1000) == 0) print*, inull
-      allocate(points(3,0))
+      if (mod(inull, iprint/10) == 0) print*, inull
       read(40) nperring
       nrings = count(nperring > 0) - 1 ! index of nperring starts at 0
       do iring = nrings, 1, -1
