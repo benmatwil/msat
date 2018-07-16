@@ -202,7 +202,7 @@ function read_rings, filename, nskip=nskip, breaks=breaklist, assocs=assoclist, 
 
   readu, rinfo, ringsmax, writeskip, bytesize, stepsize
   if keyword_set(hcs) then readu, rinfo, n_hcs
-  if writeskip gt 1 then ringsmax = ciel(double(ringsmax)/writeskip)
+  if writeskip gt 1 then ringsmax = ceil(double(ringsmax)/writeskip)
 
   if keyword_set(hcs) then begin
     to_do = indgen(n_hcs/2) + 1
