@@ -14,14 +14,19 @@ module make_cut_mod
 
   subroutine sortpoints(points, pordered, disttol, exit_status)
 
-    real(np), dimension(:, :), allocatable :: dists, spinedists, dots, spinedots
+    real(np), dimension(:, :), allocatable :: dists
+    real(np), dimension(:), allocatable :: ptdists, spinedists
     real(np), dimension(:, :), allocatable :: points, pordered
-    real(np) :: disttol, diff(3), mindist, mindistspine
+    real(np), dimension(3) :: diff, pt1, pt2
+    real(np) :: disttol, mindist, mindistspine
 
-    integer(int32), dimension(2) :: imindist, iminspinedist, imindot, iminspinedot
+    integer(int32), dimension(2) :: imindists
+    integer(int32) :: imindist, iminspinedist
     integer(int32) :: ip, jp, dir, npoints
 
     logical :: exit_status
+
+    type(list) :: pt_list
 
     exit_status = .false.
 
@@ -35,21 +40,21 @@ module make_cut_mod
     do ip = 1, npoints
       dists(ip, ip+1:npoints) = sqrt((points(1, ip) - points(1, ip+1:npoints))**2 &
         + (points(2, ip) - points(2, ip+1:npoints))**2 + (points(3, ip) - points(3, ip+1:npoints))**2)
-      enddo
-    imindist = minloc(dists)
+    enddo
+    imindists = minloc(dists)
     
-    if (dists(imindist(1), imindist(2)) > disttol*10) then
+    if (dists(imindists(1), imindists(2)) > disttol*10) then
       exit_status = .true.
     else
       deallocate(dists)
-      allocate(pordered(3, 2))
-      pordered(:, 1) = points(:, imindist(1))
-      pordered(:, 2) = points(:, imindist(2))
-      call remove_vector(points, imindist(1))
-      if (imindist(1) < imindist(2)) then
-        call remove_vector(points, imindist(2)-1)
+      call pt_list%create()
+      call pt_list%append(points(:, imindists(1)))
+      call pt_list%append(points(:, imindists(2)))
+      call remove_vector(points, imindists(1))
+      if (imindists(1) < imindists(2)) then
+        call remove_vector(points, imindists(2)-1)
       else
-        call remove_vector(points, imindist(2))
+        call remove_vector(points, imindists(2))
       endif
 
       do dir = 1, 2
@@ -57,26 +62,31 @@ module make_cut_mod
         do while (size(points, 2) > 0)
           allocate(dists(size(points, 2), 1))
           allocate(spinedists(size(spines, 2), 1))
-          diff = normalise(pordered(:, 1) - pordered(:, 2))
-          dists(:, 1) = (points(1, :) - pordered(1, 1))**2 &
-            + (points(2, :) - pordered(2, 1))**2 + (points(3, :) - pordered(3, 1))**2
-          spinedists(:, 1) = (spines(1, :) - pordered(1, 1))**2 &
-            + (spines(2, :) - pordered(2, 1))**2 + (spines(3, :) - pordered(3, 1))**2
-          imindist = minloc(dists)
-          iminspinedist = minloc(spinedists)
-          mindist = dists(imindist(1), 1)
-          mindistspine = spinedists(iminspinedist(1), 1)
-          deallocate(dists, spinedists)
+
+          pt1 = pt_list%first%r
+          pt2 = pt_list%first%next%r
+
+          diff = normalise(pt1 - pt2)
+          ptdists = (points(1, :) - pt1(1))**2 + (points(2, :) - pt1(2))**2 + (points(3, :) - pt1(3))**2
+          spinedists = (spines(1, :) - pt1(1))**2 + (spines(2, :) - pt1(2))**2 + (spines(3, :) - pt1(3))**2
+
+          imindist = minloc(ptdists, 1)
+          iminspinedist = minloc(spinedists, 1)
+          mindist = ptdists(imindist)
+          mindistspine = spinedists(iminspinedist)
+
+          deallocate(ptdists, spinedists)
+
           if (mindist < mindistspine) then
-            if (dot(diff, normalise(points(:, imindist(1)) - pordered(:, 1))) < -0.98) then
+            if (dot(diff, normalise(points(:, imindist) - pt1)) < -0.98) then
               exit
             elseif (mindist < disttol) then
-              call add_vector(pordered, points(:, imindist(1)), 1)
-              call remove_vector(points, imindist(1))
-            elseif (dot(diff, normalise(points(:, imindist(1)) - pordered(:, 1))) > 0.95 .and. &
+              call pt_list%prepend(points(:, imindist))
+              call remove_vector(points, imindist)
+            elseif (dot(diff, normalise(points(:, imindist) - pt1)) > 0.95 .and. &
               mindist < 5*disttol) then
-              call add_vector(pordered, points(:, imindist(1)), 1)
-              call remove_vector(points, imindist(1))
+              call pt_list%prepend(points(:, imindist))
+              call remove_vector(points, imindist)
             else
               exit
             endif
@@ -85,9 +95,12 @@ module make_cut_mod
           endif
         enddo
 
-        pordered = pordered(:, size(pordered, 2):1:-1)
+        call pt_list%reverse()
 
       enddo
+
+      pordered = pt_list%to_array()
+      call pt_list%destroy()
     endif
 
   end subroutine
@@ -175,14 +188,14 @@ program make_cut
         do jarg = 1, 3
           call get_command_argument(iarg+jarg,arg)
           read(arg,*) n_pln(jarg)
-    enddo
+        enddo
         pc = pc + 1
-  endif
+      endif
       if (trim(arg) == '-d') then
         call get_command_argument(iarg+1,arg)
         read(arg,*) d_pln
         pc = pc + 1
-  endif
+      endif
     enddo
   endif
   if (pc < 2) then
