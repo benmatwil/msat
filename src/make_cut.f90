@@ -298,7 +298,7 @@ program make_cut
     read(40) nrings
     read(40) nskip_file
     allocate(nperring(0:ceiling(real(nrings)/nskip_file-1)))
-    read(40) nrings, nrings, nrings
+    read(40) nrings, nrings, nrings ! just read into unneeded variable to reach correct position in file
 
     uptoassoc = 0
     uptorings = 0
@@ -477,7 +477,7 @@ program make_cut
     do isep = 1, nseps
       read(20) inull, flag
       read(30) npoints
-      allocate(line(3,npoints))
+      allocate(line(3, npoints))
       read(30) line
       do iline = 1, npoints-1
         nextline = iline+1
