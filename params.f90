@@ -82,7 +82,7 @@ module params
   ! these do nothing if adjust_***_periodicities is .false.
   logical, parameter :: periodic_x = .false.
   logical, parameter :: periodic_y = .false.
-  logical, parameter :: periodic_z = .true.
+    logical, parameter :: periodic_z = .false.
   logical, parameter :: periodic_theta = .false.
   logical, parameter :: periodic_phi = .false.
 
