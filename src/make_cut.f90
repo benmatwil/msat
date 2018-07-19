@@ -29,14 +29,12 @@ module make_cut_mod
     else
       npoints = size(points, 2)
     endif
-    ! print*, size(points, 2)
     allocate(dists(npoints, npoints))
     dists = 1000 ! maybe needs improving
     do ip = 1, npoints
-      do jp = ip+1, npoints
-        dists(ip, jp) = dist(points(:, ip), points(:, jp))
+      dists(ip, ip+1:npoints) = sqrt((points(1, ip) - points(1, ip+1:npoints))**2 &
+        + (points(2, ip) - points(2, ip+1:npoints))**2 + (points(3, ip) - points(3, ip+1:npoints))**2)
       enddo
-    enddo
     imindist = minloc(dists)
     
     if (dists(imindist(1), imindist(2)) > disttol*10) then
