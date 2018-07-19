@@ -153,7 +153,13 @@ program make_cut
 
   integer(int64) :: tstart, tstop, count_rate ! to time program
 
-  integer(int32) :: iprint
+  integer(int32) :: iprint, iorder
+
+  integer(int64) :: num_nums, leftover_num, read_index, read_num
+  integer(int64), parameter :: large_read = 500000000_int64
+  real(np), dimension(:, :), allocatable :: lines
+  integer(int32), dimension(:), allocatable :: associations
+
   call filenames
 
   if (command_argument_count() > 0) then
@@ -200,7 +206,12 @@ program make_cut
     read(10, pos=ig) xg, yg, zg
   close(10)
 
-  iprint = 10**(floor(log10(0.25_np*nnulls)))
+  if (nnulls < 1) then
+    iprint = 1
+  else
+    iorder = floor(log10(1.0_np*nnulls))
+    iprint = (nnulls/(10**iorder) + 1)*10**(iorder-1)
+  endif
 
   call system_clock(tstart, count_rate) ! to time how long it takes
 
@@ -303,27 +314,61 @@ program make_cut
     uptoassoc = 0
     uptorings = 0
     do inull = 1, nnulls
+      if (mod(inull, iprint) == 0) print*, 'Done', inull, 'of', nnulls
       call ring_list%create()
       read(40) nperring
       nrings = count(nperring > 0) - 1 ! index of nperring starts at 0
+
+      ! 500000000 seems to be maximum number of int32 integers fortran can read at a time
+      num_nums = sum(int(nperring, int64))
+      allocate(lines(3, num_nums), associations(num_nums))
+
+      ia = uptoassoc + 1
+      ip = uptorings + 1
+      
+      if (num_nums > large_read) then
+        leftover_num = num_nums
+        read_index = 1
+        inquire(50, pos=ip)
+        inquire(55, pos=ia)
+        do while (leftover_num > 0)
+          if (leftover_num > large_read) then
+            read_num = large_read
+          else
+            read_num = leftover_num
+          endif
+          read(50) lines(:, read_index:read_index+read_num)
+          read(55) associations(read_index:read_index+read_num)
+          read_index = read_index + read_num
+          leftover_num = leftover_num - read_num
+        enddo
+      else
+        read(50, pos=ip) lines
+        read(55, pos=ia) associations
+      endif
+
       do iring = nrings, 1, -1
 
         uptoring1 = sum(int(nperring(0:iring-2), int64))
         uptoring2 = uptoring1 + nperring(iring-1)
         
-        allocate(association(nperring(iring)))
-        ia = uptoassoc + uptoring2*4_int64 + 1
-        read(55, pos=ia) association
+        ! allocate(association(nperring(iring)))
+        ! ia = uptoassoc + uptoring2*4_int64 + 1
+        ! read(55, pos=ia) association
         
-        if (iring == nrings) then
-          allocate(line(3, nperring(iring)))
-          ip = uptorings + uptoring2*24_int64 + 1
-          read(50, pos=ip) line
-        endif
+        ! if (iring == nrings) then
+        !   allocate(line(3, nperring(iring)))
+        !   ip = uptorings + uptoring2*24_int64 + 1
+        !   read(50, pos=ip) line
+        ! endif
 
-        allocate(line2(3, nperring(iring-1)))
-        ip = uptorings + uptoring1*24_int64 + 1
-        read(50, pos=ip) line2
+        ! allocate(line2(3, nperring(iring-1)))
+        ! ip = uptorings + uptoring1*24_int64 + 1
+        ! read(50, pos=ip) line2
+
+        association = associations(uptoring2+1:uptoring2+nperring(iring))
+        if (iring == nrings) line = lines(:, uptoring2+1:uptoring2+nperring(iring))
+        line2 = lines(:, uptoring1+1:uptoring2)
 
         do iline = 1, nperring(iring)
           if (check_crossing(line(:, iline), line2(:, association(iline)))) then
@@ -337,6 +382,7 @@ program make_cut
         call move_alloc(line2, line)
         deallocate(association)
       enddo
+      deallocate(lines, associations)
       if (allocated(line)) deallocate(line)
       uptoring1 = sum(int(nperring, int64))
       uptoassoc = uptoassoc + uptoring1*4_int64
@@ -403,22 +449,52 @@ program make_cut
       read(40) nperring
 
       nrings = count(nperring > 0) - 1
+      num_nums = sum(int(nperring, int64))
+      allocate(lines(3, num_nums), associations(num_nums))
+      ia = uptoassoc + 1
+      ip = uptorings + 1
+
+      if (num_nums > large_read) then
+        leftover_num = num_nums
+        read_index = 1
+        inquire(50, pos=ip)
+        inquire(55, pos=ia)
+        do while (leftover_num > 0)
+          if (leftover_num > large_read) then
+            read_num = large_read
+          else
+            read_num = leftover_num
+          endif
+          read(50) lines(:, read_index:read_index+read_num)
+          read(55) associations(read_index:read_index+read_num)
+          read_index = read_index + read_num
+          leftover_num = leftover_num - read_num
+        enddo
+      else
+        read(50, pos=ip) lines
+        read(55, pos=ia) associations
+      endif
+
       do iring = nrings, 1, -1
 
         uptoring1 = sum(int(nperring(0:iring-2), int64))
         uptoring2 = uptoring1 + nperring(iring-1)
 
-        ia = uptoassoc + uptoring2*4_int64 + 1
-        ip = uptorings + uptoring2*24_int64 + 1
+        ! ia = uptoassoc + uptoring2*4_int64 + 1
+        ! ip = uptorings + uptoring2*24_int64 + 1
       
-        allocate(association(nperring(iring)), line(3, nperring(iring)))
-        read(55, pos=ia) association
-        read(50, pos=ip) line
+        ! allocate(association(nperring(iring)), line(3, nperring(iring)))
+        ! read(55, pos=ia) association
+        ! read(50, pos=ip) line
 
-        ip = uptorings + uptoring1*24_int64 + 1
+        ! ip = uptorings + uptoring1*24_int64 + 1
 
-        allocate(line2(3,nperring(iring-1)))
-        read(50, pos=ip) line2
+        ! allocate(line2(3,nperring(iring-1)))
+        ! read(50, pos=ip) line2
+
+        association = associations(uptoring2+1:uptoring2+nperring(iring))
+        if (iring == nrings) line = lines(:, uptoring2+1:uptoring2+nperring(iring))
+        line2 = lines(:, uptoring1+1:uptoring2)
 
         do iline = 1, nperring(iring)
           if (check_crossing(line(:, iline), line2(:, association(iline)))) then
@@ -429,8 +505,11 @@ program make_cut
             endif
           endif
         enddo
-        deallocate(line, line2, association)
+        call move_alloc(line2, line)
+        deallocate(association)
       enddo
+      deallocate(lines, associations)
+      if (allocated(line)) deallocate(line)
       uptoring1 = sum(int(nperring, int64))
       uptoassoc = uptoassoc + uptoring1*4_int64
       uptorings = uptorings + uptoring1*24_int64
