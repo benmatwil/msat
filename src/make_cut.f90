@@ -7,6 +7,8 @@ module make_cut_mod
 
   real(np) :: ds
 
+  real(np) :: n_pln(3), d_pln
+
   contains
 
   subroutine sortpoints(points, pordered, disttol, exit_status)
@@ -93,6 +95,33 @@ module make_cut_mod
 
   end subroutine
 
+  function plane(r)
+
+    real(np) :: plane, r(3)
+
+    plane = dot(n_pln, r) - d_pln
+
+  end function
+
+  function check_crossing(r1, r2)
+
+    logical :: check_crossing
+    real(np), dimension(3) :: r1, r2
+
+    check_crossing = plane(r1)*plane(r2) < 0
+
+  end function
+
+  function find_crossing(r1, r2)
+
+    real(np), dimension(3) :: find_crossing, r1, r2
+    real(np) :: s
+
+    s = (d_pln - dot(r1, n_pln))/(dot((r2 - r1), n_pln))
+    find_crossing = r1 + s*(r2 - r1)
+
+  end function
+
 end module
 
 program make_cut
@@ -132,25 +161,35 @@ program make_cut
   if (command_argument_count() > 0) then
     do iarg = 1, command_argument_count()
       call get_command_argument(iarg,arg)
-      if (trim(arg) == '-r') then
-        call get_command_argument(iarg+1,arg)
-        read(arg,*) r0
-        rc = 1
-        print*, 'Making cut at '// trim(arg) //' for file '//filein
-      endif
       if (trim(arg) == '--no-hcs') then
         do_hcs = .false.
       endif
       if (trim(arg) == '--only-hcs') then
         do_all_ssf = .false.
       endif
+      if (trim(arg) == '-n') then
+        do jarg = 1, 3
+          call get_command_argument(iarg+jarg,arg)
+          read(arg,*) n_pln(jarg)
+    enddo
+        pc = pc + 1
+  endif
+      if (trim(arg) == '-d') then
+        call get_command_argument(iarg+1,arg)
+        read(arg,*) d_pln
+        pc = pc + 1
+  endif
     enddo
   endif
-  if (rc == 0) then    
-    stop "Need to provide a radius"
+  if (pc < 2) then
+    stop "Need to provide normal to the plane -n and planar constant -d"
   endif
 
-  write(rstr,'(F6.4)') r0
+  print*, 'Making cut at in file '// filein // ' using plane:'
+  print '(5X, F6.4, A, F6.4, A, F6.4, A, F6.4)', &
+    n_pln(1), ' * x1 + ', n_pln(2), ' * x2 + ', n_pln(3), ' * x3 = ', d_pln
+
+  write(rstr, '(F6.4)') d_pln
 
   open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
     read(10) nnulls
@@ -189,9 +228,8 @@ program make_cut
       read(10) line
       do iline = 1, nspine-1
         nextline = iline + 1
-        if ((line(1, iline) - r0)*(line(1, nextline) - r0) < 0) then
-          s = (r0 - line(1, iline))/(line(1, nextline) - line(1, iline))
-          point = line(:, iline) + s*(line(:, nextline) - line(:, iline))
+        if (check_crossing(line(:, iline), line(:, nextline))) then
+          point = find_crossing(line(:, iline), line(:, nextline))
           write(80) inull, point
           ipt = ipt + 1
           call add_vector(spines, point)
@@ -224,9 +262,8 @@ program make_cut
         read(30) line
         do iline = 1, npoints-1
           nextline = iline+1
-          if ((line(1, iline) - r0)*(line(1, nextline) - r0) < 0) then
-            s = (r0 - line(1,iline))/(line(1,nextline) - line(1,iline))
-            point = line(:,iline) + s*(line(:,nextline) - line(:,iline))
+          if (check_crossing(line(:, iline), line(:, nextline))) then
+            point = find_crossing(line(:, iline), line(:, nextline))
             write(80) inull, flag, point
             ipt = ipt + 1
           endif
@@ -289,12 +326,10 @@ program make_cut
         read(50, pos=ip) line2
 
         do iline = 1, nperring(iring)
-          if ((line(1, iline) - r0)*(line2(1, association(iline)) - r0) < 0) then
-            if (abs(line(3, iline) - line2(3, association(iline))) < 1) then
+          if (check_crossing(line(:, iline), line2(:, association(iline)))) then
+            if (dist(line(:, iline), line2(:, association(iline))) < 1) then
               ! find point in between at r0 and add to line
-              s = (r0 - line(1, iline))/(line2(1, association(iline)) - line(1, iline))
-              point = line(:, iline) + s*(line2(:, association(iline)) - line(:, iline))
-              call add_vector(points, point)
+              point = find_crossing(line(:, iline), line2(:, association(iline)))
             endif
           endif
         enddo
@@ -381,12 +416,10 @@ program make_cut
         read(50, pos=ip) line2
 
         do iline = 1, nperring(iring)
-          if ((line(1, iline) - r0)*(line2(1, association(iline)) - r0) < 0) then
-            if (abs(line(3, iline) - line2(3, association(iline))) < 1) then
+          if (check_crossing(line(:, iline), line2(:, association(iline)))) then
+            if (dist(line(:, iline), line2(:, association(iline))) < 1) then
               ! find point in between at r0 and add to line
-              s = (r0 - line(1, iline))/(line2(1, association(iline)) - line(1, iline))
-              point = line(:, iline) + s*(line2(:, association(iline)) - line(:, iline))
-              call add_vector(points, point)
+              point = find_crossing(line(:, iline), line2(:, association(iline)))
             endif
           endif
         enddo
@@ -439,9 +472,8 @@ program make_cut
       read(30) line
       do iline = 1, npoints-1
         nextline = iline+1
-        if ((line(1, iline) - r0)*(line(1, nextline) - r0) < 0) then
-          s = (r0 - line(1, iline))/(line(1 ,nextline) - line(1, iline))
-          point = line(:, iline) + s*(line(:, nextline) - line(:, iline))
+        if (check_crossing(line(:, iline), line(:, nextline))) then
+          point = find_crossing(line(:, iline), line(:, nextline))
           write(80) flag, point
           ipt = ipt + 1
         endif
