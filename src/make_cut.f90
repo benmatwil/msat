@@ -133,13 +133,13 @@ program make_cut
   implicit none
 
   real(np) :: r0
-  integer(int32) :: rc = 0
+  integer(int32) :: pc = 0
   character(6) :: rstr
 
   integer(int64) :: ig
   real(np), dimension(:), allocatable :: xg, yg, zg
 
-  integer(int32) :: iarg
+  integer(int32) :: iarg, jarg
   character(10) :: arg
 
   integer(int64) :: ia, ip, uptorings, uptoassoc, uptoring1, uptoring2
