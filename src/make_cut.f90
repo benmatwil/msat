@@ -60,8 +60,7 @@ module make_cut_mod
       do dir = 1, 2
         ! add points in the each direction
         do while (size(points, 2) > 0)
-          allocate(dists(size(points, 2), 1))
-          allocate(spinedists(size(spines, 2), 1))
+          allocate(ptdists(size(points, 2)), spinedists(size(spines, 2)))
 
           pt1 = pt_list%first%r
           pt2 = pt_list%first%next%r
