@@ -80,7 +80,7 @@ hcs : params.f90 $(SRCDIR)/common.F90 $(SRCDIR)/trace.F90 $(SRCDIR)/ring.F90 $(S
 bp : params.f90 $(SRCDIR)/common.F90 $(SRCDIR)/trace.F90 $(SRCDIR)/ring.F90 $(SRCDIR)/bp.F90
 	$(FC) $(FLAGS) -Dspherical -Dssf_code $(FOPENMP) $^ -o $@
 
-make_cut : params.f90 $(SRCDIR)/common.F90 $(SRCDIR)/make_cut.f90
+make_cut : params.f90 $(SRCDIR)/common.F90 $(SRCDIR)/list_mod.f90 $(SRCDIR)/make_cut.f90
 	$(FC) $(FLAGS) $^ -o $@
 
 ###########################################################
