@@ -59,12 +59,10 @@ module make_cut_mod
           allocate(dists(size(points, 2), 1))
           allocate(spinedists(size(spines, 2), 1))
           diff = normalise(pordered(:, 1) - pordered(:, 2))
-          do ip = 1, size(points, 2)
-            dists(ip, 1) = dist(points(:, ip), pordered(:, 1))
-          enddo
-          do ip = 1, size(spines, 2)
-            spinedists(ip, 1) = dist(spines(:, ip), pordered(:, 1))
-          enddo
+          dists(:, 1) = (points(1, :) - pordered(1, 1))**2 &
+            + (points(2, :) - pordered(2, 1))**2 + (points(3, :) - pordered(3, 1))**2
+          spinedists(:, 1) = (spines(1, :) - pordered(1, 1))**2 &
+            + (spines(2, :) - pordered(2, 1))**2 + (spines(3, :) - pordered(3, 1))**2
           imindist = minloc(dists)
           iminspinedist = minloc(spinedists)
           mindist = dists(imindist(1), 1)
