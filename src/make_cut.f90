@@ -2,6 +2,7 @@ module make_cut_mod
 
   use params
   use common
+  use list_mod
 
   implicit none
 
@@ -138,6 +139,7 @@ program make_cut
   integer(int32) :: iarg, jarg
   character(10) :: arg
 
+  type(list) :: spine_list, ring_list
   integer(int64) :: ia, ip, uptorings, uptoassoc, uptoring1, uptoring2
   integer(int32) :: inull, jnull, iring, iline, nextline, flag, ihcs, ipt, isep
   integer(int32) :: nrings, npoints, nlines, nseps, ncomp, nskip_file
@@ -211,7 +213,7 @@ program make_cut
   open(unit=80, file=trim(fileout)//'-spines-cut_'//rstr//'.dat', access='stream', status='replace')
   open(unit=10, file=trim(fileout)//'-spines.dat', access='stream', status='old')
 
-  allocate(spines(3, 0))
+  call spine_list%create()
 
   ipt = 0
   write(80) ipt
@@ -220,7 +222,7 @@ program make_cut
     ! read in spine
     do dir = 1, 2
       read(10) nspine
-      allocate(line(3,nspine))
+      allocate(line(3, nspine))
       read(10) line
       do iline = 1, nspine-1
         nextline = iline + 1
@@ -228,7 +230,7 @@ program make_cut
           point = find_crossing(line(:, iline), line(:, nextline))
           write(80) inull, point
           ipt = ipt + 1
-          call add_vector(spines, point)
+          call spine_list%append(point)
         endif
       enddo
       deallocate(line)
@@ -237,6 +239,8 @@ program make_cut
   write(80, pos=1) ipt
   close(80)
   close(10)
+
+  spines = spine_list%to_array()
 
   !********************************************************************************
 
@@ -299,7 +303,7 @@ program make_cut
     uptoassoc = 0
     uptorings = 0
     do inull = 1, nnulls
-      if (mod(inull, iprint/10) == 0) print*, inull
+      call ring_list%create()
       read(40) nperring
       nrings = count(nperring > 0) - 1 ! index of nperring starts at 0
       do iring = nrings, 1, -1
@@ -326,6 +330,7 @@ program make_cut
             if (dist(line(:, iline), line2(:, association(iline))) < 1) then
               ! find point in between at r0 and add to line
               point = find_crossing(line(:, iline), line2(:, association(iline)))
+              call ring_list%append(point)
             endif
           endif
         enddo
@@ -336,6 +341,9 @@ program make_cut
       uptoring1 = sum(int(nperring, int64))
       uptoassoc = uptoassoc + uptoring1*4_int64
       uptorings = uptorings + uptoring1*24_int64
+
+      points = ring_list%to_array()
+      call ring_list%destroy()
 
       do while (size(points, 2) > 0)
 
@@ -391,6 +399,7 @@ program make_cut
     ! uptonull = 0
     do ihcs = 1, ncomp
       allocate(points(3, 0))
+      call ring_list%create()
       read(40) nperring
 
       nrings = count(nperring > 0) - 1
@@ -416,6 +425,7 @@ program make_cut
             if (dist(line(:, iline), line2(:, association(iline))) < 1) then
               ! find point in between at r0 and add to line
               point = find_crossing(line(:, iline), line2(:, association(iline)))
+              call ring_list%append(point)
             endif
           endif
         enddo
@@ -424,6 +434,9 @@ program make_cut
       uptoring1 = sum(int(nperring, int64))
       uptoassoc = uptoassoc + uptoring1*4_int64
       uptorings = uptorings + uptoring1*24_int64
+
+      points = ring_list%to_array()
+      call ring_list%destroy()
 
       print*, 'sorting hcs points'
       print*, size(points, 2)
@@ -486,5 +499,7 @@ program make_cut
 
   call system_clock(tstop, count_rate)
   print*, 'Time taken:', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"
+
+  call spine_list%destroy()
 
 end program
