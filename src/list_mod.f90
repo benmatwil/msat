@@ -34,6 +34,8 @@ module list_mod
 
     end subroutine
 
+    !********************************************************************************
+
     subroutine create_from_array(self, veclist)
 
       class(list) :: self
@@ -45,6 +47,8 @@ module list_mod
       enddo
 
     end subroutine
+
+    !********************************************************************************
 
     subroutine append(self, vec)
 
@@ -66,6 +70,8 @@ module list_mod
 
     end subroutine
 
+    !********************************************************************************
+
     subroutine prepend(self, vec)
 
       class(list) :: self
@@ -85,6 +91,8 @@ module list_mod
       self%size = self%size + 1
 
     end subroutine
+
+    !********************************************************************************
 
     subroutine delete_index(self, index)
 
@@ -114,6 +122,8 @@ module list_mod
 
     end subroutine
 
+    !********************************************************************************
+
     subroutine delete_indices(self, indices)
 
       class(list) :: self
@@ -130,6 +140,8 @@ module list_mod
 
     end subroutine
 
+    !********************************************************************************
+
     subroutine destroy(self)
 
       class(list) :: self
@@ -145,6 +157,8 @@ module list_mod
       nullify(self%last)
       
     end subroutine
+
+    !********************************************************************************
 
     function to_array(self)
 
@@ -164,6 +178,8 @@ module list_mod
 
     end function
 
+    !********************************************************************************
+
     subroutine print(self)
 
       class(list) :: self
@@ -177,18 +193,24 @@ module list_mod
 
     end subroutine
 
+    !********************************************************************************
+
     subroutine reverse(self)
 
       class(list) :: self
       integer :: i
-      real(real64), dimension(:, :), allocatable :: arr
 
-      arr = self%to_array()
-      self%current => self%first
-      do i = self%size, 1, -1
-        self%current%r = arr(:, i)
-        self%current => self%current%next
+      self%last => self%first
+      do i = 3, self%size
+        self%current => self%last%next
+        self%last%next => self%current%next
+        self%current%next => self%first
+        self%first => self%current
       enddo
+      self%current => self%last%next
+      nullify(self%last%next)
+      self%current%next => self%first
+      self%first => self%current
 
     end subroutine
 
