@@ -537,7 +537,8 @@ def add_box():
 
     # ml.outline(extent=[*xx[[0, -1]], *yy[[0, -1]], *zz[[0, -1]]], color=(0,0,0))
     
-    ml.outline(extent=[*xx[[0, -1]], *yy[[0, -1]], *zz[[0, -1]]], color=(0,0,0))
+def add_axes():
+    ml.axes(extent=[*xx[[0, -1]], *yy[[0, -1]], *zz[[0, -1]]])
 
 def add_base(coord, pos, vmin=-10, vmax=10):
     """
