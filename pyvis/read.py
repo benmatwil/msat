@@ -271,10 +271,27 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=Fal
     else:
         return ringlist
 
-def cut_sepsurf(r, filename):
+def get_cut_filename_plane(norm, d):
+    try:
+        len(d)
+    except TypeError:
+        d_pln = d
+    else:
+        pt = np.array(d, dtype=np.float64)
+        d_pln = np.sum(pt*norm)
+    l = [*norm, d_pln]
+    fmt = ''
+    for i in l:
+        fmt += r'{:08.4f}_' if i >= 0 else r'{:09.4f}_'
+    # fmt = '{:08.4f}_{:08.4f}_{:08.4f}_{:08.4f}'
+    fmt = fmt[:-1]
+    return fmt.format(*norm, d_pln)
+
+def cut_sepsurf(filename, norm, d):
+    filename_plane = get_cut_filename_plane(norm, d)
     null_nums = []
     sepsurfs = []
-    with open(outprefix+'/'+prefix(filename)+'-rings-cut_'+'{:6.4f}.dat'.format(r), 'rb') as ringfile:
+    with open(outprefix+'/'+prefix(filename)+'-rings-cut_'+'{}.dat'.format(filename_plane), 'rb') as ringfile:
         nlines, = np.fromfile(ringfile, dtype=np.int32, count=1)
         for _ in range(nlines):
             inull, = np.fromfile(ringfile, dtype=np.int32, count=1)
@@ -284,11 +301,12 @@ def cut_sepsurf(r, filename):
             sepsurfs.append(sepsurf)
     return null_nums, sepsurfs
 
-def cut_separators(r, filename, hcs=False):
+def cut_separators(filename, norm, d, hcs=False):
+    filename_plane = get_cut_filename_plane(norm, d)
     null_nums = []
     sep_pts = []
     if hcs:
-        with open(outprefix+'/'+prefix(filename)+'-hcs-separators-cut_'+'{:6.4f}.dat'.format(r), 'rb') as sepfile:
+        with open(outprefix+'/'+prefix(filename)+'-hcs-separators-cut_'+'{}.dat'.format(filename_plane), 'rb') as sepfile:
             npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
             for _ in range(npts):
                 end, = np.fromfile(sepfile, dtype=np.int32, count=1)
@@ -296,7 +314,7 @@ def cut_separators(r, filename, hcs=False):
                 sep = np.fromfile(sepfile, dtype=np.float64, count=3)
                 sep_pts.append(sep)
     else:
-        with open(outprefix+'/'+prefix(filename)+'-separators-cut_'+'{:6.4f}.dat'.format(r), 'rb') as sepfile:
+        with open(outprefix+'/'+prefix(filename)+'-separators-cut_'+'{}.dat'.format(filename_plane), 'rb') as sepfile:
             npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
             for _ in range(npts):
                 _, end = np.fromfile(sepfile, dtype=np.int32, count=2)
@@ -305,10 +323,11 @@ def cut_separators(r, filename, hcs=False):
                 sep_pts.append(sep)
     return null_nums, sep_pts
 
-def cut_spines(r, filename):
+def cut_spines(filename, norm, d):
+    filename_plane = get_cut_filename_plane(norm, d)
     null_nums = []
     spine_pts = []
-    with open(outprefix+'/'+prefix(filename)+'-spines-cut_'+'{:6.4f}.dat'.format(r), 'rb') as spinefile:
+    with open(outprefix+'/'+prefix(filename)+'-spines-cut_'+'{}.dat'.format(filename_plane), 'rb') as spinefile:
         npts, = np.fromfile(spinefile, dtype=np.int32, count=1)
         for _ in range(npts):
             inull, = np.fromfile(spinefile, dtype=np.int32, count=1)
@@ -317,9 +336,10 @@ def cut_spines(r, filename):
             spine_pts.append(spine)
     return null_nums, spine_pts
 
-def cut_hcs(r, filename):
+def cut_hcs(filename, norm, d):
+    filename_plane = get_cut_filename_plane(norm, d)
     lines = []
-    with open(outprefix+'/'+prefix(filename)+'-hcs-cut_{:6.4f}.dat'.format(r), 'rb') as hcsfile:
+    with open(outprefix+'/'+prefix(filename)+'-hcs-cut_{}.dat'.format(filename_plane), 'rb') as hcsfile:
         nlines, = np.fromfile(hcsfile, dtype=np.int32, count=1)
         for _ in range(0, nlines):
             _ = np.fromfile(hcsfile, dtype=np.int32, count=1)
