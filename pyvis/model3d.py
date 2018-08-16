@@ -88,6 +88,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
         if sun: add_sun()
         box = False
     if box: add_box()
+    if axes: add_axes()
 
     if fieldlines is not None: add_fieldlines(fieldlines, col=linecolor)
 
