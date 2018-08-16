@@ -16,6 +16,9 @@ n1, n3, n4, n5 = 25/216, 1408/2565, 2197/4104, -1/5
 nn1, nn3, nn4, nn5, nn6 = 16/135, 6656/12825, 28561/56430, -9/50, 2/55
 
 def trilinear3d(pt, grid, xx, yy, zz):
+    ix = np.where(pt[0] > xx)[0][-1]
+    iy = np.where(pt[1] > yy)[0][-1]
+    iz = np.where(pt[2] > zz)[0][-1]
 
     ix = np.where(pt[0] > xx)[0].max()
     iy = np.where(pt[1] > yy)[0].max()
