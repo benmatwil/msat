@@ -24,7 +24,7 @@ sign_names = {-2:'Sink', -1:'Neg', 0:'Zero', 1:'Pos', 2:'Source'}
 
 def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
     nullrad=1, nfanlines=40, nring=None, colquant=None, coordsystem='cartesian', no_nulls=False,
-    sun=True, outdir=None, periodicity=''):
+    sun=True, axes=False, outdir=None, periodicity='', only_nf=False):
     """Makes a 3D visualisation of the output from Magnetic Skeleton Analysis Tools
 
         fname: name of the file containing the original magnetic field
@@ -78,8 +78,11 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
 
     filename = fname
 
-    if not no_nulls:
+    if not no_nulls and not only_nf:
         nulldata = rd.nulls(filename)
+        set_null_list(null_list)
+    if only_nf:
+        nulldata = rd.nulls(filename, simple=True)
         set_null_list(null_list)
 
     add_structures(*addlist, nullrad=nullrad, nfanlines=nfanlines, nring=nring)
@@ -473,7 +476,7 @@ def add_separators(hcs=False, colour=None):
         lines = ml.pipeline.stripper(src)
         ml.pipeline.surface(lines, color=linecol, line_width=6, name='Separators')
 
-def add_nulls(size=1):
+def add_nulls(size=1, no_sf=False):
     print("Adding nulls")
 
     cols = {-2:(0.5, 0, 0.5), -1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0), 2:(1, 165/255, 0)}
@@ -486,6 +489,12 @@ def add_nulls(size=1):
     # pick out only the nulls required
     nulldata1 = nulldata[nulllist-1]
 
+    if no_sf:
+        pos = nulldata1.pos
+        if csystem == 'spherical':
+            pos[:, 0], pos[:, 1], pos[:, 2] = sphr2cart(pos[:, 0], pos[:, 1], pos[:, 2])
+        ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[0], scale_factor=r, resolution=32, name=sign_names[0]+'Nulls')
+    else:
         for sign in np.unique(nulldata1.sign):
         pos = nulldata1.pos[nulldata1.sign == sign]
         if csystem == 'spherical':
