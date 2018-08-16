@@ -7,6 +7,15 @@ from . import fieldline3d as fl
 import sys
 import vtk
 
+try:
+    __IPYTHON__
+except NameError:
+    pass
+else:
+    from IPython import get_ipython
+    ipython = get_ipython()
+    ipython.magic(r"%gui qt")
+
 # turn of warnings while vtk/mayavi compatibility is fixed -- still works
 vtk.vtkObject.GlobalWarningDisplayOff()
 
