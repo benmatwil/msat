@@ -365,14 +365,6 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
         elif bounce == 1: line = line[:-1]
 
     if gridcoord == False:
-        for pt in line:
-            ix, iy, iz = np.floor(pt).astype(np.int)
-            if ix == xmax: ix -= 1
-            if iy == ymax: iy -= 1
-            if iz == zmax: iz -= 1
-
-            pt[0] = x[ix] + (pt[0] - ix)*(x[ix+1] - x[ix])
-            pt[1] = y[iy] + (pt[1] - iy)*(y[iy+1] - y[iy])
-            pt[2] = z[iz] + (pt[2] - iz)*(z[iz+1] - z[iz])
+        for pt in line: gtr(pt, x, y, z)
     
     return np.array(line[::-1], dtype=np.float64)
