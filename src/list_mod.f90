@@ -42,6 +42,8 @@ module list_mod
       real(real64), dimension(:, :) :: veclist
       integer :: ivec
 
+      call self%create()
+
       do ivec = 1, size(veclist, 2)
         call self%append(veclist(:, ivec))
       enddo
