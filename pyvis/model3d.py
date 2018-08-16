@@ -421,6 +421,7 @@ def add_separators(hcs=False, colour=None):
     print('Adding separators')
 
     seps, conn = rd.separators(filename, null_list=nulllist, hcs=hcs)
+    ringsmax, nskip, _, _, ringnums = rd.ringinfo(filename)
 
     # simpler version of spines and rings - no need for positive and negative
     x, y, z, s, ptcons = ( [] for _ in range(5) )
@@ -442,12 +443,14 @@ def add_separators(hcs=False, colour=None):
     for inull in to_do:
         print('Null {:5d}'.format(inull+1))
         sys.stdout.write("\033[F")
+        num = np.count_nonzero(ringnums[inull] > 0)*nskip
         for con, sep in zip(conn[inull], seps[inull]):
             if con in nulllist:
                 if csystem == 'spherical':
                     sep[:, 0], sep[:, 1], sep[:, 2] = sphr2cart(sep[:, 0], sep[:, 1], sep[:, 2])
                 elif csystem == 'cylindical':
                     sep[:, 0], sep[:, 1], sep[:, 2] = cyl2cart(sep[:, 0], sep[:, 1], sep[:, 2])
+                if sep.shape[0] > num: continue
                 x.append(sep[:, 0])
                 y.append(sep[:, 1])
                 z.append(sep[:, 2])
