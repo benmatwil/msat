@@ -6,19 +6,19 @@ module make_cut_mod
 
   implicit none
 
-  real(np) :: ds
+  real(np) :: ds, disttol
 
   real(np) :: n_pln(3), d_pln
 
   contains
 
-  subroutine sortpoints(points, pordered, disttol, exit_status)
+  subroutine sortpoints(points, pordered, exit_status)
 
     real(np), dimension(:, :), allocatable :: dists
     real(np), dimension(:), allocatable :: ptdists, spinedists
     real(np), dimension(:, :), allocatable :: points, pordered
     real(np), dimension(3) :: diff, pt1, pt2
-    real(np) :: disttol, mindist, mindistspine
+    real(np) :: mindist, mindistspine
 
     integer(int32), dimension(2) :: imindists
     integer(int32) :: imindist, iminspinedist
@@ -117,7 +117,7 @@ module make_cut_mod
     logical :: check_crossing
     real(np), dimension(3) :: r1, r2
 
-    check_crossing = plane(r1)*plane(r2) < 0
+    check_crossing = plane(r1)*plane(r2) <= 0
 
   end function
 
@@ -126,7 +126,7 @@ module make_cut_mod
     real(np), dimension(3) :: find_crossing, r1, r2
     real(np) :: s
 
-    s = (d_pln - dot(r1, n_pln))/(dot((r2 - r1), n_pln))
+    s = (d_pln - dot(r1, n_pln))/(dot(r2 - r1, n_pln))
     find_crossing = r1 + s*(r2 - r1)
 
   end function
@@ -143,7 +143,9 @@ program make_cut
 
   real(np) :: r0
   integer(int32) :: pc = 0
-  character(6) :: rstr
+  character(:), allocatable :: astr, bstr, cstr, dstr, sign
+  character(*), parameter :: fmt = '(A,i3.3,f5.4)', neg = '         ', pos = '        '
+  character(:), allocatable :: file_pln
 
   integer(int64) :: ig
   real(np), dimension(:), allocatable :: xg, yg, zg
@@ -155,11 +157,12 @@ program make_cut
   integer(int64) :: ia, ip, uptorings, uptoassoc, uptoring1, uptoring2
   integer(int32) :: inull, jnull, iring, iline, nextline, flag, ihcs, ipt, isep
   integer(int32) :: nrings, npoints, nlines, nseps, ncomp, nskip_file
-  integer(int32), dimension(:), allocatable :: association
+  ! integer(int32), dimension(:), allocatable :: association
+  integer(int32), dimension(:), allocatable :: association, break
   integer(int32), dimension(:), allocatable :: nperring
   real(np), dimension(:, :), allocatable :: line, line2, points, pordered
-  real(np) :: s, point(3)
-  logical :: iexist, exit_status, do_hcs = .true., do_all_ssf = .true.
+  real(np) :: s, point(3), hstep
+  logical :: iexist, exit_status, do_hcs = .false., do_all_ssf = .true., too_much_memory
 
   integer(int32) :: nspine, dir
 
@@ -170,15 +173,16 @@ program make_cut
   integer(int64) :: num_nums, leftover_num, read_index, read_num
   integer(int64), parameter :: large_read = 500000000_int64
   real(np), dimension(:, :), allocatable :: lines
-  integer(int32), dimension(:), allocatable :: associations
+  ! integer(int32), dimension(:), allocatable :: associations
+  integer(int32), dimension(:), allocatable :: associations, breaks
 
   call filenames
 
   if (command_argument_count() > 0) then
     do iarg = 1, command_argument_count()
       call get_command_argument(iarg,arg)
-      if (trim(arg) == '--no-hcs') then
-        do_hcs = .false.
+      if (trim(arg) == '--hcs') then
+        do_hcs = .true.
       endif
       if (trim(arg) == '--only-hcs') then
         do_all_ssf = .false.
@@ -200,12 +204,45 @@ program make_cut
   if (pc < 2) then
     stop "Need to provide normal to the plane -n and planar constant -d"
   endif
+  
+  if (n_pln(1) < 0) then
+    sign = '-'
+    astr = neg
+  else
+    sign = ''
+    astr = pos
+  endif
+  write(astr, fmt) sign, int(abs(n_pln(1))), abs(n_pln(1))-int(abs(n_pln(1)))
+  if (n_pln(2) < 0) then
+    sign = '-'
+    bstr = neg
+  else
+    sign = ''
+    bstr = pos
+  endif
+  write(bstr, fmt) sign, int(abs(n_pln(2))), abs(n_pln(2))-int(abs(n_pln(2)))
+  if (n_pln(3) < 0) then
+    sign = '-'
+    cstr = neg
+  else
+    sign = ''
+    cstr = pos
+  endif
+  write(cstr, fmt) sign, int(abs(n_pln(3))), abs(n_pln(3))-int(abs(n_pln(3)))
+  if (d_pln < 0) then
+    sign = '-'
+    dstr = neg
+  else
+    sign = ''
+    dstr = pos
+  endif
+  write(dstr, fmt) sign, int(abs(d_pln)), abs(d_pln)-int(abs(d_pln))
+
+  file_pln = astr // '_' // bstr // '_' // cstr // '_' // dstr
 
   print*, 'Making cut at in file '// filein // ' using plane:'
-  print '(5X, F6.4, A, F6.4, A, F6.4, A, F6.4)', &
-    n_pln(1), ' * x1 + ', n_pln(2), ' * x2 + ', n_pln(3), ' * x3 = ', d_pln
-
-  write(rstr, '(F6.4)') d_pln
+  print '(5X, 7A)', &
+    astr, ' * x1 + ', bstr, ' * x2 + ', cstr, ' * x3 = ', dstr
 
   open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
     read(10) nnulls
@@ -218,7 +255,7 @@ program make_cut
     read(10, pos=ig) xg, yg, zg
   close(10)
 
-  if (nnulls < 1) then
+  if (nnulls < 10) then
     iprint = 1
   else
     iorder = floor(log10(1.0_np*nnulls))
@@ -227,13 +264,20 @@ program make_cut
 
   call system_clock(tstart, count_rate) ! to time how long it takes
 
-  ds = maxval([maxval(yg(2:ny) - yg(1:ny-1)), maxval(zg(2:nz) - zg(1:nz-1))])
+  open(unit=40, file=trim(fileout)//'-ringinfo.dat', access='stream', status='old')
+    read(40) nrings, nrings, nrings, hstep
+  close(40)
 
+  ds = maxval([maxval(xg(2:nx) - xg(1:nx-1)), &
+               maxval(yg(2:ny) - yg(1:ny-1)), &
+               maxval(zg(2:nz) - zg(1:nz-1))])*2*hstep
+  disttol = ds/10
+  print*, ds, hstep
   !********************************************************************************
     
   ! for each spine, check whether we cross r=r0 and add point to file
   print*, 'Spines'
-  open(unit=80, file=trim(fileout)//'-spines-cut_'//rstr//'.dat', access='stream', status='replace')
+  open(unit=80, file=trim(fileout)//'-spines-cut_'//file_pln//'.dat', access='stream', status='replace')
   open(unit=10, file=trim(fileout)//'-spines.dat', access='stream', status='old')
 
   call spine_list%create()
@@ -250,10 +294,12 @@ program make_cut
       do iline = 1, nspine-1
         nextline = iline + 1
         if (check_crossing(line(:, iline), line(:, nextline))) then
-          point = find_crossing(line(:, iline), line(:, nextline))
-          write(80) inull, point
-          ipt = ipt + 1
-          call spine_list%append(point)
+          if (dist(line(:, iline), line(:, nextline)) < 1) then
+            point = find_crossing(line(:, iline), line(:, nextline))
+            write(80) inull, point
+            ipt = ipt + 1
+            call spine_list%append(point)
+          endif
         endif
       enddo
       deallocate(line)
@@ -270,7 +316,7 @@ program make_cut
   if (do_all_ssf) then
     ! for each separator, check whether we cross r=r0 and add point to file
     print*, 'Separators'
-    open(unit=80, file=trim(fileout)//'-separators-cut_'//rstr//'.dat', access='stream', status='replace')
+    open(unit=80, file=trim(fileout)//'-separators-cut_'//file_pln//'.dat', access='stream', status='replace')
     open(unit=20, file=trim(fileout)//'-connectivity.dat', access='stream', status='old')
     open(unit=30, file=trim(fileout)//'-separators.dat', access='stream', status='old')
 
@@ -286,9 +332,11 @@ program make_cut
         do iline = 1, npoints-1
           nextline = iline+1
           if (check_crossing(line(:, iline), line(:, nextline))) then
-            point = find_crossing(line(:, iline), line(:, nextline))
-            write(80) inull, flag, point
-            ipt = ipt + 1
+            if (dist(line(:, iline), line(:, nextline)) < 1) then
+              point = find_crossing(line(:, iline), line(:, nextline))
+              write(80) inull, flag, point
+              ipt = ipt + 1
+            endif
           endif
         enddo
         read(20) flag, flag
@@ -304,9 +352,10 @@ program make_cut
     !********************************************************************************
 
     print*, 'Rings'
-    open(unit=80, file=trim(fileout)//'-rings-cut_'//rstr//'.dat', access='stream', status='replace')
+    open(unit=80, file=trim(fileout)//'-rings-cut_'//file_pln//'.dat', access='stream', status='replace')
     open(unit=40, file=trim(fileout)//'-ringinfo.dat', access='stream', status='old')
     open(unit=50, file=trim(fileout)//'-rings.dat', access='stream', status='old')
+    open(unit=60, file=trim(fileout)//'-breaks.dat', access='stream', status='old')
     inquire(file=trim(fileout)//'-assocs.dat', exist=iexist)
     if (iexist) then
       open(unit=55, file=trim(fileout)//'-assocs.dat', access='stream', status='old')
@@ -326,37 +375,49 @@ program make_cut
     uptoassoc = 0
     uptorings = 0
     do inull = 1, nnulls
-      if (mod(inull, iprint) == 0) print*, 'Done', inull, 'of', nnulls
       call ring_list%create()
       read(40) nperring
       nrings = count(nperring > 0) - 1 ! index of nperring starts at 0
 
-      ! 500000000 seems to be maximum number of int32 integers fortran can read at a time
       num_nums = sum(int(nperring, int64))
-      allocate(lines(3, num_nums), associations(num_nums))
-
-      ia = uptoassoc + 1
-      ip = uptorings + 1
-      
-      if (num_nums > large_read) then
-        leftover_num = num_nums
-        read_index = 1
-        inquire(50, pos=ip)
-        inquire(55, pos=ia)
-        do while (leftover_num > 0)
-          if (leftover_num > large_read) then
-            read_num = large_read
-          else
-            read_num = leftover_num
-          endif
-          read(50) lines(:, read_index:read_index+read_num)
-          read(55) associations(read_index:read_index+read_num)
-          read_index = read_index + read_num
-          leftover_num = leftover_num - read_num
-        enddo
+      if (num_nums > 2500000000_int64) then
+        too_much_memory = .true.
       else
-        read(50, pos=ip) lines
-        read(55, pos=ia) associations
+        too_much_memory = .false.
+      endif
+      ! print*, num_nums
+
+      if (.not. too_much_memory) then
+        ! 500000000 seems to be maximum number of int32 integers fortran can read at a time
+        ! allocate(lines(3, num_nums), associations(num_nums))
+        allocate(lines(3, num_nums), associations(num_nums), breaks(num_nums))
+
+        ia = uptoassoc + 1
+        ip = uptorings + 1
+        
+        if (num_nums > large_read) then
+          leftover_num = num_nums
+          read_index = 1
+          inquire(50, pos=ip)
+          inquire(55, pos=ia)
+          inquire(60, pos=ia)
+          do while (leftover_num > 0)
+            if (leftover_num > large_read) then
+              read_num = large_read
+            else
+              read_num = leftover_num
+            endif
+            read(50) lines(:, read_index:read_index+read_num-1)
+            read(55) associations(read_index:read_index+read_num-1)
+            read(60) breaks(read_index:read_index+read_num-1)
+            read_index = read_index + read_num
+            leftover_num = leftover_num - read_num
+          enddo
+        else
+          read(50, pos=ip) lines
+          read(55, pos=ia) associations
+          read(60, pos=ia) breaks
+        endif
       endif
 
       do iring = nrings, 1, -1
@@ -364,23 +425,28 @@ program make_cut
         uptoring1 = sum(int(nperring(0:iring-2), int64))
         uptoring2 = uptoring1 + nperring(iring-1)
         
-        ! allocate(association(nperring(iring)))
-        ! ia = uptoassoc + uptoring2*4_int64 + 1
-        ! read(55, pos=ia) association
-        
-        ! if (iring == nrings) then
-        !   allocate(line(3, nperring(iring)))
-        !   ip = uptorings + uptoring2*24_int64 + 1
-        !   read(50, pos=ip) line
-        ! endif
+        if (too_much_memory) then
+          ! allocate(association(nperring(iring)))
+          allocate(association(nperring(iring)), break(nperring(iring)))
+          ia = uptoassoc + uptoring2*4_int64 + 1
+          read(55, pos=ia) association
+          read(60, pos=ia) break
+          
+          if (iring == nrings) then
+            allocate(line(3, nperring(iring)))
+            ip = uptorings + uptoring2*24_int64 + 1
+            read(50, pos=ip) line
+          endif
 
-        ! allocate(line2(3, nperring(iring-1)))
-        ! ip = uptorings + uptoring1*24_int64 + 1
-        ! read(50, pos=ip) line2
-
-        association = associations(uptoring2+1:uptoring2+nperring(iring))
-        if (iring == nrings) line = lines(:, uptoring2+1:uptoring2+nperring(iring))
-        line2 = lines(:, uptoring1+1:uptoring2)
+          allocate(line2(3, nperring(iring-1)))
+          ip = uptorings + uptoring1*24_int64 + 1
+          read(50, pos=ip) line2
+        else
+          association = associations(uptoring2+1:uptoring2+nperring(iring))
+          break = breaks(uptoring2+1:uptoring2+nperring(iring))
+          if (iring == nrings) line = lines(:, uptoring2+1:uptoring2+nperring(iring))
+          line2 = lines(:, uptoring1+1:uptoring2)
+        endif
 
         do iline = 1, nperring(iring)
           if (check_crossing(line(:, iline), line2(:, association(iline)))) then
@@ -391,10 +457,22 @@ program make_cut
             endif
           endif
         enddo
+        do iline = 1, nperring(iring)-1
+          nextline = iline + 1
+          if (check_crossing(line(:, iline), line(:, nextline))) then
+            if (break(iline) == 0 .and. dist(line(:, iline), line(:, nextline)) < 1) then
+              ! find point in between at r0 and add to line
+              point = find_crossing(line(:, iline), line(:, nextline))
+              call ring_list%append(point)
+            endif
+          endif
+        enddo
         call move_alloc(line2, line)
-        deallocate(association)
+        ! deallocate(association)
+        deallocate(association, break)
       enddo
-      deallocate(lines, associations)
+      ! if (.not. too_much_memory) deallocate(lines, associations)
+      if (.not. too_much_memory) deallocate(lines, associations, breaks)
       if (allocated(line)) deallocate(line)
       uptoring1 = sum(int(nperring, int64))
       uptoassoc = uptoassoc + uptoring1*4_int64
@@ -405,7 +483,7 @@ program make_cut
 
       do while (size(points, 2) > 0)
 
-        call sortpoints(points, pordered, ds/3, exit_status)
+        call sortpoints(points, pordered, exit_status)
         if (exit_status) then
           exit
         else
@@ -417,6 +495,7 @@ program make_cut
       enddo
       
       deallocate(points)
+      if (mod(inull, iprint) == 0) print*, 'Done', inull, 'of', nnulls
     enddo
     write(80, pos=1) nlines
     close(80)
@@ -433,7 +512,7 @@ program make_cut
 
   if (do_hcs) then
     ! for hcs
-    open(unit=80, file=trim(fileout)//'-hcs-cut_'//rstr//'.dat', access='stream', status='replace')
+    open(unit=80, file=trim(fileout)//'-hcs-cut_'//file_pln//'.dat', access='stream', status='replace')
     open(unit=40, file=trim(fileout)//'-hcs-ringinfo.dat', access='stream', status='old')
     open(unit=50, file=trim(fileout)//'-hcs-rings.dat', access='stream', status='old')
     inquire(file=trim(fileout)//'-hcs-assocs.dat', exist=iexist)
@@ -534,7 +613,7 @@ program make_cut
 
       do while (size(points, 2) > 0)
 
-        call sortpoints(points, pordered, ds/3, exit_status)
+        call sortpoints(points, pordered, exit_status)
         if (exit_status) then
           exit
         else
@@ -558,7 +637,7 @@ program make_cut
   !********************************************************************************
 
     ! for each hcs separator, check whether we cross r=r0 and add point to file
-    open(unit=80, file=trim(fileout)//'-hcs-separators-cut_'//rstr//'.dat', access='stream', status='replace')
+    open(unit=80, file=trim(fileout)//'-hcs-separators-cut_'//file_pln//'.dat', access='stream', status='replace')
     open(unit=20, file=trim(fileout)//'-hcs-connectivity.dat', access='stream', status='old')
     open(unit=30, file=trim(fileout)//'-hcs-separators.dat', access='stream', status='old')
     
@@ -573,9 +652,11 @@ program make_cut
       do iline = 1, npoints-1
         nextline = iline+1
         if (check_crossing(line(:, iline), line(:, nextline))) then
-          point = find_crossing(line(:, iline), line(:, nextline))
-          write(80) flag, point
-          ipt = ipt + 1
+          if (dist(line(:, iline), line(:, nextline)) < 1) then
+            point = find_crossing(line(:, iline), line(:, nextline))
+            write(80) flag, point
+            ipt = ipt + 1
+          endif
         endif
       enddo
       read(20) flag, flag
