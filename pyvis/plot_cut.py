@@ -50,8 +50,8 @@ def ticks(nsplit, npi):
 
 #################################################################
 
-def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.cm.Greys_r, nticks=4, newcolours=True, linerast=False, output_dir=None):
-    global datafile, prefile, nulldata, rstr, colours
+def start(filename, norm, d, title=False, levels=np.linspace(-20,20,101), colmap=plt.cm.Greys_r, nticks=4, newcolours=True, linerast=False, output_dir=None):
+    global datafile, prefile, nulldata, plane_norm, plane_d, colours
 
     datafile = filename
     prefile = rd.prefix(filename)
@@ -62,7 +62,14 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
 
     nulldata = rd.nulls(datafile)
 
-    rstr = '{:6.4f}'.format(r)
+    plane_norm = norm
+    try:
+        len(d)
+    except TypeError:
+        plane_d = d
+    else:
+        pt = np.array(d, dtype=np.float64)
+        plane_d = np.sum(pt*norm)
 
     # os.system(f'./make_cut -i {filename} -r {r}')
 
@@ -81,8 +88,8 @@ def start(r, filename, title=False, levels=np.linspace(-20,20,101), colmap=plt.c
         ax.set_rasterization_zorder(0)
         
     br, _, _, rads, thetas, phis = rd.field(datafile)
-    ir = np.where(r >= rads)[0].max()
-    plotfield = br[ir, :, :] + (r - rads[ir])/(rads[ir+1] - rads[ir])*(br[ir+1, :, :] - br[ir, :, :])
+    ir = np.where(plane_d >= rads)[0].max()
+    plotfield = br[ir, :, :] + (plane_d - rads[ir])/(rads[ir+1] - rads[ir])*(br[ir+1, :, :] - br[ir, :, :])
     plt.contourf(phis, thetas, plotfield, levels, cmap=colmap, extend='both', zorder=-10)
     cb = plt.colorbar(fraction=0.05, pad=0.025)
     diff = levels[-1] - levels[0]
@@ -101,70 +108,58 @@ def all(labels=False, ms=3):
     hcs(lw=lw)
     spines(labels=labels, ms=ms)
     separators(labels=labels, ms=ms)
+    separators(labels=labels, ms=ms, hcs=True)
 
 #################################################################
 
 def spines(labels=False, ms=3):
-    with open(outprefix+'/'+prefile+'-spines-cut_'+rstr+'.dat', 'rb') as spinefile:
-        npts, = np.fromfile(spinefile, dtype=np.int32, count=1)
-        for _ in range(npts):
-            inull, = np.fromfile(spinefile, dtype=np.int32, count=1)
-            spine = np.fromfile(spinefile, dtype=np.float64, count=3)
-            plt.plot(spine[2], spine[1], '.', c=colours[inull-1], ms=ms, zorder=-5)
-            if labels == True:
-                plt.text(spine[2], spine[1], '{}'.format(inull), color='green')
+    null_nums, spines = rd.cut_spines(datafile, plane_norm, plane_d)
+    for inull, spine in zip(null_nums, spines):
+        plt.plot(spine[2], spine[1], '.', c=colours[inull-1], ms=ms, zorder=-5)
+        if labels:
+            plt.text(spine[2], spine[1], '{}'.format(inull), color='green')
 
 #################################################################
 
-def separators(labels=False, ms=3):
-    with open(outprefix+'/'+prefile+'-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
-        npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
-        for _ in range(npts):
-            start, end = np.fromfile(sepfile, dtype=np.int32, count=2)
-            sep = np.fromfile(sepfile, dtype=np.float64, count=3)
-            plt.plot(sep[2], sep[1], '*', c='yellow', ms=ms, zorder=-5)
-            if labels == True:
-                plt.text(sep[2], sep[1], '{}'.format(start))
+def separators(labels=False, ms=3, hcs=False):
+    null_nums, separators = rd.cut_separators(datafile, plane_norm, plane_d, hcs=hcs)
+    col = 'orange' if hcs else 'yellow'
+    for inull, sep in zip(null_nums, separators):
+        plt.plot(sep[2], sep[1], '*', c=col, ms=ms, zorder=-5)
+        if labels:
+            plt.text(sep[2], sep[1], '{}'.format(inull))
 
-    with open(outprefix+'/'+prefile+'-hcs-separators-cut_'+rstr+'.dat', 'rb') as sepfile:
-        npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
-        for _ in range(npts):
-            end, = np.fromfile(sepfile, dtype=np.int32, count=1)
-            sep = np.fromfile(sepfile, dtype=np.float64, count=3)
-            plt.plot(sep[2], sep[1], '*', c='orange', ms=ms, zorder=-5)
-            
 #################################################################
 
 def rings(dots=False, labels=False, lw=1):
-    with open(outprefix+'/'+prefile+'-rings-cut_'+rstr+'.dat', 'rb') as ringfile:
-        nlines, = np.fromfile(ringfile, dtype=np.int32, count=1)
-        for _ in range(nlines):
-            inull, = np.fromfile(ringfile, dtype=np.int32, count=1)
-            length, = np.fromfile(ringfile, dtype=np.int32, count=1)
-            ring = np.fromfile(ringfile, dtype=np.float64, count=3*length).reshape(-1,3)
-            plt.plot(ring[:,2], ring[:,1], c=colours[inull-1], lw=lw, zorder=-5)
-            if labels == True:
-                plt.text(ring[length//2,2], ring[length//2,1], '{}'.format(inull))
-            if dots == True:
-                plt.plot(ring[:,2], ring[:,1], '.', c='green')
+    null_nums, rings = rd.cut_sepsurf(datafile, plane_norm, plane_d)
+    for inull, ring in zip(null_nums, rings):
+        plt.plot(ring[:, 2], ring[:, 1], c=colours[inull-1], lw=lw, zorder=-5)
+        if labels:
+            plt.text(ring[ring.length[0]//2, 2], ring[ring.length[0]//2, 1], '{}'.format(inull))
+        if dots:
+            plt.plot(ring[:, 2], ring[:, 1], '.', c='green')
 
 #################################################################
 
 def hcs(dots=False, lw=1):
-    with open(outprefix+'/'+prefile+'-hcs-cut_'+rstr+'.dat', 'rb') as hcsfile:
-        nlines, = np.fromfile(hcsfile, dtype=np.int32, count=1)
-        print(nlines)
-        if float(rstr) > 2.49:
-            skip = 2
-        else:
-            skip = 1
-        for _ in range(0, nlines, skip):
-            ihcs, = np.fromfile(hcsfile, dtype=np.int32, count=1)
-            length, = np.fromfile(hcsfile, dtype=np.int32, count=1)
-            line = np.fromfile(hcsfile, dtype=np.float64, count=3*length).reshape(-1,3)
-            plt.plot(line[:, 2], line[:, 1], ls=':', c='lime', lw=lw, zorder=-0.5)
-            if dots == True:
-                plt.plot(line[:, 2], line[:, 1], '.', c='blue')
+    lines = rd.cut_hcs(datafile, plane_norm, plane_d)
+    for line in lines:
+        plt.plot(line[:, 2], line[:, 1], c='lime', ls=':', lw=lw, zorder=-0.5)
+        if dots:
+            plt.plot(line[:, 2], line[:, 1], '.', c='blue')
+
+    # with open(outprefix+'/'+prefile+'-hcs-cut_'+rstr+'.dat', 'rb') as hcsfile:
+    #     nlines, = np.fromfile(hcsfile, dtype=np.int32, count=1)
+    #     print(nlines)
+    #     if rad > 2.49:
+    #         skip = 2
+    #     else:
+    #         skip = 1
+    #     for _ in range(0, nlines, skip):
+    #         ihcs, = np.fromfile(hcsfile, dtype=np.int32, count=1)
+    #         length, = np.fromfile(hcsfile, dtype=np.int32, count=1)
+    #         line = np.fromfile(hcsfile, dtype=np.float64, count=3*length).reshape(-1,3)
 
 #################################################################
 
