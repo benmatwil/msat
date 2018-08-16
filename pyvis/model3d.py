@@ -20,7 +20,7 @@ vtk.vtkObject.GlobalWarningDisplayOff()
 
 filename = None
 
-sign_names = {-1:'Neg', 0:'Zero', 1:'Pos'}
+sign_names = {-2:'Sink', -1:'Neg', 0:'Zero', 1:'Pos', 2:'Source'}
 
 def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
     nullrad=1, nfanlines=40, nring=None, colquant=None, coordsystem='cartesian', no_nulls=False,
@@ -115,11 +115,11 @@ def add_sepsurf_rings():
 
     rings, breaks = rd.rings(filename, breaks=True, nskip=nskipglob, null_list=nulllist)
 
-    cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
+    cols = {-2:(218/255, 112/255, 214/255), -1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5), 2:(1.0, 178/255, 102/255)}
 
     nulls = nulldata[nulllist-1]
 
-    for isign in [-1, 1]:
+    for isign in np.unique(nulls.sign):
         # new very efficient routine for plotting many lines
         # two lists, one for positive and the other for negative nulls
         x, y, z, s, ptcons = ( [] for _ in range(5) )
@@ -203,11 +203,11 @@ def add_sepsurf_flines(nlines, nring=None):
 
     rings = rd.rings(filename, nskip=nskipglob, null_list=nulllist)
 
-    cols = {-1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5)}
+    cols = {-2:(218/255, 112/255, 214/255), -1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5), 2:(1.0, 178/255, 102/255)}
 
     nulls = nulldata[nulllist-1]
 
-    for isign in [-1, 1]:
+    for isign in np.unique(nulls.sign):
         x, y, z, s, ptcons = ( [] for _ in range(5) )
         index = 0
         for inull in nulls.number[nulls.sign == isign]-1:
@@ -372,14 +372,14 @@ def add_fieldlines(startpts, col=(0, 0, 0), lw=2):
 def add_spines():
     print('Adding spines')
 
-    cols = {-1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0)}
+    cols = {-2:(0.5, 0, 0.5), -1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0), 2:(1, 165/255, 0)}
 
     spines = rd.spines(filename, null_list=nulllist)
 
     nulls = nulldata[nulllist-1]
 
     # very similar to ring algorithm without breaks
-    for isign in [-1, 1]:
+    for isign in np.unique(nulls.sign):
         # set up lists like rings
         x, y, z, s, ptcons = ( [] for _ in range(5) )
         index = 0
@@ -472,7 +472,7 @@ def add_separators(hcs=False, colour=None):
 def add_nulls(size=1):
     print("Adding nulls")
 
-    cols = {-1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0)}
+    cols = {-2:(0.5, 0, 0.5), -1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0), 2:(1, 165/255, 0)}
 
     boxsize = min([xx[-1] - xx[0], yy[-1] - yy[0], zz[-1] - zz[0]])/40
 
@@ -482,7 +482,7 @@ def add_nulls(size=1):
     # pick out only the nulls required
     nulldata1 = nulldata[nulllist-1]
 
-    for sign in [-1, 0, 1]:
+        for sign in np.unique(nulldata1.sign):
         pos = nulldata1.pos[nulldata1.sign == sign]
         if csystem == 'spherical':
             pos[:, 0], pos[:, 1], pos[:, 2] = sphr2cart(pos[:, 0], pos[:, 1], pos[:, 2])
