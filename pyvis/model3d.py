@@ -496,10 +496,10 @@ def add_nulls(size=1, no_sf=False):
         ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[0], scale_factor=r, resolution=32, name=sign_names[0]+'Nulls')
     else:
         for sign in np.unique(nulldata1.sign):
-        pos = nulldata1.pos[nulldata1.sign == sign]
-        if csystem == 'spherical':
-            pos[:, 0], pos[:, 1], pos[:, 2] = sphr2cart(pos[:, 0], pos[:, 1], pos[:, 2])
-        ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[sign], scale_factor=r, resolution=32, name=sign_names[sign]+'Nulls')
+            pos = nulldata1.pos[nulldata1.sign == sign]
+            if csystem == 'spherical':
+                pos[:, 0], pos[:, 1], pos[:, 2] = sphr2cart(pos[:, 0], pos[:, 1], pos[:, 2])
+            ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[sign], scale_factor=r, resolution=32, name=sign_names[sign]+'Nulls')
 
     # r = max([boxsize, ds])
     # r = r*size
@@ -523,10 +523,10 @@ def change_null_size(size):
         if 'Nulls' in obj.name:
             count_remove += 1
     while count_remove > 0:
-    objs = ml.gcf().children
-    for obj in objs:
-        if 'Nulls' in obj.name:
-            obj.remove()
+        objs = ml.gcf().children
+        for obj in objs:
+            if 'Nulls' in obj.name:
+                obj.remove()
                 count_remove -= 1
     
     add_nulls(size)
