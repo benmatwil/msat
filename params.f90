@@ -23,6 +23,9 @@ module params
   real(np), parameter :: zero = 1e-16_np
   ! the number of significant figures of accuracy required for the null
   integer(int32), parameter :: sig_figs = 8
+  ! whether to include null points close to the boundary of vector field grids
+  ! if true sign finder may struggle to analyse them
+  logical, parameter :: boundary_nulls = .false.
 
   ! Sign Finder Parameters
   ! ----------------------

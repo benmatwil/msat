@@ -171,11 +171,9 @@ program nullfinder
 
             bound_dist = rspherefact*10.0_np**(-sig_figs)
             
-            ! if (rnull(1) > 1 + bound_dist .and. rnull(1) < nx - bound_dist .and. &
-            !   rnull(2) > 1 + bound_dist .and. rnull(2) < ny - bound_dist .and. &
-            !   rnull(3) > 1 + bound_dist .and. rnull(3) < nz - bound_dist) then
-            !   call add_vector(rnulls, rnull)
-            ! endif
+            if (boundary_nulls)
+              call add_vector(rnulls, rnull)
+            else
             if (rnull(1) > 1 + bound_dist .and. rnull(1) < nx - bound_dist .and. &
               rnull(2) > 1 + bound_dist .and. rnull(2) < ny - bound_dist .and. &
               rnull(3) > 1 + bound_dist .and. rnull(3) < nz - bound_dist) then
@@ -186,6 +184,7 @@ program nullfinder
 #endif
             endif
           endif
+        endif
         endif
       enddo
     enddo
