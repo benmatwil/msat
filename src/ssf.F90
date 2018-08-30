@@ -81,7 +81,6 @@ program ssfinder
   call system_clock(tstart,count_rate) ! to time how long it takes
 
   ! read in null data
-
   open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
     read(10) nnulls
     allocate(rnulls(3,nnulls), rnullsreal(3,nnulls))
@@ -94,6 +93,7 @@ program ssfinder
     read(10) signs, spines, fans
   close(10)
 
+  ! create a copy for later checks
   rnullsalt = rnulls
 
 #if spherical
@@ -287,6 +287,7 @@ program ssfinder
     slowdown = 1.0_np
     terror = 0
 
+    ! write initial ring to file
     write_ring = gtr(line1, x, y, z)
     write(20) real(write_ring, bytesize)
     if (assoc_output) write(25) [(iline,iline=1,nlines)]
@@ -298,11 +299,12 @@ program ssfinder
     exitcondition = .false.
     !$OMP END SINGLE
 
-    do iring = 1, ringsmax ! loop over number of rings we want
+    ! loop over each ring
+    do iring = 1, ringsmax
 
-      if (abs(signs(inull)) /= 1) then ! skip null which is uncharacterised
+      if (abs(signs(inull)) /= 1) then ! skip null which is source/sink
         !$OMP SINGLE
-        print*,'Null has zero sign -- skipping'
+        print*,'Source/Sink -- skipping'
         !$OMP END SINGLE
         nrings = 1
         exit
@@ -328,17 +330,18 @@ program ssfinder
       !$OMP END WORKSHARE
 
       !$OMP DO private(r, h, out)
-      do iline = 1, nlines ! loop over all points in ring (in parallel do)
+      do iline = 1, nlines ! loop over all points in ring
 
-        r = line1(:,iline)
+        r = line1(:, iline)
         h = h0
 
-        call trace_line(r, signs(inull), h) ! trace line by a distance of h
+        ! trace line by a distance of h
+        call trace_line(r, signs(inull), h)
 
-        line2(:,iline) = line2(:,iline) + (r - line1(:,iline))
-        line1(:,iline) = r
+        line2(:, iline) = line2(:, iline) + (r - line1(:, iline))
+        line1(:, iline) = r
 
-        ! counter to see how many points on ring have reached outer boundary
+        ! check to see if a point is out the boundary is requires removal
         if (outedge(r)) then
           endpoints(iline) = 1
         else
@@ -351,6 +354,7 @@ program ssfinder
       !$OMP END DO
 
       !$OMP SINGLE
+      ! set distances required for checks later in ssf
       if (iring < 50) then
         maxdist = 0.1_np*h0*slowdown
       elseif (iring < 100) then
@@ -375,6 +379,7 @@ program ssfinder
       nearnull = 0
       !$OMP END WORKSHARE
 
+      ! check for lines close to null points
       !$OMP DO private(jnull)
       do iline = 1, nlines
         do jnull = 1, nnulls
@@ -412,7 +417,7 @@ program ssfinder
       if (nearflag > 0) call sep_detect(nlines, inull, iring, signs(inull))
 
       !$OMP SINGLE
-
+      ! check through possible exit points
       if (nlines > pointsmax) then
       ! exit if too many points on ring
         print*, 'Reached maximum number of points'
@@ -446,6 +451,7 @@ program ssfinder
       if (exitcondition) exit
 
       !$OMP SINGLE
+      ! write ring data to file
       nperring(iring) = nlines
       write_ring = gtr(line1, x, y, z)
       if (modulo(iring, nskip) == 0) then
@@ -466,7 +472,7 @@ program ssfinder
     !$OMP SINGLE
     write(10) nperring(::nskip)
     
-    ! trace separators...
+    ! trace separators and write to file
     print*, "Tracing spines and any separators and dealing with rings"
     write(40, pos=uptonullconn) nseps
     if (nseps > 0) then
@@ -488,7 +494,7 @@ program ssfinder
     endif
     uptonullconn = uptonullconn + nseps*16_int64 + 4_int64 ! 4*4
 
-    ! Trace spines...
+    ! trace spine lines and write file
     do dir = -1, 1, 2
       out = .false.
       allocate(spine(3,1))
@@ -506,6 +512,7 @@ program ssfinder
       deallocate(spine)
     enddo
 
+    ! write the associations to file corrected for nskip /= 1
     if (assoc_output) then
       do iring = nskip, nskip*(nrings/nskip), nskip
         allocate(association(nperring(iring)))
@@ -532,6 +539,7 @@ program ssfinder
     deallocate(xs, ys, zs)
     deallocate(line1, line2, break)
     
+    ! close temporary ring file and delete it
     close(90, status='delete')
   
     !$OMP END SINGLE
@@ -540,6 +548,7 @@ program ssfinder
 
   !$OMP END PARALLEL
 
+  ! close all files
   close(10)
   close(20)
   close(25)
@@ -548,6 +557,7 @@ program ssfinder
   close(50)
   close(60)
 
+  ! print final run time
   call system_clock(tstop, count_rate)
   print*, 'Time taken:', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"
 

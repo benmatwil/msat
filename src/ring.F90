@@ -250,7 +250,7 @@ contains
         ! first find all points that lie within nulldist and note their index
         do iline = 1, nlines
           if (dist(line1(:,iline),rnulls(:,inull)) < nulldist &
-            .or. dist(line1(:,iline),rnullsalt(:,inull)) < nulldist) near(iline) = iline !point lies within nulldist
+            .or. dist(line1(:,iline),rnullsalt(:,inull)) < nulldist) near(iline) = iline ! point lies within nulldist
         enddo
 
         if (maxval(near) > 0) then ! if there are any points that lie within this distance
@@ -288,16 +288,16 @@ contains
             n1 = modulo(endgap + 1 - nextra - 1, nlines) + 1
             n2 = modulo(nlines + endgap - gapsize + nextra - 1, nlines) + 1
           endif
-          allocate(r(3,nr), rmap(nr))
+          allocate(r(3, nr), rmap(nr))
 
           if (n1 <= n2) then
-            r = line1(:,n1:n2)
-            rmap = [(k,k=n1,n2)]
+            r = line1(:, n1:n2)
+            rmap = [(k, k=n1, n2)]
           else
-            r(:,1:nlines-n1+1) = line1(:,n1:nlines)
-            rmap(1:nlines-n1+1) = [(k,k=n1,nlines)]
-            r(:,nlines-n1+2:nr) = line1(:,1:n2)
-            rmap(nlines-n1+2:nr) = [(k,k=1,n2)]
+            r(:, 1:nlines-n1+1) = line1(:, n1:nlines)
+            rmap(1:nlines-n1+1) = [(k, k=n1,nlines)]
+            r(:, nlines-n1+2:nr) = line1(:, 1:n2)
+            rmap(nlines-n1+2:nr) = [(k, k=1,n2)]
           endif
 
           allocate(signof(nr))

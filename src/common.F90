@@ -1,5 +1,5 @@
-! common functions, subroutine and variables for ssfind
 module common
+  ! common functions, subroutine and variables for all programs MSAT
   use params
 
   implicit none
@@ -21,6 +21,7 @@ module common
   contains
 
     subroutine filenames
+      ! sets the filenames as required for reading from and writing to
 
       character(100) :: arg
       character(:), allocatable :: outname
@@ -55,6 +56,7 @@ module common
     end
 
     subroutine print_params
+      ! allows the user to find out what parameters have been set in params.f90 when executable was compiled
 
       print*, 'np =', np
       print*, 'nproc =', nproc
@@ -92,7 +94,7 @@ module common
     !********************************************************************************
 
     function trilinear(r, b)
-      ! find the value of a function, b, at (x,y,z) using the 8 vertices and trilinear method
+      ! find the value of vector field at r using the trilinear method
 
       real(np) :: trilinear(3)
       real(np), allocatable :: b(:, :, :, :)
@@ -184,7 +186,7 @@ module common
     !********************************************************************************
 
     function dot(a, b)
-    ! dot product between a and b
+      ! dot product between a and b
 
       real(np), dimension(3) :: a, b
       real(np) :: dot
@@ -196,9 +198,9 @@ module common
     !********************************************************************************
 
     function cross(a, b)
-    ! cross product between a and b
+      ! cross product between a and b
 
-      real(np), dimension(3) :: a,b
+      real(np), dimension(3) :: a, b
       real(np), dimension(3) :: cross
 
       cross(1) = a(2)*b(3) - a(3)*b(2)
@@ -210,7 +212,7 @@ module common
     !********************************************************************************
 
     function normalise(a)
-    ! finds the unit vector of a
+      ! finds the unit vector of a
 
       real(np), dimension(3) :: a
       real(np), dimension(3) :: normalise
@@ -222,9 +224,9 @@ module common
     !********************************************************************************
 
     subroutine add_vector(x, vec, pos)
-    ! adds an row (vec) to a nx column by ny row array at row number pos
+      ! adds an row (vec) to a nx column by ny row array at row number pos (or end)
 
-      real(np), allocatable, dimension(:,:) :: x, dummy
+      real(np), allocatable, dimension(:, :) :: x, dummy
       real(np), allocatable, dimension(:) :: vec1
       real(np) :: vec(:)
       integer(int32), optional :: pos
@@ -232,8 +234,8 @@ module common
 
       vec1 = vec
 
-      nx = size(x,1)
-      ny = size(x,2)
+      nx = size(x, 1)
+      ny = size(x, 2)
       
       if (present(pos)) then
         position = pos
@@ -243,17 +245,18 @@ module common
 
       call move_alloc(x, dummy)
 
-      allocate(x(nx,ny+1))
+      allocate(x(nx, ny+1))
 
-      x(:,1:position-1) = dummy(:,1:position-1)
-      x(:,position) = vec1
-      x(:,position+1:ny+1) = dummy(:,position:ny)
+      x(:, 1:position-1) = dummy(:, 1:position-1)
+      x(:, position) = vec1
+      x(:, position+1:ny+1) = dummy(:, position:ny)
 
     end
 
     !********************************************************************************
 
     subroutine add_element(x, number, pos)
+      ! adds an row with number to a nx array at row number pos (or end)
       
       integer(int32), allocatable, dimension(:) :: x, dummy
       integer(int32), optional :: pos
@@ -261,7 +264,7 @@ module common
       
       flag = number
 
-      nx = size(x,1)
+      nx = size(x, 1)
 
       if (present(pos)) then
         position = pos
@@ -282,27 +285,27 @@ module common
     !********************************************************************************
 
     subroutine remove_vector(x, pos)
-    ! removes row number pos from an array
+      ! removes row number pos from a 2D array
 
-      real(np), allocatable, dimension(:,:) :: x, dummy
+      real(np), allocatable, dimension(:, :) :: x, dummy
       integer(int32) :: pos, nx, ny
 
-      nx = size(x,1)
-      ny = size(x,2)
+      nx = size(x, 1)
+      ny = size(x, 2)
 
       call move_alloc(x, dummy)
 
-      allocate(x(nx,ny-1))
+      allocate(x(nx, ny-1))
 
-      x(:,1:pos-1) = dummy(:,1:pos-1)
-      x(:,pos:ny-1) = dummy(:,pos+1:ny)
+      x(:, 1:pos-1) = dummy(:, 1:pos-1)
+      x(:, pos:ny-1) = dummy(:, pos+1:ny)
       
     end
 
     !********************************************************************************
 
     subroutine remove_element(x, pos)
-    ! removes row number pos from an array
+      ! removes row number pos from an 1D integer array
 
       integer(int32), allocatable, dimension(:) :: x, dummy
       integer(int32) :: pos, nx
@@ -321,19 +324,32 @@ module common
     !********************************************************************************
 
     function modulus(a)
+      ! calculates the magnitude a vector a
       
       real(np), dimension(3) :: a
       real(np) :: modulus
 
-      modulus = sqrt(dot(a, a))
+      modulus = sqrt(sum(a**2))
+
+    end function
+
+    !********************************************************************************
+
+    function dist(a, b)
+      ! calculates the distance between two points in grid units
+      
+      real(np) :: dist
+      real(np), dimension(3) :: a, b
+
+      dist = sqrt(sum((b - a)**2))
 
     end function
 
     !********************************************************************************
 
     function outedge(r)
-    ! determines if the point r is outwith the computation box across a non periodic
-    ! boundary and flags true or false
+      ! determines if the point r is outwith the computation box across a non periodic
+      ! boundary and flags true or false
 
       real(np) :: r(3)
       logical :: outedge
@@ -371,8 +387,8 @@ module common
     !********************************************************************************
 
     subroutine edgecheck(r)
-    ! determines if the point r is outwith the computational box across a 
-    ! periodic boundary and moves it if necessary
+      ! determines if the point r is outwith the computational box across a 
+      ! periodic boundary and moves it if necessary
 
       real(np) :: r(3)
 
@@ -442,7 +458,7 @@ module common
     !********************************************************************************
 
     subroutine get_startpoints(theta, phi, xs, ys, zs)
-    ! from the theta, phi coordinates of a fan vector, produces ring of points in the fanplane
+      ! from the theta, phi coordinates of a fan vector, produces ring of points in the fanplane
 
         real(np) :: theta, phi
         real(np), dimension(:) :: xs, ys, zs
@@ -472,8 +488,7 @@ module common
     !********************************************************************************
 
     function rotate(r, theta, phi)
-    ! rotates a vector (r) by a certain angle about the x-z plane (theta),
-    ! then by an angle (phi) about the x-y plane
+      ! rotates a r by theta about the xz plane then by phi about the xy plane
 
       real(np), dimension(3) :: r, rotate
       real(np) :: theta, phi
@@ -510,20 +525,8 @@ module common
 
     !********************************************************************************
 
-    function dist(a, b)
-    ! calculates the distance between two points in grid units
-      
-      real(np) :: dist
-      real(np), dimension(3) :: a, b
-
-      dist = sqrt(sum((b - a)**2))
-
-    end function
-
-    !********************************************************************************
-
     function gtr(r, gx, gy, gz)
-    ! converts a list of grid points to real coordinates
+      ! converts a list of grid points to real coordinates
 
       integer(int32) :: ir
       real(np), dimension(:,:), allocatable :: r, gtr
@@ -546,7 +549,7 @@ module common
     !********************************************************************************
 
     subroutine file_position(nring, nperring, index, a, p)
-    ! calculates the position in the temporary files of the rings and specific points
+      ! calculates the position in the temporary files of the rings and specific points
 
       integer(int64) :: a, p
       integer(int64) :: uptoring

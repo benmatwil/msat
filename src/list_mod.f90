@@ -27,6 +27,7 @@ module list_mod
   contains
 
     subroutine create(self)
+      ! "create" a list -- essentially just sets size attribute to zero in case it's not by default
 
       class(list) :: self
       
@@ -37,6 +38,7 @@ module list_mod
     !********************************************************************************
 
     subroutine create_from_array(self, veclist)
+      ! use an array of vectors to create each element on list
 
       class(list) :: self
       real(real64), dimension(:, :) :: veclist
@@ -53,6 +55,7 @@ module list_mod
     !********************************************************************************
 
     subroutine append(self, vec)
+      ! add a vector to the end of the list
 
       class(list) :: self
       real(real64), dimension(3) :: vec
@@ -75,6 +78,7 @@ module list_mod
     !********************************************************************************
 
     subroutine prepend(self, vec)
+      ! add a vector to the start of the list
 
       class(list) :: self
       real(real64), dimension(3) :: vec
@@ -97,6 +101,7 @@ module list_mod
     !********************************************************************************
 
     subroutine delete_index(self, index)
+      ! delete element from the list at specific index
 
       class(list) :: self
       integer :: index
@@ -127,6 +132,7 @@ module list_mod
     !********************************************************************************
 
     subroutine delete_indices(self, indices)
+      ! delete multiple elements from the list given by an array of indicies
 
       class(list) :: self
       integer, dimension(:) :: indices
@@ -145,6 +151,7 @@ module list_mod
     !********************************************************************************
 
     subroutine destroy(self)
+      ! delete the list
 
       class(list) :: self
 
@@ -163,6 +170,7 @@ module list_mod
     !********************************************************************************
 
     function to_array(self)
+      ! return an array containing each element of list
 
       class(list) :: self
       real(real64), dimension(:, :), allocatable :: to_array
@@ -183,6 +191,7 @@ module list_mod
     !********************************************************************************
 
     subroutine print(self)
+      ! print entire list
 
       class(list) :: self
       integer :: i
@@ -198,6 +207,7 @@ module list_mod
     !********************************************************************************
 
     subroutine reverse(self)
+      ! completely reverse the list
 
       class(list) :: self
       integer :: i
