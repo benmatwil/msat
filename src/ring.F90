@@ -243,7 +243,7 @@ contains
 
     !$OMP DO ! private(near, notnear, nnc, k, gapsize, endgap, nr, r, rmap, signof, index, count, h)
     do inull = 1, size(rnulls,2)
-      if (signs(inull) /= sign) then !ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
+      if (signs(inull) /= sign) then ! ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
         near = 0
         notnear = 0
 
