@@ -215,7 +215,7 @@ contains
 
   !********************************************************************************
 
-  subroutine sep_detect(nlines,nullnum,nring,sign)
+  subroutine sep_detect(nlines, nullnum, nring, sign)
     ! determine whether a point in a ring is near a null
     ! if so, integrate it and its neighbours forward to see if any of them diverge around the null to find a separator
 
@@ -342,6 +342,7 @@ contains
                   else
                     write(40) nullnum, inull, nring, rmap(index-1)
                   endif
+                  if (one_sep_per_ring) exit
                 endif
               endif
             endif
