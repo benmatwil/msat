@@ -112,7 +112,9 @@ pro model_add_fanlines, nlines, nring=nring
 
       line = fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem_model3d)
 
-      dist = (line[0, *] - nulldata[inull].pos[0])^2 + (line[1, *] - nulldata[inull].pos[1])^2 + (line[2, *] - nulldata[inull].pos[2])^2
+      dist = (line[0, *] - nulldata[inull].pos[0])^2 + $
+        (line[1, *] - nulldata[inull].pos[1])^2 + $
+        (line[2, *] - nulldata[inull].pos[2])^2
       imin = where(dist eq min(dist))
       if nulldata[inull].sign lt 0 then begin
         line = line[*, 0:min(imin)]
@@ -178,19 +180,22 @@ pro model_add_box
   box = dblarr(3,2)
   box[*,0] = [min(xx), min(yy), min(zz)] 
   box[*,1] = [max(xx), max(yy), max(zz)]
-  line = double(transpose([[0,0,0],[1,0,0],[1,0,1],[1,0,0],[1,1,0],[1,1,1],[1,1,0], $
-    [0,1,0],[0,1,1],[0,1,0],[0,0,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1],[0,0,1]]))
+  line = double(transpose([[0, 0, 0], [1, 0, 0], [1, 0, 1], $
+      [1, 0, 0], [1, 1, 0], [1, 1, 1], $
+      [1, 1, 0], [0, 1, 0], [0, 1, 1], $
+      [0, 1, 0], [0, 0, 0], [0, 0, 1], $
+      [1, 0, 1], [1, 1, 1], [0, 1, 1], [0, 0, 1]]))
   
   line[*, 0] = line[*, 0]*(box[0, 1] - box[0, 0]) + box[0, 0]
   line[*, 1] = line[*, 1]*(box[1, 1] - box[1, 0]) + box[1, 0]
   line[*, 2] = line[*, 2]*(box[2, 1] - box[2, 0]) + box[2, 0]
 
   dist = min([n_elements(xx), n_elements(yy), n_elements(zz)])*ds/5
-  oModel.add, obj_new('idlgrtext', 'x', locations=[box[0,0]+dist,box[1,0],box[2,0]], /onglass)
-  oModel.add, obj_new('idlgrtext', 'y', locations=[box[0,0],box[1,0]+dist,box[2,0]], /onglass)
-  oModel.add, obj_new('idlgrtext', 'z', locations=[box[0,0],box[1,0],box[2,0]+dist], /onglass)
+  oModel.add, obj_new('idlgrtext', 'x', locations=[box[0, 0]+dist, box[1, 0], box[2, 0]], /onglass)
+  oModel.add, obj_new('idlgrtext', 'y', locations=[box[0, 0], box[1, 0]+dist, box[2, 0]], /onglass)
+  oModel.add, obj_new('idlgrtext', 'z', locations=[box[0, 0], box[1, 0], box[2, 0]+dist], /onglass)
   
-  oModel.add, obj_new('IDLgrPolyline',line[*,0],line[*,1],line[*,2],color=[0,0,0])
+  oModel.add, obj_new('IDLgrPolyline', line[*, 0], line[*, 1], line[*, 2], color=[0, 0, 0])
 end
 
 pro save, dimensions=dimensions
