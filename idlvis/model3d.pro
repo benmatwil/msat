@@ -16,29 +16,29 @@ pro model_add_sepsurf, nskip=nskip, draw=draw, nlines=nlines, nring=nring
 
   if not keyword_set(draw) then draw = 'rings'
   if not keyword_set(nskip) then nskip = 20
-  
+
   if draw eq 'rings' then begin
     print, 'Adding separatrix surface rings'
     
-  rings = read_rings(filename, breaks=breaks, nskip=nskip, null_list=nulllist)
+    rings = read_rings(filename, breaks=breaks, nskip=nskip, null_list=nulllist)
 
-  foreach inull, nulllist-1 do begin
+    foreach inull, nulllist-1 do begin
 
-    if nulldata[inull].sign gt 0 then colour = [255, 128, 128] else begin
-      if nulldata[inull].sign lt 0 then colour = [128, 128, 255] else colour = [128, 255, 128]
-    endelse
+      if nulldata[inull].sign gt 0 then colour = [255, 128, 128] else begin
+        if nulldata[inull].sign lt 0 then colour = [128, 128, 255] else colour = [128, 255, 128]
+      endelse
 
-    for iring = 0, n_elements(rings[inull])-1 do begin
-      brks = [-1, where(breaks[inull, iring] eq 1, /null), n_elements(breaks[inull, iring])-1]
+      for iring = 0, n_elements(rings[inull])-1 do begin
+        brks = [-1, where(breaks[inull, iring] eq 1, /null), n_elements(breaks[inull, iring])-1]
         brks = brks[uniq(brks)]
-      ring = rings[inull, iring, *, *]
-      if csystem_model3d eq 'spherical' then ring = sphr2cart(ring)
-      for ib = 0, n_elements(brks)-2 do begin
+        ring = rings[inull, iring, *, *]
+        if csystem_model3d eq 'spherical' then ring = sphr2cart(ring)
+        for ib = 0, n_elements(brks)-2 do begin
           oModel.add, obj_new("IDLgrPolyline", ring[0, brks[ib]+1:brks[ib+1]], ring[1, brks[ib]+1:brks[ib+1]], ring[2, brks[ib]+1:brks[ib+1]], color=colour)
+        endfor
       endfor
-    endfor
-    
-  endforeach
+      
+    endforeach
   endif else if draw eq 'fieldlines' then begin
     
     if not keyword_set(nlines) then nlines = 50
@@ -99,16 +99,16 @@ pro model_add_hcs, nskip, nlines=nlines, draw=draw
 
   if draw eq 'rings' then begin
 
-  rings = read_rings(filename, breaks=breaks, nskip=nskip, /hcs)
+    rings = read_rings(filename, breaks=breaks, nskip=nskip, /hcs)
 
-  for inull = 0, n_elements(rings)-1 do begin
+    for inull = 0, n_elements(rings)-1 do begin
 
-    for iring = 0, n_elements(rings[inull])-1 do begin
-      brks = [-1, where(breaks[inull, iring] eq 1, /null), n_elements(breaks[inull, iring])-1]
+      for iring = 0, n_elements(rings[inull])-1 do begin
+        brks = [-1, where(breaks[inull, iring] eq 1, /null), n_elements(breaks[inull, iring])-1]
         brks = brks[uniq(brks)]
-      ring = rings[inull, iring, *, *]
+        ring = rings[inull, iring, *, *]
         ring = sphr2cart(ring)
-      for ib = 0, n_elements(brks)-2 do begin
+        for ib = 0, n_elements(brks)-2 do begin
           oModel.add, obj_new("IDLgrPolyline", ring[0, brks[ib]+1:brks[ib+1]], ring[1, brks[ib]+1:brks[ib+1]], ring[2, brks[ib]+1:brks[ib+1]], color=colour)
         endfor
       endfor
@@ -153,7 +153,7 @@ pro model_add_hcs, nskip, nlines=nlines, draw=draw
       endfor
 
     endfor
-    
+  
   endif else print, "Set draw to be either 'rings' or 'fieldlines'"
 
   for inull = 0, n_elements(rings)-1, 2 do begin
