@@ -147,111 +147,187 @@ def outedge(r, minmax_box, csystem, periodicity):
 
 # @njit(cache=True)
 @njit
-def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, t_max, minmax, minmax_box, csystem, periodicity):
-    dr = getdr(r0, x, y, z, csystem)
-    mindist = dr.min()*h
-    # hvec = mindist/dr
-    hvec = np.zeros(3, dtype=np.float64)
-    hvec[0] = mindist/dr[0]
-    hvec[1] = mindist/dr[1]
-    hvec[2] = mindist/dr[2]
+def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline, oneway, stop_criteria, t_max, minmax, minmax_box, csystem, periodicity):
+    ih = [h] if oneway else [h, -h]
 
-    rt = r0
-    b = trilinear3d_grid(rt, bgrid)
-    k1 = hvec*b/sqrt(np.sum(b**2))
-    rt = r0 + b2*k1
+    line = [r0]
     
-    if outedge(rt, minmax_box, csystem, periodicity): return rt, True, h
+    for h in ih:
 
-    edgecheck(rt, minmax, csystem, periodicity)
-    b = trilinear3d_grid(rt, bgrid)
-    k2 = hvec*b/sqrt(np.sum(b**2))
-    rt = r0 + b3*k1 + c3*k2
+        count = 1
+        out = False
+        bounce = False
 
-    if outedge(rt, minmax_box, csystem, periodicity): return rt, True, h
+        while count < mxline:
+
+            r0 = line[-1].copy()
+
+            dr = getdr(r0, x, y, z, csystem)
+            mindist = dr.min()*h
+            hvec = mindist/dr
+            # hvec = np.zeros(3, dtype=np.float64)
+            # hvec[0] = mindist/dr[0]
+            # hvec[1] = mindist/dr[1]
+            # hvec[2] = mindist/dr[2]
+
+            rt = r0
+            b = trilinear3d_grid(rt, bgrid)
+            k1 = hvec*b/sqrt(np.sum(b**2))
+            rt = r0 + b2*k1
+            
+            if outedge(rt, minmax_box, csystem, periodicity):
+                out = True
+                break
+
+            edgecheck(rt, minmax, csystem, periodicity)
+            b = trilinear3d_grid(rt, bgrid)
+            k2 = hvec*b/sqrt(np.sum(b**2))
+            rt = r0 + b3*k1 + c3*k2
+
+            if outedge(rt, minmax_box, csystem, periodicity):
+                out = True
+                break
+            
+            edgecheck(rt, minmax, csystem, periodicity)
+            b = trilinear3d_grid(rt, bgrid)
+            k3 = hvec*b/sqrt(np.sum(b**2))
+            rt = r0 + b4*k1 + c4*k2 + d4*k3
+
+            if outedge(rt, minmax_box, csystem, periodicity):
+                out = True
+                break
+
+            edgecheck(rt, minmax, csystem, periodicity)
+            b = trilinear3d_grid(rt, bgrid)
+            k4 = hvec*b/sqrt(np.sum(b**2))
+            rt = r0 + b5*k1 + c5*k2 + d5*k3 + e5*k4
+
+            if outedge(rt, minmax_box, csystem, periodicity):
+                out = True
+                break
+
+            edgecheck(rt, minmax, csystem, periodicity)
+            b = trilinear3d_grid(rt, bgrid)
+            k5 = hvec*b/sqrt(np.sum(b**2))
+            rt = r0 + b6*k1 + c6*k2 + d6*k3 + e6*k4 + f6*k5
+
+            if outedge(rt, minmax_box, csystem, periodicity):
+                out = True
+                break
+
+            edgecheck(rt, minmax, csystem, periodicity)
+            b = trilinear3d_grid(rt, bgrid)
+            k6 = hvec*b/sqrt(np.sum(b**2))
+
+            # 4th order estimate
+            rtest4 = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
+            # 5th order estimate
+            rtest5 = r0 + nn1*k1 + nn3*k3 + nn4*k4 + nn5*k5 + nn6*k6
+
+            # optimum stepsize
+            diff = rtest5 - rtest4
+            err = sqrt(np.sum(diff**2))
+            if err > 0:
+                t = (epsilon*abs(h)/(2*err))**0.25
+            else:
+                t = 1
+
+            if (abs(t*h) < abs(hmin)): t = abs(hmin/h)
+            if t > t_max: t = t_max
+
+            rt = r0
+            b = trilinear3d_grid(rt, bgrid)
+            k1 = t*hvec*b/sqrt(np.sum(b**2))
+            rt = r0 + b2*k1
+
+            if outedge(rt, minmax_box, csystem, periodicity):
+                out = True
+                break
+
+            edgecheck(rt, minmax, csystem, periodicity)
+            b = trilinear3d_grid(rt, bgrid)
+            k2 = t*hvec*b/sqrt(np.sum(b**2))
+            rt = r0 + b3*k1 + c3*k2
+
+            if outedge(rt, minmax_box, csystem, periodicity):
+                out = True
+                break
+
+            edgecheck(rt, minmax, csystem, periodicity)
+            b = trilinear3d_grid(rt, bgrid)
+            k3 = t*hvec*b/sqrt(np.sum(b**2))
+            rt = r0 + b4*k1 + c4*k2 + d4*k3
+
+            if outedge(rt, minmax_box, csystem, periodicity):
+                out = True
+                break
+
+            edgecheck(rt, minmax, csystem, periodicity)
+            b = trilinear3d_grid(rt, bgrid)
+            k4 = t*hvec*b/sqrt(np.sum(b**2))
+            rt = r0 + b5*k1 + c5*k2 + d5*k3 + e5*k4
+
+            if outedge(rt, minmax_box, csystem, periodicity):
+                out = True
+                break
+
+            edgecheck(rt, minmax, csystem, periodicity)
+            b = trilinear3d_grid(rt, bgrid)
+            k5 = t*hvec*b/sqrt(np.sum(b**2))
+            rt = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
+            edgecheck(rt, minmax, csystem, periodicity)
+            
+            if outedge(rt, minmax_box, csystem, periodicity):
+                out = True
+                break
+
+            h = t*h
+            if abs(h) < hmin: h = hmin*h/abs(h)
+            if abs(h) > hmax: h = hmax*h/abs(h)
+            
+            count += 1
+
+            line.append(rt)
+
+            if stop_criteria:
+                # check line is still moving
+                if count >= 3:
+                    dl = line[-1] - line[-2]
+                    mdl = sqrt(np.sum(dl**2))
+                    if mdl < hmin*0.5:
+                        break
+
+                    dl = line[-1] - line[-3]
+                    mdl = sqrt(np.sum(dl**2))
+                    if mdl < hmin*0.5:
+                        bounce = True
+                        break
+        
+        # move exited point back to boundary of box
+        if out:
+            rout = rt.copy()
+            rin = line[-1].copy()
+            if rout[0] > minmax[1] or rout[0] < minmax[0]:
+                xedge = minmax[1] if rout[0] > minmax[1] else minmax[0]
+                s = (xedge - rin[0])/(rout[0] - rin[0])
+                rout = s*(rout - rin) + rin
+            if rout[1] > minmax[3] or rout[1] < minmax[2]:
+                yedge = minmax[3] if rout[1] > minmax[3] else minmax[2]
+                s = (yedge - rin[1])/(rout[1] - rin[1])
+                rout = s*(rout - rin) + rin
+            if rout[2] > minmax[5] or rout[2] < minmax[4]:
+                zedge = minmax[5] if rout[2] > minmax[5] else minmax[4]
+                s = (zedge - rin[2])/(rout[2] - rin[2])
+                rout = s*(rout - rin) + rin
+            line.append(rout)
+        elif bounce: line = line[:-1]
+
+        line.reverse()
     
-    edgecheck(rt, minmax, csystem, periodicity)
-    b = trilinear3d_grid(rt, bgrid)
-    k3 = hvec*b/sqrt(np.sum(b**2))
-    rt = r0 + b4*k1 + c4*k2 + d4*k3
+    # linearr = np.array(line, dtype=np.float64)
+    if oneway: line.reverse()
 
-    if outedge(rt, minmax_box, csystem, periodicity): return rt, True, h
-
-    edgecheck(rt, minmax, csystem, periodicity)
-    b = trilinear3d_grid(rt, bgrid)
-    k4 = hvec*b/sqrt(np.sum(b**2))
-    rt = r0 + b5*k1 + c5*k2 + d5*k3 + e5*k4
-
-    if outedge(rt, minmax_box, csystem, periodicity): return rt, True, h
-
-    edgecheck(rt, minmax, csystem, periodicity)
-    b = trilinear3d_grid(rt, bgrid)
-    k5 = hvec*b/sqrt(np.sum(b**2))
-    rt = r0 + b6*k1 + c6*k2 + d6*k3 + e6*k4 + f6*k5
-
-    if outedge(rt, minmax_box, csystem, periodicity): return rt, True, h
-
-    edgecheck(rt, minmax, csystem, periodicity)
-    b = trilinear3d_grid(rt, bgrid)
-    k6 = hvec*b/sqrt(np.sum(b**2))
-
-    # 4th order estimate
-    rtest4 = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
-    # 5th order estimate
-    rtest5 = r0 + nn1*k1 + nn3*k3 + nn4*k4 + nn5*k5 + nn6*k6
-
-    # optimum stepsize
-    diff = rtest5 - rtest4
-    err = sqrt(np.sum(diff**2))
-    if err > 0:
-        t = (epsilon*abs(h)/(2*err))**0.25
-    else:
-        t = 1
-
-    if (abs(t*h) < abs(hmin)): t = abs(hmin/h)
-    if t > t_max: t = t_max
-
-    rt = r0
-    b = trilinear3d_grid(rt, bgrid)
-    k1 = t*hvec*b/sqrt(np.sum(b**2))
-    rt = r0 + b2*k1
-
-    if outedge(rt, minmax_box, csystem, periodicity): return rt, True, h
-
-    edgecheck(rt, minmax, csystem, periodicity)
-    b = trilinear3d_grid(rt, bgrid)
-    k2 = t*hvec*b/sqrt(np.sum(b**2))
-    rt = r0 + b3*k1 + c3*k2
-
-    if outedge(rt, minmax_box, csystem, periodicity): return rt, True, h
-
-    edgecheck(rt, minmax, csystem, periodicity)
-    b = trilinear3d_grid(rt, bgrid)
-    k3 = t*hvec*b/sqrt(np.sum(b**2))
-    rt = r0 + b4*k1 + c4*k2 + d4*k3
-
-    if outedge(rt, minmax_box, csystem, periodicity): return rt, True, h
-
-    edgecheck(rt, minmax, csystem, periodicity)
-    b = trilinear3d_grid(rt, bgrid)
-    k4 = t*hvec*b/sqrt(np.sum(b**2))
-    rt = r0 + b5*k1 + c5*k2 + d5*k3 + e5*k4
-
-    if outedge(rt, minmax_box, csystem, periodicity): return rt, True, h
-
-    edgecheck(rt, minmax, csystem, periodicity)
-    b = trilinear3d_grid(rt, bgrid)
-    k5 = t*hvec*b/sqrt(np.sum(b**2))
-    rt = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
-    edgecheck(rt, minmax, csystem, periodicity)
-    
-    if outedge(rt, minmax_box, csystem, periodicity): return rt, True, h
-
-    h = t*h
-    if abs(h) < hmin: h = hmin*h/abs(h)
-    if abs(h) > hmax: h = hmax*h/abs(h)
-    
-    return rt, False, h
+    return line
 
 def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t_max=1.2, oneway=False,
     boxedge=None, coordsystem='cartesian', gridcoord=False, stop_criteria=True, periodicity=''):
@@ -275,12 +351,14 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
     stop_critieria - use the stopping criteria to detect if field line has stopped inside domain
     periodicity - set the periodicity of the grid e.g. 'xy' for periodicity in both x and y direction
     """
+    # create array for coordsystems
     csystem = np.array([
         True if coordsystem == 'cartesian' else False,
         True if coordsystem == 'cylindrical' else False,
         True if coordsystem == 'spherical' else False
         ], dtype=np.bool_)
     
+    # create array for periodicities
     periodicity = np.array([
         True if 'x' in periodicity else False,
         True if 'y' in periodicity else False,
@@ -292,12 +370,12 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
     # define edges of box
     minmax = np.array([0, x.shape[0]-1, 0, y.shape[0]-1, 0, z.shape[0]-1], dtype=np.float64)
     if boxedge is not None:
-        xmin_box = max([boxedge[0,0], x.min()])
-        ymin_box = max([boxedge[0,1], y.min()])
-        zmin_box = max([boxedge[0,2], z.min()])
-        xmax_box = min([boxedge[1,0], x.max()])
-        ymax_box = min([boxedge[1,1], y.max()])
-        zmax_box = min([boxedge[1,2], z.max()])
+        xmin_box = max([boxedge[0, 0], x.min()])
+        ymin_box = max([boxedge[0, 1], y.min()])
+        zmin_box = max([boxedge[0, 2], z.min()])
+        xmax_box = min([boxedge[1, 0], x.max()])
+        ymax_box = min([boxedge[1, 1], y.max()])
+        zmax_box = min([boxedge[1, 2], z.max()])
         minmax_box = np.array([xmin_box, xmax_box, ymin_box, ymax_box, zmin_box, zmax_box], dtype=np.float64)
     else:
         minmax_box = minmax
@@ -336,64 +414,11 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
         print('Start point is a null point')
         raise ValueError
 
-    ###################################################
-
-    ih = [h] if oneway else [h, -h]
-
-    line = [r0]
-    
-    for h in ih:
-
-        count = 0
-        out = False
-        bounce = 0
-        line = line[::-1]
-
-        while count < mxline:
-
-            r0 = line[-1].copy()
-
-            rt, out, h = rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, t_max, minmax, minmax_box, csystem, periodicity)
-
-            if out: break
-
-            count += 1
-
-            line.append(rt)
-
-            if stop_criteria:
-                # check line is still moving
-                if count >= 2:
-                    dl = line[-1] - line[-2]
-                    mdl = sqrt(np.sum(dl**2))
-                    if mdl < hmin*0.5:
-                        break
-
-                    dl = line[-1] - line[-3]
-                    mdl = sqrt(np.sum(dl**2))
-                    if mdl < hmin*0.5:
-                        bounce = 1
-                        break
-
-        if out:
-            rout = rt.copy()
-            rin = line[-1].copy()
-            if rout[0] > minmax[1] or rout[0] < minmax[0]:
-                xedge = minmax[1] if rout[0] > minmax[1] else minmax[0]
-                s = (xedge - rin[0])/(rout[0] - rin[0])
-                rout = s*(rout - rin) + rin
-            if rout[1] > minmax[3] or rout[1] < minmax[2]:
-                yedge = minmax[3] if rout[1] > minmax[3] else minmax[2]
-                s = (yedge - rin[1])/(rout[1] - rin[1])
-                rout = s*(rout - rin) + rin
-            if rout[2] > minmax[5] or rout[2] < minmax[4]:
-                zedge = minmax[5] if rout[2] > minmax[5] else minmax[4]
-                s = (zedge - rin[2])/(rout[2] - rin[2])
-                rout = s*(rout - rin) + rin
-            line.append(rout)
-        elif bounce == 1: line = line[:-1]
+    line = rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline, oneway, stop_criteria, t_max, minmax, minmax_box, csystem, periodicity)
 
     if gridcoord == False:
         for pt in line: gtr(pt, x, y, z)
     
-    return np.array(line[::-1], dtype=np.float64)
+    line = np.array(line)
+
+    return line
