@@ -53,14 +53,9 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
         rd.outprefix = outdir
 
     if fname != filename:
-        field = rd.field(fname)
-        bgrid = np.zeros(field[0].shape + (3,), dtype=np.float64)
-        for i in range(3):
-            bgrid[:, :, :, i] = field[i]
-        xx = field[3]
-        yy = field[4]
-        zz = field[5]
+        bgrid, xx, yy, zz = rd.field(fname, grid=True)
         ds = min([np.diff(xx).min(), np.diff(yy).min(), np.diff(zz).min()])/2
+        # ds = min([np.diff(gg).min() for gg in [xx, yy, zz]])/2
 
     periodic_check = False
     if periodicity != '':
