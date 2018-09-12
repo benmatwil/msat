@@ -1,5 +1,22 @@
 common shared_var_fl3d, xmin, xmax, ymin, ymax, zmin, zmax, csystem_fl3d
 
+function trilinear3d_grid, pt, grid
+
+  ix = floor(pt[0])
+  iy = floor(pt[1])
+  iz = floor(pt[2])
+
+  x = pt[0] - ix
+  y = pt[1] - iy
+  z = pt[2] - iz
+
+  cube = grid[ix:ix+1, iy:iy+1, iz:iz+1, *]
+  square = reform((1 - z)*cube[*, *, 0, *] + z*cube[*, *, 1, *])
+  line = reform((1 - y)*square[*, 0, *] + y*square[*, 1, *])
+  return, reform((1 - x)*line[0, *] + x*line[1, *])
+
+end
+
 function getdr, r, x, y, z
   common shared_var_fl3d
 
@@ -15,10 +32,12 @@ function getdr, r, x, y, z
   yp = y[iy] + (r[1] - iy)*dy
 
   if csystem_fl3d eq 'spherical' then begin
-    return, [dx, xp*dy, xp*np.sin(yp)*dz]
-  endif else begin
+    return, [dx, xp*dy, xp*sin(yp)*dz]
+  endif else if csystem_fl3d eq 'cartesian' then begin
     return, [dx, dy, dz]
-  endelse
+  endif else if csystem_fl3d eq 'cylindrical' then begin
+    return, [dx, xp*dy, dz]
+  endif
 
 end
 
@@ -61,14 +80,21 @@ end
 function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mxline, t_max=t_max, oneway=oneway, boxedge=boxedge, gridcoord=gridcoord, coordsystem=coordsystem
   common shared_var_fl3d
 
-  ;startpt[3,nl] - start point for field line
-  ;bgrid[nx,ny,nz,3] - magnetic field 
-  ;x[nx],y[ny],z[nz] - grid of points on which magnetic field given 
+  ; startpt[3]: start point for field line
+  ; bgrid[nx, ny, nz, 3]: magnetic field 
+  ; x[nx], y[ny], z[nz]: grids of the three grid dimensions on which magnetic field given 
 
-  ;h - initial step length
-  ;hmin - minimum step length
-  ;hmax - maximum step length
-  ;epsilon - tolerance to which we require point on field line known
+  ; h: initial step length
+  ; hmin: minimum step length
+  ; hmax: maximum step length
+  ; epsilon: tolerance to which we require point on field line known
+
+  ; mxline: maximum number of points on a field line
+  ; t_val: change maximum value which h can increase by at each iteration
+  ; oneway: only let field line trace in one direction (direction of h)
+  ; boxedge: create articifical edges to magnetic field grid
+  ; gridcoord: startpt is given in grid coordinates, output also in grid coordinates
+  ; coordsystem: coordinate system of grid; 'cartesian', 'cylindrical' or 'spherical'
 
   if not keyword_set(coordsystem) then coordsystem = 'cartesian'
   csystem_fl3d = coordsystem
@@ -102,14 +128,16 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
   ;used to determine y_i+1 from y_i if using rkf54 (5th order)
   nn1 = 16d/135d & nn3 = 6656d/12825d & nn4 = 28561d/56430d & nn5 = -9d/50d & nn6 = 2d/55d
 
-  ix = max(where(startpt[0] ge x))
-  iy = max(where(startpt[1] ge y))
-  iz = max(where(startpt[2] ge z))
+  if not keyword_set(gridcoord) then begin
+    ix = max(where(startpt[0] ge x))
+    iy = max(where(startpt[1] ge y))
+    iz = max(where(startpt[2] ge z))
 
-  r0 = startpt
-  r0[0] = ix + (startpt[0] - x[ix])/(x[ix+1] - x[ix])
-  r0[1] = iy + (startpt[1] - y[iy])/(y[iy+1] - y[iy])
-  r0[2] = iz + (startpt[2] - z[iz])/(z[iz+1] - z[iz])
+    r0 = startpt
+    r0[0] = ix + (startpt[0] - x[ix])/(x[ix+1] - x[ix])
+    r0[1] = iy + (startpt[1] - y[iy])/(y[iy+1] - y[iy])
+    r0[2] = iz + (startpt[2] - z[iz])/(z[iz+1] - z[iz])
+  endif else r0 = startpt
 
   x0 = startpt[0]
   y0 = startpt[1]
@@ -135,16 +163,15 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
 
   ;##################################################
 
-  if keyword_set(oneway) then ih = [h] else ih = [h,-h]
+  if keyword_set(oneway) then ih = [h] else ih = [h, -h]
 
   line = list(r0)
 
   foreach h, ih do begin
 
-    count = 0L
+    count = 1L
     out = 0
     bounce = 0
-    line = line[-1:0:-1]
     
     while count lt mxline do begin
 
@@ -213,7 +240,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       ; 5th order estimate
       rtest5 = r0 + nn1*k1 + nn3*k3 + nn4*k4 + nn5*k5 + nn6*k6
 
-      ;optimum stepsize
+      ; optimum stepsize
       diff = rtest5 - rtest4
       err = sqrt(total(diff^2))
       if err gt 0 then t = (epsilon*abs(h)/(2*err))^0.25 else t = 1
@@ -282,7 +309,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       line.add, rt
     
       ; check line is still moving
-      if (count ge 2) then begin
+      if (count ge 3) then begin
         dl = line[-1] - line[-2]
         mdl = sqrt(total(dl^2))
         if mdl lt hmin*0.5 then break
@@ -320,6 +347,8 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       line.add, rout
     endif
 
+    line.reverse
+
   endforeach
 
   if not keyword_set(gridcoord) then begin
@@ -337,6 +366,8 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
     endforeach
   endif
   
-  return, (transpose(line.toarray()))[*, -1:0:-1]
+  if keyword_set(oneway) then line.reverse
+
+  return, transpose(line.toarray())
 
 end
