@@ -133,6 +133,8 @@ pro model_add_separators, hcs=hcs
 
   print, 'Adding separators'
 
+  if hcs then colour = [255, 165, 0] else colour = [255, 255, 0]
+
   seps = read_separators(filename, null_list=nulllist, hcs=hcs)
 
   if keyword_set(hcs) then to_do = [0] else to_do = nulllist-1
@@ -142,7 +144,7 @@ pro model_add_separators, hcs=hcs
     for isep = 0, n_elements(seps[inull])-1 do begin
       sep = seps[inull, isep, *, *]
       if csystem_model3d eq 'spherical' then sep = sphr2cart(sep)
-      oModel.add, obj_new("IDLgrPolyline", sep[0, *], sep[1, *], sep[2, *], color=[0, 160, 60], thick=4)
+      oModel.add, obj_new("IDLgrPolyline", sep[0, *], sep[1, *], sep[2, *], color=colour, thick=4)
     endfor
 
   endforeach
