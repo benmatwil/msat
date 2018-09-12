@@ -88,5 +88,8 @@ module params
     logical, parameter :: periodic_z = .false.
   logical, parameter :: periodic_theta = .false.
   logical, parameter :: periodic_phi = .false.
+  ! Only allow one separator to be found per null point per ring
+  ! This can help to reduce the number of separators found in complex fields
+  logical, parameter :: one_sep_per_ring = .false.
 
 end module
