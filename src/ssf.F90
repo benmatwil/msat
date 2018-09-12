@@ -166,7 +166,7 @@ program ssfinder
   open(unit=50, file=trim(fileout)//'-separators.dat', status=fstatus, access='stream')
   ! stores all the coordinates of the spine lines in original coordinate system
   open(unit=60, file=trim(fileout)//'-spines.dat', status=fstatus, access='stream')
-  
+
   uptonullconn = 1
   if (restart) then
 
@@ -216,7 +216,7 @@ program ssfinder
     write(20, pos=totalpts*3_int64*int(bytesize, int64)+1)
     if (assoc_output) write(25, pos=totalpts*4_int64+1)
     write(30, pos=totalpts*4_int64+1)
-    
+
     ! sort out connectivity and separator files
     filepos = 1
     uptonullconn = 1
@@ -309,7 +309,7 @@ program ssfinder
         nrings = 1
         exit
       endif
-      
+
       !$OMP SINGLE
       nrings = iring
 #if debug
@@ -413,9 +413,6 @@ program ssfinder
       deallocate(nearnull)
       !$OMP END SINGLE
 
-      ! determine if any lines are separators
-      if (nearflag > 0) call sep_detect(nlines, inull, iring, signs(inull))
-
       !$OMP SINGLE
       ! check through possible exit points
       if (nlines > pointsmax) then
@@ -450,6 +447,9 @@ program ssfinder
 
       if (exitcondition) exit
 
+      ! determine if any lines are separators, needs to be after exit for final ring
+      if (nearflag > 0) call sep_detect(nlines, inull, iring, signs(inull))
+
       !$OMP SINGLE
       ! write ring data to file
       nperring(iring) = nlines
@@ -470,8 +470,9 @@ program ssfinder
     enddo
 
     !$OMP SINGLE
+    flush(90)
     write(10) nperring(::nskip)
-    
+
     ! trace separators and write to file
     print*, "Tracing spines and any separators and dealing with rings"
     write(40, pos=uptonullconn) nseps
@@ -479,11 +480,11 @@ program ssfinder
       do isep = 1, nseps
         read(40) nullnum1, nullnum2, ringnum, linenum
         allocate(rsep(3, ringnum+3))
+        rsep = 0
         do iring = ringnum, 0, -1
           call file_position(iring, nperring, linenum, ia, ip)
           read(90, pos=ia) linenum
-          read(90, pos=ip) rsep(:,iring+2)
-          ! print*,  ip
+          read(90, pos=ip) rsep(:, iring+2)
         enddo
         rsep(:, 1) = rnullsreal(:,nullnum1)
         rsep(:, ringnum+3) = rnullsreal(:,nullnum2)
@@ -497,18 +498,18 @@ program ssfinder
     ! trace spine lines and write file
     do dir = -1, 1, 2
       out = .false.
-      allocate(spine(3,1))
-      spine(:,1) = rnulls(:, inull)
+      allocate(spine(3, 1))
+      spine(:, 1) = rnulls(:, inull)
       rspine = rnulls(:, inull) + dir*spines(:, inull)*1e-3_np ! pick a good factor
       iring = 0
       do while (.not. outedge(rspine) .and. iring < spinemax)
         iring = iring + 1
-        if (signs(inull) == 0) exit
+        if (abs(signs(inull)) /= 1) exit
         call add_vector(spine, rspine)
         call trace_line(rspine, -signs(inull), hspine)
         call edgecheck(rspine)
       enddo
-      write(60) size(spine,2), gtr(spine, x, y, z)
+      write(60) size(spine, 2), gtr(spine, x, y, z)
       deallocate(spine)
     enddo
 
@@ -538,10 +539,10 @@ program ssfinder
 
     deallocate(xs, ys, zs)
     deallocate(line1, line2, break)
-    
+
     ! close temporary ring file and delete it
     close(90, status='delete')
-  
+
     !$OMP END SINGLE
 
   enddo
