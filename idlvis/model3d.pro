@@ -1,4 +1,4 @@
-common shared_var_model3d, bgrid, xx, yy, zz, oModel, nulldata, ds, filename, nulllist, csystem_model3d
+common shared_var_model3d, bgrid, xx, yy, zz, oModel, nulldata, ds, filename, nulllist, csystem_model3d, nskip_global, periodic_global
 
 function sphr2cart, pts
   
@@ -11,11 +11,15 @@ function sphr2cart, pts
 
 end
 
-pro model_add_sepsurf, nskip
+pro model_add_sepsurf, nskip=nskip, draw=draw, nlines=nlines, nring=nring
   common shared_var_model3d
 
-  print, 'Adding Separatrix surface rings'
+  if not keyword_set(draw) then draw = 'rings'
+  if not keyword_set(nskip) then nskip = 20
   
+  if draw eq 'rings' then begin
+    print, 'Adding separatrix surface rings'
+    
   rings = read_rings(filename, breaks=breaks, nskip=nskip, null_list=nulllist)
 
   foreach inull, nulllist-1 do begin
@@ -26,35 +30,136 @@ pro model_add_sepsurf, nskip
 
     for iring = 0, n_elements(rings[inull])-1 do begin
       brks = [-1, where(breaks[inull, iring] eq 1, /null), n_elements(breaks[inull, iring])-1]
+        brks = brks[uniq(brks)]
       ring = rings[inull, iring, *, *]
       if csystem_model3d eq 'spherical' then ring = sphr2cart(ring)
       for ib = 0, n_elements(brks)-2 do begin
-        if brks[ib] ne brks[ib+1] then oModel.add, obj_new("IDLgrPolyline", ring[0, brks[ib]+1:brks[ib+1]], ring[1, brks[ib]+1:brks[ib+1]], ring[2, brks[ib]+1:brks[ib+1]], color=colour)
+          oModel.add, obj_new("IDLgrPolyline", ring[0, brks[ib]+1:brks[ib+1]], ring[1, brks[ib]+1:brks[ib+1]], ring[2, brks[ib]+1:brks[ib+1]], color=colour)
       endfor
     endfor
     
   endforeach
+  endif else if draw eq 'fieldlines' then begin
+    
+    if not keyword_set(nlines) then nlines = 50
 
+    rings = read_rings(filename, nskip=nskip, null_list=nulllist)
+    
+    foreach inull, nulllist-1 do begin
+
+      if nulldata[inull].sign gt 0 then colour = [255, 128, 128] else begin
+        if nulldata[inull].sign lt 0 then colour = [128, 128, 255] else colour = [128, 255, 128]
+      endelse
+
+      if not keyword_set(nring) then begin
+        ring = rings[inull, n_elements(rings[inull])/5]
+      endif else begin
+        if typename(nring) eq typename(1) or typename(nring) eq typename(1l) then begin
+          ring = rings[inull, nring]
+        endif else if typename(nring) eq typename(0.1) or typename(nring) eq typename(0.1d) then begin
+          ring = rings[inull, floor(nring*n_elements(rings[inull]))]
+        endif
+      endelse
+
+      nskip = n_elements(ring[0, *])/nlines
+
+      for i = 0, nlines-1 do begin
+        
+        startpt = ring[*, i*nskip]
+        h = 1d-2
+        hmin = 1d-3
+        hmax = 0.5
+        epsilon = 1d-5
+
+        line = fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem_model3d)
+
+        dists = sqrt((line[0, *] - nulldata[inull].pos[0])^2 + $
+                (line[1, *] - nulldata[inull].pos[1])^2 + $
+                (line[2, *] - nulldata[inull].pos[2])^2)
+        a = min(dists, imin)
+        if nulldata[inull].sign eq -1 then line = line[*, 0:imin] else line = line[*, imin:-1]
+
+        if csystem_model3d eq 'spherical' then line = sphr2cart(line)
+
+        oModel.add, obj_new("IDLgrPolyline", line[0, *], line[1, *], line[2, *], color=colour)
+
+      endfor
+
+    endforeach
+  endif else print, "Set draw to be either 'rings' or 'fieldlines'"
 end
 
-pro model_add_hcs, nskip
+pro model_add_hcs, nskip, nlines=nlines, draw=draw
   common shared_var_model3d
+
+  if not keyword_set(draw) then draw = 'rings'
+  if not keyword_set(nlines) then nlines = 100
+
+  colour = [0, 255, 0]
+
+  if draw eq 'rings' then begin
 
   rings = read_rings(filename, breaks=breaks, nskip=nskip, /hcs)
 
   for inull = 0, n_elements(rings)-1 do begin
 
-    colour = [0, 255, 0]
-
     for iring = 0, n_elements(rings[inull])-1 do begin
       brks = [-1, where(breaks[inull, iring] eq 1, /null), n_elements(breaks[inull, iring])-1]
+        brks = brks[uniq(brks)]
       ring = rings[inull, iring, *, *]
-      if csystem_model3d eq 'spherical' then ring = sphr2cart(ring)
+        ring = sphr2cart(ring)
       for ib = 0, n_elements(brks)-2 do begin
-        if brks[ib] ne brks[ib+1] then oModel.add, obj_new("IDLgrPolyline", ring[0, brks[ib]+1:brks[ib+1]], ring[1, brks[ib]+1:brks[ib+1]], ring[2, brks[ib]+1:brks[ib+1]], color=colour)
+          oModel.add, obj_new("IDLgrPolyline", ring[0, brks[ib]+1:brks[ib+1]], ring[1, brks[ib]+1:brks[ib+1]], ring[2, brks[ib]+1:brks[ib+1]], color=colour)
+        endfor
       endfor
+      
+    endfor
+
+  endif else if draw eq 'fieldlines' then begin
+
+    rings = read_rings(filename, nskip=nskip, /hcs)
+
+    for inull = 0, n_elements(rings)-1, 2 do begin
+
+      iring = 1
+      nskip = n_elements(rings[inull, iring, 0, *])/nlines
+
+      for idir = 0, 1 do begin
+
+        for i = 0, nlines-1 do begin
+
+          startpt = rings[inull+idir, iring, *, i*nskip]
+
+          h = 1d-2
+          hmin = h*0.1
+          hmax = h*10
+          epsilon = h*0.01
+
+          line = fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem_model3d)
+
+          a = max(line[0, *], imax)
+          if idir eq 1 then begin
+            line = line[*, 0:imax]
+          endif else begin
+            line = line[*, imax:-1]
+          endelse
+          
+          line = sphr2cart(line)
+
+          oModel.add, obj_new("IDLgrPolyline", line[0, *], line[1, *], line[2, *], color=colour)
+
+        endfor
+
+      endfor
+
     endfor
     
+  endif else print, "Set draw to be either 'rings' or 'fieldlines'"
+
+  for inull = 0, n_elements(rings)-1, 2 do begin
+    ring = rings[inull, 0]
+    ring = sphr2cart(ring)
+    oModel.add, obj_new("IDLgrPolyline", ring[0, *], ring[1, *], ring[2, *], color=colour, thick=4)
   endfor
 
 end
@@ -215,7 +320,7 @@ pro set_null_list, lst
   endelse
 end
 
-function mk_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf, hcs=hcs, hcs_sep=hcs_sep, spines=spines, box=box, fanlines=fanlines, nskip=nskip, null_list=null_list, coordsystem=coordsystem
+function mk_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf, hcs=hcs, hcs_separators=hcs_separators, spines=spines, box=box, fanlines=fanlines, nskip=nskip, null_list=null_list, coordsystem=coordsystem
   common shared_var_model3d
 
   if not keyword_set(coordsystem) then coordsystem = 'cartesian'
@@ -242,14 +347,14 @@ function mk_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf, h
   set_null_list, null_list
 
   oModel = obj_new("IDLgrModel")
-  if keyword_set(box)        then model_add_box
-  if keyword_set(nulls)      then model_add_nulls
-  if keyword_set(fanlines)   then model_add_fanlines, nskip
-  if keyword_set(spines)     then model_add_spines
-  if keyword_set(sepsurf)    then model_add_sepsurf, nskip
-  if keyword_set(hcs)        then model_add_hcs, nskip
-  if keyword_set(hcs_sep)    then model_add_separators, /hcs
-  if keyword_set(separators) then model_add_separators
+  if keyword_set(box)            then model_add_box
+  if keyword_set(nulls)          then model_add_nulls
+  if keyword_set(fanlines)       then model_add_fanlines, nskip
+  if keyword_set(spines)         then model_add_spines
+  if keyword_set(sepsurf)        then model_add_sepsurf, nskip
+  if keyword_set(hcs)            then model_add_hcs, nskip
+  if keyword_set(hcs_separators) then model_add_separators, /hcs
+  if keyword_set(separators)     then model_add_separators
   
   return, oModel
 end
