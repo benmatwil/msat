@@ -19,6 +19,10 @@ nn1, nn3, nn4, nn5, nn6 = 16/135, 6656/12825, 28561/56430, -9/50, 2/55
 # @njit(f64[:](f64[:], f64[:, :, :, :], f64[:], f64[:], f64[:]), cache=True)
 @njit
 def trilinear3d(pt, grid, xx, yy, zz):
+    """
+    Given a point, pt, in the grid with dimensions xx, yy and zz,
+    returns the value of grid under the trilinear assumption.
+    """
     ix = np.where(pt[0] > xx)[0][-1]
     iy = np.where(pt[1] > yy)[0][-1]
     iz = np.where(pt[2] > zz)[0][-1]
@@ -35,6 +39,10 @@ def trilinear3d(pt, grid, xx, yy, zz):
 # @njit(f64[:](f64[:], f64[:, :, :, :]), cache=True)
 @njit
 def trilinear3d_grid(pt, grid):
+    """
+    Given a point, pt, in grid coordinates in the grid,
+    returns the value of grid under the trilinear assumption.
+    """
     ix = floor(pt[0])
     iy = floor(pt[1])
     iz = floor(pt[2])
@@ -51,6 +59,9 @@ def trilinear3d_grid(pt, grid):
 # @njit(f64[:](f64[:], f64[:], f64[:], f64[:], boolean[:]), cache=True)
 @njit
 def getdr(r, x, y, z, csystem):
+    """
+    Returns the infinitesimal line element at a point, r, in the correct coordinate system.
+    """
     ix = floor(r[0])
     iy = floor(r[1])
     iz = floor(r[2])
@@ -73,6 +84,9 @@ def getdr(r, x, y, z, csystem):
 # @njit(void(f64[:], f64[:], f64[:], f64[:]), cache=True)
 @njit
 def gtr(pt, x, y, z):
+    """
+    Converts a point from grid coordinates to real coordinates.
+    """
     ix = floor(pt[0])
     iy = floor(pt[1])
     iz = floor(pt[2])
@@ -88,7 +102,9 @@ def gtr(pt, x, y, z):
 # @njit(void(f64[:], f64[:], boolean[:], boolean[:]), cache=True)
 @njit
 def edgecheck(r, minmax, csystem, periodicity):
-    # need to implement periodic_t, periodic_p
+    """
+    Checks whether a point, r, has exited the grid through a periodic boundary and if so, moves the point back into the grid using the periodicity.
+    """
     if np.any(periodicity):
         if csystem[2]:
             if periodicity[3]:
@@ -120,7 +136,9 @@ def edgecheck(r, minmax, csystem, periodicity):
 # @njit(boolean(f64[:], f64[:], boolean[:], boolean[:]), cache=True)
 @njit
 def outedge(r, minmax_box, csystem, periodicity):
-    # need to implement periodic_t, periodic_p
+    """
+    Checks whether a point, r, has left the domain.
+    """
     if np.any(periodicity):
         if csystem[0]:
             outedge = False
@@ -147,7 +165,9 @@ def outedge(r, minmax_box, csystem, periodicity):
 
 # @njit(cache=True)
 @njit
-def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline, oneway, stop_criteria, t_max, minmax, minmax_box, csystem, periodicity):
+    """
+    The actual line tracer after the checks have been made and set up by fieldline3d function. This has been separated from fieldline3d in order to use numba's jit.
+    """
     ih = [h] if oneway else [h, -h]
 
     line = [r0]
