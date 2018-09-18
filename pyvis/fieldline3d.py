@@ -178,7 +178,7 @@ def outedge(r, minmax_box, csystem, periodicity):
         out = False
         bounce = False
 
-        while count < mxline:
+        while count < maxpoints:
 
             r0 = line[-1].copy()
 
@@ -349,7 +349,7 @@ def outedge(r, minmax_box, csystem, periodicity):
 
     return line
 
-def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t_max=1.2, oneway=False,
+def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints=50000, t_max=1.1, oneway=False,
     boxedge=None, coordsystem='cartesian', gridcoord=False, stop_criteria=True, periodicity=''):
     """
     Calculates 3D field line which goes through the point startpt
@@ -362,7 +362,7 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
     hmax - maximum step length
     epsilon - tolerance to which we require point on field line known
 
-    maxline - maximum number of points on a fieldline in each direction
+    maxpoints - maximum number of points on a fieldline in each direction
     t_max - maximum value of correction factor in RKF45 method
     oneway - whether to only calculate field in one direction (sign of h)
     boxedge - use a smaller domain than edge of the grids x, y and z
@@ -434,7 +434,7 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=50000, t
         print('Start point is a null point')
         raise ValueError
 
-    line = rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline, oneway, stop_criteria, t_max, minmax, minmax_box, csystem, periodicity)
+    line = rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_criteria, t_max, minmax, minmax_box, csystem, periodicity)
 
     if gridcoord == False:
         for pt in line: gtr(pt, x, y, z)
