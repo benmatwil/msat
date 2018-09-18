@@ -122,7 +122,9 @@ function outedge, r
 
 end
 
-function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mxline, t_max=t_max, oneway=oneway, boxedge=boxedge, gridcoord=gridcoord, coordsystem=coordsystem, periodicity=periodicity
+function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
+  maxpoints=maxpoints, t_max=t_max, oneway=oneway, boxedge=boxedge, $
+  gridcoord=gridcoord, coordsystem=coordsystem, periodicity=periodicity
   common shared_var_fl3d
 
   ; startpt[3]: start point for field line
@@ -134,8 +136,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
   ; hmax: maximum step length
   ; epsilon: tolerance to which we require point on field line known
 
-  ; mxline: maximum number of points on a field line
-  ; t_val: change maximum value which h can increase by at each iteration
+  ; maxpoints: maximum number of points (including starting point) on a fieldline in one direction (maximum of 2*maxpoints - 1 if traced in both directions)
   ; oneway: only let field line trace in one direction (direction of h)
   ; boxedge: create articifical edges to magnetic field grid
   ; gridcoord: startpt is given in grid coordinates, output also in grid coordinates
@@ -209,7 +210,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
     print, "You need to satisfy hmin < h < hmax"
   endif
 
-  if not keyword_set(mxline) then mxline = 50000
+  if not keyword_set(maxpoints) then maxpoints = 50000
   if not keyword_set(t_max) then t_max = 1.1d
 
   ; #####################################################################
@@ -225,7 +226,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
     out = 0
     bounce = 0
     
-    while count lt mxline do begin
+    while count lt maxpoints do begin
 
       r0 = line[-1]
       
