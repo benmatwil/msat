@@ -165,6 +165,7 @@ def outedge(r, minmax_box, csystem, periodicity):
 
 # @njit(cache=True)
 @njit
+def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_criteria, t_max, minmax, minmax_box, csystem, periodicity):
     """
     The actual line tracer after the checks have been made and set up by fieldline3d function. This has been separated from fieldline3d in order to use numba's jit.
     """
