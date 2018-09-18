@@ -25,7 +25,9 @@ def synmap(filename):
 
 def field(filename):
     with open(filename, 'rb') as fieldfile:
-        nx, ny, nz = np.fromfile(fieldfile, count=3, dtype=np.int32)
+        shape = np.fromfile(fieldfile, count=3, dtype=np.int32)
+        nx, ny, nz = (int(n) for n in shape)
+        num = nx*ny*nz
 
         shape = (nx, ny, nz)
         num = np.asscalar(nx)*np.asscalar(ny)*np.asscalar(nz)
