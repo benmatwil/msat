@@ -7,7 +7,7 @@ function prefix, filename
 
 end
 
-function read_field, filename
+function read_field, filename, grid=grid
 
   openr, field, filename, /get_lun
   nx = 0L
@@ -24,7 +24,15 @@ function read_field, filename
   close, field
   free_lun, field
 
-  return, {bx:bx, by:by, bz:bz, x:x, y:y, z:z}
+  if keyword_set(grid) then begin
+    bgrid = dblarr(nx, ny, nz, 3)
+    bgrid[*, *, *, 0] = bx
+    bgrid[*, *, *, 1] = by
+    bgrid[*, *, *, 2] = bz
+    return, {bgrid:bgrid, x:x, y:y, z:z}
+  endif else begin
+    return, {bx:bx, by:by, bz:bz, x:x, y:y, z:z}
+  endelse
 
 end
 
