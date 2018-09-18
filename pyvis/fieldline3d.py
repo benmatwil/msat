@@ -158,7 +158,8 @@ def outedge(r, minmax_box, csystem, periodicity):
     return outedge
 
 @njit
-def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_criteria, t_max, minmax, minmax_box, csystem, periodicity):
+def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway,
+    stop_criteria, t_max, minmax, minmax_box, csystem, periodicity):
     """
     The actual line tracer after the checks have been made and set up by fieldline3d function. This has been separated from fieldline3d in order to use numba's jit.
     """
@@ -339,20 +340,21 @@ def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_cr
 
     return line
 
-def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints=50000, t_max=1.1, oneway=False,
-    boxedge=None, coordsystem='cartesian', gridcoord=False, stop_criteria=True, periodicity=''):
+def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints=50000,
+    t_max=1.1, oneway=False, boxedge=None, coordsystem='cartesian', gridcoord=False,
+    stop_criteria=True, periodicity=''):
     """
     Calculates 3D field line which goes through the point startpt
     startpt - 3 element, 1D array as start point for field line calculation
     bgrid - magnetic field array of shape (nx, ny, nz, 3)
-    x, y, z - 1D arrays of grid points on which magnetic field given
+    x, y, z - 1D arrays of grid points on which magnetic field given with shapes (nx,), (ny,) and (nz,) respectively
 
     h - initial step length
     hmin - minimum step length
     hmax - maximum step length
     epsilon - tolerance to which we require point on field line known
 
-    maxpoints - maximum number of points on a fieldline in each direction
+    maxpoints - maximum number of points (including starting point) on a fieldline in one direction (maximum of 2*maxpoints - 1 if traced in both directions)
     t_max - maximum value of correction factor in RKF45 method
     oneway - whether to only calculate field in one direction (sign of h)
     boxedge - use a smaller domain than edge of the grids x, y and z
