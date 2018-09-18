@@ -23,14 +23,12 @@ def synmap(filename):
 
     return bsyn, lons, lats
 
-def field(filename):
+def field(filename, grid=False):
     with open(filename, 'rb') as fieldfile:
         shape = np.fromfile(fieldfile, count=3, dtype=np.int32)
         nx, ny, nz = (int(n) for n in shape)
         num = nx*ny*nz
 
-        shape = (nx, ny, nz)
-        num = np.asscalar(nx)*np.asscalar(ny)*np.asscalar(nz)
         bx = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
         by = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
         bz = np.fromfile(fieldfile, count=num, dtype=np.float64).reshape(shape, order='f')
@@ -39,6 +37,9 @@ def field(filename):
         y = np.fromfile(fieldfile, count=ny, dtype=np.float64)
         z = np.fromfile(fieldfile, count=nz, dtype=np.float64)
 
+    if grid:
+        return np.stack((bx, by, bz), axis=-1), x, y, z
+    else:
     return bx, by, bz, x, y, z
 
 def nulls(filename, simple=False):
