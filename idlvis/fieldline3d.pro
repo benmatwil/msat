@@ -1,4 +1,4 @@
-common shared_var_fl3d, xmin, xmax, ymin, ymax, zmin, zmax, csystem_fl3d
+common shared_var_fl3d, xmin, xmax, ymin, ymax, zmin, zmax, csystem_fl3d, period_fl3d
 
 function trilinear3d_grid, pt, grid
 
@@ -32,33 +32,55 @@ function getdr, r, x, y, z
   yp = y[iy] + (r[1] - iy)*dy
 
   if csystem_fl3d eq 'spherical' then begin
-    return, [dx, xp*dy, xp*sin(yp)*dz]
+    dr = [dx, xp*dy, xp*sin(yp)*dz]
   endif else if csystem_fl3d eq 'cartesian' then begin
-    return, [dx, dy, dz]
+    dr = [dx, dy, dz]
   endif else if csystem_fl3d eq 'cylindrical' then begin
-    return, [dx, xp*dy, dz]
+    dr = [dx, xp*dy, dz]
   endif
+  return, dr
 
 end
 
 pro edgecheck, r
   common shared_var_fl3d
 
-  if csystem_fl3d eq 'spherical' then begin
-    if r[1] lt ymin or r[1] gt ymax then begin
-      if r[1] lt ymin then r[1] = 2*ymin - r[1]
-      if r[1] gt ymax then r[1] = 2*ymax - r[1]
-      if r[2] lt (zmax + zmin)/2 then begin
-        r[2] = r[2] + (zmax - zmin)/2
-      endif else begin
-        r[2] = r[2] - (zmax - zmin)/2
-      endelse
+  if period_fl3d.hasvalue(1) then begin
+    if csystem_fl3d eq 'spherical' then begin
+      if period_fl3d[3] then begin
+        if r[1] lt ymin or r[1] gt ymax then begin
+          if r[1] lt ymin then r[1] = 2*ymin - r[1]
+          if r[1] gt ymax then r[1] = 2*ymax - r[1]
+          if r[2] lt (zmax + zmin)/2 then begin
+            r[2] = r[2] + (zmax - zmin)/2
+          endif else begin
+            r[2] = r[2] - (zmax - zmin)/2
+          endelse
+        endif
+      endif
+      if period_fl3d[4] then begin
+        if r[2] le zmin then r[2] = r[2] + (zmax - zmin)
+        if r[2] ge zmax then r[2] = r[2] - (zmax - zmin)
+      endif
+    endif else if csystem_fl3d eq 'cartesian' then begin
+      if period_fl3d[0] then begin
+        if r[0] le xmin then r[0] = r[0] + (xmax - xmin)
+        if r[0] ge xmax then r[0] = r[0] - (xmax - xmin)
+      endif
+      if period_fl3d[1] then begin
+        if r[1] le ymin then r[1] = r[1] + (ymax - ymin)
+        if r[1] ge ymax then r[1] = r[1] - (ymax - ymin)
+      endif
+      if period_fl3d[2] then begin
+        if r[2] le zmin then r[2] = r[2] + (zmax - zmin)
+        if r[2] ge zmax then r[2] = r[2] - (zmax - zmin)
+      endif
+    endif else if csystem_fl3d eq 'cylindrical' then begin
+      if period_fl3d[4] then begin
+        if r[2] lt ymin then r[2] = r[2] + (ymax - ymin)
+        if r[2] gt ymax then r[2] = r[2] - (ymax - ymin)
+      endif
     endif
-    if r[2] le zmin then r[2] = r[2] + (zmax - zmin)
-    if r[2] ge zmax then r[2] = r[2] - (zmax - zmin)
-  endif else if csystem_fl3d eq 'cylindrical' then begin
-    if r[2] lt ymin then r[2] = r[2] + (ymax - ymin)
-    if r[2] gt ymax then r[2] = r[2] - (ymax - ymin)
   endif
  
 end
@@ -66,18 +88,41 @@ end
 function outedge, r
   common shared_var_fl3d
 
-  outedge = r[0] ge xmax or r[0] le xmin
-  if csystem_fl3d eq 'cartesian' then begin
-    outedge = outedge or r[1] ge ymax or r[1] le ymin or r[2] ge zmax or r[2] le zmin
-  endif else if csystem_fl3d eq 'cylindrical' then begin
-    outedge = outedge or r[2] ge zmax or r[2] le zmin
-  endif
+  if period_fl3d.hasvalue(1) then begin
+    if csystem_fl3d eq 'cartesian' then begin
+      outedge = 0
+      if not period_fl3d[0] then begin
+        outedge = outedge or r[0] ge xmax or r[0] le xmin
+      endif
+      if not period_fl3d[1] then begin
+        outedge = outedge or r[1] ge ymax or r[1] le ymin
+      endif
+      if not period_fl3d[2] then begin
+        outedge = outedge or r[2] ge zmax or r[2] le zmin
+      endif
+    endif else if csystem_fl3d eq 'spherical' then begin
+      outedge = r[0] ge xmax or r[0] le xmin
+      if not period_fl3d[3] then begin
+        outedge = outedge or r[1] ge ymax or r[1] le ymin
+      endif
+      if not period_fl3d[4] then begin
+        outedge = outedge or r[2] ge zmax or r[2] le zmin
+      endif
+    endif else if csystem_fl3d eq 'cylindrical' then begin
+      outedge = r[0] ge xmax or r[0] le xmin or r[2] ge zmax or r[2] le zmin
+      if not period_fl3d[4] then begin
+        outedge = outedge or r[1] ge ymax or r[1] le ymin
+      endif
+    endif
+  endif else begin
+      outedge = r[0] ge xmax or r[0] le xmin or r[1] ge ymax or r[1] le ymin or r[2] ge zmax or r[2] le zmin
+  endelse
   
   return, outedge
 
 end
 
-function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mxline, t_max=t_max, oneway=oneway, boxedge=boxedge, gridcoord=gridcoord, coordsystem=coordsystem
+function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mxline, t_max=t_max, oneway=oneway, boxedge=boxedge, gridcoord=gridcoord, coordsystem=coordsystem, periodicity=periodicity
   common shared_var_fl3d
 
   ; startpt[3]: start point for field line
@@ -99,7 +144,13 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
   if not keyword_set(coordsystem) then coordsystem = 'cartesian'
   csystem_fl3d = coordsystem
 
-  ;define edges of box
+  if not keyword_set(periodicity) then periodicity = ''
+  chks = ['*x*', '*y*', '*z*', '*t*', '*p*']
+  period_fl3d = bytarr(5)
+  for i = 0, 2 do period_fl3d[i] = strmatch(periodicity, chks[i])
+  for i = 3, 4 do period_fl3d[i] = not strmatch(periodicity, chks[i])
+
+  ; define edges of box
   if keyword_set(boxedge) then begin
     xmin = max([boxedge[0,0],min(x)])
     ymin = max([boxedge[0,1],min(y)])
@@ -161,7 +212,8 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
   if not keyword_set(mxline) then mxline = 50000
   if not keyword_set(t_max) then t_max = 1.1d
 
-  ;##################################################
+  ; #####################################################################
+  ; now for the main rkf45 algorithm
 
   if keyword_set(oneway) then ih = [h] else ih = [h, -h]
 
@@ -307,7 +359,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       count++
 
       line.add, rt
-    
+
       ; check line is still moving
       if (count ge 3) then begin
         dl = line[-1] - line[-2]
