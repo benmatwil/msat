@@ -159,7 +159,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
   endif
 
   if not keyword_set(mxline) then mxline = 50000
-  if not keyword_set(t_max) then t_max = 1.2
+  if not keyword_set(t_max) then t_max = 1.1d
 
   ;##################################################
 
@@ -243,7 +243,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       ; optimum stepsize
       diff = rtest5 - rtest4
       err = sqrt(total(diff^2))
-      if err gt 0 then t = (epsilon*abs(h)/(2*err))^0.25 else t = 1
+      if err gt 0 then t = (epsilon*abs(h)/(2*err))^0.25d else t = 1
       
       if (abs(t*h) lt abs(hmin)) then t = abs(hmin/h)
       if (t gt t_max) then t = t_max
@@ -312,11 +312,11 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, mxline=mx
       if (count ge 3) then begin
         dl = line[-1] - line[-2]
         mdl = sqrt(total(dl^2))
-        if mdl lt hmin*0.5 then break
+        if mdl lt hmin/2 then break
 
         dl = line[-1] - line[-3]
         mdl = sqrt(total(dl^2))
-        if mdl lt hmin*0.5 then begin
+        if mdl lt hmin/2 then begin
           bounce = 1
           break
         endif
