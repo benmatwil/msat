@@ -137,10 +137,12 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
   ; epsilon: tolerance to which we require point on field line known
 
   ; maxpoints: maximum number of points (including starting point) on a fieldline in one direction (maximum of 2*maxpoints - 1 if traced in both directions)
+  ; t_max: change maximum value which h can increase by at each iteration
   ; oneway: only let field line trace in one direction (direction of h)
   ; boxedge: create articifical edges to magnetic field grid
   ; gridcoord: startpt is given in grid coordinates, output also in grid coordinates
   ; coordsystem: coordinate system of grid; 'cartesian', 'cylindrical' or 'spherical'
+  ; periodicity - set the periodicity of the grid e.g. 'xy' for periodicity in both x and y direction
 
   if not keyword_set(coordsystem) then coordsystem = 'cartesian'
   csystem_fl3d = coordsystem
@@ -296,14 +298,20 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
       ; optimum stepsize
       diff = rtest5 - rtest4
       err = sqrt(total(diff^2))
-      if err gt 0 then t = (epsilon*abs(h)/(2*err))^0.25d else t = 1
+      if err gt 0 then begin
+        t = (epsilon*abs(h)/(2*err))^0.25d
+        if t gt t_max then t = t_max
+      endif else t = t_max
+
+      h = t*h
+      if abs(h) lt hmin then h = hmin*signum(h)
+      if abs(h) gt hmax then h = hmax*signum(h)
+
+      thvec = t*hvec
       
-      if (abs(t*h) lt abs(hmin)) then t = abs(hmin/h)
-      if (t gt t_max) then t = t_max
-            
       rt = r0
       b = trilinear3d_grid(rt, bgrid)
-      k1 = t*hvec*b/sqrt(total(b^2))
+      k1 = thvec*b/sqrt(total(b^2))
       rt = r0 + b2*k1
 
       if outedge(rt) then begin
@@ -313,7 +321,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
 
       edgecheck, rt
       b = trilinear3d_grid(rt, bgrid)
-      k2 = t*hvec*b/sqrt(total(b^2))
+      k2 = thvec*b/sqrt(total(b^2))
       rt = r0 + b3*k1 + c3*k2
 
       if outedge(rt) then begin
@@ -323,7 +331,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
 
       edgecheck, rt
       b = trilinear3d_grid(rt, bgrid)
-      k3 = t*hvec*b/sqrt(total(b^2))
+      k3 = thvec*b/sqrt(total(b^2))
       rt = r0 + b4*k1 + c4*k2 + d4*k3
 
       if outedge(rt) then begin
@@ -333,7 +341,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
 
       edgecheck, rt
       b = trilinear3d_grid(rt, bgrid)
-      k4 = t*hvec*b/sqrt(total(b^2))
+      k4 = thvec*b/sqrt(total(b^2))
       rt = r0 + b5*k1 + c5*k2 + d5*k3 + e5*k4
 
       if outedge(rt) then begin
@@ -343,7 +351,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
 
       edgecheck, rt
       b = trilinear3d_grid(rt, bgrid)
-      k5 = t*hvec*b/sqrt(total(b^2))
+      k5 = thvec*b/sqrt(total(b^2))
       
       rt = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
       edgecheck, rt
@@ -353,10 +361,6 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
         break
       endif
 
-      h = t*h
-      if abs(h) lt hmin then h = hmin*h/abs(h)
-      if abs(h) gt hmax then h = hmax*h/abs(h)
-      
       count++
 
       line.add, rt
