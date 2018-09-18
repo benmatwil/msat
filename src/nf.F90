@@ -171,7 +171,7 @@ program nullfinder
 
             bound_dist = rspherefact*10.0_np**(-sig_figs)
             
-            if (boundary_nulls)
+            if (boundary_nulls) then
               call add_vector(rnulls, rnull)
             else
             if (rnull(1) > 1 + bound_dist .and. rnull(1) < nx - bound_dist .and. &
