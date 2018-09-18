@@ -16,7 +16,6 @@ n1, n3, n4, n5 = 25/216, 1408/2565, 2197/4104, -1/5
 # used to determine y_i+1 from y_i if using rkf54 (5th order)
 nn1, nn3, nn4, nn5, nn6 = 16/135, 6656/12825, 28561/56430, -9/50, 2/55
 
-# @njit(f64[:](f64[:], f64[:, :, :, :], f64[:], f64[:], f64[:]), cache=True)
 @njit
 def trilinear3d(pt, grid, xx, yy, zz):
     """
@@ -36,7 +35,6 @@ def trilinear3d(pt, grid, xx, yy, zz):
     line = (1 - y)*square[0, :, ...] + y*square[1, :, ...]
     return (1 - z)*line[0, ...] + z*line[1, ...]
 
-# @njit(f64[:](f64[:], f64[:, :, :, :]), cache=True)
 @njit
 def trilinear3d_grid(pt, grid):
     """
@@ -56,7 +54,6 @@ def trilinear3d_grid(pt, grid):
     line = (1 - y)*square[0, :, ...] + y*square[1, :, ...]
     return (1 - z)*line[0, ...] + z*line[1, ...]
 
-# @njit(f64[:](f64[:], f64[:], f64[:], f64[:], boolean[:]), cache=True)
 @njit
 def getdr(r, x, y, z, csystem):
     """
@@ -81,7 +78,6 @@ def getdr(r, x, y, z, csystem):
         dr = np.array([dx, xp*dy, dz], dtype=np.float64)
     return dr
 
-# @njit(void(f64[:], f64[:], f64[:], f64[:]), cache=True)
 @njit
 def gtr(pt, x, y, z):
     """
@@ -99,7 +95,6 @@ def gtr(pt, x, y, z):
     pt[1] = y[iy] + (pt[1] - iy)*(y[iy+1] - y[iy])
     pt[2] = z[iz] + (pt[2] - iz)*(z[iz+1] - z[iz])
 
-# @njit(void(f64[:], f64[:], boolean[:], boolean[:]), cache=True)
 @njit
 def edgecheck(r, minmax, csystem, periodicity):
     """
@@ -133,7 +128,6 @@ def edgecheck(r, minmax, csystem, periodicity):
                 if r[2] < minmax[2]: r[2] = r[2] + (minmax[3] - minmax[2])
                 if r[2] > minmax[3]: r[2] = r[2] - (minmax[3] - minmax[2])
 
-# @njit(boolean(f64[:], f64[:], boolean[:], boolean[:]), cache=True)
 @njit
 def outedge(r, minmax_box, csystem, periodicity):
     """
@@ -163,7 +157,6 @@ def outedge(r, minmax_box, csystem, periodicity):
         
     return outedge
 
-# @njit(cache=True)
 @njit
 def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_criteria, t_max, minmax, minmax_box, csystem, periodicity):
     """
@@ -253,7 +246,7 @@ def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_cr
             h = t*h
             if abs(h) < hmin: h = hmin*np.sign(h)
             if abs(h) > hmax: h = hmax*np.sign(h)
-
+            
             thvec = t*hvec
 
             rt = r0
@@ -387,13 +380,14 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints=50000
     # define edges of box
     minmax = np.array([0, x.shape[0]-1, 0, y.shape[0]-1, 0, z.shape[0]-1], dtype=np.float64)
     if boxedge is not None:
-        xmin_box = max([boxedge[0, 0], x.min()])
-        ymin_box = max([boxedge[0, 1], y.min()])
-        zmin_box = max([boxedge[0, 2], z.min()])
-        xmax_box = min([boxedge[1, 0], x.max()])
-        ymax_box = min([boxedge[1, 1], y.max()])
-        zmax_box = min([boxedge[1, 2], z.max()])
-        minmax_box = np.array([xmin_box, xmax_box, ymin_box, ymax_box, zmin_box, zmax_box], dtype=np.float64)
+        minmax_box = np.array([
+            max([boxedge[0, 0], x.min()]),
+            max([boxedge[0, 1], y.min()]),
+            max([boxedge[0, 2], z.min()]),
+            min([boxedge[1, 0], x.max()]),
+            min([boxedge[1, 1], y.max()]),
+            min([boxedge[1, 2], z.max()])
+            ], dtype=np.float64)
     else:
         minmax_box = minmax
 
