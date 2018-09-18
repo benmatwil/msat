@@ -186,10 +186,6 @@ def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_cr
             dr = getdr(r0, x, y, z, csystem)
             mindist = dr.min()*h
             hvec = mindist/dr
-            # hvec = np.zeros(3, dtype=np.float64)
-            # hvec[0] = mindist/dr[0]
-            # hvec[1] = mindist/dr[1]
-            # hvec[2] = mindist/dr[2]
 
             rt = r0
             b = trilinear3d_grid(rt, bgrid)
@@ -250,15 +246,19 @@ def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_cr
             err = sqrt(np.sum(diff**2))
             if err > 0:
                 t = (epsilon*abs(h)/(2*err))**0.25
+                if t > t_max: t = t_max
             else:
-                t = 1
+                t = t_max
 
-            if (abs(t*h) < abs(hmin)): t = abs(hmin/h)
-            if t > t_max: t = t_max
+            h = t*h
+            if abs(h) < hmin: h = hmin*np.sign(h)
+            if abs(h) > hmax: h = hmax*np.sign(h)
+
+            thvec = t*hvec
 
             rt = r0
             b = trilinear3d_grid(rt, bgrid)
-            k1 = t*hvec*b/sqrt(np.sum(b**2))
+            k1 = thvec*b/sqrt(np.sum(b**2))
             rt = r0 + b2*k1
 
             if outedge(rt, minmax_box, csystem, periodicity):
@@ -267,7 +267,7 @@ def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_cr
 
             edgecheck(rt, minmax, csystem, periodicity)
             b = trilinear3d_grid(rt, bgrid)
-            k2 = t*hvec*b/sqrt(np.sum(b**2))
+            k2 = thvec*b/sqrt(np.sum(b**2))
             rt = r0 + b3*k1 + c3*k2
 
             if outedge(rt, minmax_box, csystem, periodicity):
@@ -276,7 +276,7 @@ def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_cr
 
             edgecheck(rt, minmax, csystem, periodicity)
             b = trilinear3d_grid(rt, bgrid)
-            k3 = t*hvec*b/sqrt(np.sum(b**2))
+            k3 = thvec*b/sqrt(np.sum(b**2))
             rt = r0 + b4*k1 + c4*k2 + d4*k3
 
             if outedge(rt, minmax_box, csystem, periodicity):
@@ -285,7 +285,7 @@ def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_cr
 
             edgecheck(rt, minmax, csystem, periodicity)
             b = trilinear3d_grid(rt, bgrid)
-            k4 = t*hvec*b/sqrt(np.sum(b**2))
+            k4 = thvec*b/sqrt(np.sum(b**2))
             rt = r0 + b5*k1 + c5*k2 + d5*k3 + e5*k4
 
             if outedge(rt, minmax_box, csystem, periodicity):
@@ -294,7 +294,7 @@ def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_cr
 
             edgecheck(rt, minmax, csystem, periodicity)
             b = trilinear3d_grid(rt, bgrid)
-            k5 = t*hvec*b/sqrt(np.sum(b**2))
+            k5 = thvec*b/sqrt(np.sum(b**2))
             rt = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
             edgecheck(rt, minmax, csystem, periodicity)
             
@@ -302,10 +302,6 @@ def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_cr
                 out = True
                 break
 
-            h = t*h
-            if abs(h) < hmin: h = hmin*h/abs(h)
-            if abs(h) > hmax: h = hmax*h/abs(h)
-            
             count += 1
 
             line.append(rt)
@@ -315,12 +311,12 @@ def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway, stop_cr
                 if count >= 3:
                     dl = line[-1] - line[-2]
                     mdl = sqrt(np.sum(dl**2))
-                    if mdl < hmin*0.5:
+                    if mdl < hmin/2:
                         break
 
                     dl = line[-1] - line[-3]
                     mdl = sqrt(np.sum(dl**2))
-                    if mdl < hmin*0.5:
+                    if mdl < hmin/2:
                         bounce = True
                         break
         
