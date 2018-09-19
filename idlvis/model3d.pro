@@ -278,6 +278,29 @@ pro model_add_nulls, size=size
   
 end
 
+pro model_add_fieldlines, startpts, colour=colour
+  common shared_var_model3d
+
+  if not keyword_set(colour) then colour = [0, 0, 0]
+
+  for i = 0, n_elements(startpts)/3 - 1  do begin
+        
+    startpt = startpts[*, i]
+    h = 1d-2
+    hmin = 1d-3
+    hmax = 0.5
+    epsilon = 1d-5
+
+    line = fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem_model3d)
+
+    if csystem_model3d eq 'spherical' then line = sphr2cart(line)
+
+    oModel.add, obj_new("IDLgrPolyline", line[0, *], line[1, *], line[2, *], color=colour)
+
+  endfor
+
+end
+
 pro model_add_box
   common shared_var_model3d
   
