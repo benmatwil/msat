@@ -573,7 +573,7 @@ def add_base(coord, pos, vmin=-10, vmax=10):
         z = np.ones_like(y)*zz[ipos]
         ml.mesh(x, y, z, scalars=-bgrid[:, :, ipos, 2], colormap='Greys', vmin=vmin, vmax=vmax)
 
-def add_sun():
+def add_sun(absbrmax=10):
     # make theta, phi grids of bgrid coords and create the coords of sphere
     theta, phi = np.meshgrid(yy, zz, indexing='ij')
     x = xx[0] * np.sin(theta) * np.cos(phi)
@@ -581,7 +581,7 @@ def add_sun():
     z = xx[0] * np.cos(theta)
 
     # -bgrid because otherwise want reversed colourtable
-    ml.mesh(x, y, z, scalars=-bgrid[0, :, :, 0],  colormap='Greys', vmin=-10, vmax=10, name='Solar surface')
+    ml.mesh(x, y, z, scalars=-bgrid[0, :, :, 0],  colormap='Greys', vmin=-absbrmax, vmax=absbrmax, name='Solar surface')
 
     # make z-axis
     ml.plot3d([0, 0], [0, 0], [-xx.max(), xx.max()], color=(0, 0, 0), tube_radius=None, line_width=4, name='Z-axis')
