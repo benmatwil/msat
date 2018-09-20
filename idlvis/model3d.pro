@@ -326,6 +326,44 @@ pro model_add_box
   oModel.add, obj_new('IDLgrPolyline', line[*, 0], line[*, 1], line[*, 2], color=[0, 0, 0])
 end
 
+pro model_add_sun, absbrmax=absbrmax
+  common shared_var_model3d
+
+  if not keyword_set(absbrmax) then absbrmax = 10
+
+  br_sun = reform(bgrid[0, *, *, 0])
+  brsun = transpose(br_sun)
+  nsz = size(brsun)
+  np = nsz(1)
+  nt = nsz(2)
+  br_tsun = brsun
+  for k = 0, nt-1 do br_tsun[*, k] = brsun[*, nt-1-k]
+  brmax = max(abs(br_tsun)) 
+  vc = float(br_tsun)
+  ii = where(br_tsun gt brmax*0.25)
+  vc(ii) = brmax*0.25
+  ii = where(br_tsun lt -brmax*0.25)
+  vc(ii) = -brmax*0.25
+  vc = fix(((vc+brmax*0.25)/(brmax*0.5))*255)
+
+  vert_colour = fltarr(3, np*nt)
+  for i = 0, 2 do begin
+    for j = 0, nt-1 do begin
+      vert_colour[i, j*np:(j+1)*np-1] = vc[*, j]
+    endfor
+  endfor
+  
+  mesh_obj, 4, vert, poly, replicate(1.00, np, nt)
+  oModel.add, obj_new("IDLgrPolygon", data=vert, vert_colors=vert_colour, polygons=poly, shading=0)
+
+  mesh_obj, 3, vert, poly, replicate(0.02, 21, 2), p3=-2.4, p4=2.4
+  oModel.add, obj_new("IDLgrPolygon", data=vert, polygons=poly, color=[102, 0, 102])
+
+  mesh_obj, 3, vert, poly, (findgen(3)/2.*0.08) ## replicate(1, 21), p3=2.5, p4=2.4
+  oModel.add, obj_new("IDLgrPolygon", data=vert, polygons=poly, color=[102, 0, 102])
+
+end
+
 pro save, dimensions=dimensions
 
   xobjview_write_image, 'figures/' + rd.prefix(filename) + '-model3d.png', 'png', dimensions=dimensions
@@ -351,14 +389,8 @@ function mk_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf, h
 
   filename = fname
 
-  field = read_field(fname)
-  nx = n_elements(field.x)
-  ny = n_elements(field.y)
-  nz = n_elements(field.z)
-  bgrid = dblarr(nx, ny, nz, 3)
-  bgrid[*, *, *, 0] = field.bx
-  bgrid[*, *, *, 1] = field.by
-  bgrid[*, *, *, 2] = field.bz
+  field = read_field(fname, /grid)
+  bgrid = field.bgrid
   xx = field.x
   yy = field.y
   zz = field.z
