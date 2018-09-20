@@ -175,17 +175,17 @@ program nullfinder
             if (boundary_nulls) then
               call add_vector(rnulls, rnull)
             else
-            if (rnull(1) > 1 + bound_dist .and. rnull(1) < nx - bound_dist .and. &
-              rnull(2) > 1 + bound_dist .and. rnull(2) < ny - bound_dist .and. &
-              rnull(3) > 1 + bound_dist .and. rnull(3) < nz - bound_dist) then
-              call add_vector(rnulls, rnull)
+              if (rnull(1) > 1 + bound_dist .and. rnull(1) < nx - bound_dist .and. &
+                  rnull(2) > 1 + bound_dist .and. rnull(2) < ny - bound_dist .and. &
+                  rnull(3) > 1 + bound_dist .and. rnull(3) < nz - bound_dist) then
+                call add_vector(rnulls, rnull)
 #if debug
-            else
-              print*, 'Null on the boundary', int([ix, iy, iz], int16), 'Removing...'
+              else
+                print*, 'Null on the boundary', int([ix, iy, iz], int16), 'Removing...'
 #endif
+              endif
             endif
           endif
-        endif
         endif
       enddo
     enddo
@@ -200,15 +200,15 @@ program nullfinder
   print*, ''
 
   if (gridpoint_nulls) then
-  do iz = 1, nz
-    do iy = 1, ny
-      do ix = 1, nx
-        if (magb(ix, iy, iz) < zero) then ! 0 or zero?
-          call add_vector(rnulls, real([ix, iy, iz], np))
-        endif
+    do iz = 1, nz
+      do iy = 1, ny
+        do ix = 1, nx
+          if (magb(ix, iy, iz) < zero) then ! 0 or zero?
+            call add_vector(rnulls, real([ix, iy, iz], np))
+          endif
+        enddo
       enddo
     enddo
-  enddo
   endif
 
   nnulls = size(rnulls, 2)
