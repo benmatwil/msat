@@ -89,7 +89,7 @@ pro model_add_sepsurf, nskip=nskip, draw=draw, nlines=nlines, nring=nring
   endif else print, "Set draw to be either 'rings' or 'fieldlines'"
 end
 
-pro model_add_hcs, nskip, nlines=nlines, draw=draw
+pro model_add_hcs, nskip=nskip, nlines=nlines, draw=draw
   common shared_var_model3d
 
   if not keyword_set(draw) then draw = 'rings'
@@ -181,58 +181,6 @@ pro model_add_spines
 
     endfor
   endforeach
-end
-
-pro model_add_fanlines, nlines, nring=nring
-  common shared_var_model3d
-
-  print, 'Adding Separatrix surface field lines'
-
-  rings = read_rings(filename, nskip=nskip, null_list=nulllist)
-
-  foreach inull, nulllist-1 do begin
-    if nulldata[inull].sign gt 0 then colour = [255, 128, 128] else begin
-      if nulldata[inull].sign lt 0 then colour = [128, 128, 255] else colour = [128, 255, 128]
-    endelse
-
-    if not keyword_set(nring) then begin
-      ring = rings[inull, n_elements(rings[inull])/5]
-    endif else begin
-      ring = rings[inull, nring]
-    endelse
-
-    n = n_elements(ring)/3/nlines
-
-    xf = ring[0, *]
-    yf = ring[1, *]
-    zf = ring[2, *]
-
-    for k = 0, n_elements(ring)/3 - 1, n do begin
-      startpt = [xf[k], yf[k], zf[k]]
-
-      h = 0.01
-      hmin = 0.001
-      hmax = 0.5
-      epsilon = 1.0d-5
-
-      line = fieldline3d(startpt, bgrid, xx, yy, zz, h, hmin, hmax, epsilon, coordsystem=csystem_model3d)
-
-      dist = (line[0, *] - nulldata[inull].pos[0])^2 + $
-        (line[1, *] - nulldata[inull].pos[1])^2 + $
-        (line[2, *] - nulldata[inull].pos[2])^2
-      imin = where(dist eq min(dist))
-      if nulldata[inull].sign lt 0 then begin
-        line = line[*, 0:min(imin)]
-      endif else begin
-        line = line[*, max(imin):-1]
-      endelse
-
-      if csystem_model3d eq 'spherical' then line = sphr2cart(line)
-      
-      oModel.add, obj_new("IDLgrPolyline", line[0, *], line[1, *], line[2, *], color=colour, thick=2)
-    endfor
-  endforeach
-
 end
 
 pro model_add_separators, hcs=hcs
@@ -404,10 +352,11 @@ function mk_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf, h
   oModel = obj_new("IDLgrModel")
   if keyword_set(box)            then model_add_box
   if keyword_set(nulls)          then model_add_nulls
-  if keyword_set(fanlines)       then model_add_fanlines, nskip
+  if keyword_set(sepsurf_flines) then model_add_sepsurf, nskip=nskip, draw='fieldlines'
   if keyword_set(spines)         then model_add_spines
-  if keyword_set(sepsurf)        then model_add_sepsurf, nskip
-  if keyword_set(hcs)            then model_add_hcs, nskip
+  if keyword_set(sepsurf_rings)  then model_add_sepsurf, nskip=nskip, draw='rings'
+  if keyword_set(hcs_rings)      then model_add_hcs, nskip=nskip, draw='rings'
+  if keyword_set(hcs_flines)     then model_add_hcs, nskip=nskip, draw='fieldlines'
   if keyword_set(hcs_separators) then model_add_separators, /hcs
   if keyword_set(separators)     then model_add_separators
   
