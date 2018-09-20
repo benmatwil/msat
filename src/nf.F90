@@ -99,7 +99,8 @@ program nullfinder
 
         if (candidates(ix, iy, iz)) then
           
-          rnull = [ix, iy, iz]
+          ! adding 1e-8 can help find null points...
+          rnull = [ix, iy, iz]! + 1e-8_np
 
           ierror = 0
           sigloop: do isig = 1, sig_figs
