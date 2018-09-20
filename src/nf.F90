@@ -224,7 +224,6 @@ program nullfinder
     exitcondition = .false.
 
     main_while: do while (.not. exitcondition)
-      !allocate(distances(n,n))
       do j = 1, nnulls
         do i = j+1, nnulls
           if (dist(rnulls(:, i), rnulls(:, j)) < 1e-4_np) then
