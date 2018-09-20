@@ -26,6 +26,8 @@ module params
   ! whether to include null points close to the boundary of vector field grids
   ! if true sign finder may struggle to analyse them
   logical, parameter :: boundary_nulls = .false.
+  ! whether to check the grid points for null points - may be useful for analytical grids
+  logical, parameter :: gridpoint_nulls = .true.
 
   ! Sign Finder Parameters
   ! ----------------------

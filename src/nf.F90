@@ -198,6 +198,7 @@ program nullfinder
   print*, '-----------------------------------------------------------------------'
   print*, ''
 
+  if (gridpoint_nulls) then
   do iz = 1, nz
     do iy = 1, ny
       do ix = 1, nx
@@ -207,6 +208,7 @@ program nullfinder
       enddo
     enddo
   enddo
+  endif
 
   nnulls = size(rnulls, 2)
 
