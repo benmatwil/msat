@@ -5,7 +5,7 @@ import os.path
 
 files = sorted(glob.glob('data/*.dat'))
 
-outprefix = 'output'
+outdir = 'output'
 
 def prefix(filename):
     dot = filename[::-1].find('.')
