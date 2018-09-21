@@ -238,28 +238,19 @@ program nullfinder
       exitcondition = .true.
     enddo main_while
 
-    allocate(distances(nnulls, nnulls))
-
-    distances = 1e6_np
-    do j = 1, nnulls
-      do i = j+1, nnulls
-        distances(i, j) = dist(rnulls(:, i), rnulls(:, j))
-      enddo
-    enddo
-
     print*,''
     print*,'All null pairs with less than 1 gridcell spacing'
     counter = 0
     do j = 1, nnulls
       do i = j+1, nnulls
-        if (distances(i, j) < 1) then
-          print *, i, j, distances(i, j)
+        distance = dist(rnulls(:, i), rnulls(:, j)) < 1
+        if (distance < 1) then
+          print *, i, j, distance
           counter = counter + 1
         endif
       enddo
     enddo
 
-    deallocate(distances)
     print*, 'Number of close-by nulls =', counter
 
   endif
