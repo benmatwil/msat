@@ -3,8 +3,11 @@ program nullfinder
   use params
   use nf_mod
   use common
+  use list_mod
 
   implicit none
+
+  type(list) :: nullpts
 
   real(np), dimension(:, :, :), allocatable :: magb
   logical, dimension(:, :, :), allocatable :: candidates ! flags for candidate cells
@@ -51,6 +54,8 @@ program nullfinder
 
   close(10)
 
+  call nullpts%create()
+
   xmax = nx
   ymax = ny
   zmax = nz
@@ -91,7 +96,7 @@ program nullfinder
   print*, '-----------------------------------------------------------------------'
   print*, ''
 
-  allocate(rnulls(3, 0))
+  ! allocate(rnulls(3, 0))
 
   do iz = 1, nz-1
     do iy = 1, ny-1
@@ -173,12 +178,14 @@ program nullfinder
             bound_dist = rspherefact*10.0_np**(-sig_figs)
             
             if (boundary_nulls) then
-              call add_vector(rnulls, rnull)
+              ! call add_vector(rnulls, rnull)
+              call nullpts%append(rnull)
             else
               if (rnull(1) > 1 + bound_dist .and. rnull(1) < nx - bound_dist .and. &
                   rnull(2) > 1 + bound_dist .and. rnull(2) < ny - bound_dist .and. &
                   rnull(3) > 1 + bound_dist .and. rnull(3) < nz - bound_dist) then
-                call add_vector(rnulls, rnull)
+                ! call add_vector(rnulls, rnull)
+                call nullpts%append(rnull)
 #if debug
               else
                 print*, 'Null on the boundary', int([ix, iy, iz], int16), 'Removing...'
@@ -191,7 +198,8 @@ program nullfinder
     enddo
   enddo
 
-  nnulls = size(rnulls, 2)
+  ! nnulls = size(rnulls, 2)
+  nnulls = nullpts%size
 
   print*, 'Found', nnulls, 'nulls'
 
@@ -204,16 +212,20 @@ program nullfinder
       do iy = 1, ny
         do ix = 1, nx
           if (magb(ix, iy, iz) < zero) then ! 0 or zero?
-            call add_vector(rnulls, real([ix, iy, iz], np))
+            ! call add_vector(rnulls, real([ix, iy, iz], np))
+            call nullpts%append(real([ix, iy, iz], np))
           endif
         enddo
       enddo
     enddo
+    ! print*, 'Found', size(rnulls, 2) - nnulls, 'nulls at vertices'
+    print*, 'Found', nullpts%size - nnulls, 'nulls at vertices'
   endif
+  
+  ! nnulls = size(rnulls, 2)
+  nnulls = nullpts%size
 
-  nnulls = size(rnulls, 2)
-
-  print*, 'Found', size(rnulls, 2) - nnulls, 'nulls at vertices'
+  rnulls = nullpts%to_array()
 
   print*, ''
   print*, '-----------------------------------------------------------------------'
@@ -259,7 +271,6 @@ program nullfinder
   print*, '-----------------------------------------------------------------------'
   print*, ''
 
-  print*, ''
   print*, 'Final number of nulls=', nnulls
   print*, 'Is this the same?', size(rnulls, 2)
 
@@ -270,5 +281,7 @@ program nullfinder
     write(10) rnulls
     write(10) gtr(rnulls, x, y, z)
   close(10)
+
+  call nullpts%destroy()
 
 end program
