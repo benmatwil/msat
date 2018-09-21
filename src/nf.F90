@@ -96,8 +96,6 @@ program nullfinder
   print*, '-----------------------------------------------------------------------'
   print*, ''
 
-  ! allocate(rnulls(3, 0))
-
   do iz = 1, nz-1
     do iy = 1, ny-1
       do ix = 1, nx-1
@@ -178,13 +176,11 @@ program nullfinder
             bound_dist = rspherefact*10.0_np**(-sig_figs)
             
             if (boundary_nulls) then
-              ! call add_vector(rnulls, rnull)
               call nullpts%append(rnull)
             else
               if (rnull(1) > 1 + bound_dist .and. rnull(1) < nx - bound_dist .and. &
                   rnull(2) > 1 + bound_dist .and. rnull(2) < ny - bound_dist .and. &
                   rnull(3) > 1 + bound_dist .and. rnull(3) < nz - bound_dist) then
-                ! call add_vector(rnulls, rnull)
                 call nullpts%append(rnull)
 #if debug
               else
@@ -198,7 +194,6 @@ program nullfinder
     enddo
   enddo
 
-  ! nnulls = size(rnulls, 2)
   nnulls = nullpts%size
 
   print*, 'Found', nnulls, 'nulls'
@@ -212,17 +207,14 @@ program nullfinder
       do iy = 1, ny
         do ix = 1, nx
           if (magb(ix, iy, iz) < zero) then ! 0 or zero?
-            ! call add_vector(rnulls, real([ix, iy, iz], np))
             call nullpts%append(real([ix, iy, iz], np))
           endif
         enddo
       enddo
     enddo
-    ! print*, 'Found', size(rnulls, 2) - nnulls, 'nulls at vertices'
     print*, 'Found', nullpts%size - nnulls, 'nulls at vertices'
   endif
   
-  ! nnulls = size(rnulls, 2)
   nnulls = nullpts%size
 
   rnulls = nullpts%to_array()
