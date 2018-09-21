@@ -53,7 +53,7 @@ rtp: spherical
 writedata : params.f90 $(SRCDIR)/writedata.f90
 	$(FC) $(FLAGS) $^ -o $@
 
-nf : params.f90 $(SRCDIR)/common.F90 $(SRCDIR)/nf_mod.F90 $(SRCDIR)/nf.F90
+nf : params.f90 $(SRCDIR)/common.F90 $(SRCDIR)/nf_mod.F90 $(SRCDIR)/list_mod.f90 $(SRCDIR)/nf.F90
 	$(FC) $(FLAGS) $^ -o $@
 
 sfxyz : params.f90 $(SRCDIR)/common.F90 $(SRCDIR)/trace.F90 $(SRCDIR)/sf_mod.F90 $(SRCDIR)/sf.F90
