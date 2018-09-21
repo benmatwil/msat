@@ -24,7 +24,7 @@ program nullfinder
   real(np) :: bound_dist
 
   integer(int32) :: i, j, counter
-  real(np), allocatable :: distances(:,:)
+  real(np) :: distance
   logical :: exitcondition
 
   print*, '#######################################################################'
