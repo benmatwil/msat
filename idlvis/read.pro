@@ -1,5 +1,5 @@
 function prefix, filename
-  compile_opt, idl2
+  compile_opt idl2
 
     file1 = strmid(filename, strlen('data/'), strlen(filename))
     file1 = strmid(file1, 0, strlen(file1)-strlen('.dat'))
@@ -9,7 +9,7 @@ function prefix, filename
 end
 
 function read_field, filename, grid=grid
-  compile_opt, idl2
+  compile_opt idl2
 
   openr, field, filename, /get_lun
   nx = 0L
@@ -39,7 +39,7 @@ function read_field, filename, grid=grid
 end
 
 function read_nulls, filename, simple=simple
-  compile_opt, idl2
+  compile_opt idl2
 
   openr, null, 'output/'+prefix(filename)+'-nullpos.dat', /get_lun
   nnulls = 0L
@@ -93,7 +93,7 @@ function read_nulls, filename, simple=simple
 end
 
 function read_separators, filename, conlist=conlist, null_list=null_list, hcs=hcs
-  compile_opt, idl2
+  compile_opt idl2
 
   nulldata = read_nulls(filename, /simple)
 
@@ -148,7 +148,7 @@ function read_separators, filename, conlist=conlist, null_list=null_list, hcs=hc
 end
 
 function read_spines, filename, null_list=null_list
-  compile_opt, idl2
+  compile_opt idl2
   
   nulldata = read_nulls(filename, /simple)
 
@@ -182,7 +182,7 @@ function read_spines, filename, null_list=null_list
 end
 
 function read_rings, filename, nskip=nskip, breaks=breaklist, assocs=assoclist, null_list=null_list, hcs=hcs
-  compile_opt, idl2
+  compile_opt idl2
 
   nulldata = read_nulls(filename, /simple)
 

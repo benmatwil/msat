@@ -1,5 +1,5 @@
 function trilinear3d, xp, yp, zp, grid, xx, yy, zz
-  compile_opt, idl2
+  compile_opt idl2
 
   ; inputs
   ; (xp, yp, zp) point at which field required in x, y, z units
