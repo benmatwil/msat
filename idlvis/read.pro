@@ -1,3 +1,5 @@
+common shared_var_read, outdir
+
 function prefix, filename
   compile_opt idl2
 
@@ -289,5 +291,159 @@ function read_rings, filename, nskip=nskip, breaks=breaklist, assocs=assoclist, 
   endif
   
   return, ringlist
+
+end
+
+function get_cut_filename_plane, normal, d
+  compile_opt idl2
+
+  if n_elements(d) eq 1 then begin
+    d_pln = d
+  endif else begin
+    d_pln = np.sum(d*normal)
+  endelse
+
+  l = [normal, d_pln]
+  fmt = '('
+  fmt1 = 'f08.4'
+  fmt2 = 'f09.4'
+  foreach i, l, n do begin &$
+    if i ge 0 then fadd = fmt1 else fadd = fmt2 &$
+    fmt = fmt + fadd &$
+    if n ne 3 then fmt = fmt + ', A, ' &$
+  endforeach
+  fmt = fmt + ')'
+
+  return, string(l[0], '_', l[1], '_', l[2], '_', l[3], format=fmt)
+
+end
+
+function read_cut_sepsurf, filename, normal, d
+  common shared_var_read
+  compile_opt idl2
+  
+  filename_plane = get_cut_filename_plane(normal, d)
+  null_nums = list()
+  sepsurfs = list()
+  
+  nlines = 0L
+  inull = 0L
+  length = 0L
+
+  openr, ringfile, outdir+'/'+prefix(filename)+'-rings-cut_'+filename_plane+'.dat', /get_lun
+  readu, ringfile, nlines
+  for i = 1, nlines do begin
+    readu, ringfile, inull
+    null_nums.add, inull
+    readu, ringfile, length
+    sepsurf = dblarr(3, length)
+    readu, ringfile, sepsurf
+    sepsurfs.add, sepsurf
+  endfor
+  close, ringfile
+  free_lun, ringfile
+
+  return, list(sepsurfs, null_nums)
+
+end
+
+function read_cut_separators, filename, normal, d, hcs=hcs
+  common shared_var_read
+  compile_opt idl2
+
+  filename_plane = get_cut_filename_plane(normal, d)
+  null_nums = list()
+  sep_pts = list()
+  npts = 0L
+  endnum = 0L
+  sep = dblarr(3)
+
+  if keyword_set(hcs) then begin
+    openr, sepfile, outdir+'/'+prefix(filename)+'-hcs-separators-cut_'+filename_plane+'.dat', /get_lun
+    readu, sepfile, npts
+    for i = 1, npts do begin
+      readu, sepfile, endnum
+      null_nums.add, endnum
+      readu, sepfile, sep
+      sep_pts.add, sep
+    endfor
+  endif else begin
+    openr, sepfile, outdir+'/'+prefix(filename)+'-separators-cut_'+filename_plane+'.dat', /get_lun
+    readu, sepfile, npts
+    for i = 1, npts do begin
+      readu, sepfile, endnum
+      readu, sepfile, endnum
+      null_nums.add, endnum
+      readu, sepfile, sep
+      sep_pts.add, sep
+    endfor
+  endelse
+  close, sepfile
+  free_lun, sepfile
+
+  return, list(sep_pts, null_nums)
+
+end
+
+function read_cut_spines, filename, normal, d
+  common shared_var_read
+  compile_opt idl2
+
+  filename_plane = get_cut_filename_plane(normal, d)
+  null_nums = list()
+  spine_pts = list()
+
+  npts = 0L
+  inull = 0L
+  spine = dblarr(3)
+
+  openr, spinefile, outdir+'/'+prefix(filename)+'-spines-cut_'+filename_plane+'.dat', /get_lun
+  readu, spinefile, npts
+  for i = 1, npts do begin
+    readu, spinefile, inull
+    null_nums.add, inull
+    readu, spinefile, spine
+    spine_pts.add, spine
+  endfor
+  close, spinefile
+  free_lun, spinefile
+
+  return, list(spine_pts, null_nums)
+  
+end
+
+function read_cut_hcs, filename, normal, d
+  common shared_var_read
+  compile_opt idl2
+
+  filename_plane = get_cut_filename_plane(normal, d)
+  lines = list()
+
+  nlines = 0L
+  length = 0L
+  temp = 0L
+  
+  openr, hcsfile, outdir+'/'+prefix(filename)+'-hcs-cut_'+filename_plane+'.dat', /get_lun
+  readu, hcsfile, nlines
+  for i = 1, nlines do begin
+    readu, hcsfile, temp
+    readu, hcsfile, length
+    line = dblarr(3, length)
+    readu, hcsfile, line
+    lines.add, line
+  endfor
+  close, hcsfile
+  free_lun, hcsfile
+
+  return, lines
+
+end
+
+pro set_output_dir, loc
+  common shared_var_read
+  
+  if loc.endswith('/') then loc = loc.remove(-1)
+  outdir = loc
+  print, 'Changed output data directory to be "./' + outdir + '"'
 
 end
