@@ -276,24 +276,24 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=Fal
     else:
         return ringlist
 
-def get_cut_filename_plane(norm, d):
+def get_cut_filename_plane(normal, d):
     try:
         len(d)
     except TypeError:
         d_pln = d
     else:
         pt = np.array(d, dtype=np.float64)
-        d_pln = np.sum(pt*norm)
-    l = [*norm, d_pln]
+        d_pln = np.sum(pt*normal)
+    l = [*normal, d_pln]
     fmt = ''
     for i in l:
         fmt += r'{:08.4f}_' if i >= 0 else r'{:09.4f}_'
     # fmt = '{:08.4f}_{:08.4f}_{:08.4f}_{:08.4f}'
     fmt = fmt[:-1]
-    return fmt.format(*norm, d_pln)
+    return fmt.format(*normal, d_pln)
 
-def cut_sepsurf(filename, norm, d):
-    filename_plane = get_cut_filename_plane(norm, d)
+def cut_sepsurf(filename, normal, d):
+    filename_plane = get_cut_filename_plane(normal, d)
     null_nums = []
     sepsurfs = []
     with open(outdir+'/'+prefix(filename)+'-rings-cut_'+'{}.dat'.format(filename_plane), 'rb') as ringfile:
@@ -306,8 +306,8 @@ def cut_sepsurf(filename, norm, d):
             sepsurfs.append(sepsurf)
     return null_nums, sepsurfs
 
-def cut_separators(filename, norm, d, hcs=False):
-    filename_plane = get_cut_filename_plane(norm, d)
+def cut_separators(filename, normal, d, hcs=False):
+    filename_plane = get_cut_filename_plane(normal, d)
     null_nums = []
     sep_pts = []
     if hcs:
@@ -328,8 +328,8 @@ def cut_separators(filename, norm, d, hcs=False):
                 sep_pts.append(sep)
     return null_nums, sep_pts
 
-def cut_spines(filename, norm, d):
-    filename_plane = get_cut_filename_plane(norm, d)
+def cut_spines(filename, normal, d):
+    filename_plane = get_cut_filename_plane(normal, d)
     null_nums = []
     spine_pts = []
     with open(outdir+'/'+prefix(filename)+'-spines-cut_'+'{}.dat'.format(filename_plane), 'rb') as spinefile:
@@ -341,8 +341,8 @@ def cut_spines(filename, norm, d):
             spine_pts.append(spine)
     return null_nums, spine_pts
 
-def cut_hcs(filename, norm, d):
-    filename_plane = get_cut_filename_plane(norm, d)
+def cut_hcs(filename, normal, d):
+    filename_plane = get_cut_filename_plane(normal, d)
     lines = []
     with open(outdir+'/'+prefix(filename)+'-hcs-cut_{}.dat'.format(filename_plane), 'rb') as hcsfile:
         nlines, = np.fromfile(hcsfile, dtype=np.int32, count=1)
