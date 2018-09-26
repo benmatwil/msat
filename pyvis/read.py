@@ -169,6 +169,8 @@ def ringinfo(filename):
 
 def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=False):
 
+    if nskip != 1 and assocs: print('Warning: Associations not corrected for when nskip != 1. May be updated in future.')
+
     nulldata = nulls(filename, simple=True)
 
     ringlist = []

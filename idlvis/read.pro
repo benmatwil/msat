@@ -203,6 +203,8 @@ function read_rings, filename, nskip=nskip, breaks=breaklist, assocs=assoclist, 
   if keyword_set(assocs) and not file_test(assocs_filename) then print, 'Not reading in associations: file does not exist'
   if keyword_set(assocs) and file_test(assocs_filename) then do_assocs = 1 else do_assocs = 0
 
+  if nskip eq 1 and keyword_set(assocs) then print, 'Warning: Associations not corrected for when nskip ne 1. May be updated in future.'
+
   openr, rinfo, info_filename, /get_lun
   openr, ring, ring_filename, /get_lun
   openr, brks, break_filename, /get_lun
