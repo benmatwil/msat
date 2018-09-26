@@ -34,14 +34,14 @@ function trilinear3d, xp, yp, zp, grid, xx, yy, zz
   bp = dblarr(it+1)
 
   for k=0, it do begin
-    b000 = grid[ix,iy,iz,k]
-    b100 = grid[ix+1,iy,iz,k]
-    b010 = grid[ix,iy+1,iz,k]
-    b110 = grid[ix+1,iy+1,iz,k]
-    b001 = grid[ix,iy,iz+1,k]
-    b101 = grid[ix+1,iy,iz+1,k]
-    b011 = grid[ix,iy+1,iz+1,k]
-    b111 = grid[ix+1,iy+1,iz+1,k]
+    b000 = grid[ix, iy, iz, k]
+    b100 = grid[ix+1, iy, iz, k]
+    b010 = grid[ix, iy+1, iz, k]
+    b110 = grid[ix+1, iy+1, iz, k]
+    b001 = grid[ix, iy, iz+1, k]
+    b101 = grid[ix+1, iy, iz+1, k]
+    b011 = grid[ix, iy+1, iz+1, k]
+    b111 = grid[ix+1, iy+1, iz+1, k]
     
     a = b000
     b = b100 - b000
