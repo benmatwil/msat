@@ -1,7 +1,8 @@
 common shared_var_model3d, bgrid, xx, yy, zz, oModel, nulldata, ds, filename, nulllist, csystem_model3d, nskip_global, periodic_global
 
 function sphr2cart, pts
-  
+  compile_opt, idl2
+
   carts = pts
   carts[0, *] = pts[0, *]*sin(pts[1, *])*cos(pts[2, *])
   carts[1, *] = pts[0, *]*sin(pts[1, *])*sin(pts[2, *])
@@ -13,6 +14,7 @@ end
 
 pro model_add_sepsurf, nskip=nskip, draw=draw, nlines=nlines, nring=nring
   common shared_var_model3d
+  compile_opt, idl2
 
   if not keyword_set(draw) then draw = 'rings'
   if not keyword_set(nskip) then nskip = 20
@@ -91,6 +93,7 @@ end
 
 pro model_add_hcs, nskip=nskip, nlines=nlines, draw=draw
   common shared_var_model3d
+  compile_opt, idl2
 
   if not keyword_set(draw) then draw = 'rings'
   if not keyword_set(nlines) then nlines = 100
@@ -166,6 +169,7 @@ end
 
 pro model_add_spines
   common shared_var_model3d
+  compile_opt, idl2
 
   print, 'Adding Spines'
 
@@ -185,6 +189,7 @@ end
 
 pro model_add_separators, hcs=hcs
   common shared_var_model3d
+  compile_opt, idl2
 
   print, 'Adding separators'
 
@@ -207,6 +212,7 @@ end
 
 pro model_add_nulls, size=size
   common shared_var_model3d
+  compile_opt, idl2
 
   boxsize = min([xx[-1] - xx[0], yy[-1] - yy[0], zz[-1] - zz[0]])/40
   if not keyword_set(size) then size = 1
@@ -228,6 +234,7 @@ end
 
 pro model_add_fieldlines, startpts, colour=colour
   common shared_var_model3d
+  compile_opt, idl2
 
   if not keyword_set(colour) then colour = [0, 0, 0]
 
@@ -251,6 +258,7 @@ end
 
 pro model_add_box
   common shared_var_model3d
+  compile_opt, idl2
   
   print, "Adding box"
   box = dblarr(3,2)
@@ -276,6 +284,7 @@ end
 
 pro model_add_sun, absbrmax=absbrmax
   common shared_var_model3d
+  compile_opt, idl2
 
   if not keyword_set(absbrmax) then absbrmax = 10
 
@@ -320,6 +329,7 @@ end
 
 pro set_null_list, lst
   common shared_var_model3d
+  compile_opt, idl2
 
   if lst eq !null then begin
     nulllist = nulldata.number
@@ -331,6 +341,7 @@ end
 
 function mk_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf, hcs=hcs, hcs_separators=hcs_separators, spines=spines, box=box, fanlines=fanlines, nskip=nskip, null_list=null_list, coordsystem=coordsystem
   common shared_var_model3d
+  compile_opt, idl2
 
   if not keyword_set(coordsystem) then coordsystem = 'cartesian'
   csystem_model3d = coordsystem

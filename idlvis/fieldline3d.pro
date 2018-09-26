@@ -1,6 +1,7 @@
 common shared_var_fl3d, xmin, xmax, ymin, ymax, zmin, zmax, csystem_fl3d, period_fl3d
 
 function trilinear3d_grid, pt, grid
+  compile_opt, idl2
 
   ix = floor(pt[0])
   iy = floor(pt[1])
@@ -19,6 +20,7 @@ end
 
 function getdr, r, x, y, z
   common shared_var_fl3d
+  compile_opt, idl2
 
   ix = floor(r[0])
   iy = floor(r[1])
@@ -44,6 +46,7 @@ end
 
 pro edgecheck, r
   common shared_var_fl3d
+  compile_opt, idl2
 
   if period_fl3d.hasvalue(1) then begin
     if csystem_fl3d eq 'spherical' then begin
@@ -87,6 +90,7 @@ end
 
 function outedge, r
   common shared_var_fl3d
+  compile_opt, idl2
 
   if period_fl3d.hasvalue(1) then begin
     if csystem_fl3d eq 'cartesian' then begin
@@ -126,6 +130,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
   maxpoints=maxpoints, t_max=t_max, oneway=oneway, boxedge=boxedge, $
   gridcoord=gridcoord, coordsystem=coordsystem, periodicity=periodicity
   common shared_var_fl3d
+  compile_opt, idl2
 
   ; startpt[3]: start point for field line
   ; bgrid[nx, ny, nz, 3]: magnetic field 
