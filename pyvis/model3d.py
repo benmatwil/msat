@@ -60,14 +60,12 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
     periodic_check = False
     if periodicity != '':
         periodic_dist = 1e100
+        periodic_check = True
         if 'x' in periodicity:
-            periodic_check = True
             periodic_dist = min((periodic_dist, (xx[-1] - xx[0])**2))
         if 'y' in periodicity:
-            periodic_check = True
             periodic_dist = min((periodic_dist, (yy[-1] - yy[0])**2))
         if 'z' in periodicity:
-            periodic_check = True
             periodic_dist = min((periodic_dist, (zz[-1] - zz[0])**2))
     periodic_global = periodicity
 
