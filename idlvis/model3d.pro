@@ -1,4 +1,4 @@
-common shared_var_model3d, bgrid, xx, yy, zz, oModel, nulldata, ds, filename, nulllist, csystem_model3d, nskip_global, periodic_global
+common shared_var_model3d, bgrid, xx, yy, zz, oModel, nulldata, ds, filename, nulllist, csystem_model3d, nskip_global, periodic_check, periodic_dist, periodic_global
 
 function sphr2cart, pts
   compile_opt idl2
@@ -7,6 +7,18 @@ function sphr2cart, pts
   carts[0, *] = pts[0, *]*sin(pts[1, *])*cos(pts[2, *])
   carts[1, *] = pts[0, *]*sin(pts[1, *])*sin(pts[2, *])
   carts[2, *] = pts[0, *]*cos(pts[1, *])
+
+  return, carts
+
+end
+
+function cyl2cart, pts
+  compile_opt idl2
+
+  carts = pts
+  carts[0, *] = pts[0, *]*cos(pts[1, *])
+  carts[1, *] = pts[0, *]*sin(pts[1, *])
+  carts[2, *] = pts[2, *]
 
   return, carts
 
@@ -31,9 +43,14 @@ pro model_add_sepsurf, nskip=nskip, draw=draw, nlines=nlines, nring=nring
       endelse
 
       for iring = 0, n_elements(rings[inull])-1 do begin
-        brks = [-1, where(breaks[inull, iring] eq 1, /null), n_elements(breaks[inull, iring])-1]
+        ring = rings[inull, iring]
+        if periodic_check then begin
+          dists = total((ring[*, 1:-1] - ring[*, 0:-2])^2, 1)
+          brks = [-1, where(breaks[inull, iring] eq 1, /null), where(dists gt periodic_dist), n_elements(breaks[inull, iring])-1]
+        endif else begin
+          brks = [-1, where(breaks[inull, iring] eq 1, /null), n_elements(breaks[inull, iring])-1]
+        endelse
         brks = brks[uniq(brks)]
-        ring = rings[inull, iring, *, *]
         if csystem_model3d eq 'spherical' then ring = sphr2cart(ring)
         for ib = 0, n_elements(brks)-2 do begin
           oModel.add, obj_new("IDLgrPolyline", ring[0, brks[ib]+1:brks[ib+1]], ring[1, brks[ib]+1:brks[ib+1]], ring[2, brks[ib]+1:brks[ib+1]], color=colour)
@@ -83,7 +100,15 @@ pro model_add_sepsurf, nskip=nskip, draw=draw, nlines=nlines, nring=nring
 
         if csystem_model3d eq 'spherical' then line = sphr2cart(line)
 
-        oModel.add, obj_new("IDLgrPolyline", line[0, *], line[1, *], line[2, *], color=colour)
+        if periodic_check then begin
+            dists = total((ring[*, 1:-1] - ring[*, 0:-2])^2, 1)
+            brks = [-1, where(dists gt 0.9*periodic_dist), n_elements(ring)/3-1]
+            for ib = 0, n_elements(brks)-2 do begin
+              oModel.add, obj_new("IDLgrPolyline", line[0, brks[ib]+1:brks[ib+1]], line[1, brks[ib]+1:brks[ib+1]], line[2, brks[ib]+1:brks[ib+1]], color=colour)
+            endfor
+          endif else begin
+            oModel.add, obj_new("IDLgrPolyline", line[0, *], line[1, *], line[2, *], color=colour)
+          endelse
 
       endfor
 
@@ -181,7 +206,17 @@ pro model_add_spines
       
       spine = spines[inull, dir, *, *]
       if csystem_model3d eq 'spherical' then spine = sphr2cart(spine)
-      oModel.add, obj_new("IDLgrPolyline", spine[0, *], spine[1, *], spine[2, *], color=col, thick=4)
+
+      if periodic_check then begin
+        dists = total((spine[*, 1:-1] - spine[*, 0:-2])^2, 1)
+        brks = [-1, where(dists gt 0.9*periodic_dist), n_elements(spine)/3-1]
+        brks = brks[uniq(brks)]
+        for ib = 0, n_elements(brks)-2 do begin
+          oModel.add, obj_new("IDLgrPolyline", spine[0, brks[ib]+1:brks[ib+1]], spine[1, brks[ib]+1:brks[ib+1]], spine[2, brks[ib]+1:brks[ib+1]], color=col, thick=4)
+        endfor
+      endif else begin
+        oModel.add, obj_new("IDLgrPolyline", spine[0, *], spine[1, *], spine[2, *], color=col, thick=4)
+      endelse
 
     endfor
   endforeach
@@ -193,7 +228,7 @@ pro model_add_separators, hcs=hcs
 
   print, 'Adding separators'
 
-  if hcs then colour = [255, 165, 0] else colour = [255, 255, 0]
+  if keyword_set(hcs) then colour = [255, 165, 0] else colour = [255, 255, 0]
 
   seps = read_separators(filename, null_list=nulllist, hcs=hcs)
 
@@ -204,7 +239,18 @@ pro model_add_separators, hcs=hcs
     for isep = 0, n_elements(seps[inull])-1 do begin
       sep = seps[inull, isep, *, *]
       if csystem_model3d eq 'spherical' then sep = sphr2cart(sep)
-      oModel.add, obj_new("IDLgrPolyline", sep[0, *], sep[1, *], sep[2, *], color=colour, thick=4)
+
+      if periodic_check then begin
+        dists = total((sep[*, 1:-1] - sep[*, 0:-2])^2, 1)
+        brks = [-1, where(dists gt 0.9*periodic_dist), n_elements(line)/2-1]
+        brks = brks[uniq(brks)]
+        for ib = 0, n_elements(brks)-2 do begin
+          oModel.add, obj_new("IDLgrPolyline", sep[0, brks[ib]+1:brks[ib+1]], sep[1, brks[ib]+1:brks[ib+1]], sep[2, brks[ib]+1:brks[ib+1]], color=colour, thick=4)
+        endfor
+      endif else begin
+        oModel.add, obj_new("IDLgrPolyline", sep[0, *], sep[1, *], sep[2, *], color=colour, thick=4)
+      endelse
+
     endfor
 
   endforeach
@@ -250,7 +296,16 @@ pro model_add_fieldlines, startpts, colour=colour
 
     if csystem_model3d eq 'spherical' then line = sphr2cart(line)
 
-    oModel.add, obj_new("IDLgrPolyline", line[0, *], line[1, *], line[2, *], color=colour)
+    if periodic_check then begin
+      dists = total((line[*, 1:-1] - line[*, 0:-2])^2, 1)
+      brks = [-1, where(dists gt 0.9*periodic_dist), n_elements(line)/3-1]
+      brks = brks[uniq(brks)]
+      for ib = 0, n_elements(brks)-2 do begin
+        oModel.add, obj_new("IDLgrPolyline", line[0, brks[ib]+1:brks[ib+1]], line[1, brks[ib]+1:brks[ib+1]], line[2, brks[ib]+1:brks[ib+1]], color=colour)
+      endfor
+    endif else begin
+      oModel.add, obj_new("IDLgrPolyline", line[0, *], line[1, *], line[2, *], color=colour)
+    endelse
 
   endfor
 
@@ -291,16 +346,16 @@ pro model_add_sun, absbrmax=absbrmax
   br_sun = reform(bgrid[0, *, *, 0])
   brsun = transpose(br_sun)
   nsz = size(brsun)
-  np = nsz(1)
-  nt = nsz(2)
+  np = nsz[1]
+  nt = nsz[2]
   br_tsun = brsun
   for k = 0, nt-1 do br_tsun[*, k] = brsun[*, nt-1-k]
   brmax = max(abs(br_tsun)) 
   vc = float(br_tsun)
   ii = where(br_tsun gt brmax*0.25)
-  vc(ii) = brmax*0.25
+  vc[ii] = brmax*0.25
   ii = where(br_tsun lt -brmax*0.25)
-  vc(ii) = -brmax*0.25
+  vc[ii] = -brmax*0.25
   vc = fix(((vc+brmax*0.25)/(brmax*0.5))*255)
 
   vert_colour = fltarr(3, np*nt)
@@ -339,7 +394,7 @@ pro set_null_list, lst
   endelse
 end
 
-function mk_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf, hcs=hcs, hcs_separators=hcs_separators, spines=spines, box=box, fanlines=fanlines, nskip=nskip, null_list=null_list, coordsystem=coordsystem
+function make_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf, hcs=hcs, hcs_separators=hcs_separators, spines=spines, box=box, fanlines=fanlines, nskip=nskip, null_list=null_list, coordsystem=coordsystem, periodicity=periodicity
   common shared_var_model3d
   compile_opt idl2
 
@@ -356,6 +411,16 @@ function mk_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf, h
   field = !null
 
   ds = min([min(xx[1:-1] - xx[0:-2]), min(yy[1:-1] - yy[0:-2]), min(zz[1:-1] - zz[0:-2])])
+
+  periodic_check = 0
+  if keyword_set(periodicity) then begin
+    periodic_dist = 1d100
+    periodic_check = 1
+    if periodicity.contains('x') then periodic_dist = min([periodic_dist, (xx[-1] - xx[0])^2])
+    if periodicity.contains('y') then periodic_dist = min([periodic_dist, (yy[-1] - yy[0])^2])
+    if periodicity.contains('z') then periodic_dist = min([periodic_dist, (zz[-1] - zz[0])^2])
+  endif
+  if keyword_set(periodicity) then periodic_global = periodicity
 
   nulldata = read_nulls(filename)
   set_null_list, null_list
