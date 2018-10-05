@@ -3,8 +3,15 @@ common shared_var_read, outdir
 function prefix, filename
   compile_opt idl2
 
-    file1 = strmid(filename, strlen('data/'), strlen(filename))
-    file1 = strmid(file1, 0, strlen(file1)-strlen('.dat'))
+    ; file1 = strmid(filename, strlen('data/'), strlen(filename))
+    ; file1 = strmid(file1, 0, strlen(file1)-strlen('.dat'))
+    ; dot = filename[::-1].find('.')
+    ; slash = filename[::-1].find('/')
+
+    dot = filename.lastindexof('.')
+    slash = filename.lastindexof('/')
+    len = filename.strlen()
+    file1 = filename.substring(slash+1, dot-1)
 
     return, file1
 
@@ -12,6 +19,7 @@ end
 
 function read_field, filename, grid=grid
   compile_opt idl2
+  common shared_var_read
 
   openr, field, filename, /get_lun
   nx = 0L
@@ -42,8 +50,9 @@ end
 
 function read_nulls, filename, simple=simple
   compile_opt idl2
+  common shared_var_read
 
-  openr, null, 'output/'+prefix(filename)+'-nullpos.dat', /get_lun
+  openr, null, outdir+'/'+prefix(filename)+'-nullpos.dat', /get_lun
   nnulls = 0L
   readu, null, nnulls
   if nnulls gt 0 then begin
@@ -62,7 +71,7 @@ function read_nulls, filename, simple=simple
     free_lun, null
 
     if not keyword_set(simple) then begin
-      openr, null, 'output/'+prefix(filename)+'-nulldata.dat', /get_lun
+      openr, null, outdir+'/'+prefix(filename)+'-nulldata.dat', /get_lun
       nnulls = 0L
       readu, null, nnulls
 
@@ -96,16 +105,17 @@ end
 
 function read_separators, filename, conlist=conlist, null_list=null_list, hcs=hcs
   compile_opt idl2
+  common shared_var_read
 
   nulldata = read_nulls(filename, /simple)
 
   if not keyword_set(hcs) then begin
-    openr, con, 'output/'+prefix(filename)+'-connectivity.dat', /get_lun
-    openr, sep, 'output/'+prefix(filename)+'-separators.dat', /get_lun
+    openr, con, outdir+'/'+prefix(filename)+'-connectivity.dat', /get_lun
+    openr, sep, outdir+'/'+prefix(filename)+'-separators.dat', /get_lun
     allnulls_list = nulldata.number
   endif else begin
-    openr, con, 'output/'+prefix(filename)+'-hcs-connectivity.dat', /get_lun
-    openr, sep, 'output/'+prefix(filename)+'-hcs-separators.dat', /get_lun
+    openr, con, outdir+'/'+prefix(filename)+'-hcs-connectivity.dat', /get_lun
+    openr, sep, outdir+'/'+prefix(filename)+'-hcs-separators.dat', /get_lun
     allnulls_list = [1]
   endelse
 
@@ -151,6 +161,7 @@ end
 
 function read_spines, filename, null_list=null_list
   compile_opt idl2
+  common shared_var_read
   
   nulldata = read_nulls(filename, /simple)
 
@@ -159,7 +170,7 @@ function read_spines, filename, null_list=null_list
   spinelist = list()
   length = 0L
 
-  openr, spi, 'output/'+prefix(filename)+'-spines.dat', /get_lun
+  openr, spi, outdir+'/'+prefix(filename)+'-spines.dat', /get_lun
 
   foreach inull, nulldata.number do begin
     spinelisti = list()
@@ -185,21 +196,22 @@ end
 
 function read_rings, filename, nskip=nskip, breaks=breaklist, assocs=assoclist, null_list=null_list, hcs=hcs
   compile_opt idl2
+  common shared_var_read
 
   nulldata = read_nulls(filename, /simple)
 
   if not keyword_set(nskip) then nskip = 1
 
   if keyword_set(hcs) then begin
-    assocs_filename = 'output/'+prefix(filename)+'-hcs-assocs.dat'
-    info_filename = 'output/'+prefix(filename)+'-hcs-ringinfo.dat'
-    ring_filename = 'output/'+prefix(filename)+'-hcs-rings.dat'
-    break_filename = 'output/'+prefix(filename)+'-hcs-breaks.dat'
+    assocs_filename = outdir+'/'+prefix(filename)+'-hcs-assocs.dat'
+    info_filename = outdir+'/'+prefix(filename)+'-hcs-ringinfo.dat'
+    ring_filename = outdir+'/'+prefix(filename)+'-hcs-rings.dat'
+    break_filename = outdir+'/'+prefix(filename)+'-hcs-breaks.dat'
   endif else begin
-    assocs_filename = 'output/'+prefix(filename)+'-assocs.dat'
-    info_filename = 'output/'+prefix(filename)+'-ringinfo.dat'
-    ring_filename = 'output/'+prefix(filename)+'-rings.dat'
-    break_filename = 'output/'+prefix(filename)+'-breaks.dat'
+    assocs_filename = outdir+'/'+prefix(filename)+'-assocs.dat'
+    info_filename = outdir+'/'+prefix(filename)+'-ringinfo.dat'
+    ring_filename = outdir+'/'+prefix(filename)+'-rings.dat'
+    break_filename = outdir+'/'+prefix(filename)+'-breaks.dat'
   endelse
 
   if keyword_set(assocs) and not file_test(assocs_filename) then print, 'Not reading in associations: file does not exist'
@@ -210,7 +222,7 @@ function read_rings, filename, nskip=nskip, breaks=breaklist, assocs=assoclist, 
   openr, rinfo, info_filename, /get_lun
   openr, ring, ring_filename, /get_lun
   openr, brks, break_filename, /get_lun
-  if do_assocs then openr, ass, 'output/'+prefix(filename)+'-assocs.dat', /get_lun
+  if do_assocs then openr, ass, outdir+'/'+prefix(filename)+'-assocs.dat', /get_lun
 
   ringsmax = 0L
   writeskip = 0L
@@ -296,6 +308,7 @@ end
 
 function get_cut_filename_plane, normal, d
   compile_opt idl2
+  common shared_var_read
 
   if n_elements(d) eq 1 then begin
     d_pln = d
