@@ -58,15 +58,24 @@ module common
     subroutine print_params
       ! allows the user to find out what parameters have been set in params.f90 when executable was compiled
 
+      print*, 'GLOBAL PARAMETERS:'
       print*, 'np =', np
       print*, 'nproc =', nproc
+      print*, ''
+      print*, 'NF PARAMETERS:'
       print*, 'zero =', zero
       print*, 'sig_figs =', sig_figs
+      print*, 'boundary_nulls = ', boundary_nulls
+      print*, 'gridpoint_nulls = ', gridpoint_nulls
+      print*, ''
+      print*, 'SF PARAMETERS:'
       print*, 'rspherefact =', rspherefact
       print*, 'nphi =', nphi
       print*, 'ntheta =', ntheta
       print*, 'maxiter =', maxiter
       print*, 'dist_mult =', dist_mult
+      print*, ''
+      print*, 'SSF PARAMETERS:'
       print*, 'nstart =', nstart
       print*, 'start_dist =', start_dist
       print*, 'ringsmax =', ringsmax
@@ -88,6 +97,7 @@ module common
       print*, 'periodic_z =', periodic_z
       print*, 'periodic_theta =', periodic_theta
       print*, 'periodic_phi =', periodic_phi
+      print*, 'one_sep_per_ring =', one_sep_per_ring
 
     end
 
@@ -403,9 +413,7 @@ module common
           if (r(2) >= ymax) r(2) = r(2) - (ymax - ymin)
         endif
         if (periodic_z) then
-          if (r(3) <= zmin) then
-            r(3) = r(3) + (zmax - zmin)
-          endif
+          if (r(3) <= zmin) r(3) = r(3) + (zmax - zmin)
           if (r(3) >= zmax) r(3) = r(3) - (zmax - zmin)
         endif
       endif
