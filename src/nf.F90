@@ -54,6 +54,8 @@ program nullfinder
 
   close(10)
 
+  call system_clock(tstart, count_rate) ! to time how long it takes
+
   call nullpts%create()
 
   xmax = nx
@@ -247,7 +249,7 @@ program nullfinder
     counter = 0
     do j = 1, nnulls
       do i = j+1, nnulls
-        distance = dist(rnulls(:, i), rnulls(:, j)) < 1
+        distance = dist(rnulls(:, i), rnulls(:, j))
         if (distance < 1) then
           print *, i, j, distance
           counter = counter + 1
@@ -275,5 +277,9 @@ program nullfinder
   close(10)
 
   call nullpts%destroy()
+
+  ! print final run time
+  call system_clock(tstop, count_rate)
+  print*, 'Time taken:', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"
 
 end program

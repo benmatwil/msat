@@ -12,8 +12,6 @@ program ssfinder
 
   implicit none
 
-  integer(int64) :: tstart, tstop, count_rate ! to time program
-
   real(np) :: r(3)
   real(np) :: h, h0
   real(np) :: slowdown, slowdist
@@ -78,7 +76,7 @@ program ssfinder
   zmax = nz
   print*, "Data read in, grid dimensions are", nx, ny, nz
 
-  call system_clock(tstart,count_rate) ! to time how long it takes
+  call system_clock(tstart, count_rate) ! to time how long it takes
 
   ! read in null data
   open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')

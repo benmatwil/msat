@@ -18,6 +18,8 @@ module common
   real(np), parameter :: dtor = pi/180.0_np
   character(:), allocatable :: filein, fileout
 
+  integer(int64) :: tstart, tstop, count_rate ! to time programs
+
   contains
 
     subroutine filenames
