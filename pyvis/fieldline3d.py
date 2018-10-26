@@ -101,8 +101,10 @@ def edgecheck(r, minmax, csystem, periodicity):
     Checks whether a point, r, has exited the grid through a periodic boundary and if so, moves the point back into the grid using the periodicity.
     """
     if np.any(periodicity):
+        # spherical
         if csystem[2]:
-            if periodicity[3]:
+            # if theta periodic
+            if periodicity[1]:
                 if r[1] < minmax[2] or r[1] > minmax[3]:
                     if r[1] < minmax[2]: r[1] = 2*minmax[2] - r[1]
                     if r[1] > minmax[3]: r[1] = 2*minmax[3] - r[1]
@@ -110,23 +112,30 @@ def edgecheck(r, minmax, csystem, periodicity):
                         r[2] = r[2] + (minmax[5] - minmax[4])/2
                     else:
                         r[2] = r[2] - (minmax[5] - minmax[4])/2
-            if periodicity[4]:
-                if r[2] <= minmax[4]: r[2] = r[2] + (minmax[5] - minmax[4])
-                if r[2] >= minmax[5]: r[2] = r[2] - (minmax[5] - minmax[4])
-        elif csystem[0]:
-            if periodicity[0]:
-                if r[0] <= minmax[0]: r[0] = r[0] + (minmax[1] - minmax[0])
-                if r[0] >= minmax[1]: r[0] = r[0] - (minmax[1] - minmax[0])
-            if periodicity[1]:
-                if r[1] <= minmax[2]: r[1] = r[1] + (minmax[3] - minmax[2])
-                if r[1] >= minmax[3]: r[1] = r[1] - (minmax[3] - minmax[2])
+            # if phi periodic
             if periodicity[2]:
                 if r[2] <= minmax[4]: r[2] = r[2] + (minmax[5] - minmax[4])
                 if r[2] >= minmax[5]: r[2] = r[2] - (minmax[5] - minmax[4])
+        # cartesian
+        elif csystem[0]:
+            # if x periodic
+            if periodicity[0]:
+                if r[0] <= minmax[0]: r[0] = r[0] + (minmax[1] - minmax[0])
+                if r[0] >= minmax[1]: r[0] = r[0] - (minmax[1] - minmax[0])
+            # if y periodic
+            if periodicity[1]:
+                if r[1] <= minmax[2]: r[1] = r[1] + (minmax[3] - minmax[2])
+                if r[1] >= minmax[3]: r[1] = r[1] - (minmax[3] - minmax[2])
+            # if z periodic
+            if periodicity[2]:
+                if r[2] <= minmax[4]: r[2] = r[2] + (minmax[5] - minmax[4])
+                if r[2] >= minmax[5]: r[2] = r[2] - (minmax[5] - minmax[4])
+        # cylindrical
         elif csystem[1]:
-            if periodicity[4]:
-                if r[2] < minmax[2]: r[2] = r[2] + (minmax[3] - minmax[2])
-                if r[2] > minmax[3]: r[2] = r[2] - (minmax[3] - minmax[2])
+            # if phi periodic
+            if periodicity[1]:
+                if r[1] < minmax[2]: r[1] = r[1] + (minmax[3] - minmax[2])
+                if r[1] > minmax[3]: r[1] = r[1] - (minmax[3] - minmax[2])
 
 @njit
 def outedge(r, minmax_box, csystem, periodicity):
@@ -134,23 +143,32 @@ def outedge(r, minmax_box, csystem, periodicity):
     Checks whether a point, r, has left the domain.
     """
     if np.any(periodicity):
+        # cartesian
         if csystem[0]:
             outedge = False
+            # if no x periodicity
             if not periodicity[0]:
                 outedge = outedge or r[0] >= minmax_box[1] or r[0] <= minmax_box[0]
+            # if no y periodicity
             if not periodicity[1]:
                 outedge = outedge or r[1] >= minmax_box[3] or r[1] <= minmax_box[2]
+            # if no z periodicity
             if not periodicity[2]:
                 outedge = outedge or r[2] >= minmax_box[5] or r[2] <= minmax_box[4]
+        # spherical
         elif csystem[2]:
             outedge = r[0] >= minmax_box[1] or r[0] <= minmax_box[0]
-            if not periodicity[3]:
+            # if no theta periodicity
+            if not periodicity[1]:
                 outedge = outedge or r[1] >= minmax_box[3] or r[1] <= minmax_box[2]
-            if not periodicity[4]:
+            # if no phi periodicity
+            if not periodicity[2]:
                 outedge = outedge or r[2] >= minmax_box[5] or r[2] <= minmax_box[4]
+        # cylindrical
         elif csystem[1]:
             outedge = r[0] >= minmax_box[1] or r[0] <= minmax_box[0] or r[2] >= minmax_box[5] or r[2] <= minmax_box[4]
-            if not periodicity[4]:
+            # if no phi periodicity
+            if not periodicity[1]:
                 outedge = outedge or r[1] >= minmax_box[3] or r[1] <= minmax_box[2]
     else:
         outedge = r[0] >= minmax_box[1] or r[0] <= minmax_box[0] or r[1] >= minmax_box[3] or r[1] <= minmax_box[2] or r[2] >= minmax_box[5] or r[2] <= minmax_box[4]
@@ -342,7 +360,7 @@ def rkf45(r0, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints, oneway,
 
 def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints=50000,
     t_max=1.1, oneway=False, boxedge=None, coordsystem='cartesian', gridcoord=False,
-    stop_criteria=True, periodicity=''):
+    stop_criteria=True, periodicity=None):
     """
     Calculates 3D field line which goes through the point startpt
     startpt - 3 element, 1D array as start point for field line calculation
@@ -371,28 +389,42 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints=50000
         ], dtype=np.bool_)
     
     # create array for periodicities
-    periodicity = np.array([
-        True if 'x' in periodicity else False,
-        True if 'y' in periodicity else False,
-        True if 'z' in periodicity else False,
-        False if 't' in periodicity else True,
-        False if 'p' in periodicity else True
-        ], dtype=np.bool_)
+    if periodicity is None:
+        periodicity = np.array([False, False, False], dtype=np.bool_)
+    else:
+        if coordsystem == 'cartesian':
+            periodicity = np.array([
+                True if 'x' in periodicity else False,
+                True if 'y' in periodicity else False,
+                True if 'z' in periodicity else False,
+                ], dtype=np.bool_)
+        elif coordsystem == 'cylindrical':
+            periodicity = np.array([
+                False,
+                False if 'p' in periodicity else True,
+                False if 'z' in periodicity else True
+                ], dtype=np.bool_)
+        elif coordsystem == 'spherical':
+            periodicity = np.array([
+                False,
+                False if 't' in periodicity else True,
+                False if 'p' in periodicity else True
+                ], dtype=np.bool_)
     
     # define edges of box
     minmax = np.array([0, x.shape[0]-1, 0, y.shape[0]-1, 0, z.shape[0]-1], dtype=np.float64)
     if boxedge is not None:
         minmax_box = np.array([
             max([boxedge[0, 0], x.min()]),
-            max([boxedge[0, 1], y.min()]),
-            max([boxedge[0, 2], z.min()]),
             min([boxedge[1, 0], x.max()]),
+            max([boxedge[0, 1], y.min()]),
             min([boxedge[1, 1], y.max()]),
+            max([boxedge[0, 2], z.min()]),
             min([boxedge[1, 2], z.max()])
             ], dtype=np.float64)
     else:
         minmax_box = minmax
-
+    
     # first convert point into grid coordinates
     if not gridcoord:
         ix = np.argwhere(startpt[0] >= x).max()

@@ -50,7 +50,7 @@ pro edgecheck, r
 
   if period_fl3d.hasvalue(1) then begin
     if csystem_fl3d eq 'spherical' then begin
-      if period_fl3d[3] then begin
+      if period_fl3d[1] then begin
         if r[1] lt ymin or r[1] gt ymax then begin
           if r[1] lt ymin then r[1] = 2*ymin - r[1]
           if r[1] gt ymax then r[1] = 2*ymax - r[1]
@@ -61,7 +61,7 @@ pro edgecheck, r
           endelse
         endif
       endif
-      if period_fl3d[4] then begin
+      if period_fl3d[2] then begin
         if r[2] le zmin then r[2] = r[2] + (zmax - zmin)
         if r[2] ge zmax then r[2] = r[2] - (zmax - zmin)
       endif
@@ -79,9 +79,9 @@ pro edgecheck, r
         if r[2] ge zmax then r[2] = r[2] - (zmax - zmin)
       endif
     endif else if csystem_fl3d eq 'cylindrical' then begin
-      if period_fl3d[4] then begin
-        if r[2] lt ymin then r[2] = r[2] + (ymax - ymin)
-        if r[2] gt ymax then r[2] = r[2] - (ymax - ymin)
+      if period_fl3d[1] then begin
+        if r[2] lt ymin then r[1] = r[1] + (ymax - ymin)
+        if r[2] gt ymax then r[1] = r[1] - (ymax - ymin)
       endif
     endif
   endif
@@ -152,27 +152,38 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
   if not keyword_set(coordsystem) then coordsystem = 'cartesian'
   csystem_fl3d = coordsystem
 
+  period_fl3d = bytarr(3)
   if not keyword_set(periodicity) then periodicity = ''
-  chks = ['*x*', '*y*', '*z*', '*t*', '*p*']
-  period_fl3d = bytarr(5)
-  for i = 0, 2 do period_fl3d[i] = strmatch(periodicity, chks[i])
-  for i = 3, 4 do period_fl3d[i] = not strmatch(periodicity, chks[i])
+  
+  if coordsystem eq 'cartesian' then begin
+    period_fl3d[0] = strmatch(periodicity, '*x*')
+    period_fl3d[1] = strmatch(periodicity, '*y*')
+    period_fl3d[2] = strmatch(periodicity, '*z*')
+  endif else if coordsystem eq 'cylindrical' then begin
+    period_fl3d[0] = 0b
+    period_fl3d[1] = not strmatch(periodicity, '*p*')
+    period_fl3d[2] = strmatch(periodicity, '*z*')
+  endif else if coordsystem eq 'spherical' then begin
+    period_fl3d[0] = 0b
+    period_fl3d[1] = not strmatch(periodicity, '*t*')
+    period_fl3d[2] = not strmatch(periodicity, '*p*')
+  endif
 
   ; define edges of box
   if keyword_set(boxedge) then begin
-    xmin = max([boxedge[0,0],min(x)])
-    ymin = max([boxedge[0,1],min(y)])
-    zmin = max([boxedge[0,2],min(z)])
-    xmax = min([boxedge[1,0],max(x)])
-    ymax = min([boxedge[1,1],max(y)])
-    zmax = min([boxedge[1,2],max(z)])
+    xmin = max([boxedge[0, 0],min(x)])
+    ymin = max([boxedge[0, 1],min(y)])
+    zmin = max([boxedge[0, 2],min(z)])
+    xmax = min([boxedge[1, 0],max(x)])
+    ymax = min([boxedge[1, 1],max(y)])
+    zmax = min([boxedge[1, 2],max(z)])
   endif else begin
     xmin = 0
     ymin = 0
     zmin = 0
-    xmax = n_elements(x)-1
-    ymax = n_elements(y)-1
-    zmax = n_elements(z)-1
+    xmax = n_elements(x) - 1
+    ymax = n_elements(y) - 1
+    zmax = n_elements(z) - 1
   endelse
 
   b2 = 0.25d
