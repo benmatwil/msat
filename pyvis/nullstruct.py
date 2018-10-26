@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os
 
-def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=5e-2, coordsystem='cartesian', draw_scale=1, figsize=(10, 10)):
+def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=5e-2,
+    coordsystem='cartesian', draw_scale=1, figsize=(10, 10), sf_debug=False):
 
     if converge == True:
         if coordsystem == 'cartesian':
@@ -14,8 +15,13 @@ def plot(n, filename, converge=True, fan=False, ball=True, rsphere=1e-4, h0=5e-2
             coord = 'rpz'
         elif coordsystem == 'spherical':
             coord = 'rtp'
+        makestr = 'make sf{}'.format(coord)
+        if sf_debug:
+            makestr = makestr + ' debug=on'
+            print('Removing sf exectutable to recompile in debug')
+            os.system('rm -f sf{}'.format(coord))
         os.system('make sf{} debug=on'.format(coord))
-        os.system('./sf{0} -i {1} -n {2:04d}'.format(coord, filename, n) )
+        os.system('./sf{0} -i {1} -n {2:04d}'.format(coord, filename, n))
 
     bgrid, xgc, ygc, zgc = rd.field(filename, grid=True)
     
