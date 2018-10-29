@@ -375,9 +375,9 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints=50000
     maxpoints - maximum number of points (including starting point) on a fieldline in one direction (maximum of 2*maxpoints - 1 if traced in both directions)
     t_max - maximum value of correction factor in RKF45 method
     oneway - whether to only calculate field in one direction (sign of h)
-    boxedge - use a smaller domain than edge of the grids x, y and z
+    boxedge - use a smaller domain than edge of the grids x, y and z (2x3 array)
     coordsystem - set the coordinate system of the magnetic field grid
-    gridcoord - use grid coordinates as input and output to routine
+    gridcoord - use grid coordinates as input and output to routine (startpt and boxedge)
     stop_critieria - use the stopping criteria to detect if field line has stopped inside domain
     periodicity - set the periodicity of the grid e.g. 'xy' for periodicity in both x and y direction
     """
@@ -390,7 +390,12 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints=50000
     
     # create array for periodicities
     if periodicity is None:
-        periodicity = np.array([False, False, False], dtype=np.bool_)
+        if coordsystem == 'cartesian':
+            periodicity = np.array([False, False, False], dtype=np.bool_)
+        elif coordsystem == 'cylindrical':
+            periodicity = np.array([False, True, False], dtype=np.bool_)
+        elif coordsystem == 'spherical':
+            periodicity = np.array([False, True, True], dtype=np.bool_)
     else:
         if coordsystem == 'cartesian':
             periodicity = np.array([
@@ -402,7 +407,7 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints=50000
             periodicity = np.array([
                 False,
                 False if 'p' in periodicity else True,
-                False if 'z' in periodicity else True
+                True if 'z' in periodicity else False
                 ], dtype=np.bool_)
         elif coordsystem == 'spherical':
             periodicity = np.array([
@@ -414,13 +419,21 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints=50000
     # define edges of box
     minmax = np.array([0, x.shape[0]-1, 0, y.shape[0]-1, 0, z.shape[0]-1], dtype=np.float64)
     if boxedge is not None:
+        periodicity[:] = False
+        boxedge1 = boxedge.copy()
+        if not gridcoord:
+            for idim, dim in enumerate([x, y, z]):
+                for im in range(2):
+                    index = np.argwhere(boxedge[im, idim] >= dim).max()
+                    boxedge1[im, idim] = index + (boxedge[im, idim] - dim[index])/(dim[index+1] - dim[index])
+        
         minmax_box = np.array([
-            max([boxedge[0, 0], x.min()]),
-            min([boxedge[1, 0], x.max()]),
-            max([boxedge[0, 1], y.min()]),
-            min([boxedge[1, 1], y.max()]),
-            max([boxedge[0, 2], z.min()]),
-            min([boxedge[1, 2], z.max()])
+            max([boxedge1[0, 0], minmax[0]]),
+            min([boxedge1[1, 0], minmax[1]]),
+            max([boxedge1[0, 1], minmax[2]]),
+            min([boxedge1[1, 1], minmax[3]]),
+            max([boxedge1[0, 2], minmax[4]]),
+            min([boxedge1[1, 2], minmax[5]])
             ], dtype=np.float64)
     else:
         minmax_box = minmax
@@ -439,18 +452,19 @@ def fieldline3d(startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, maxpoints=50000
         r0 = startpt.copy()
 
     # Produce an error if the first point isn't in the box
-    if startpt[0] < x[0] or startpt[0] > x[-1] or startpt[1] < y[0] or startpt[1] > y[-1] or startpt[2] < z[0] or startpt[2] > z[-1]:
+    if (r0[0] < minmax_box[0] or r0[0] > minmax_box[1] or 
+        r0[1] < minmax_box[2] or r0[1] > minmax_box[3] or 
+        r0[2] < minmax_box[4] or r0[2] > minmax_box[5]):
         print("Error: Start point not in range")
-        print("Start point is: {} {} {}".format(startpt[0],startpt[1],startpt[2]))
-        if (startpt[0] < x[0] or startpt[0] > x[-1]):
+        print("Start point is: {} {} {}".format(startpt[0], startpt[1], startpt[2]))
+        
+        if (r0[0] < minmax_box[0] or r0[0] > minmax_box[1]):
             print("{} (x) is the issue".format(startpt[0]))
-        if (startpt[1] < y[0] or startpt[1] > y[-1]):
+        if (r0[1] < minmax_box[2] or r0[1] > minmax_box[3]):
             print("{} (y) is the issue".format(startpt[1]))
-        if (startpt[2] < z[0] or startpt[2] > z[-1]):
+        if (r0[2] < minmax_box[4] or r0[2] > minmax_box[5]):
             print("{} (z) is the issue".format(startpt[2]))
-        print("Bounds are: x[0] = {}, x[-1] = {}".format(x[0], x[-1]))
-        print("Bounds are: y[0] = {}, y[-1] = {}".format(y[0], y[-1]))
-        print("Bounds are: z[0] = {}, z[-1] = {}".format(z[0], z[-1]))
+        
         raise ValueError
     elif not (hmin < np.abs(h) < hmax):
         print('You need to satisfy hmin ({}) < h ({}) < hmax({})'.format(hmin, h, hmax))

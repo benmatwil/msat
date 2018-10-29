@@ -144,8 +144,8 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
   ; maxpoints: maximum number of points (including starting point) on a fieldline in one direction (maximum of 2*maxpoints - 1 if traced in both directions)
   ; t_max: change maximum value which h can increase by at each iteration
   ; oneway: only let field line trace in one direction (direction of h)
-  ; boxedge: create articifical edges to magnetic field grid
-  ; gridcoord: startpt is given in grid coordinates, output also in grid coordinates
+  ; boxedge: create articifical edges to magnetic field grid (2x3 array)
+  ; gridcoord: startpt and boxedge is given in grid coordinates, output also in grid coordinates
   ; coordsystem: coordinate system of grid; 'cartesian', 'cylindrical' or 'spherical'
   ; periodicity - set the periodicity of the grid e.g. 'xy' for periodicity in both x and y direction
 
@@ -171,12 +171,22 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
 
   ; define edges of box
   if keyword_set(boxedge) then begin
-    xmin = max([boxedge[0, 0],min(x)])
-    ymin = max([boxedge[0, 1],min(y)])
-    zmin = max([boxedge[0, 2],min(z)])
-    xmax = min([boxedge[1, 0],max(x)])
-    ymax = min([boxedge[1, 1],max(y)])
-    zmax = min([boxedge[1, 2],max(z)])
+    period_fl3d[*] = 0b
+    boxedge1 = boxedge
+    if not keyword_set(gridcoord) then begin
+      foreach dim, list(x, y, z), idim do begin
+        for im = 0, 1 do begin
+          index = max(where(boxedge[im, idim] ge dim))
+          boxedge1[im, idim] = index + (boxedge[im, idim] - dim[index])/(dim[index+1] - dim[index])
+        endfor    
+      endforeach
+    endif
+    xmin = max([boxedge1[0, 0], 0])
+    xmax = min([boxedge1[1, 0], n_elements(x) - 1])
+    ymin = max([boxedge1[0, 1], 0])
+    ymax = min([boxedge1[1, 1], n_elements(y) - 1])
+    zmin = max([boxedge1[0, 2], 0])
+    zmax = min([boxedge1[1, 2], n_elements(z) - 1])
   endif else begin
     xmin = 0
     ymin = 0
@@ -213,19 +223,19 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
   y0 = startpt[1]
   z0 = startpt[2]
 
-  if (startpt[0] lt x[0] or startpt[0] gt x[-1] or startpt[1] lt y[0] or startpt[1] gt y[-1] or startpt[2] lt z[0] or startpt[2] gt z[-1]) then begin
+  if (r0[0] lt xmin or r0[0] gt xmax or r0[1] lt ymin or r0[1] gt ymax or r0[2] lt zmin or r0[2] gt zmax) then begin
     print, "Error: Start point not in range"
-    print, "Start point is:", x0,y0,z0
-    if (x0 lt xmin or x0 gt xmax) then print, x0, " (x0) is the issue"
-    if (y0 lt ymin or y0 gt ymax) then print, y0, " (y0) is the issue"
-    if (z0 lt zmin or z0 gt zmax) then print, z0, " (z0) is the issue"
-    print, "Bounds are: ", "xmin = ", xmin, " xmax = ", xmax
-    print, "Bounds are: ", "ymin = ", ymin, " ymax = ", ymax
-    print, "Bounds are: ", "zmin = ", zmin, " zmax = ", zmax
+    print, "Start point is:", startpt
+    if (r0[0] lt xmin or r0[0] gt xmax) then print, startpt[0], " (x) is the issue"
+    if (r0[1] lt ymin or r0[1] gt ymax) then print, startpt[1], " (y) is the issue"
+    if (r0[2] lt zmin or r0[2] gt zmax) then print, startpt[2], " (z) is the issue"
+    print, "Bounds are: ", "xmin = ", x[0], " xmax = ", x[-1]
+    print, "Bounds are: ", "ymin = ", y[0], " ymax = ", y[-1]
+    print, "Bounds are: ", "zmin = ", z[0], " zmax = ", z[-1]
 
-    return, [x0,y0,z0]
+    message, 'Start point error'
   endif else if not (hmin < h and h < hmax) then begin
-    print, "You need to satisfy hmin < h < hmax"
+    message, "You need to satisfy hmin < h < hmax"
   endif
 
   if not keyword_set(maxpoints) then maxpoints = 50000
