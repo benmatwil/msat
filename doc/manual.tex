@@ -16,6 +16,9 @@
 \usepackage{enumitem}
 \usetikzlibrary{3d,calc,intersections,patterns,positioning,tikzmark}
 
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[cm]{sfmath}
+
 \raggedright
 \linespread{1.3}
 \setlist[description]{labelindent=1cm, leftmargin=!, labelwidth=1cm}
@@ -43,22 +46,23 @@
 
     The MSAT package also includes codes to calculate the heliospheric current sheet and its curtains, as well as bald patches in global solar magnetic field data set that have spherical geometry.
 
-    These codes that are written using the Fortran 2008 standard so should be compiler independent and are parallelised using OpenMP. They have been tested and compiled using the free-to-use GFortran 4.8.5 on Linux. It has also been provisionally tested to work well on Windows using the Windows Subsystem for Linux and GFortran.
+    These codes that are written using the Fortran 2008 standard so should be compiler independent and are parallelised using OpenMP. They have been tested and compiled using the free-to-use GNU Fortran compiler version 4.8.5 on Linux. It has also been provisionally tested to work well on Windows using the Windows Subsystem for Linux and Ubuntu's GNU Fortran compiler (version 7).
 
-    The MSAT package also provides several scripts in Python and IDL for visualisation of the output which have been tested using recent versions of Python (3.5) and IDL (8.5). The Python visualisation tools should, in the main, work with Python 2, but as it will be officially unsupported in the near future, development has concentrated on Python 3.
+    The MSAT package also provides several scripts in Python and IDL for visualisation of the output which have been tested using recent versions of Python (\textgreater 3.5) and IDL (8.5). The Python visualisation tools should, in the main, work with Python 2, but as it will be officially unsupported in the near future, development has concentrated on Python 3.
 
-    The following Python modules are used (and tested using the versions in brackets):
+    The following Python modules are used:
     \begin{enumerate}
-      \item NumPy (1.12)
-      \item Matplotlib (2.0)
-      \item Mayavi (4.5) (some issues with python 3 currently using default package)
-      \item igraph (0.7.1)
+      \item NumPy
+      \item Numba
+      \item Matplotlib
+      \item Mayavi
+      \item igraph (this hasn't been updated for a long time, may be changed)
     \end{enumerate}
 
   \section{Quick Start for a Cartesian Data Set}
 
     \begin{enumerate}
-      \item First you need to setup up your directories using the command
+      \item First you need to set-up data and output symbolic links using the command
       
       \texttt{make setup data=/path/to/data/dir output=/path/to/output/dir}
       
@@ -68,6 +72,8 @@
 
         \item \texttt{/path/to/output/dir} is the path to the directory where the output files from the skeleton analysis of the data will be stored. This can be the same as your data directory.
       \end{itemize}
+
+      Otherwise, just \texttt{data} and \texttt{output} directories may be created with the MSAT directory.
 
       \item Compile the Fortran MSAT packages.
 
@@ -298,7 +304,7 @@
         These parameters relate to the rings used to determine the separatrix surface location
         
         \begin{description}
-          \item [\texttt{stepsize = 0.2}:] the distance in grid coordinates between each of the rings. This is equivalent to saying the magnetic field line through each point on a r     ing is traced a distance approximately equal to \texttt{stepsize = 0.2} in grid coordinates before the next ring is formed.
+          \item [\texttt{stepsize = 0.2}:] the distance in grid coordinates between each of the rings. This is equivalent to saying the magnetic field line through each point on a ring is traced a distance approximately equal to \texttt{stepsize = 0.2} in grid coordinates before the next ring is formed.
           \item [\texttt{ringsmax = 10000}:] the maximum number of rings (excluding the first) that \texttt{ssf} will use to analyse each null's separatrix surface. If this number of rings is reached then the code will move onto the next null. For large boxes, this may need to be increased. The code will be able trace fieldlines a maximum of approximately \texttt{stepsize} \( \times \) \texttt{ringsmax} grid points away from the nulls.
         \end{description}
         
@@ -439,9 +445,7 @@
 
       The following command will plot fieldlines from the \texttt{(n, 3)} array of points given in \texttt{startpts}
       
-      \texttt{m3d.add\_fieldlines(startpts, col=(0,0,0), colquant=None)}.
-
-      If \texttt{colquant} is given as a scalar array of the same size as the grid, the fieldlines will be coloured to vary with the quantity given in \texttt{colquant} and \texttt{col} will be ignored. Custom colormaps will be soon be added.
+      \texttt{m3d.add\_fieldlines(startpts, col=(0,0,0))}.
 
       For more documentation, such as how to save the plots drawn, see the Mayavi online documentation at \texttt{http://docs.enthought.com/mayavi/mayavi/mlab.html}. Once the plotting window is open, standard Mayavi commands can be used. The Mayavi module is imported inder the name \texttt{ml} in the \texttt{model3d} module or it can be imported into the main namespace.
 
@@ -471,7 +475,7 @@
 
       This will give an array of the coordinates of the \texttt{isep}\textsuperscript{th} separator from the \texttt{inull}\textsuperscript{th} null point.
 
-      TBC...
+      This indexing is similar for many of the read routines.
 
   \printbibliography
 
