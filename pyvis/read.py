@@ -40,7 +40,7 @@ def field(filename, grid=False):
     if grid:
         return np.stack((bx, by, bz), axis=-1), x, y, z
     else:
-    return bx, by, bz, x, y, z
+        return bx, by, bz, x, y, z
 
 def nulls(filename, simple=False):
     # create datatypes depending on simple or not
