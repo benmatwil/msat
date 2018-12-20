@@ -20,7 +20,7 @@ A manual is provided in LaTeX, this can be compiled using `make doc`
 ## Quick Start
 Assuming that the magnetic field data file is in the correct format and is in the location `data/field3d.dat`:
 1. Typing `make` should compile all the fortran codes
-2. Run the following on the codes successively. `***` represents the appropriate coordinate system -- e.g. `ssfxyz` for cartesian coordinates.
+2. Run the following on the codes successively. `***` represents the appropriate coordinate system -- e.g. `ssfxyz` for cartesian coordinates and `ssfrtp` for spherical coordinates.
 ```sh
 ./nf -i data/field3d.dat
 ./sf*** -i data/field3d.dat
