@@ -9,8 +9,6 @@ program hcs
 
   implicit none
 
-  integer(int64) :: tstart, tstop, count_rate !to time program
-
   real(np) :: r(3)
   real(np) :: h, h0
   real(np) :: slowdown, slowdist

@@ -166,8 +166,6 @@ program make_cut
 
   integer(int32) :: nspine, dir
 
-  integer(int64) :: tstart, tstop, count_rate ! to time program
-
   integer(int32) :: iprint, iorder
 
   integer(int64) :: num_nums, leftover_num, read_index, read_num
