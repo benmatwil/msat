@@ -1,4 +1,8 @@
-FC = gfortran
+ifeq ($(compiler),)
+	FC = gfortran
+else
+	FC = $(compiler)
+endif
 
 ifeq ($(openmp),off)
 else
