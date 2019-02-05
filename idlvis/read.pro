@@ -52,6 +52,8 @@ function read_nulls, filename, simple=simple
   compile_opt idl2
   common shared_var_read
 
+  if outdir eq !null then outdir = 'output'
+
   openr, null, outdir+'/'+prefix(filename)+'-nullpos.dat', /get_lun
   nnulls = 0L
   readu, null, nnulls
@@ -106,6 +108,8 @@ end
 function read_separators, filename, conlist=conlist, null_list=null_list, hcs=hcs
   compile_opt idl2
   common shared_var_read
+
+  if outdir eq !null then outdir = 'output'
 
   nulldata = read_nulls(filename, /simple)
 
@@ -162,6 +166,8 @@ end
 function read_spines, filename, null_list=null_list
   compile_opt idl2
   common shared_var_read
+
+  if outdir eq !null then outdir = 'output'
   
   nulldata = read_nulls(filename, /simple)
 
@@ -197,6 +203,8 @@ end
 function read_rings, filename, nskip=nskip, breaks=breaklist, assocs=assoclist, null_list=null_list, hcs=hcs
   compile_opt idl2
   common shared_var_read
+
+  if outdir eq !null then outdir = 'output'
 
   nulldata = read_nulls(filename, /simple)
 
@@ -310,6 +318,8 @@ function get_cut_filename_plane, normal, d
   compile_opt idl2
   common shared_var_read
 
+  if outdir eq !null then outdir = 'output'
+
   if n_elements(d) eq 1 then begin
     d_pln = d
   endif else begin
@@ -332,8 +342,10 @@ function get_cut_filename_plane, normal, d
 end
 
 function read_cut_sepsurf, filename, normal, d
-  common shared_var_read
   compile_opt idl2
+  common shared_var_read
+
+  if outdir eq !null then outdir = 'output'
   
   filename_plane = get_cut_filename_plane(normal, d)
   null_nums = list()
@@ -361,8 +373,10 @@ function read_cut_sepsurf, filename, normal, d
 end
 
 function read_cut_separators, filename, normal, d, hcs=hcs
-  common shared_var_read
   compile_opt idl2
+  common shared_var_read
+
+  if outdir eq !null then outdir = 'output'
 
   filename_plane = get_cut_filename_plane(normal, d)
   null_nums = list()
@@ -399,8 +413,10 @@ function read_cut_separators, filename, normal, d, hcs=hcs
 end
 
 function read_cut_spines, filename, normal, d
-  common shared_var_read
   compile_opt idl2
+  common shared_var_read
+  
+  if outdir eq !null then outdir = 'output'
 
   filename_plane = get_cut_filename_plane(normal, d)
   null_nums = list()
@@ -426,8 +442,10 @@ function read_cut_spines, filename, normal, d
 end
 
 function read_cut_hcs, filename, normal, d
-  common shared_var_read
   compile_opt idl2
+  common shared_var_read
+
+  if outdir eq !null then outdir = 'output'
 
   filename_plane = get_cut_filename_plane(normal, d)
   lines = list()
