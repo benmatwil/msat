@@ -63,11 +63,11 @@ function read_nulls, filename, simple=simple
     rp = dblarr(3)
     for i = 1, nnulls do begin
       readu, null, rp
-      pos[*,i-1] = rp
+      pos[*, i-1] = rp
     endfor
     for i = 1, nnulls do begin
       readu, null, rp
-      realpos[*,i-1] = rp
+      realpos[*, i-1] = rp
     endfor
     close, null
     free_lun, null
@@ -78,24 +78,24 @@ function read_nulls, filename, simple=simple
       readu, null, nnulls
 
       signs = lonarr(nnulls)
-      spine = dblarr(3,nnulls)
+      spine = dblarr(3, nnulls)
       fan = spine
-      readu,null,signs,spine,fan
+      readu, null, signs, spine, fan
 
       close, null
       free_lun, null
     endif
 
     nulls = {nulldata, pos:dblarr(3), gridpos:dblarr(3), spine:dblarr(3), fan:dblarr(3), sign:0, number:0}
-    nulls = replicate({nulldata},nnulls)
+    nulls = replicate({nulldata}, nnulls)
 
     for i = 0, nnulls-1 do begin
-      nulls[i].pos = realpos[*,i]
-      nulls[i].gridpos = pos[*,i]
+      nulls[i].pos = realpos[*, i]
+      nulls[i].gridpos = pos[*, i]
       nulls[i].number = i+1
       if not keyword_set(simple) then begin
-        nulls[i].spine = spine[*,i]
-        nulls[i].fan = fan[*,i]
+        nulls[i].spine = spine[*, i]
+        nulls[i].fan = fan[*, i]
         nulls[i].sign = signs[i]
       endif
     endfor
