@@ -342,17 +342,26 @@
           \item a trace error occurs
         \end{enumerate}
 
-  \section{Heliospheric Current Sheet (hcs) and Bald Patches (bp)}
+  \section{Heliospheric Current Sheet Finder}
 
-    To be finished...
+    The heliospheric current sheet finder is to be used uniquely for global solar magnetic field magnetic fields. It identifies the base of the heliospheric current sheet in these models and calculates the associated curtains including the separators linking the base to the null points in the magnetic field.
 
-  \section{The code: \texttt{makecut}}
+    It is called using \texttt{./hcs -i data/field3d.dat}
 
-    Creates slices through the magnetic skeleton features to aid visualisation.
+  \section{Cut Maker}
 
-    Currently can only take cuts for a plane of constant \( x \)
+    The cut maker creates slices through the magnetic skeleton features to aid visualisation. Any linearly defined plane can be used of the form 
+      \[ a x_1 + b x_2 + c x_3 = d \]
+    where \( x_1, x_2, x_3 \) are the three coordinates of the coordinate system.
+    For example, in spherical coordinates, this represents a plane of the form:
+      \[ a r + b \theta + c \phi = d \]
 
-    To be finished...
+    The cut maker is called similarly to the other routines plus extra parameters defining \( a \), \( b \), \( c \) and \( d \). The values of \( a \), \( b \) and \( c \) define the normal to the plane.
+
+    \texttt{./make\_cut -i data/field3d.dat -n 1.0 0.0 0.0 -d 2.0}
+    would calculate the cut through the magnetic field in \texttt{data/field3d.dat} in the plane \( 1.0*x_1 = 2.0 \) (\( x = 2 \) in Cartesian coordinates and \( r = 2 \) in spherical coordinates).
+
+    Two extra calling options are \texttt{--hcs} and \texttt{--only-hcs}. \texttt{--hcs} tells the cut maker also take a cut through HCS skeleton features. \texttt{--only-hcs} tells the cut maker to only a take a cut through HCS skeleton features and ignore those skeleton features associated only with null points.
 
   \section{Visualisation routines}
     \label{sec:vis}
@@ -463,7 +472,7 @@
 
       \begin{center}
         \begin{tikzpicture}[remember picture]
-          \node at (0,0) {\texttt{seps[\tikzmark{inull1}inull\tikzmark{inull2}][\tikzmark{isep1}isep\tikzmark{isep2}]}};
+          % \node at (0,0) {\texttt{seps[\tikzmark{inull1}inull\tikzmark{inull2}][\tikzmark{isep1}isep\tikzmark{isep2}]}};
           \coordinate (inull) at ($(pic cs:inull1)!1/2!(pic cs:inull2) - (0,1ex)$);
           \coordinate (isep) at ($(pic cs:isep1)!1/2!(pic cs:isep2) - (0,1ex)$);
           \draw[<-] (inull) -- ++(0,-0.5);
