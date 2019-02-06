@@ -1,4 +1,4 @@
-!code to find the separatrix surface and separators of null points
+! code to find the separatrix surface and separators of heliospheric current sheet
 program hcs
 
   use omp_lib
