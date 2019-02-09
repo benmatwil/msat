@@ -31,11 +31,14 @@ module make_cut_mod
 
     exit_status = .false.
 
+    ! search for closest points in first 5000 points if large number of points
     if (size(points, 2) > 5000) then
       npoints = 5000
     else
       npoints = size(points, 2)
     endif
+
+    ! calculate point to point distances
     allocate(dists(npoints, npoints))
     dists = 1000 ! maybe needs improving
     do ip = 1, npoints
@@ -45,8 +48,10 @@ module make_cut_mod
     imindists = minloc(dists)
     
     if (dists(imindists(1), imindists(2)) > disttol*10) then
+      ! exit if closest points far away
       exit_status = .true.
     else
+      ! add two closest points to list to start the line
       deallocate(dists)
       call pt_list%create()
       call pt_list%append(points(:, imindists(1)))
@@ -58,39 +63,50 @@ module make_cut_mod
         call remove_vector(points, imindists(2))
       endif
 
+      ! allocate array to store distances between current points and all spines
       nspines = size(spines, 2)
       allocate(spinedists(nspines))
+
       do dir = 1, 2
         ! add points in the each direction
         do while (size(points, 2) > 0)
+          ! allocate array to store distances between current point to all other points
           allocate(ptdists(size(points, 2)))
 
+          ! set pt1/2 to be first two points in list
           pt1 = pt_list%first%r
           pt2 = pt_list%first%next%r
 
+          ! vector connecting pt1/2
           diff = normalise(pt1 - pt2)
+
+          ! required distances to first point
           ptdists = (points(1, :) - pt1(1))**2 + (points(2, :) - pt1(2))**2 + (points(3, :) - pt1(3))**2
           spinedists = (spines(1, :) - pt1(1))**2 + (spines(2, :) - pt1(2))**2 + (spines(3, :) - pt1(3))**2
 
+          ! shortest distance from point to all other points and location in array
           imindist = minloc(ptdists, 1)
           mindist = ptdists(imindist)
           
+          ! shortest distance from point to all spines
           if (nspines == 0) then
             mindistspine = 20
           else
             ! iminspinedist = minloc(spinedists, 1)
             mindistspine = minval(spinedists, 1)
           endif
+
           deallocate(ptdists, spinedists)
 
+          ! if new point is good, add to line
           if (mindist < mindistspine) then
-            if (dot(diff, normalise(points(:, imindist) - pt1)) < -0.98) then
+            if (dot(diff, normalise(points(:, imindist) - pt1)) < -0.98) then ! sharp corner in line
               exit
             elseif (mindist < disttol) then
               call pt_list%prepend(points(:, imindist))
               call remove_vector(points, imindist)
             elseif (dot(diff, normalise(points(:, imindist) - pt1)) > 0.95 .and. &
-              mindist < 5*disttol) then
+              mindist < 5*disttol) then ! line is almost straight
               call pt_list%prepend(points(:, imindist))
               call remove_vector(points, imindist)
             else
@@ -101,6 +117,7 @@ module make_cut_mod
           endif
         enddo
 
+        ! reverse line so can add to line using loop
         call pt_list%reverse()
 
       enddo
@@ -112,6 +129,9 @@ module make_cut_mod
   end subroutine
 
   function plane(r)
+    ! function to calculate required plane
+
+    implicit none
 
     real(np) :: plane, r(3)
 
@@ -120,6 +140,9 @@ module make_cut_mod
   end function
 
   function check_crossing(r1, r2)
+    ! checks if line between two points crosses plane
+
+    implicit none
 
     logical :: check_crossing
     real(np), dimension(3) :: r1, r2
@@ -129,6 +152,9 @@ module make_cut_mod
   end function
 
   function find_crossing(r1, r2)
+    ! finds crossing of plane using linear interpolation of two points
+
+    implicit none
 
     real(np), dimension(3) :: find_crossing, r1, r2
     real(np) :: s
@@ -140,7 +166,14 @@ module make_cut_mod
 
 end module
 
+!######################################################################################
+
 program make_cut
+  ! main make_cut program
+  ! finds the intersection of the magnetic skeleton features found by nf, sf, ssf and hcs
+  ! and the plane given as input to the program
+  ! Execute ./make_cut -i field3d.dat -n 1.0 0.0 0.0 -d 2.0 for the plane
+  !   1.0*x + 0.0*y + 0.0*z = 2.0
 
   use params
   use common
@@ -164,7 +197,7 @@ program make_cut
   integer(int64) :: ia, ip, uptorings, uptoassoc, uptoring1, uptoring2
   integer(int32) :: inull, jnull, iring, iline, nextline, flag, ihcs, ipt, isep
   integer(int32) :: nrings, npoints, nlines, nseps, ncomp, nskip_file
-  ! integer(int32), dimension(:), allocatable :: association
+
   integer(int32), dimension(:), allocatable :: association, break
   integer(int32), dimension(:), allocatable :: nperring
   real(np), dimension(:, :), allocatable :: line, line2, points, pordered
@@ -178,7 +211,7 @@ program make_cut
   integer(int64) :: num_nums, leftover_num, read_index, read_num
   integer(int64), parameter :: large_read = 500000000_int64
   real(np), dimension(:, :), allocatable :: lines
-  ! integer(int32), dimension(:), allocatable :: associations
+  
   integer(int32), dimension(:), allocatable :: associations, breaks
 
   call filenames
@@ -209,7 +242,8 @@ program make_cut
   if (pc < 2) then
     stop "Need to provide normal to the plane -n and planar constant -d"
   endif
-  
+
+  ! set up the part of filename defining the plane
   if (n_pln(1) < 0) then
     sign = '-'
     astr = neg
@@ -249,17 +283,20 @@ program make_cut
   print '(5X, 7A)', &
     astr, ' * x1 + ', bstr, ' * x2 + ', cstr, ' * x3 = ', dstr
 
+  ! read in number of null points - no need for positions
   open(unit=10, file=trim(fileout)//'-nullpos.dat', access='stream', status='old')
     read(10) nnulls
   close(10)
 
+  ! read in only the grid coordinates - no need to magnetic field values here
   open(unit=10, file=filein, access='stream', status='old')
-    read(10) nx, ny, nz !number of vertices
+    read(10) nx, ny, nz ! number of vertices
     allocate(xg(nx), yg(ny), zg(nz))
     ig = 3_int64*4_int64 + 3_int64*int(nx, int64)*int(ny, int64)*int(nz, int64)*8_int64 + 1_int64
     read(10, pos=ig) xg, yg, zg
   close(10)
 
+  ! work out how often to print for progress update
   if (nnulls < 10) then
     iprint = 1
   else
@@ -269,6 +306,7 @@ program make_cut
 
   call system_clock(tstart, count_rate) ! to time how long it takes
 
+  ! read in the value of h used during the running of ssf
   open(unit=40, file=trim(fileout)//'-ringinfo.dat', access='stream', status='old')
     read(40) nrings, nrings, nrings, hstep
   close(40)
@@ -280,7 +318,7 @@ program make_cut
   print*, ds, hstep
   !********************************************************************************
     
-  ! for each spine, check whether we cross r=r0 and add point to file
+  ! for each spine, check whether we cross desired plane and add point to file
   print*, 'Spines'
   open(unit=80, file=trim(fileout)//'-spines-cut_'//file_pln//'.dat', access='stream', status='replace')
   open(unit=10, file=trim(fileout)//'-spines.dat', access='stream', status='old')
@@ -291,7 +329,7 @@ program make_cut
   write(80) ipt
   
   do inull = 1, nnulls
-    ! read in spine
+    ! read in spines for each direction
     do dir = 1, 2
       read(10) nspine
       allocate(line(3, nspine))
@@ -319,7 +357,7 @@ program make_cut
   !********************************************************************************
 
   if (do_all_ssf) then
-    ! for each separator, check whether we cross r=r0 and add point to file
+    ! for each separator, check whether we cross desired plane and add point to file
     print*, 'Separators'
     open(unit=80, file=trim(fileout)//'-separators-cut_'//file_pln//'.dat', access='stream', status='replace')
     open(unit=20, file=trim(fileout)//'-connectivity.dat', access='stream', status='old')
@@ -356,6 +394,7 @@ program make_cut
 
     !********************************************************************************
 
+    ! for each adjacent ring, check whether we cross desired plane and add point to file
     print*, 'Rings'
     open(unit=80, file=trim(fileout)//'-rings-cut_'//file_pln//'.dat', access='stream', status='replace')
     open(unit=40, file=trim(fileout)//'-ringinfo.dat', access='stream', status='old')
@@ -380,10 +419,14 @@ program make_cut
     uptoassoc = 0
     uptorings = 0
     do inull = 1, nnulls
-      call ring_list%create()
+      
       read(40) nperring
       nrings = count(nperring > 0) - 1 ! index of nperring starts at 0
 
+      ! two options to read in points: one fast and one slow
+      ! depends on if all points too big for memory/max fortran array size
+      ! if number of points isn't too big... uses fast method
+      ! and reads all points in now
       num_nums = sum(int(nperring, int64))
       if (num_nums > 2500000000_int64) then
         too_much_memory = .true.
@@ -394,12 +437,14 @@ program make_cut
 
       if (.not. too_much_memory) then
         ! 500000000 seems to be maximum number of int32 integers fortran can read at a time
-        ! allocate(lines(3, num_nums), associations(num_nums))
+        ! don't have concrete evidence for this number... may need changing but seems to work
         allocate(lines(3, num_nums), associations(num_nums), breaks(num_nums))
 
         ia = uptoassoc + 1
         ip = uptorings + 1
         
+        ! if bigger than a certain read size then read in chunks
+        ! otherwise read all of it
         if (num_nums > large_read) then
           leftover_num = num_nums
           read_index = 1
@@ -424,14 +469,17 @@ program make_cut
           read(60, pos=ia) breaks
         endif
       endif
+      
+      call ring_list%create()
 
       do iring = nrings, 1, -1
 
         uptoring1 = sum(int(nperring(0:iring-2), int64))
         uptoring2 = uptoring1 + nperring(iring-1)
         
+        ! if have to use the slow method start reading in ring by ring
+        ! otherwise use the arrays read in above using fast method
         if (too_much_memory) then
-          ! allocate(association(nperring(iring)))
           allocate(association(nperring(iring)), break(nperring(iring)))
           ia = uptoassoc + uptoring2*4_int64 + 1
           read(55, pos=ia) association
@@ -453,10 +501,13 @@ program make_cut
           line2 = lines(:, uptoring1+1:uptoring2)
         endif
 
+        ! find crossing of rings
+        ! first by using associations from one ring to next
+        ! second by going around rings in order of points
         do iline = 1, nperring(iring)
           if (check_crossing(line(:, iline), line2(:, association(iline)))) then
             if (dist(line(:, iline), line2(:, association(iline))) < 1) then
-              ! find point in between at r0 and add to line
+              ! find point in crossing plane and add to list of points
               point = find_crossing(line(:, iline), line2(:, association(iline)))
               call ring_list%append(point)
             endif
@@ -466,19 +517,20 @@ program make_cut
           nextline = iline + 1
           if (check_crossing(line(:, iline), line(:, nextline))) then
             if (break(iline) == 0 .and. dist(line(:, iline), line(:, nextline)) < 1) then
-              ! find point in between at r0 and add to line
+              ! find point in crossing plane and add to list of points
               point = find_crossing(line(:, iline), line(:, nextline))
               call ring_list%append(point)
             endif
           endif
         enddo
         call move_alloc(line2, line)
-        ! deallocate(association)
         deallocate(association, break)
       enddo
-      ! if (.not. too_much_memory) deallocate(lines, associations)
+
       if (.not. too_much_memory) deallocate(lines, associations, breaks)
       if (allocated(line)) deallocate(line)
+
+      ! find new read file points for slow method
       uptoring1 = sum(int(nperring, int64))
       uptoassoc = uptoassoc + uptoring1*4_int64
       uptorings = uptorings + uptoring1*24_int64
@@ -486,6 +538,7 @@ program make_cut
       points = ring_list%to_array()
       call ring_list%destroy()
 
+      ! sort points until list is exhausted
       do while (size(points, 2) > 0)
 
         call sortpoints(points, pordered, exit_status)
@@ -516,7 +569,7 @@ program make_cut
   !********************************************************************************
 
   if (do_hcs) then
-    ! for hcs
+    ! same as the rings above but for the hcs rings - see above for comments
     open(unit=80, file=trim(fileout)//'-hcs-cut_'//file_pln//'.dat', access='stream', status='replace')
     open(unit=40, file=trim(fileout)//'-hcs-ringinfo.dat', access='stream', status='old')
     open(unit=50, file=trim(fileout)//'-hcs-rings.dat', access='stream', status='old')
@@ -641,7 +694,8 @@ program make_cut
 
   !********************************************************************************
 
-    ! for each hcs separator, check whether we cross r=r0 and add point to file
+    ! for each hcs separator, check whether we cross the plane and add point to file
+    ! need to do this after rings (can't remember why)
     open(unit=80, file=trim(fileout)//'-hcs-separators-cut_'//file_pln//'.dat', access='stream', status='replace')
     open(unit=20, file=trim(fileout)//'-hcs-connectivity.dat', access='stream', status='old')
     open(unit=30, file=trim(fileout)//'-hcs-separators.dat', access='stream', status='old')
@@ -664,7 +718,7 @@ program make_cut
           endif
         endif
       enddo
-      read(20) flag, flag
+      read(20) flag, flag ! don't care about these - just reposition file marker
       deallocate(line)
     enddo
     
