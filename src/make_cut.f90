@@ -22,6 +22,7 @@ module make_cut_mod
 
     integer(int32), dimension(2) :: imindists
     integer(int32) :: imindist, iminspinedist
+    integer(int32) :: nspines
     integer(int32) :: ip, jp, dir, npoints
 
     logical :: exit_status
@@ -57,10 +58,12 @@ module make_cut_mod
         call remove_vector(points, imindists(2))
       endif
 
+      nspines = size(spines, 2)
+      allocate(spinedists(nspines))
       do dir = 1, 2
         ! add points in the each direction
         do while (size(points, 2) > 0)
-          allocate(ptdists(size(points, 2)), spinedists(size(spines, 2)))
+          allocate(ptdists(size(points, 2)))
 
           pt1 = pt_list%first%r
           pt2 = pt_list%first%next%r
@@ -70,10 +73,14 @@ module make_cut_mod
           spinedists = (spines(1, :) - pt1(1))**2 + (spines(2, :) - pt1(2))**2 + (spines(3, :) - pt1(3))**2
 
           imindist = minloc(ptdists, 1)
-          iminspinedist = minloc(spinedists, 1)
           mindist = ptdists(imindist)
-          mindistspine = spinedists(iminspinedist)
-
+          
+          if (nspines == 0) then
+            mindistspine = 20
+          else
+            ! iminspinedist = minloc(spinedists, 1)
+            mindistspine = minval(spinedists, 1)
+          endif
           deallocate(ptdists, spinedists)
 
           if (mindist < mindistspine) then
