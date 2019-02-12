@@ -1,4 +1,6 @@
 module list_mod
+  ! module which attempts to implement an easy to use basic linked list in fortran
+  ! here each item in the list must be a 3 element vector - change the item as required
 
   use iso_fortran_env
 
@@ -151,7 +153,7 @@ module list_mod
     !********************************************************************************
 
     subroutine destroy(self)
-      ! delete the list
+      ! empty the list and delete pointers
 
       class(list) :: self
 
