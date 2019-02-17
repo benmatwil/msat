@@ -180,7 +180,7 @@ def add_sepsurf(draw='rings', nlines=50, nring=None):
                         ring = rings[inull][nring]
                     elif type(nring) is float:
                         # choose ring as a fraction of one of total
-                        ring = rings[inull][np.floor(nring*len(rings[inull]))]
+                        ring = rings[inull][np.floor(nring*len(rings[inull])).astype(np.int)]
 
                 nskip = len(ring[:, 0])//nlines
 
