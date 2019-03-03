@@ -23,7 +23,7 @@ filename = None
 sign_names = {-2:'Sink', -1:'Neg', 0:'Zero', 1:'Pos', 2:'Source'}
 
 def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
-    nullrad=1, nfanlines=40, nring=None, colquant=None, coordsystem='cartesian', no_nulls=False,
+    nullrad=1, nfanlines=40, nring=None, coordsystem='cartesian', no_nulls=False,
     sun=True, axes=False, outdir=None, periodicity='', only_nf=False):
     """Makes a 3D visualisation of the output from Magnetic Skeleton Analysis Tools
 
@@ -31,14 +31,25 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
         addlist: list of features to be plotted e.g. ['nulls', 'separators'] will
             only plot the nulls and separators
 
-        nulls: if None (default), will plot all nulls, otherwise give a list (starting at 1) of nulls to plot
+        null_list: if None (default), will plot all nulls, otherwise give a list (starting at 1) of nulls to plot
             e.g. nulls=list(range(45,65)) for all nulls between 45 and 64 inclusive
         nullrad: will scale radius of null spheres by this factor (default 1)
             e.g. nullrad=0.5 will halve the size of the nulls
         box: if True (default), plots a box otherwise set to False
+        sun: turn on and off plotting a sun and z-axis when in spherical coordinates
+        axes: add axes to the plot
         fieldlines: provide a numpy array of shape (3, n) of start points and it will trace magnetic field lines
         linecolor: color of fieldlines (defaults to black)
-        nskip: how many rings to skip in plotting"""
+        nskip: how many rings to skip in plotting
+        nfanlines: number of fieldlines in the fan plane to plot
+        nring: ring number in the separatrix surfaces to trace fieldlines from
+
+        outdir: change output directory of data
+        only_nf: only read in data from NF if SF anf SSF haven't been run
+        no_nulls: turn off reading of any nulls - useful just to plot fieldlines/field
+        coordsystem: set the coordinate system of field (cartesian or spherical)
+        periodicity: set periodicity of cartesian coordinate system
+        """
 
     global bgrid, xx, yy, zz, nulldata, ds, filename, nskipglob, nulllist, csystem, periodic_check, periodic_dist, periodic_global
 
@@ -108,6 +119,11 @@ def add_structures(*args, **kwargs):
     if 'hcs_sep' in args: add_separators(hcs=True)
 
 def add_sepsurf(draw='rings', nlines=50, nring=None):
+    """
+    Adds separatrix surfaces to 3D plot, either 'rings' or 'flines'.
+        nlines: number of fieldlines to plot
+        nring: sets the ring to trace fieldlines from. Set as an integer for ring number or float in [0, 1] as fraction of all rings.
+    """
     
     cols = {-2:(218/255, 112/255, 214/255), -1:(0.5, 0.5, 1), 0:(0.5, 1, 0.5), 1:(1, 0.5, 0.5), 2:(1.0, 178/255, 102/255)}
     
@@ -232,6 +248,11 @@ def add_sepsurf(draw='rings', nlines=50, nring=None):
         print("Set draw to be either 'rings' or 'fieldlines'")
 
 def add_hcs(draw='rings', nlines=100):
+    """
+    Adds heliospheric current sheet curtains to 3D plot, either 'rings' or 'flines'.
+        nlines: number of fieldlines to plot
+        nring: sets the ring to trace fieldlines from. Set as an integer for ring number or float in [0, 1] as fraction of all rings.
+    """
     
     x, y, z, s, ptcons = ( [] for _ in range(5) )
     index = 0
@@ -320,6 +341,9 @@ def add_hcs(draw='rings', nlines=100):
         ml.plot3d(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None, name='HCSBase')
 
 def add_fieldlines(startpts, col=(0, 0, 0), lw=2):
+    """
+    Add fieldlines to the 3D plot starting at startpts. Also set the colour and width of the lines.
+    """
     print('Adding field lines')
 
     x, y, z, s, ptcons = ( [] for _ in range(5) )
@@ -367,6 +391,9 @@ def add_fieldlines(startpts, col=(0, 0, 0), lw=2):
         ml.pipeline.surface(lines, color=col, line_width=lw, name='Fieldlines')
 
 def add_spines():
+    """
+    Adds the spine lines to the 3D plot.
+    """
     print('Adding spines')
 
     cols = {-2:(0.5, 0, 0.5), -1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0), 2:(1, 165/255, 0)}
@@ -411,9 +438,9 @@ def add_spines():
     
 def add_separators(hcs=False, colour=None, nskip=1):
     """
-    Add separators to model
-    hcs: controls whether null or hcs separators
-    colour: override custom colours
+    Add separators to 3D plot
+        hcs: controls whether null or hcs separators
+        colour: override custom colours
     """
     print('Adding separators')
 
@@ -468,6 +495,9 @@ def add_separators(hcs=False, colour=None, nskip=1):
         ml.pipeline.surface(lines, color=linecol, line_width=6, name='Separators')
 
 def add_nulls(size=1, no_sf=False):
+    """
+    Add nulls to the 3D plot
+    """
     print("Adding nulls")
 
     cols = {-2:(0.5, 0, 0.5), -1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0), 2:(1, 165/255, 0)}
