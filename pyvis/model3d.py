@@ -15,7 +15,7 @@ else:
     ipython = get_ipython()
     ipython.magic(r"%gui qt")
 
-# turn of warnings while vtk/mayavi compatibility is fixed -- still works
+# turn of warnings while vtk/mayavi compatibility is fixed -- still works (error from older vtk)
 vtk.vtkObject.GlobalWarningDisplayOff()
 
 filename = None
@@ -25,7 +25,8 @@ sign_names = {-2:'Sink', -1:'Neg', 0:'Zero', 1:'Pos', 2:'Source'}
 def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
     nullrad=1, nfanlines=40, nring=None, coordsystem='cartesian', no_nulls=False,
     sun=True, axes=False, outdir=None, periodicity='', only_nf=False):
-    """Makes a 3D visualisation of the output from Magnetic Skeleton Analysis Tools
+    """
+    Makes a 3D visualisation of the output from Magnetic Skeleton Analysis Tools
 
         fname: name of the file containing the original magnetic field
         addlist: list of features to be plotted e.g. ['nulls', 'separators'] will
@@ -49,7 +50,7 @@ def make(fname, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0
         no_nulls: turn off reading of any nulls - useful just to plot fieldlines/field
         coordsystem: set the coordinate system of field (cartesian or spherical)
         periodicity: set periodicity of cartesian coordinate system
-        """
+    """
 
     global bgrid, xx, yy, zz, nulldata, ds, filename, nskipglob, nulllist, csystem, periodic_check, periodic_dist, periodic_global
 
