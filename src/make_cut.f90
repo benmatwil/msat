@@ -90,7 +90,7 @@ module make_cut_mod
           
           ! shortest distance from point to all spines
           if (nspines == 0) then
-            mindistspine = 20
+            mindistspine = 1e200_np
           else
             ! iminspinedist = minloc(spinedists, 1)
             mindistspine = minval(spinedists, 1)
