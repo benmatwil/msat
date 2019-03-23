@@ -284,12 +284,10 @@ def get_cut_filename_plane(normal, d):
     else:
         pt = np.array(d, dtype=np.float64)
         d_pln = np.sum(pt*normal)
+    
     l = [*normal, d_pln]
-    fmt = ''
-    for i in l:
-        fmt += r'{:08.4f}_' if i >= 0 else r'{:09.4f}_'
-    # fmt = '{:08.4f}_{:08.4f}_{:08.4f}_{:08.4f}'
-    fmt = fmt[:-1]
+    fmt = '_'.join(r'{:08.4f}' if i >= 0 else r'{:09.4f}' for i in l)
+    
     return fmt.format(*normal, d_pln)
 
 def cut_sepsurf(filename, normal, d):
