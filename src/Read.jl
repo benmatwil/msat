@@ -37,7 +37,6 @@ module Read
             push!(output, Common.Vector3D(list[:, index]))
         end
         return output
-
     end
 
 
