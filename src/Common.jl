@@ -296,28 +296,18 @@ module Common
 
 	end
 
-	# !********************************************************************************
+	# ********************************************************************************
 
-	# function gtr(r, gx, gy, gz)
-	# 	! converts a list of grid points to real coordinates
+	function gtr(pt::Vector3D, field::Field3D)
+		# converts a list of grid points to real coordinates
 
-	# 	integer(int32) :: ir
-	# 	real(np), dimension(:,:), allocatable :: r, gtr
-	# 	real(np), dimension(:), allocatable :: gx, gy, gz
-	# 	integer(int32), dimension(3) :: ig
+		ig = floor.(Int, pt)
 
-	# 	gtr = r
+		return Vector3D([field.x[ig[1]] + (pt[1] - ig[1])*(field.x[ig[1] + 1] - field.x[ig[1]]),
+						 field.y[ig[2]] + (pt[2] - ig[2])*(field.y[ig[2] + 1] - field.y[ig[2]]),
+						 field.z[ig[3]] + (pt[3] - ig[3])*(field.z[ig[3] + 1] - field.z[ig[3]])])
 
-	# 	do ir = 1, size(r, 2)
-	# 	ig = floor(r(:, ir))
-
-	# 	gtr(1, ir) = gx(ig(1)) + (r(1, ir) - ig(1))*(gx(ig(1)+1) - gx(ig(1)))
-	# 	gtr(2, ir) = gy(ig(2)) + (r(2, ir) - ig(2))*(gy(ig(2)+1) - gy(ig(2)))
-	# 	gtr(3, ir) = gz(ig(3)) + (r(3, ir) - ig(3))*(gz(ig(3)+1) - gz(ig(3)))
-
-	# 	enddo
-
-	# end function
+	end
 
 	# !********************************************************************************
 
