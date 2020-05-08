@@ -57,53 +57,14 @@ module Common
 		
 	# end
 
-	# subroutine print_params
-	# 	! allows the user to find out what parameters have been set in params.f90 when executable was compiled
+	function print_params()
+		# allows the user to find out what parameters have been set in Params.jl when executable was compiled
+		for name in propertynames(Params)
+			println("$(name) = $(getproperty(Params, name))")
+		end
+	end
 
-	# 	print*, 'GLOBAL PARAMETERS:'
-	# 	print*, 'np =', np
-	# 	print*, 'nproc =', nproc
-	# 	print*, ''
-	# 	print*, 'NF PARAMETERS:'
-	# 	print*, 'zero =', zero
-	# 	print*, 'sig_figs =', sig_figs
-	# 	print*, 'boundary_nulls = ', boundary_nulls
-	# 	print*, 'gridpoint_nulls = ', gridpoint_nulls
-	# 	print*, ''
-	# 	print*, 'SF PARAMETERS:'
-	# 	print*, 'rspherefact =', rspherefact
-	# 	print*, 'nphi =', nphi
-	# 	print*, 'ntheta =', ntheta
-	# 	print*, 'maxiter =', maxiter
-	# 	print*, 'dist_mult =', dist_mult
-	# 	print*, ''
-	# 	print*, 'SSF PARAMETERS:'
-	# 	print*, 'nstart =', nstart
-	# 	print*, 'start_dist =', start_dist
-	# 	print*, 'ringsmax =', ringsmax
-	# 	print*, 'pointsmax =', pointsmax
-	# 	print*, 'samemax =', samemax
-	# 	print*, 'stepsize =', stepsize
-	# 	print*, 'tol =', tol
-	# 	print*, 'stepmin =', stepmin 
-	# 	print*, 'restart =', restart
-	# 	print*, 'nullrestart =', nullrestart
-	# 	print*, 'nskip =', nskip
-	# 	print*, 'bytesize =', bytesize
-	# 	print*, 'assoc_output =', assoc_output
-	# 	print*, 'adjust_cartesian_periodicity =', adjust_cartesian_periodicity
-	# 	print*, 'adjust_cylindrical_periodicity =', adjust_cylindrical_periodicity
-	# 	print*, 'adjust_spherical_periodicity =', adjust_spherical_periodicity
-	# 	print*, 'periodic_x =', periodic_x
-	# 	print*, 'periodic_y =', periodic_y
-	# 	print*, 'periodic_z =', periodic_z
-	# 	print*, 'periodic_theta =', periodic_theta
-	# 	print*, 'periodic_phi =', periodic_phi
-	# 	print*, 'one_sep_per_ring =', one_sep_per_ring
-
-	# end
-
-	# !********************************************************************************
+	# ********************************************************************************
 
 	function trilinear(r::Vector3D, field::Field3D)
 		# find the value of vector field at r using the trilinear method
