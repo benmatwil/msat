@@ -1,6 +1,6 @@
 module Params
     export MSAT_float, nproc, default_output
-    export zero, sig_figs, boundary_nulls, gridpoint_nulls
+    export zero_value, sig_figs, boundary_nulls, gridpoint_nulls
     export rspherefact, nphi, ntheta, maxiter, dist_mult
     export nstart, start_dist, ringsmax, pointsmax, samemax, stepsize, tol, stepmin, restart, nullrestart, nskip, bytesize, assoc_output, one_sep_per_ring
     export adjust_cartesian_periodicity, adjust_cylindrical_periodicity, adjust_spherical_periodicity, periodic_x, periodic_y, periodic_z, periodic_theta, periodic_phi
