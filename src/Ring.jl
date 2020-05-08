@@ -4,6 +4,7 @@ module Ring
 
     using ..Params
     using ..Common
+    using ..Trace
 
     function add_points!(line1::Vector{Vector3D},
                          line2::Vector{Vector3D},
@@ -29,7 +30,7 @@ module Ring
                 end
                 if Common.dist(line2[iline], line2[nxtline]) > maxdist0 # if two adjacent points too far away
                     # add point half way between two points
-                    add1[iline] = line1[iline] + 0.5*(line2[nxtline] - line2[iline]) 
+                    add1[iline] = line1[iline] + 0.5*(line2[nxtline] - line2[iline])
                     add2[iline] = line2[iline] + 0.5*(line2[nxtline] - line2[iline])
                 end
             end
@@ -111,32 +112,34 @@ module Ring
 
     end
 
-    function sep_detect(line1::Vector{Vector3D},
+    function sep_detect!(line1::Vector{Vector3D},
                         rnulls::Vector{Vector3D},
                         rnullsalt::Vector{Vector3D},
                         signs::Vector{Int32},
                         spines::Vector{Vector3D},
                         breaks::Vector{Int32},
-                        nullnum::Int32,
-                        nring::Int32,
-                        sign::Int32,
-                        nulldist::Float64)
+                        nullnum::Integer,
+                        nring::Integer,
+                        sign::Integer,
+                        nulldist::AbstractFloat,
+                        field::Field3D)
 
-        nlines = size(line1, 2)
+        nlines = size(line1, 1)
         maxcount = 1000
+        nseps = 0
 
         h0 = 5e-2 * stepsize
         tracedist = 3 * nulldist # trace points around null until tracedist away
         checkdist = tracedist + 2 * h0 # distance to check for separator after being iterated to tracedist away
     
-        for inull in 1:size(rnulls, 2)
-            if signs(inull) != sign # ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
-                near = 0
-                notnear = 0
+        for inull in 1:size(rnulls, 1)
+            if signs[inull] != sign # ignore nulls of the same sign (but not nulls with zero/undetermined sign - just in case)
+                near = zeros(Int32, nlines)
+                notnear = zeros(Int32, nlines)
         
                 # first find all points that lie within nulldist and note their index
                 for iline = 1:nlines
-                    if (Common.dist(line1[:, iline], rnulls[:, inull]) < nulldist) | (Common.dist(line1[:, iline], rnullsalt[:, inull]) < nulldist)
+                    if (Common.dist(line1[iline], rnulls[inull]) < nulldist) | (Common.dist(line1[iline], rnullsalt[inull]) < nulldist)
                         near[iline] = iline # point lies within nulldist
                     end
                 end
@@ -162,7 +165,7 @@ module Ring
                         end
                     end
             
-                    endgap = argmax(notnear, 1) # location of last non-near point
+                    endgap = argmax(notnear) # location of last non-near point
                     gapsize = notnear[endgap] # number of points in biggest gap not near null
                     nextra = 10 # number of points to test either side of test points
                     nr = nlines - gapsize + 2*nextra # total number to test (nlines-gapsize near null)
@@ -173,36 +176,33 @@ module Ring
                         nr = nlines
                     else
                         # select all points not in this longest chain to be tested for change in side of the fan
-                        n1 = endgap + 1 - nextra - 1 % nlines + 1
-                        n2 = nlines + endgap - gapsize + nextra - 1 % nlines + 1
+                        n1 = (endgap + 1 - nextra - 1) % nlines + 1
+                        n2 = (nlines + endgap - gapsize + nextra - 1) % nlines + 1
                     end
             
                     if n1 <= n2
-                        r = line1[:, n1:n2]
+                        r = line1[n1:n2]
                         rmap = n1:n2
                     else
-                        r = Array{Float64, 2}(undef, 3, nr)
-                        rmap = Vector{Int32}(undef, nr)
-                        r[:, 1:nlines-n1+1] = line1[:, n1:nlines]
-                        rmap[1:nlines-n1+1] = n1:nlines
-                        r[:, nlines-n1+2:nr] = line1[:, 1:n2]
-                        rmap[nlines-n1+2:nr] = 1:n2
+                        r = vcat(line1[n1:nlines], line1[1:n2])
+                        rmap = vcat(n1:nlines, 1:n2)
                     end
             
                     signof = zeros(Int32, nr)
                     for index in 1:nr
                         # extrapolate points along fieldlines
                         count = 0
-                        while (Common.dist(r[:, index], rnulls[:, inull]) < tracedist) & (count < maxcount)
+                        pt = r[index]
+                        while (Common.dist(pt, rnulls[inull]) < tracedist) & (count < maxcount)
                             h = h0
-                            Common.trace_line(r[:, index], sign, h)
-                            Common.edgecheck(r[:, index])
+                            pt = Trace.trace_line(pt, sign, h, field)
+                            Common.edgecheck(pt, field)
                             count = count + 1
                         end
             
                         if signs[inull] * sign == -1
                             # check which side of the null the points end out on
-                            if Common.dot(spines[:, inull], r[:, index] - rnulls[:, inull]) > 0
+                            if Common.dot(spines[inull], r[index] - rnulls[inull]) > 0
                                 signof[index] = 1
                             else
                                 signof[index] = -1
@@ -210,22 +210,18 @@ module Ring
                 
                             # if theres a change in sign, theres the separator
                             if index != 1
-                                dist1 = Common.dist(rnulls[:, inull], r[:, index-1])
-                                dist2 = Common.dist(rnulls[:, inull], r[:, index])
-                                if ((signof[index-1]*signof[index] == -1)
-                                        & (breaks[rmap[index-1]] != 1)
-                                        & (dist1 < checkdist)
-                                        & (dist2 < checkdist))
-                                    
-                                    
-                    # #if debug
-                    #                 print*, 'Found a separator', nring, rmap(index-1), nlines, nullnum, inull
-                    # #else
-                    #                 print*, 'Found a separator to null', inull, 'on ring', nring
-                    # #endif
-                                    println("Found a separator")
+                                dist1 = Common.dist(rnulls[inull], r[index-1])
+                                dist2 = Common.dist(rnulls[inull], r[index])
+                                if ((signof[index-1] * signof[index] == -1) & (breaks[rmap[index-1]] != 1)
+                                        & (dist1 < checkdist) & (dist2 < checkdist))
+                                        # #if debug
+                                            # print*, 'Found a separator', nring, rmap(index-1), nlines, nullnum, inull
+                                        # #else
+                                            # print*, 'Found a separator to null', inull, 'on ring', nring
+                                        # #endif
+                                    println("Found a separator to null $(inull) on ring $(nring)")
                                     breaks[rmap[index-1]] = 1 # disassociate points so that new points don't get added between them as they diverge around the null
-                                    nseps = nseps + 1
+                                    nseps += 1
                                     # write the point's information to the separator file
                                     # if (dist1 > dist2) then
                                     #     write(40) nullnum, inull, nring, rmap(index)
@@ -238,20 +234,20 @@ module Ring
                                 end
                             end
                         end
-                        if count1 == maxcount # points appear to be stuck at the null
+                        if count == maxcount # points appear to be stuck at the null
                             if rmap[index] != 1
                                 breaks[rmap[index] - 1] = 2
                             else
                                 breaks[nlines] = 2
                             end
                         end
-                        count1 = count
+                        # count1 = count
                     end
                     # deallocate(r, signof, rmap)
                 end
             end
         end
-
+        return nseps
     end
 
 end
