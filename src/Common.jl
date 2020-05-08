@@ -1,24 +1,10 @@
 module Common
 
     using StaticArrays
-	# include("../params.jl")
 	using ..Params
 
 	export Vector3D
 	# common functions, subroutine and variables for all programs MSAT
-
-	# integer(int32) :: nx, ny, nz
-	# real(np), allocatable :: bgrid(:, :, :, :)
-	# real(np) :: xmin, xmax, ymin, ymax, zmin, zmax
-	# real(np), dimension(:), allocatable :: x, y, z
-	# integer(int32) :: nnulls
-	# real(np) :: dx, dy, dz
-	# real(np), allocatable, dimension(:,:) :: rnulls, rnullsalt, rnullsreal
-	# real(np), allocatable, dimension(:,:) :: spines, fans
-	# integer(int32), allocatable, dimension(:) :: signs
-	
-	# real(np), parameter :: dtor = pi/180.0_np
-	# character(:), allocatable :: filein, fileout
 
     const Vector3D = SVector{3, Float64}
 
@@ -121,11 +107,6 @@ module Common
 
 	function trilinear(r::Vector3D, field::Field3D)
 		# find the value of vector field at r using the trilinear method
-
-		# real(np) :: trilinear(3)
-		# real(np), allocatable :: b(:, :, :, :)
-		# real(np) :: x, y, z, xp, yp, zp
-		# integer(int32) :: nx, ny, nz
 
 		edgecheck(r, field)
 
