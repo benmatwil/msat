@@ -164,7 +164,7 @@ module Common
 	function modulus(a::Vector3D)
 		# calculates the magnitude a vector a
 		
-		return sqrt(sum(a .^2 ))
+		return sqrt(sum(a .^ 2))
 
 	end
 
@@ -253,7 +253,7 @@ module Common
 		for i in 1:nlines
 			r = Float64[cos(i*dtheta), sin(i*dtheta), 0]
 			r = rotate(r, theta, phi)
-			push!(startpoints, r*start_dist)
+			push!(startpoints, r * start_dist)
 		end
 
 		return startpoints
