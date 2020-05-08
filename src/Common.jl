@@ -3,7 +3,7 @@ module Common
     using StaticArrays
 	using ..Params
 
-	export Vector3D
+	export Vector3D, Field3D
 	# common functions, subroutine and variables for all programs MSAT
 
     const Vector3D = SVector{3, Float64}
