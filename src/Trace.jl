@@ -1,8 +1,6 @@
 module Trace
     using StaticArrays
-    # include("common.jl")
     import ..Common
-    # include("../params.jl")
     using ..Params
 
 	# rkf45 parameters
