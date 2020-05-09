@@ -36,6 +36,7 @@ module Ring
             end
         end
 
+        # add in reverse to make indexing simple
         for iline in nlines:-1:1
             if add1[iline][1] > 1e-1
                 iadd = iline + 1
