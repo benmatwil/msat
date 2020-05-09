@@ -214,11 +214,6 @@ module Ring
                                 dist2 = Common.dist(rnulls[inull], r[index])
                                 if ((signof[index-1] * signof[index] == -1) & (breaks[rmap[index-1]] != 1)
                                         & (dist1 < checkdist) & (dist2 < checkdist))
-                                        # #if debug
-                                            # print*, 'Found a separator', nring, rmap(index-1), nlines, nullnum, inull
-                                        # #else
-                                            # print*, 'Found a separator to null', inull, 'on ring', nring
-                                        # #endif
                                     println("Found a separator to null $(inull) on ring $(nring)")
                                     breaks[rmap[index-1]] = 1 # disassociate points so that new points don't get added between them as they diverge around the null
                                     nseps += 1
@@ -243,7 +238,6 @@ module Ring
                         end
                         # count1 = count
                     end
-                    # deallocate(r, signof, rmap)
                 end
             end
         end
