@@ -215,6 +215,7 @@ module Ring
                                 if ((signof[index-1] * signof[index] == -1) & (breaks[rmap[index-1]] != 1)
                                         & (dist1 < checkdist) & (dist2 < checkdist))
                                     println("Found a separator to null $(inull) on ring $(nring)")
+                                    @debug "Found a separator on ring $nring at index $(rmap[index-1]) out of $nlines points from null number $nullnum to null number $inull"
                                     breaks[rmap[index-1]] = 1 # disassociate points so that new points don't get added between them as they diverge around the null
                                     nseps += 1
                                     # write the point's information to the separator file

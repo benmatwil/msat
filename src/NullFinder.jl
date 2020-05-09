@@ -91,10 +91,8 @@ module NullFinder
                             (rnull[2] > 1 + bound_dist) & (rnull[2] < ny - bound_dist) &
                             (rnull[3] > 1 + bound_dist) & (rnull[3] < nz - bound_dist))
                             push!(nullpts, rnull)
-        #if debug
                         else
-                            println("Null on the boundary: $(Int.([ix, iy, iz])), Removing...")
-        #endif
+                            @debug "Null on the boundary: $(Int.([ix, iy, iz])), Removing..."
                         end
                     end
                 end
