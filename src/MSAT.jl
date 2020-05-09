@@ -7,7 +7,8 @@ module MSAT
     include("Read.jl")
     include("Trace.jl")
     include("Ring.jl")
-    include("SSF.jl")
+    include("NullFinder.jl")
+    include("SeparatrixSurfaceFinder.jl")
 
     function test()
         field = Common.read_field("data/bmag0037.dat")
@@ -24,6 +25,8 @@ if abspath(PROGRAM_FILE) == @__FILE__
     # middle = MSAT.Common.Vector3D([10, 20, 30])
     # starts = [middle + [cos(i), sin(i), 0] for i in (0:99)/100*2*pi]
     # pts = [MSAT.Trace.trace_line(start, 1, MSAT.stepsize, field) for start in starts]
+    datafile = "data\\bmag0037-jl.dat"
 
-    MSAT.SeparatrixSurfaceFinder.SSF("data\\bmag0037.dat")
+    MSAT.NullFinder.NF(datafile)
+    # MSAT.SeparatrixSurfaceFinder.SSF(datafile)
 end
