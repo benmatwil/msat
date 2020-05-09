@@ -30,8 +30,8 @@ module Ring
                 end
                 if Common.dist(line2[iline], line2[nxtline]) > maxdist0 # if two adjacent points too far away
                     # add point half way between two points
-                    add1[iline] = line1[iline] + 0.5*(line2[nxtline] - line2[iline])
-                    add2[iline] = line2[iline] + 0.5*(line2[nxtline] - line2[iline])
+                    add1[iline] = line1[iline] + 0.5 * (line2[nxtline] - line2[iline])
+                    add2[iline] = line2[iline] + 0.5 * (line2[nxtline] - line2[iline])
                 end
             end
         end
