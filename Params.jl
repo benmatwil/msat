@@ -35,7 +35,7 @@ module Params
     # number of start points in phi direction
     const nphi = 50
     # number of start points in theta direction
-    const ntheta = nphi/2
+    const ntheta = nphi ÷ 2
     # maximum number of iterations for convergence method
     const maxiter = 20000
     # multiple of rsphere distance to move points at each iteration
