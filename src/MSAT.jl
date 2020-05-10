@@ -8,6 +8,7 @@ module MSAT
     include("Trace.jl")
     include("Ring.jl")
     include("NullFinder.jl")
+    include("SpineFinder.jl")
     include("SeparatrixSurfaceFinder.jl")
 
     function test()
