@@ -123,7 +123,8 @@ module Ring
                         nring::Integer,
                         sign::Integer,
                         nulldist::AbstractFloat,
-                        field::Field3D)
+                        field::Field3D,
+                        connectivity_file::IOStream)
 
         nlines = size(line1, 1)
         maxcount = 1000
@@ -220,11 +221,11 @@ module Ring
                                     breaks[rmap[index-1]] = 1 # disassociate points so that new points don't get added between them as they diverge around the null
                                     nseps += 1
                                     # write the point's information to the separator file
-                                    # if (dist1 > dist2) then
-                                    #     write(40) nullnum, inull, nring, rmap(index)
-                                    # else
-                                    #     write(40) nullnum, inull, nring, rmap(index-1)
-                                    # end
+                                    if dist1 > dist2
+                                        write(connectivity_file, Int32(nullnum), Int32(inull), Int32(nring), Int32(rmap[index]))
+                                    else
+                                        write(connectivity_file, Int32(nullnum), Int32(inull), Int32(nring), Int32(rmap[index-1]))
+                                    end
                                     if one_sep_per_ring
                                         break
                                     end
@@ -238,7 +239,6 @@ module Ring
                                 breaks[nlines] = 2
                             end
                         end
-                        # count1 = count
                     end
                 end
             end

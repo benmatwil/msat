@@ -8,6 +8,9 @@ module SeparatrixSurfaceFinder
     import ..Ring
     import ..Read
 
+    const hspine = 0.5*stepsize
+    const spinemax = 10*ringsmax
+
     function SSF(filename::AbstractString)
         bgrid = Common.read_field(filename)
         nnulls, rnulls, rnullsreal = Read.read_nulls(filename)
@@ -15,7 +18,33 @@ module SeparatrixSurfaceFinder
 
         rnullsalt = copy(rnulls)
 
+        outfile_init = joinpath(default_output, Read.prefix(filename))
+
+        # stores all info regarding size of rings
+        ringinfo_file = open(outfile_init * "-ringinfo.dat", "w+")
+        # stores all the coordinates of rings in original coordinate system
+        ring_file = open(outfile_init * "-rings.dat", "w+")
+        # stores all the associations between rings
+        if assoc_output
+            assoc_file = open(outfile_init * "-assocs.dat", "w+")
+        end
+        # stores all the breaks on rings
+        break_file = open(outfile_init * "-breaks.dat", "w+")
+        # stores all the connection info about each separator
+        connectivity_file = open(outfile_init * "-connectivity.dat", "w+")
+        # stores all the coordinates of the separator lines in original coordinate system
+        separator_file = open(outfile_init * "-separators.dat", "w+")
+        # stores all the coordinates of the spine lines in original coordinate system
+        spine_file = open(outfile_init * "-spines.dat", "w+")
+
+        write(ringinfo_file, Int32(ringsmax+1), Int32(nskip), Int32(sizeof(bytesize)), stepsize)
+
+        tempfilename = outfile_init * "-rings.temp"
+        uptonullconn = 0
+
         for inull in 1:nnulls
+            tempfile = open(tempfilename, "w+")
+
             theta = acos(fans[inull][3])
             phi = atan(fans[inull][2], fans[inull][1])
             startpoints = Common.get_startpoints(fans[inull], nstart)
@@ -33,8 +62,21 @@ module SeparatrixSurfaceFinder
             terror = 0
             exit_condition = false
 
+            # write initial ring to file
+            write_ring = Common.gtr.(line1, Ref(bgrid))
+            write(ring_file, write_ring)
+            if (assoc_output)
+                write(assoc_file, Int32.(1:nlines))
+            end
+            write(break_file, breaks)
+            write(tempfile, Int32.(1:nlines), write_ring)
+            write(connectivity_file, Int32(nseps))
+
             for iring in 1:ringsmax
-                println("Ring number: $(iring) with length $(size(line1, 1))")
+                global nrings
+                if iring % 20 == 0
+                    println("Ring number: $(iring) with length $(size(line1, 1))")
+                end
                 if abs(signs[inull]) != 1
                     println("Source/Sink -- skipping")
                     nrings = 1
@@ -130,15 +172,103 @@ module SeparatrixSurfaceFinder
                 end
 
                 if nearflag > 0
-                    nseps = Ring.sep_detect!(line1, rnulls, rnullsalt, signs, spines, breaks, inull, iring, signs[inull], nulldist, bgrid)
+                    nseps += Ring.sep_detect!(line1, rnulls, rnullsalt, signs, spines, breaks, inull, iring, signs[inull], nulldist, bgrid, connectivity_file)
                 end
 
-                nperring[iring] = size(line1, 1) # maybe iring+1
+                nperring[iring] = size(line1, 1)
+
+                write_ring = Common.gtr.(line1, Ref(bgrid))
+                if iring % nskip == 0
+                    write(ring_file, write_ring)
+                    write(break_file, breaks)
+                end
+                write(tempfile, associations, write_ring)
 
                 # write to file
             end
 
+            flush(tempfile)
+
+            write(ringinfo_file, nperring[1:nskip:end])
+
+            # trace separators and write to file
+            println("Tracing spines and any separators and dealing with rings")
+            seek(connectivity_file, uptonullconn)
+            write(connectivity_file, Int32(nseps))
+            if nseps > 0
+                for isep in 1:nseps
+                    nullnum1, nullnum2, ringnum, linenum = read!(connectivity_file, Vector{Int32}(undef, 4)) 
+                    rsep = Vector{Common.Vector3D}(undef, ringnum + 3)
+                    for iring in ringnum:-1:0
+                        ia, ip = Common.file_position(iring, nperring, linenum)
+                        seek(tempfile, ia)
+                        linenum = read(tempfile, Int32)
+                        seek(tempfile, ip)
+                        rsep[iring+2] = read(tempfile, Common.Vector3D)
+                    end
+                    rsep[1] = rnullsreal[nullnum1]
+                    rsep[ringnum+3] = rnullsreal[nullnum2]
+                    write(separator_file, Int32(ringnum+3), rsep)
+                end
+            end
+            uptonullconn = uptonullconn + nseps*16 + 4
+
+            # trace spine lines and write file
+            for dir in (-1, 1)
+                out = false
+                spine = [rnulls[inull]]
+                rspine = rnulls[inull] + dir*spines[inull]*1e-3 # pick a good factor
+                iring = 0
+                while ! Common.outedge(rspine, bgrid) & (iring < spinemax)
+                    iring = iring + 1
+                    if abs(signs[inull]) != 1
+                        break
+                    end
+                    push!(spine, rspine)
+                    rspine = Trace.trace_line(rspine, -signs[inull], hspine, bgrid)
+                    Common.edgecheck(rspine, bgrid)
+                end
+                write(spine_file, Int32(size(spine, 1)), Common.gtr.(spine, Ref(bgrid)))
+            end
+
+            # write the associations to file corrected for nskip != 1
+
+            if assoc_output
+                for iring in nskip:nskip:nskip * (nrings ÷ nskip)
+                    ia, ip = Common.file_position(iring, nperring, 1)
+                    # println("$ia $ip $iring $nskip $nrings $(stat(tempfile).size)")
+                    seek(tempfile, ia)
+                    association = read!(tempfile, Vector{Int32}(undef, nperring[iring]))
+                    for iskip in 1:nskip-1
+                        ia, ip = Common.file_position(iring-iskip, nperring, 1)
+                        # println("In loop $ia $ip $iring $nskip $nrings $(stat(tempfile).size)")
+                        seek(tempfile, ia)
+                        assoc_temp = read!(tempfile, Vector{Int32}(undef, nperring[iring-iskip]))
+                        association = assoc_temp[association]
+                    end
+                    write(assoc_file, association)
+                end
+            end
+
+            if nrings == ringsmax
+                println("Reached maximum number of rings")
+            end
+
+            println("Number of separators: $nseps\nNumber of rings: $nrings")
+
+            # close temporary ring file and delete it
+            close(tempfile)
+
         end
+
+        close(ringinfo_file)
+        close(ring_file)
+        close(assoc_file)
+        close(break_file)
+        close(connectivity_file)
+        close(separator_file)
+        close(spine_file)
+
     end
 
 end
