@@ -1,6 +1,7 @@
 module Common
 
-    using StaticArrays
+	using StaticArrays
+	using OffsetArrays
 	using ..Params
 
 	export Vector3D, Field3D
@@ -262,7 +263,7 @@ module Common
 
 	# ********************************************************************************
 
-	function rotate(r, theta, phi)
+	function rotate(r, theta::Float64, phi::Float64)
 		# rotates a r by theta about the xz plane then by phi about the xy plane
 
 		roty = Matrix{Float64}(undef, 3, 3)
@@ -309,25 +310,24 @@ module Common
 
 	end
 
-	# !********************************************************************************
+	# ********************************************************************************
 
-	# subroutine file_position(nring, nperring, index, a, p)
-	# 	! calculates the position in the temporary files of the rings and specific points
+	function file_position(nring::Integer, nperring::OffsetVector{Int32, Vector{Int32}}, index::Integer)
+		# calculates the position in the temporary files of the rings and specific points
 
-	# 	integer(int64) :: a, p
-	# 	integer(int64) :: uptoring
-	# 	integer(int32) :: nring, index
-	# 	integer(int32) :: nperring(0:)
+		# 1 whole ring contains 3*np vector points and np association points
+		uptoring = sum(nperring[0:nring-1])*7
+		a = uptoring + (index - 1)
+		p = uptoring + nperring[nring] + (index - 1)*6
 
-	# 	! 1 whole ring contains 3*np vector points and np association points
-	# 	uptoring = sum(int(nperring(0:nring-1), int64))*7
-	# 	a = uptoring + int((index-1), int64)
-	# 	p = uptoring + int(nperring(nring) + (index-1)*6, int64)
+		a = a*4
+		p = p*4
 
-	# 	a = a*4 + 1
-	# 	p = p*4 + 1
+		return a, p
 
-    # end subroutine
+	end
+	
+	# ********************************************************************************
     
     function read_field(filename::String)
         fieldfile = open(filename, "r")
