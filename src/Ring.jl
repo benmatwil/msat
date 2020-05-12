@@ -184,7 +184,7 @@ module Ring
             
                     if n1 <= n2
                         r = line1[n1:n2]
-                        rmap = n1:n2
+                        rmap = collect(n1:n2)
                     else
                         r = vcat(line1[n1:nlines], line1[1:n2])
                         rmap = vcat(n1:nlines, 1:n2)
