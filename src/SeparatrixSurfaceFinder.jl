@@ -72,8 +72,9 @@ module SeparatrixSurfaceFinder
             write(tempfile, Int32.(1:nlines), write_ring)
             write(connectivity_file, Int32(nseps))
 
+            nrings = 0
+
             for iring in 1:ringsmax
-                global nrings
                 if iring % 20 == 0
                     println("Ring number: $(iring) with length $(size(line1, 1))")
                 end
