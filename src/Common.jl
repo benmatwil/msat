@@ -85,24 +85,24 @@ module Common
 		if outedge(r, field)
             if xp <= field.xmin
                 xp = field.xmin
-                nx = ceil(Int32, xp)
+                nx = ceil(Int, xp)
             elseif xp >= field.xmax
                 xp = field.xmax
-                nx = ceil(Int32, xp) - 1
+                nx = ceil(Int, xp) - 1
             end
             if yp <= field.ymin
                 yp = field.ymin
-                ny = ceil(Int32, yp)
+                ny = ceil(Int, yp)
             elseif yp >= field.ymax
                 yp = field.ymax
-                ny = ceil(Int32, yp) - 1
+                ny = ceil(Int, yp) - 1
             end
             if zp <= field.zmin
                 zp = field.zmin
-                nz = ceil(Int32, zp)
+                nz = ceil(Int, zp)
             elseif zp >= field.zmax
                 zp = field.zmax
-                nz = ceil(Int32, zp) - 1
+                nz = ceil(Int, zp) - 1
             end
 		end
 
