@@ -189,7 +189,7 @@ module SeparatrixSurfaceFinder
 
             flush(tempfile)
 
-            write(ringinfo_file, nperring[1:nskip:end])
+            write(ringinfo_file, nperring[0:nskip:end])
 
             # trace separators and write to file
             println("Tracing spines and any separators and dealing with rings")
