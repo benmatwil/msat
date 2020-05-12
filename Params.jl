@@ -1,6 +1,6 @@
 module Params
     export MSAT_float, nproc, default_output
-    export zero_value, sig_figs, boundary_nulls, gridpoint_nulls
+    export zero_value, sig_figs
     export rspherefact, rsphere, nphi, ntheta, maxiter, dist_mult
     export nstart, start_dist, ringsmax, pointsmax, samemax, stepsize, tol, stepmin, restart, nullrestart, nskip, bytesize, assoc_output, one_sep_per_ring
     export adjust_cartesian_periodicity, adjust_cylindrical_periodicity, adjust_spherical_periodicity, periodic_x, periodic_y, periodic_z, periodic_theta, periodic_phi
@@ -21,11 +21,6 @@ module Params
     const zero_value = 1e-16
     # the number of significant figures of accuracy required for the null
     const sig_figs = 8
-    # whether to include null points close to the boundary of vector field grids
-    # if true sign finder may struggle to analyse them
-    const boundary_nulls = false
-    # whether to check the grid points for null points - may be useful for analytical grids
-    const gridpoint_nulls = true
 
     # Sign Finder Parameters
     # ----------------------

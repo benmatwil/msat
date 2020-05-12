@@ -5,7 +5,7 @@ module NullFinder
     using ..Common
     using ..Read
 
-    function NF(filename::AbstractString)
+    function NF(filename::AbstractString; boundary_nulls::Bool=false, gridpoint_nulls::Bool=true)
         bgrid = Common.read_field(filename)
 
         nx, ny, nz, ndims = size(bgrid.field)
