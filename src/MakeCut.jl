@@ -2,6 +2,8 @@ module MakeCut
 
     using StaticArrays
     using OffsetArrays
+    using Formatting
+
     using ..Params
     using ..Common
     using ..Read
@@ -12,12 +14,16 @@ module MakeCut
         z::Vector{Float64}
     end
 
-    function MakeCut(filename::AbstractString)
+    function get_ints(n::Integer)
+        return Vector{Int32}(undef, n)
+    end
+
+    function MC(filename::AbstractString, plane_norm::Vector3D, plane_const::Float64; do_all_ssf=true, do_hcs=true)
         nnulls, _, _ = Read.read_nulls(filename)
         
         # read in only the grid coordinates - no need to magnetic field values here
         fieldfile = open(filename, "r")
-        nx, ny, nz = read(fieldfile, Tuple{Int32, Int32, Int32})
+        nx, ny, nz = read!(fieldfile, get_ints(3))
         seek(fieldfile, 3 * 4 + 3 * nx * ny * nz * 8)
         grid = FieldGrid(read!(fieldfile, Vector{Float64}(undef, nx)),
                          read!(fieldfile, Vector{Float64}(undef, ny)),
@@ -32,20 +38,27 @@ module MakeCut
             iprint = (nnulls ÷ (10^iorder) + 1) * 10^(iorder-1)
         end
 
-        prefix = joinpath("default_output", Read.prefix(filename))
+        prefix = joinpath(default_output, Read.prefix(filename))
+        plane_nums = [plane_norm..., plane_const]
+        file_plane = format(join([i >= 0 ? raw"{:08.4f}" : raw"{:09.4f}" for i in plane_nums], "_"), plane_nums...)
 
         info_file = open(prefix * "-ringinfo.dat", "r")
-        nrings, nrings, nrings, hstep = read(info_file, Tuple{Int32, Int32, Int32, Int32}) 
+        skip(info_file, 12)
+        hstep = read(info_file, Float64)
         close(info_file)
 
         ds = max(maximum(diff(grid.x)), maximum(diff(grid.y)), maximum(diff(grid.z))) * 2 * hstep
         disttol = ds/10
 
+        @show ds, disttol, hstep
+
+        large_read = 500000000
+
         ###############################################################################################
 
         # for each spine, check whether we cross desired plane and add point to file
         println("Spines")
-        spines_cut_file = open(prefix * "-spines-cut_" * file_pln * ".dat", "w+")
+        spines_cut_file = open(prefix * "-spines-cut_" * file_plane * ".dat", "w+")
         spines_file = open(prefix * "-spines.dat", "r")
       
         spine_list = Vector{Vector3D}(undef, 0)
@@ -60,9 +73,9 @@ module MakeCut
                 line = read!(spines_file, Vector{Vector3D}(undef, nspine))
                 for iline in 1:nspine-1
                     nextline = iline + 1
-                    if check_crossing(line[iline], line[nextline])
+                    if check_crossing(line[iline], line[nextline], plane_norm, plane_const)
                         if Common.dist(line[iline], line[nextline]) < 1
-                            point = find_crossing(line[iline], line[nextline])
+                            point = find_crossing(line[iline], line[nextline], plane_norm, plane_const)
                             write(spines_cut_file, inull, point)
                             ipt += one(Int32)
                             push!(spine_list, point)
@@ -72,16 +85,18 @@ module MakeCut
             end
         end
         seekstart(spines_cut_file)
-        write(spines_cut_file) ipt
+        write(spines_cut_file, ipt)
         close(spines_cut_file)
         close(spines_file)
+
+        spines = spine_list
       
         # ********************************************************************************
       
         if do_all_ssf
             # for each separator, check whether we cross desired plane and add point to file
             println("Separators")
-            separators_cut_file = open(prefix * "-separators-cut_" * file_pln * ".dat", "w+")
+            separators_cut_file = open(prefix * "-separators-cut_" * file_plane * ".dat", "w+")
             connectivity_file = open(prefix * "-connectivity.dat", "r")
             separator_file = open(prefix * "-separators.dat", "r")
         
@@ -96,9 +111,9 @@ module MakeCut
                     line = read!(separator_file, Vector{Vector3D}(undef, npoints))
                     for iline in 1:npoints-1
                         nextline = iline+1
-                        if check_crossing(line[iline], line[nextline])
+                        if check_crossing(line[iline], line[nextline], plane_norm, plane_const)
                             if Common.dist(line[iline], line[nextline]) < 1
-                                point = find_crossing(line[iline], line[nextline])
+                                point = find_crossing(line[iline], line[nextline], plane_norm, plane_const)
                                 write(separators_cut_file, Int32(inull), flag, point)
                                 ipt += one(ipt)
                             end
@@ -118,12 +133,13 @@ module MakeCut
         
             # for each adjacent ring, check whether we cross desired plane and add point to file
             println("Rings")
-            ring_cut_file = open(prefix * "-rings-cut_"//file_pln//".dat", "w+")
+            ring_cut_file = open(prefix * "-rings-cut_" * file_plane * ".dat", "w+")
             ringinfo_file = open(prefix * "-ringinfo.dat", "r")
             rings_file = open(prefix * "-rings.dat", "r")
             breaks_file = open(prefix * "-breaks.dat", "r")
             try
-                global assocs_file = open(prefix * "-assocs.dat", "r")
+                global assocs_file
+                assocs_file = open(prefix * "-assocs.dat", "r")
             catch
                 throw("Associations file does not exist.")
             end
@@ -133,17 +149,17 @@ module MakeCut
         
             nrings = read(ringinfo_file, Int32)
             nskip_file = read(ringinfo_file, Int32)
+            skip(ringinfo_file, 12)
 
-            num_rings = ceil(nrings/nskip_file)
+            num_rings = ceil(Int32, nrings/nskip_file)
             nperring = OffsetVector(Vector{Int32}(undef, num_rings), 0:num_rings-1)
-            skip(ringinfo_file, 12) # just read into unneeded variable to reach correct position in file
         
             uptoassoc = 0
             uptorings = 0
             for inull in 1:nnulls
                 
                 read!(ringinfo_file, nperring) 
-                nrings = count(nperring > 0) - 1 # index of nperring starts at 0
+                nrings = count(nperring .> 0) - 1 # index of nperring starts at 0
         
                 # two options to read in points: one fast and one slow
                 # depends on if all points too big for memory/max fortran array size
@@ -164,8 +180,8 @@ module MakeCut
                     associations = Vector{Int32}(undef, num_nums)
                     breaks = Vector{Int32}(undef, num_nums)
             
-                    ia = uptoassoc + 1
-                    ip = uptorings + 1
+                    ia = uptoassoc
+                    ip = uptorings
 
                     seek(rings_file, ip)
                     seek(assocs_file, ia)
@@ -196,8 +212,18 @@ module MakeCut
                 end
                 
                 ring_list = Vector{Vector3D}(undef, 0)
+
+                uptoring1 = sum(nperring[0:nrings-2])
+                uptoring2 = uptoring1 + nperring[nrings-1]
+                if too_much_memory
+                    seek(rings_file, uptorings + uptoring2 * 24)
+                    line = read!(rings_file, Vector{Vector3D}(undef, nperring[nrings]))
+                else
+                    line = lines[uptoring2+1:uptoring2+nperring[nrings]]
+                end
         
                 for iring in nrings:-1:1
+                    # global line
         
                     uptoring1 = sum(nperring[0:iring-2])
                     uptoring2 = uptoring1 + nperring[iring-1]
@@ -205,25 +231,16 @@ module MakeCut
                     # if have to use the slow method start reading in ring by ring
                     # otherwise use the arrays read in above using fast method
                     if too_much_memory
-                        ia = uptoassoc + uptoring2*4 + 1
+                        ia = uptoassoc + uptoring2*4
                         seek(assocs_file, ia)
-                        seek(breaks_file, ia)
                         association = read!(assocs_file, Vector{Int32}(undef, nperring[iring]))
+                        seek(breaks_file, ia)
                         break_data = read!(breaks_file, Vector{Int32}(undef, nperring[iring]))
-                        
-                        if iring == nrings
-                            seek(rings_file, uptorings + uptoring2 * 24 + 1)
-                            line = read!(rings_file, Vector{Vector3D}(undef, nperring[iring]))
-                        end
-            
-                        seek(rings_file, uptorings + uptoring1 * 24 + 1)
+                        seek(rings_file, uptorings + uptoring1 * 24 )
                         line2 = read!(rings_file, Vector{Vector3D}(undef, nperring[iring-1]))
                     else
                         association = associations[uptoring2+1:uptoring2+nperring[iring]]
                         break_data = breaks[uptoring2+1:uptoring2+nperring[iring]]
-                        if iring == nrings
-                            line = lines[uptoring2+1:uptoring2+nperring[iring]]
-                        end
                         line2 = lines[uptoring1+1:uptoring2]
                     end
             
@@ -231,20 +248,20 @@ module MakeCut
                     # first by using associations from one ring to next
                     # second by going around rings in order of points
                     for iline in 1:nperring[iring]
-                        if check_crossing(line[iline], line[association[iline]])
-                            if dist(line[iline], line2[association[iline]]) < 1
+                        if check_crossing(line[iline], line2[association[iline]], plane_norm, plane_const)
+                            if Common.dist(line[iline], line2[association[iline]]) < 1
                                 # find point in crossing plane and add to list of points
-                                point = find_crossing(line[iline], line2[association[iline]])
+                                point = find_crossing(line[iline], line2[association[iline]], plane_norm, plane_const)
                                 push!(ring_list, point)
                             end
                         end
                     end
-                    for iline in 1:nperring(iring)-1
+                    for iline in 1:nperring[iring]-1
                         nextline = iline + 1
-                        if check_crossing(line[iline], line[nextline])
-                            if (break_data[iline] == 0) & (dist(line[iline], line[nextline]) < 1)
+                        if check_crossing(line[iline], line[nextline], plane_norm, plane_const)
+                            if (break_data[iline] == 0) & (Common.dist(line[iline], line[nextline]) < 1)
                                 # find point in crossing plane and add to list of points
-                                point = find_crossing(line[iline], line[nextline])
+                                point = find_crossing(line[iline], line[nextline], plane_norm, plane_const)
                                 push!(ring_list, point)
                             end
                         end
@@ -262,7 +279,7 @@ module MakeCut
                 # sort points until list is exhausted
                 while size(points, 1) > 0
         
-                    pordered, exit_status = sortpoints(points, spines)
+                    pordered, exit_status = sortpoints(points, spines, disttol)
                     if exit_status
                         break
                     else
@@ -275,7 +292,7 @@ module MakeCut
                 if inull % iprint == 0 println("Done $inull of $nnulls") end
             end
             seekstart(ring_cut_file)
-            write(ring_cut_file) nlines
+            write(ring_cut_file, nlines)
             close(ring_cut_file)
             close(rings_file)
             close(breaks_file)
@@ -289,168 +306,153 @@ module MakeCut
       
         if do_hcs
             # same as the rings above but for the hcs rings - see above for comments
-            hcs_ring_file = open(prefix * "-hcs-cut_"//file_pln//".dat", "w+")
+            hcs_ring_cut_file = open(prefix * "-hcs-cut_" * file_plane * ".dat", "w+")
             hcs_ringinfo_file = open(prefix * "-hcs-ringinfo.dat", "r")
             hcs_rings_file = open(prefix * "-hcs-rings.dat", "r")
             try
+                global hcs_assocs_file
                 hcs_assocs_file = open(prefix * "-hcs-assocs.dat", "r")
             catch
                 throw("HCS Associations file does not exist.")
             end
         
-            nlines = 0
-            write(80) nlines
+            nlines = zero(Int32)
+            write(hcs_ring_cut_file, nlines)
             
-            read(40) nrings
-            read(40) nskip_file
-            allocate(nperring(0:ceiling(real(nrings)/nskip_file-1)))
-            read(40) nrings, nrings, nrings, ncomp
+            nrings = read(hcs_ringinfo_file, Int32)
+            nskip_file = read(hcs_ringinfo_file, Int32)
+            num_rings = ceil(Int32, nrings/nskip_file)
+            nperring = OffsetArray(Vector{Int32}(undef, num_rings), 0:num_rings-1)
+            skip(hcs_ringinfo_file, 12)
+            ncomp = read(hcs_ringinfo_file, Int32)
             
             uptoassoc = 0
             uptorings = 0
         
-            # uptonull = 0
             for ihcs in 1:ncomp
-                allocate(points(3, 0)) # fix
                 ring_list = Vector{Vector3D}(undef, 0)
-                read(40) nperring
+                read!(hcs_ringinfo_file, nperring)
         
                 nrings = count(nperring .> 0) - 1
                 num_nums = sum(nperring)
-                allocate(lines(3, num_nums), associations(num_nums))
-                ia = uptoassoc + 1
-                ip = uptorings + 1
+                ia = uptoassoc
+                ip = uptorings
+
+                seek(hcs_rings_file, ip)
+                seek(hcs_assocs_file, ia)
+
+                lines = Vector{Vector3D}(undef, num_nums)
+                associations = Vector{Int32}(undef, num_nums)
         
                 if num_nums > large_read
                     leftover_num = num_nums
                     read_index = 1
-                    inquire(50, pos=ip)
-                    inquire(55, pos=ia)
                     while (leftover_num > 0)
-                        if (leftover_num > large_read) then
+                        if leftover_num > large_read
                             read_num = large_read
                         else
                             read_num = leftover_num
                         end
-                        read(50) lines(:, read_index:read_index+read_num)
-                        read(55) associations(read_index:read_index+read_num)
+                        read!(hcs_rings_file, lines[read_index:read_index+read_num])
+                        read!(hcs_assocs_file, associations[read_index:read_index+read_num])
                         read_index = read_index + read_num
                         leftover_num = leftover_num - read_num
                     end
                 else
-                    read(50, pos=ip) lines
-                    read(55, pos=ia) associations
+                    read!(hcs_rings_file, lines)
+                    read!(hcs_assocs_file, associations)
                 end
+
+                uptoring1 = sum(nperring[0:nrings-2])
+                uptoring2 = uptoring1 + nperring[nrings-1]
+                line = lines[uptoring2+1:uptoring2+nperring[nrings]]
         
                 for iring in nrings:-1:1
         
-                    uptoring1 = sum(int(nperring(0:iring-2), int64))
-                    uptoring2 = uptoring1 + nperring(iring-1)
+                    uptoring1 = sum(nperring[0:iring-2])
+                    uptoring2 = uptoring1 + nperring[iring-1]
             
-                    # ia = uptoassoc + uptoring2*4_int64 + 1
-                    # ip = uptorings + uptoring2*24_int64 + 1
-                    
-                    # allocate(association(nperring(iring)), line(3, nperring(iring)))
-                    # read(55, pos=ia) association
-                    # read(50, pos=ip) line
+                    association = associations[uptoring2+1:uptoring2+nperring[iring]]
+                    line2 = lines[uptoring1+1:uptoring2]
             
-                    # ip = uptorings + uptoring1*24_int64 + 1
-            
-                    # allocate(line2(3,nperring(iring-1)))
-                    # read(50, pos=ip) line2
-            
-                    association = associations(uptoring2+1:uptoring2+nperring(iring))
-                    if (iring == nrings) line = lines(:, uptoring2+1:uptoring2+nperring(iring)) end
-                    line2 = lines(:, uptoring1+1:uptoring2)
-            
-                    for iline in 1:nperring(iring)
-                        if (check_crossing(line(:, iline), line2(:, association(iline)))) then
-                            if (dist(line(:, iline), line2(:, association(iline))) < 1) then
+                    for iline in 1:nperring[iring]
+                        if check_crossing(line[iline], line2[association[iline]], plane_norm, plane_const)
+                            if Common.dist(line[iline], line2[association[iline]]) < 1
                                 # find point in between at r0 and add to line
-                                point = find_crossing(line(:, iline), line2(:, association(iline)))
+                                point = find_crossing(line[iline], line2[association[iline]], plane_norm, plane_const)
                                 push!(ring_list, point)
                             end
                         end
                     end
                     line = line2
-                    deallocate(association)
                 end
-                deallocate(lines, associations)
-                if (allocated(line)) deallocate(line) end
-                uptoring1 = sum(int(nperring, int64))
-                uptoassoc = uptoassoc + uptoring1*4_int64
-                uptorings = uptorings + uptoring1*24_int64
+                uptoring1 = sum(nperring)
+                uptoassoc = uptoassoc + uptoring1 * 4
+                uptorings = uptorings + uptoring1 * 24
         
-                points = ring_list%to_array()
-                # call ring_list%destroy()
+                points = ring_list
         
                 println("sorting hcs points")
                 println(size(points, 1))
         
-                while (size(points, 2) > 0)
+                while (size(points, 1) > 0)
         
-                    pordered, exit_status = sortpoints(points)
-                    if (exit_status) then
+                    pordered, exit_status = sortpoints(points, spines, disttol)
+                    if exit_status
                         exit
                     else
-                        write(80) int(0, int32), size(pordered, 2), pordered
-                        nlines = nlines + 1
-                        deallocate(pordered)
+                        write(hcs_ring_cut_file, Int32(0), Int32(size(pordered, 1)), pordered)
+                        nlines += one(Int32)
                     end
         
                 end
         
-                deallocate(points)
             end
         
-            write(80, pos=1) nlines
-            close(80)
-            close(40)
-            close(50)
-            close(55)
-            deallocate(nperring)
+            seekstart(hcs_ring_cut_file)
+            write(hcs_ring_cut_file, nlines)
+            close(hcs_ring_cut_file)
+            close(hcs_ringinfo_file)
+            close(hcs_rings_file)
+            close(hcs_assocs_file)
         
             # ********************************************************************************
         
             # for each hcs separator, check whether we cross the plane and add point to file
             # need to do this after rings (can't remember why)
-            open(unit=80, file=trim(fileout)//"-hcs-separators-cut_"//file_pln//".dat", "w")
-            open(unit=20, file=trim(fileout)//"-hcs-connectivity.dat", "r")
-            open(unit=30, file=trim(fileout)//"-hcs-separators.dat", "r")
+            hcs_separators_cut_file = open(prefix * "-hcs-separators-cut_" * file_plane * ".dat", "w+")
+            hcs_connectivity_file = open(prefix * "-hcs-connectivity.dat", "r")
+            hcs_separators_file = open(prefix * "-hcs-separators.dat", "r")
             
-            ipt = 0
-            write(80) ipt
-            read(20) nseps
+            ipt = zero(Int32)
+            write(hcs_separators_cut_file, ipt)
+            nseps = read(hcs_connectivity_file, Int32)
             for isep in 1:nseps
-                read(20) inull, flag
-                read(30) npoints
-                allocate(line(3, npoints))
-                read(30) line
+                inull, flag = read(hcs_connectivity_file, Tuple{Int32, Int32}) 
+                npoints = read(hcs_separators_file, Int32) 
+                line = read!(hcs_separators_file, Vector{Vector3D}(undef, npoints))
                 for iline in 1:npoints-1
                     nextline = iline+1
-                    if (check_crossing(line(:, iline), line(:, nextline))) then
-                        if (dist(line(:, iline), line(:, nextline)) < 1) then
-                        point = find_crossing(line(:, iline), line(:, nextline))
-                        write(80) flag, point
-                        ipt = ipt + 1
+                    if check_crossing(line[iline], line[nextline], plane_norm, plane_const)
+                        if Common.dist(line[iline], line[nextline]) < 1
+                            point = find_crossing(line[iline], line[nextline], plane_norm, plane_const)
+                            write(hcs_separators_cut_file, flag, point)
+                            ipt += one(Int32)
                         end
                     end
                 end
-                read(20) flag, flag # don't care about these - just reposition file marker
-                deallocate(line)
+                skip(hcs_connectivity_file, 8)
             end
-            
-            write(80, pos=1) ipt
-            close(80)
-            close(30)
-            close(20)
+            seekstart(hcs_separators_cut_file)
+            write(hcs_separators_cut_file, ipt)
+            close(hcs_separators_cut_file)
+            close(hcs_separators_file)
+            close(hcs_connectivity_file)
         end
       
         # call system_clock(tstop, count_rate)
         # print*, 'Time taken:', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"
       
-        # call spine_list%destroy()
-
     end
 
     function sortpoints(points::Vector{Vector3D}, spines::Vector{Vector3D}, disttol::Float64)
@@ -461,7 +463,7 @@ module MakeCut
         if size(points, 1) > 5000
             npoints = 5000
         else
-            npoints = size(points, 2)
+            npoints = size(points, 1)
         end
 
         # calculate point to point distances
@@ -520,10 +522,10 @@ module MakeCut
                             break
                         elseif mindist < disttol
                             pushfirst!(pt_list, points[imindist])
-                            deleteat!(pt_list, imindist)
+                            deleteat!(points, imindist)
                         elseif (Common.dot(diff, Common.normalise(points[imindist] - pt1)) > 0.95) & (mindist < 5*disttol) # line is almost straight
                             pushfirst!(pt_list, points[imindist])
-                            deleteat!(pt_list, imindist)
+                            deleteat!(points, imindist)
                         else
                             break
                         end
@@ -550,10 +552,10 @@ module MakeCut
 
     end
 
-    function check_crossing(r1::Vector3D, r2::Vector3D)
+    function check_crossing(r1::Vector3D, r2::Vector3D, plane_norm::Vector3D, plane_const::Float64)
         # checks if line between two points crosses plane
 
-        return plane(r1) * plane(r2) <= 0
+        return plane(r1, plane_norm, plane_const) * plane(r2, plane_norm, plane_const) <= 0
 
     end
 
