@@ -3,12 +3,29 @@ module Read
     using StaticArrays
 
     using ..Params
-    import ..Common
+    using ..Common
 
     function prefix(filename)
         fname = splitpath(filename)[end]
         dot = findlast('.', fname)
         return fname[1:dot-1]
+    end
+
+    function read_field(filename::String, coordinate_system::String)
+        fieldfile = open(filename, "r")
+		nx, ny, nz = read!(fieldfile, Array{Int32}(undef, 3))
+		bgrid = read!(fieldfile, Array{Float64, 4}(undef, nx, ny, nz, 3))
+		x = read!(fieldfile, Array{Float64, 1}(undef, nx))
+		y = read!(fieldfile, Array{Float64, 1}(undef, ny))
+		z = read!(fieldfile, Array{Float64, 1}(undef, nz))
+        close(fieldfile)
+        if coordinate_system == "Cartesian"
+            return CartesianField3D(filename, bgrid, x, y, z)
+        elseif coordinate_system == "Spherical"
+            return SphericalField3D(filename, bgrid, x, y, z)
+        else
+            ArgumentError("Not a recognised coordinate system")
+        end
     end
 
     function read_nulls(filename::AbstractString)

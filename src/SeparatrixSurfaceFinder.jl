@@ -11,14 +11,14 @@ module SeparatrixSurfaceFinder
     const hspine = 0.5*stepsize
     const spinemax = 10*ringsmax
 
-    function SSF(filename::AbstractString)
-        bgrid = Common.read_field(filename)
-        nnulls, rnulls, rnullsreal = Read.read_nulls(filename)
-        nnulls, signs, spines, fans = Read.read_nulldata(filename)
+    function SSF(bgrid::Common.AbstractField3D)
+        # bgrid = Read.read_field(filename, "Cartesian")
+        nnulls, rnulls, rnullsreal = Read.read_nulls(bgrid.filename)
+        nnulls, signs, spines, fans = Read.read_nulldata(bgrid.filename)
 
         rnullsalt = copy(rnulls)
 
-        outfile_init = joinpath(default_output, Read.prefix(filename))
+        outfile_init = joinpath(default_output, Read.prefix(bgrid.filename))
 
         # stores all info regarding size of rings
         ringinfo_file = open(outfile_init * "-ringinfo.dat", "w+")

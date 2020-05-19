@@ -47,7 +47,7 @@ module SpineFinder
 
     end
 
-    function get_properties(rnull::Vector3D, bgrid::Field3D)
+    function get_properties(rnull::Vector3D, bgrid::AbstractField3D)
 
         rsphere = rspherefact * (1e-1)^sig_figs
         nphi1 = nphi/2
@@ -357,7 +357,7 @@ module SpineFinder
         return r * Vector3D([sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)])
     end
 
-    function it_conv(rold::Vector3D, rnull::Vector3D, bgrid::Field3D, it_dist::Float64, dir::Integer)
+    function it_conv(rold::Vector3D, rnull::Vector3D, bgrid::AbstractField3D, it_dist::Float64, dir::Integer)
         
         bvec = Common.trilinear(rold + rnull, bgrid)
         rnew = rold + dir * it_dist * Common.normalise(bvec)
@@ -367,7 +367,7 @@ module SpineFinder
         
     end
 
-    function it_conv(rold::Vector3D, rnull::Vector3D, bgrid::Field3D, maxvec::Vector3D, it_dist::Float64, dir::Integer)
+    function it_conv(rold::Vector3D, rnull::Vector3D, bgrid::AbstractField3D, maxvec::Vector3D, it_dist::Float64, dir::Integer)
         
         bvec = Common.trilinear(rold + rnull, bgrid)
         bvec = bvec - Common.dot(bvec, Common.normalise(maxvec))*Common.normalise(maxvec)

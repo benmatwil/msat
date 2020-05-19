@@ -1,6 +1,6 @@
 module Trace
     using StaticArrays
-    import ..Common
+    using ..Common
     using ..Params
 
 	# rkf45 parameters
@@ -30,7 +30,7 @@ module Trace
     const z5 = -9/50
     const z6 = 2/55
 
-    function trace_line(r::Common.Vector3D, sign::Integer, htotal::AbstractFloat, field::Common.Field3D)
+    function trace_line(r::Vector3D, sign::Integer, htotal::AbstractFloat, field::AbstractField3D)
     # traces a line from 'r' for 'nsteps' integration steps in the direction along the line as specified by 'sign'. Each step is of length h
 
         hdum = 0.0
@@ -47,7 +47,7 @@ module Trace
 
     # ********************************************************************************
 
-    function rk45(r::Common.Vector3D, h::AbstractFloat, field::Common.Field3D)
+    function rk45(r::Vector3D, h::AbstractFloat, field::AbstractField3D)
     # runge-kutta fehlberg integrator. Calculates a 4th order estimate (y) and a
     # fifth order estimate (z) and calculates the difference between them. From this it
     # determines the optimal step length with which to integrate the function by.
@@ -116,7 +116,7 @@ module Trace
 
     # ********************************************************************************
 
-    function getdr(r::Common.Vector3D, field::Common.Field3D)
+    function getdr(r::Vector3D, field::T) where T<:AbstractField3D
         # outputs length of one gridcell in 'physical' length units (essentially (dx,dy,dz))
         # integer(int32) :: ix, iy, iz
 
@@ -131,7 +131,13 @@ module Trace
         dy = field.y[iy+1] - field.y[iy]
         dz = field.z[iz+1] - field.z[iz]
 
-        getdr = SA[dx, dy, dz]
+        if T == CartesianField3D
+            return SA[dx, dy, dz]
+        elseif T == SphericalField3D
+            xp = field.x[ix] + (rcheck[1] - ix)*dx
+            yp = field.y[iy] + (rcheck[2] - iy)*dy
+            return SA[dx, xp*dy, xp*sin(yp)*dz]
+        end
 
     end
 

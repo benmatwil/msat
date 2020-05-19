@@ -114,17 +114,17 @@ module Ring
     end
 
     function sep_detect!(line1::Vector{Vector3D},
-                        rnulls::Vector{Vector3D},
-                        rnullsalt::Vector{Vector3D},
-                        signs::Vector{Int32},
-                        spines::Vector{Vector3D},
-                        breaks::Vector{Int32},
-                        nullnum::Integer,
-                        nring::Integer,
-                        sign::Integer,
-                        nulldist::AbstractFloat,
-                        field::Field3D,
-                        connectivity_file::IOStream)
+                         rnulls::Vector{Vector3D},
+                         rnullsalt::Vector{Vector3D},
+                         signs::Vector{Int32},
+                         spines::Vector{Vector3D},
+                         breaks::Vector{Int32},
+                         nullnum::Integer,
+                         nring::Integer,
+                         sign::Integer,
+                         nulldist::AbstractFloat,
+                         field::AbstractField3D,
+                         connectivity_file::IOStream)
 
         nlines = size(line1, 1)
         maxcount = 1000

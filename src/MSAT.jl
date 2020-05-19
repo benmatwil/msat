@@ -22,14 +22,17 @@ module MSAT
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
+    using StaticArrays
 
     # field = MSAT.Common.read_field("data/bmag0037.dat")
     # middle = MSAT.Common.Vector3D([10, 20, 30])
     # starts = [middle + [cos(i), sin(i), 0] for i in (0:99)/100*2*pi]
     # pts = [MSAT.Trace.trace_line(start, 1, MSAT.stepsize, field) for start in starts]
     datafile = "data\\bmag0037-jl.dat"
+    bgrid = MSAT.Read.read_field(datafile, "Cartesian")
 
     # MSAT.NullFinder.NF(datafile)
     # MSAT.SpineFinder.SF(datafile)
-    MSAT.SeparatrixSurfaceFinder.SSF(datafile)
+    MSAT.SeparatrixSurfaceFinder.SSF(bgrid)
+    # MSAT.MakeCut.MC("data\\bmag0037-jl.dat", SA[0,0,1.], 2., do_hcs=false)
 end

@@ -4,13 +4,17 @@ module Common
 	using OffsetArrays
 	using ..Params
 
-	export Vector3D, Field3D
+	export Vector3D
+	export AbstractField3D, CartesianField3D, SphericalField3D
 	# common functions, subroutine and variables for all programs MSAT
 
     const Vector3D = SVector{3, Float64}
 
-    struct Field3D
-        field::Array{Float64, 4}
+	abstract type AbstractField3D end
+
+    struct CartesianField3D <: AbstractField3D
+		filename::String
+		field::Array{Float64, 4}
         x::Vector{Float64}
         y::Vector{Float64}
         z::Vector{Float64}
@@ -21,7 +25,22 @@ module Common
         zmin::Float64
         zmax::Float64
     end
-    Field3D(field, x, y, z) = Field3D(field, x, y, z, 1, size(x, 1), 1, size(y, 1), 1, size(z, 1))
+	CartesianField3D(filename, field, x, y, z) = CartesianField3D(filename, field, x, y, z, 1, size(x, 1), 1, size(y, 1), 1, size(z, 1))
+
+	struct SphericalField3D <: AbstractField3D
+		filename::String
+		field::Array{Float64, 4}
+        x::Vector{Float64}
+        y::Vector{Float64}
+        z::Vector{Float64}
+        xmin::Float64
+        xmax::Float64
+        ymin::Float64
+        ymax::Float64
+        zmin::Float64
+        zmax::Float64
+    end
+	SphericalField3D(filename, field, x, y, z) = SphericalField3D(filename, field, x, y, z, 1, size(x, 1), 1, size(y, 1), 1, size(z, 1))
 
 	# function filenames()
 	# 	# sets the filenames as required for reading from and writing to
@@ -67,7 +86,7 @@ module Common
 
 	# ********************************************************************************
 
-	function trilinear(r::Vector3D, field::Field3D)
+	function trilinear(r::Vector3D, field::T) where T<:AbstractField3D
 		# find the value of vector field at r using the trilinear method
 
 		edgecheck(r, field)
@@ -83,27 +102,37 @@ module Common
 		# if point goes out of an edge which is not periodic, set point to be at boundary to trilinear
 		# it will go out and be removed soon
 		if outedge(r, field)
-            if xp <= field.xmin
-                xp = field.xmin
-                nx = ceil(Int, xp)
-            elseif xp >= field.xmax
-                xp = field.xmax
-                nx = ceil(Int, xp) - 1
-            end
-            if yp <= field.ymin
-                yp = field.ymin
-                ny = ceil(Int, yp)
-            elseif yp >= field.ymax
-                yp = field.ymax
-                ny = ceil(Int, yp) - 1
-            end
-            if zp <= field.zmin
-                zp = field.zmin
-                nz = ceil(Int, zp)
-            elseif zp >= field.zmax
-                zp = field.zmax
-                nz = ceil(Int, zp) - 1
-            end
+			if T == CartesianField3D
+				if xp <= field.xmin
+					xp = field.xmin
+					nx = ceil(Int, xp)
+				elseif xp >= field.xmax
+					xp = field.xmax
+					nx = ceil(Int, xp) - 1
+				end
+				if yp <= field.ymin
+					yp = field.ymin
+					ny = ceil(Int, yp)
+				elseif yp >= field.ymax
+					yp = field.ymax
+					ny = ceil(Int, yp) - 1
+				end
+				if zp <= field.zmin
+					zp = field.zmin
+					nz = ceil(Int, zp)
+				elseif zp >= field.zmax
+					zp = field.zmax
+					nz = ceil(Int, zp) - 1
+				end
+			elseif T == SphericalField3D
+				if xp <= field.xmin
+					xp = field.xmin
+					nx = ceil(Int, xp)
+				elseif xp >= field.xmax
+					xp = field.xmax
+					nx = ceil(Int, xp) - 1
+				end
+			end
 		end
 
         # if it's not ssf
@@ -180,24 +209,36 @@ module Common
 
 	# ********************************************************************************
 
-	function outedge(r::Vector3D, field::Field3D)
+	function outedge(r::Vector3D, field::T) where T<:AbstractField3D
 		# determines if the point r is outwith the computation box across a non periodic
 		# boundary and flags true or false
 
-		if adjust_cartesian_periodicity
-            out_cond = false
-            if ! periodic_x
-                out_cond = out_cond | (r[1] >= field.xmax) | (r[1] <= field.xmin)
-            end
-            if ! periodic_y
-                out_cond = out_cond | (r[2] >= field.ymax) | (r[2] <= field.ymin)
-            end
-            if ! periodic_z
-                out_cond = out_cond | (r[3] >= field.zmax) | (r[3] <= field.zmin)
-            end
-        else
-            out_cond = (r[1] >= field.xmax) | (r[1] <= field.xmin) | (r[2] >= field.ymax) | (r[2] <= field.ymin) | (r[3] >= field.zmax) | (r[3] <= field.zmin)
-        end
+		if T == CartesianField3D
+			if adjust_cartesian_periodicity
+				out_cond = false
+				if ! periodic_x
+					out_cond = out_cond | (r[1] >= field.xmax) | (r[1] <= field.xmin)
+				end
+				if ! periodic_y
+					out_cond = out_cond | (r[2] >= field.ymax) | (r[2] <= field.ymin)
+				end
+				if ! periodic_z
+					out_cond = out_cond | (r[3] >= field.zmax) | (r[3] <= field.zmin)
+				end
+			else
+				out_cond = (r[1] >= field.xmax) | (r[1] <= field.xmin) | (r[2] >= field.ymax) | (r[2] <= field.ymin) | (r[3] >= field.zmax) | (r[3] <= field.zmin)
+			end
+		elseif T == SphericalField3D
+			outedge = (r[1] >= field.xmax) | (r[1] <= field.xmin)
+			if adjust_spherical_periodicity
+				if ! periodic_theta
+					outedge = outedge | (r[2] >= field.ymax) | (r[2] <= field.ymin)
+				end
+				if ! periodic_phi
+					outedge = outedge | (r[3] >= field.zmax) | (r[3] <= field.zmin)
+				end
+			end
+		end
 
         return out_cond
 		
@@ -205,35 +246,83 @@ module Common
 
 	# ********************************************************************************
 
-	function edgecheck(r::Vector3D, field::Field3D)
+	function edgecheck(r::Vector3D, field::T) where T<:AbstractField3D
 		# determines if the point r is outwith the computational box across a 
 		# periodic boundary and moves it if necessary
 
-		if adjust_cartesian_periodicity
-            if periodic_x
-                if r[1] <= field.xmin
-                    r[1] = r[1] + (field.xmax - field.xmin)
-                end
-                if r[1] >= field.xmax
-                    r[1] = r[1] - (field.xmax - field.xmin)
-                end
-            end
-            if periodic_y
-                if r[2] <= field.ymin
-                    r[2] = r[2] + (field.ymax - field.ymin)
-                end
-                if r[2] >= field.ymax
-                    r[2] = r[2] - (field.ymax - field.ymin)
-                end
-            end
-            if periodic_z
-                if r[3] <= field.zmin
-                    r[3] = r[3] + (field.zmax - field.zmin)
-                end
-                if r[3] >= field.zmax
-                    r[3] = r[3] - (field.zmax - field.zmin)
-                end
-            end
+		if T == CartesianField3D
+			if adjust_cartesian_periodicity
+				if periodic_x
+					if r[1] <= field.xmin
+						r[1] = r[1] + (field.xmax - field.xmin)
+					end
+					if r[1] >= field.xmax
+						r[1] = r[1] - (field.xmax - field.xmin)
+					end
+				end
+				if periodic_y
+					if r[2] <= field.ymin
+						r[2] = r[2] + (field.ymax - field.ymin)
+					end
+					if r[2] >= field.ymax
+						r[2] = r[2] - (field.ymax - field.ymin)
+					end
+				end
+				if periodic_z
+					if r[3] <= field.zmin
+						r[3] = r[3] + (field.zmax - field.zmin)
+					end
+					if r[3] >= field.zmax
+						r[3] = r[3] - (field.zmax - field.zmin)
+					end
+				end
+			end
+		elseif T == SphericalField3D
+			if adjust_spherical_periodicity
+				if periodic_theta
+					if (r[2] < field.ymin) | (r[2] > field.ymax)
+						if r[2] < field.ymin
+							r[2] = 2*field.ymin - r[2]
+						end
+						if r[2] > field.ymax
+							r[2] = 2*field.ymax - r[2]
+						end
+						if r[3] < (field.zmax + field.zmin)/2
+							r[3] = r[3] + (field.zmax - field.zmin)/2
+						else
+							r[3] = r[3] - (field.zmax - field.zmin)/2
+						end
+					end
+				end
+				if periodic_phi
+					if r[3] <= field.zmin
+						r[3] = r[3] + (field.zmax - field.zmin)
+					end
+					if r[3] >= field.zmax
+						r[3] = r[3] - (field.zmax - field.zmin)
+					end
+				end
+			else
+				if (r[2] < field.ymin) | (r[2] > field.ymax)
+					if r[2] < field.ymin
+						r[2] = 2*field.ymin - r[2]
+					end
+					if r[2] > field.ymax
+						r[2] = 2*field.ymax - r[2]
+					end
+					if r[3] < (field.zmax + field.zmin)/2
+						r[3] = r[3] + (field.zmax - field.zmin)/2
+					else
+						r[3] = r[3] - (field.zmax - field.zmin)/2
+					end
+				end
+				if (r[3] <= field.zmin)
+					r[3] = r[3] + (field.zmax - field.zmin)
+				end
+				if (r[3] >= field.zmax)
+					r[3] = r[3] - (field.zmax - field.zmin)
+				end
+			end
 		end
 			
 	end
@@ -299,7 +388,7 @@ module Common
 
 	# ********************************************************************************
 
-	function gtr(pt::Vector3D, field::Field3D)
+	function gtr(pt::Vector3D, field::AbstractField3D)
 		# converts a list of grid points to real coordinates
 
 		ig = floor.(Int, pt)
@@ -327,17 +416,4 @@ module Common
 
 	end
 	
-	# ********************************************************************************
-    
-    function read_field(filename::String)
-        fieldfile = open(filename, "r")
-		nx, ny, nz = read!(fieldfile, Array{Int32}(undef, 3))
-		bgrid = read!(fieldfile, Array{Float64, 4}(undef, nx, ny, nz, 3))
-		x = read!(fieldfile, Array{Float64, 1}(undef, nx))
-		y = read!(fieldfile, Array{Float64, 1}(undef, ny))
-		z = read!(fieldfile, Array{Float64, 1}(undef, nz))
-		close(fieldfile)
-		return Field3D(bgrid, x, y, z)
-    end
-
 end
