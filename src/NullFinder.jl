@@ -173,11 +173,11 @@ module NullFinder
         null_test = false
 
         for (num, index) in enumerate(((:, :, 1),
-                                    (1, :, :),
-                                    (2, :, :),
-                                    (:, 1, :),
-                                    (:, 2, :),
-                                    (:, :, 2)))
+                                       (1, :, :),
+                                       (2, :, :),
+                                       (:, 1, :),
+                                       (:, 2, :),
+                                       (:, :, 2))) # not constant type
             facex = cube[index..., 1]
             facey = cube[index..., 2]
             facez = cube[index..., 3]
@@ -231,8 +231,8 @@ module NullFinder
         sign, cross = 0, 0
         nsol = 0
 
-        same_sign = ((count(facex .> zero_value) == 4 )| (count(facex .< -zero_value) == 4) |
-                     (count(facey .> zero_value) == 4 )| (count(facey .< -zero_value) == 4))
+        same_sign = ((count(facex .> zero_value) == 4 ) | (count(facex .< -zero_value) == 4) |
+                     (count(facey .> zero_value) == 4 ) | (count(facey .< -zero_value) == 4))
 
         not_zero = sum(abs.(facex) + abs.(facey) + abs.(facez)) > 12*zero_value
 
@@ -342,7 +342,7 @@ module NullFinder
 
         edge_check = 0
 
-        for index in ((:, 1), (:, 2), (1, :), (2, :))
+        for index in ((:, 1), (:, 2), (1, :), (2, :)) # not a constant type
 
             linex = facex[index...]
             liney = facey[index...]
@@ -363,6 +363,8 @@ module NullFinder
     function line_check(linex, liney, linez)
         # checks if null lies on an edge
 
+        line_check = 0
+
         if ((linex[1] == 0.0) & (linex[2] == 0.0)) & ((liney[1] == 0.0) & (liney[2] == 0.0))
             if linez[1] * linez[2] <= 0.0
                 line_check = 1
@@ -375,8 +377,6 @@ module NullFinder
             if linex[1] * linex[2] <= 0.0
                 line_check = 1
             end
-        else
-            line_check = 0
         end
 
         return line_check

@@ -185,7 +185,6 @@ module SeparatrixSurfaceFinder
                 end
                 write(tempfile, associations, write_ring)
 
-                # write to file
             end
 
             flush(tempfile)
