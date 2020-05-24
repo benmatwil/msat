@@ -10,6 +10,7 @@ module MSAT
     include("NullFinder.jl")
     include("SpineFinder.jl")
     include("SeparatrixSurfaceFinder.jl")
+    include("HeliosphericCurrentSheet.jl")
     include("MakeCut.jl")
 
     function test()
