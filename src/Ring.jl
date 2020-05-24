@@ -198,7 +198,7 @@ module Ring
                         while (Common.dist(pt, rnulls[inull]) < tracedist) & (count < maxcount)
                             h = h0
                             pt = Trace.trace_line(pt, sign, h, field)
-                            Common.edgecheck(pt, field)
+                            pt = Common.edgecheck(pt, field)
                             count = count + 1
                         end
             

@@ -121,7 +121,7 @@ module Trace
         # integer(int32) :: ix, iy, iz
 
         rcheck = copy(r)
-        Common.edgecheck(rcheck, field)
+        rcheck = Common.edgecheck(rcheck, field)
 
         ix = floor(Int, rcheck[1])
         iy = floor(Int, rcheck[2])

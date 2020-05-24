@@ -82,7 +82,6 @@ module SeparatrixSurfaceFinder
                     break
                 end
 
-                nrings = iring
                 endpoints = zeros(Int32, size(line1, 1))
                 associations = zeros(Int32, size(line1, 1))
 
@@ -146,9 +145,7 @@ module SeparatrixSurfaceFinder
 
                 Ring.add_points!(line1, line2, breaks, associations, nearnull, maxdist)
 
-                for point in line1
-                    Common.edgecheck(point, bgrid)
-                end
+                line1 = Common.edgecheck.(line1, Ref(bgrid))
 
                 if size(line1, 1) > pointsmax
                     println("Reached maximum number of points")
@@ -224,7 +221,7 @@ module SeparatrixSurfaceFinder
                     end
                     push!(spine, rspine)
                     rspine = Trace.trace_line(rspine, -signs[inull], hspine, bgrid)
-                    Common.edgecheck(rspine, bgrid)
+                    rspine = Common.edgecheck(rspine, bgrid)
                 end
                 write(spine_file, Int32(size(spine, 1)), Common.gtr.(spine, Ref(bgrid)))
             end

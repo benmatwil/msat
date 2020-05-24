@@ -89,7 +89,7 @@ module Common
 	function trilinear(r::Vector3D, field::T) where T<:AbstractField3D
 		# find the value of vector field at r using the trilinear method
 
-		edgecheck(r, field)
+		r = edgecheck(r, field)
 
 		xp = r[1]
 		yp = r[2]
@@ -203,7 +203,7 @@ module Common
 	function dist(a::Vector3D, b::Vector3D)
 		# calculates the distance between two points in grid units
 		
-		return sqrt(sum((b - a) .^ 2))
+		return sqrt(sum((b .- a) .^ 2))
 
 	end
 
@@ -229,13 +229,13 @@ module Common
 				out_cond = (r[1] >= field.xmax) | (r[1] <= field.xmin) | (r[2] >= field.ymax) | (r[2] <= field.ymin) | (r[3] >= field.zmax) | (r[3] <= field.zmin)
 			end
 		elseif T == SphericalField3D
-			outedge = (r[1] >= field.xmax) | (r[1] <= field.xmin)
+			out_cond = (r[1] >= field.xmax) | (r[1] <= field.xmin)
 			if adjust_spherical_periodicity
 				if ! periodic_theta
-					outedge = outedge | (r[2] >= field.ymax) | (r[2] <= field.ymin)
+					out_cond = outedge | (r[2] >= field.ymax) | (r[2] <= field.ymin)
 				end
 				if ! periodic_phi
-					outedge = outedge | (r[3] >= field.zmax) | (r[3] <= field.zmin)
+					out_cond = outedge | (r[3] >= field.zmax) | (r[3] <= field.zmin)
 				end
 			end
 		end
@@ -246,63 +246,47 @@ module Common
 
 	# ********************************************************************************
 
-	function edgecheck(r::Vector3D, field::T) where T<:AbstractField3D
+	function edgecheck(r::Vector3D, field::CartesianField3D)
 		# determines if the point r is outwith the computational box across a 
 		# periodic boundary and moves it if necessary
 
-		if T == CartesianField3D
-			if adjust_cartesian_periodicity
-				if periodic_x
-					if r[1] <= field.xmin
-						r[1] = r[1] + (field.xmax - field.xmin)
-					end
-					if r[1] >= field.xmax
-						r[1] = r[1] - (field.xmax - field.xmin)
-					end
+		if adjust_cartesian_periodicity
+			rmut = MVector(r)
+			if periodic_x
+				if r[1] <= field.xmin
+					rmut[1] += field.xmax - field.xmin
 				end
-				if periodic_y
-					if r[2] <= field.ymin
-						r[2] = r[2] + (field.ymax - field.ymin)
-					end
-					if r[2] >= field.ymax
-						r[2] = r[2] - (field.ymax - field.ymin)
-					end
-				end
-				if periodic_z
-					if r[3] <= field.zmin
-						r[3] = r[3] + (field.zmax - field.zmin)
-					end
-					if r[3] >= field.zmax
-						r[3] = r[3] - (field.zmax - field.zmin)
-					end
+				if r[1] >= field.xmax
+					rmut[1] += field.xmin - field.xmax
 				end
 			end
-		elseif T == SphericalField3D
-			if adjust_spherical_periodicity
-				if periodic_theta
-					if (r[2] < field.ymin) | (r[2] > field.ymax)
-						if r[2] < field.ymin
-							r[2] = 2*field.ymin - r[2]
-						end
-						if r[2] > field.ymax
-							r[2] = 2*field.ymax - r[2]
-						end
-						if r[3] < (field.zmax + field.zmin)/2
-							r[3] = r[3] + (field.zmax - field.zmin)/2
-						else
-							r[3] = r[3] - (field.zmax - field.zmin)/2
-						end
-					end
+			if periodic_y
+				if r[2] <= field.ymin
+					rmut[2] += field.ymax - field.ymin
 				end
-				if periodic_phi
-					if r[3] <= field.zmin
-						r[3] = r[3] + (field.zmax - field.zmin)
-					end
-					if r[3] >= field.zmax
-						r[3] = r[3] - (field.zmax - field.zmin)
-					end
+				if r[2] >= field.ymax
+					rmut[2] += field.ymin - field.ymax
 				end
-			else
+			end
+			if periodic_z
+				if r[3] <= field.zmin
+					rmut[3] += field.zmax - field.zmin
+				end
+				if r[3] >= field.zmax
+					rmut[3] += field.zmin - field.zmax
+				end
+			end
+			return SVector(rmut)
+		end
+		return r
+	end
+
+	function edgecheck(r::Vector3D, field::SphericalField3D)
+		# determines if the point r is outwith the computational box across a 
+		# periodic boundary and moves it if necessary
+
+		if adjust_spherical_periodicity
+			if periodic_theta
 				if (r[2] < field.ymin) | (r[2] > field.ymax)
 					if r[2] < field.ymin
 						r[2] = 2*field.ymin - r[2]
@@ -316,13 +300,38 @@ module Common
 						r[3] = r[3] - (field.zmax - field.zmin)/2
 					end
 				end
-				if (r[3] <= field.zmin)
+			end
+			if periodic_phi
+				if r[3] <= field.zmin
 					r[3] = r[3] + (field.zmax - field.zmin)
 				end
-				if (r[3] >= field.zmax)
+				if r[3] >= field.zmax
 					r[3] = r[3] - (field.zmax - field.zmin)
 				end
 			end
+			return r # this section needs sorting
+		else
+			rmut = MVector(r)
+			if (r[2] < field.ymin) | (r[2] > field.ymax)
+				if r[2] < field.ymin
+					rmut[2] = 2*field.ymin - r[2]
+				end
+				if r[2] > field.ymax
+					rmut[2] = 2*field.ymax - r[2]
+				end
+				if r[3] < (field.zmax + field.zmin)/2
+					rmut[3] += (field.zmax - field.zmin)/2
+				else
+					rmut[3] += (field.zmin - field.zmax)/2
+				end
+			end
+			if (r[3] <= field.zmin)
+				rmut[3] += field.zmax - field.zmin
+			end
+			if (r[3] >= field.zmax)
+				rmut[3] += (field.zmin - field.zmax)
+			end
+			return SVector(rmut)
 		end
 			
 	end
