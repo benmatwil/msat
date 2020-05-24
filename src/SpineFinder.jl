@@ -5,10 +5,9 @@ module SpineFinder
     using ..Read
     using ..Trace
 
-    function SF(filename::AbstractString)
+    function SF(bgrid::AbstractField3D)
 
         nnulls, rnulls, rnullsreal = Read.read_nulls(filename)
-        bgrid = Common.read_field(filename)
 
         signs = zeros(Int32, nnulls)
         spines = zeros(Common.Vector3D, nnulls)
@@ -24,7 +23,7 @@ module SpineFinder
         end
 
         # now write data
-        outfname = joinpath(default_output, Read.prefix(filename) * "-nulldata.dat")
+        outfname = joinpath(default_output, Read.prefix(bgrid.filename) * "-nulldata.dat")
         spinefile = open(outfname, "w")
             write(spinefile, nnulls)
             write(spinefile, signs, spines, fans, warnings)
