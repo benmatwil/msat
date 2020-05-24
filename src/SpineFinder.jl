@@ -7,7 +7,7 @@ module SpineFinder
 
     function SF(bgrid::AbstractField3D)
 
-        nnulls, rnulls, rnullsreal = Read.read_nulls(filename)
+        nnulls, rnulls, rnullsreal = Read.read_nulls(bgrid.filename)
 
         signs = zeros(Int32, nnulls)
         spines = zeros(Common.Vector3D, nnulls)
