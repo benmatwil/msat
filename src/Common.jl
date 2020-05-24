@@ -160,6 +160,43 @@ module Common
 
 	end
 
+	function trilinear_nf(r::Vector3D, field::T) where T<:AbstractField3D
+		# find the value of vector field at r using the trilinear method
+
+		xp = r[1]
+		yp = r[2]
+		zp = r[3]
+
+		nx = floor(Int, xp)
+		ny = floor(Int, yp)
+		nz = floor(Int, zp)
+
+		if xp >= field.xmax
+            xp = field.xmax
+            nx = Int(xp - 1)
+		end
+		if yp >= field.ymax
+            yp = field.ymax
+            ny = Int(yp - 1)
+		end
+		if zp >= field.zmax
+            zp = field.zmax
+            nz = Int(zp - 1)
+		end
+
+		x = xp - nx
+		y = yp - ny
+		z = zp - nz
+
+		# println("$nx, $ny, $nz, $xp, $yp, $zp")
+
+        cube = SArray{Tuple{2, 2, 2, 3}, Float64}(field.field[nx:nx+1, ny:ny+1, nz:nz+1, :])
+        square = (1 - z)*cube[:, :, 1, :] + z*cube[:, :, 2, :]
+        line = (1 - y)*square[:, 1, :] + y*square[:, 2, :]
+        return (1 - x)*line[1, :] + x*line[2, :]
+
+	end
+
 	# ********************************************************************************
 
 	function dot(a::Vector3D, b::Vector3D)
