@@ -147,7 +147,7 @@ module NullFinder
             println(pt)
         end
 
-        outfname = joinpath(default_output, Read.prefix(filename) * "-nullpos.dat")        
+        outfname = joinpath(default_output, Read.prefix(bgrid.filename) * "-nullpos.dat")        
         println("Writing null positions to $(outfname)")
         nullfile = open(outfname, "w")
             write(nullfile, Int32(size(nullpts, 1)))
