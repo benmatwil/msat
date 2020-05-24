@@ -35,7 +35,7 @@ module NullFinder
                     for izsub in 1:11, iysub in 1:11, ixsub in 1:11
 
                         rtri = rnull + [ixsub-1, iysub-1, izsub-1]*ds
-                        subcube[ixsub, iysub, izsub, :] = Common.trilinear(rtri, bgrid)
+                        subcube[ixsub, iysub, izsub, :] = Common.trilinear_nf(rtri, bgrid)
 
                     end
                     for izsub in 1:10, iysub in 1:10, ixsub in 1:10
@@ -59,7 +59,7 @@ module NullFinder
                             println("Candidate null in cell: [$(ix), $(iy), $(iz)]")
                             println("Don't believe this null. ERROR :(")
                             println("Point to $(isig) sigfigs:, $(Float32.(rnull))")
-                            println("|B| at point: $(sqrt(sum(Common.trilinear(rnull, bgrid).^2)))")
+                            println("|B| at point: $(sqrt(sum(Common.trilinear_nf(rnull, bgrid).^2)))")
                             println("")
                         end
                         @goto end_sigloop
@@ -74,7 +74,7 @@ module NullFinder
                     for izsub in 1:2, iysub in 1:2, ixsub in 1:2
                         # find all field values of subgrid
                         rtri = rnull + [ixsub-1, iysub-1, izsub-1]*ds
-                        cube[ixsub, iysub, izsub, :] = Common.trilinear(rtri, bgrid)
+                        cube[ixsub, iysub, izsub, :] = Common.trilinear_nf(rtri, bgrid)
                     end
         
                     mincube = Tuple(argmin(dropdims(sum(cube .^ 2, dims=4), dims=4)))
