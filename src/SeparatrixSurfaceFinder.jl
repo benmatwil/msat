@@ -45,8 +45,6 @@ module SeparatrixSurfaceFinder
         for inull in 1:nnulls
             tempfile = open(tempfilename, "w+")
 
-            theta = acos(fans[inull][3])
-            phi = atan(fans[inull][2], fans[inull][1])
             startpoints = Common.get_startpoints(fans[inull], nstart)
 
             line1 = Ref(rnulls[inull]) .+ startpoints
