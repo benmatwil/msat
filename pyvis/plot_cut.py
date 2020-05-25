@@ -10,29 +10,6 @@ from fractions import Fraction as fr
 
 plt.ion()
 
-def get_colours():
-    """
-    Pick random colours for each null point in shades of red and blue
-    """
-    negcolors, poscolors = plt.get_cmap('Blues'), plt.get_cmap('Reds')
-    negcolors = [negcolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(nulldata.sign == -1))]
-    poscolors = [poscolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(nulldata.sign == 1))]
-    shuffle(poscolors)
-    shuffle(negcolors)
-    colours, ipos, ineg = [], 0, 0
-    for inull in range(nulldata.number[-1]):
-        if nulldata[inull].sign == -1:
-            col = negcolors[ineg]
-            ineg += 1
-        elif nulldata[inull].sign == 1:
-            col = poscolors[ipos]
-            ipos += 1
-        colours.append(col)
-    
-    return colours
-
-#################################################################
-
 def latex_ticks(nsplit, npi):
     """
     Produces strings for the ticks used for some spherical coordinate plots in
@@ -69,7 +46,7 @@ class PlotCut:
         if output_dir is not None:
             rd.outprefix = output_dir
 
-        self.nulldata = rd.nulls(datafile, simple=True)
+        self.nulldata = rd.nulls(self.datafile)
 
         self.plane_norm = norm
         try:
@@ -94,20 +71,20 @@ class PlotCut:
         else:
             self.ax.set_rasterization_zorder(0)
             
-        self.br, _, _, self.rads, self.thetas, self.phis = rd.field(datafile)
-        ir = np.where(plane_d >= self.rads)[0].max()
-        plotfield = self.br[ir, :, :] + (self.plane_d - self.rads[ir])/(self.rads[ir+1] - self.rads[ir])*(br[ir+1, :, :] - br[ir, :, :])
-        plt.contourf(self.phis, self.thetas, plotfield, levels, cmap=colmap, extend='both', zorder=-10)
-        cb = self.fig.colorbar(fraction=0.05, pad=0.025)
+        self.br, _, _, self.rads, self.thetas, self.phis = rd.field(self.datafile)
+        ir = np.where(self.plane_d >= self.rads)[0].max()
+        plotfield = self.br[ir, :, :] + (self.plane_d - self.rads[ir])/(self.rads[ir+1] - self.rads[ir])*(self.br[ir+1, :, :] - self.br[ir, :, :])
+        contours = self.ax.contourf(self.phis, self.thetas, plotfield, levels, cmap=colmap, extend='both', zorder=-10)
+        cb = self.figure.colorbar(contours, ax=self.ax, fraction=0.05, pad=0.025)
         diff = levels[-1] - levels[0]
         cb.set_ticks(np.linspace(0, 1.0, 5)*diff + levels[0])
         cb.set_label('Radial Field Strength (G)')
         plt.tight_layout()
         if title:
-            self.ax.set_title('Cut: ' + datafile + ' r = ' + rstr)
+            self.ax.set_title('Cut: ' + self.datafile + ' r = ' + rstr)
 
         if newcolours:
-            self.colours = get_colours()
+            self.colours = self.get_colours()
 
 
     def all(self, labels=False, ms=3):
@@ -196,3 +173,24 @@ class PlotCut:
         cb.set_ticks([-10, -5, 0, 5, 10])
         cb.set_label('Magnetic Field Strength (G)')
         plt.tight_layout()
+
+    def get_colours(self):
+        """
+        Pick random colours for each null point in shades of red and blue
+        """
+        negcolors, poscolors = plt.get_cmap('Blues'), plt.get_cmap('Reds')
+        negcolors = [negcolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(self.nulldata.sign == -1))]
+        poscolors = [poscolors(i) for i in np.linspace(0.5, 1, np.count_nonzero(self.nulldata.sign == 1))]
+        shuffle(poscolors)
+        shuffle(negcolors)
+        colours, ipos, ineg = [], 0, 0
+        for inull in range(self.nulldata.number[-1]):
+            if self.nulldata[inull].sign == -1:
+                col = negcolors[ineg]
+                ineg += 1
+            elif self.nulldata[inull].sign == 1:
+                col = poscolors[ipos]
+                ipos += 1
+            colours.append(col)
+        
+        return colours
