@@ -49,8 +49,8 @@ module SpineFinder
     function get_properties(rnull::Vector3D, bgrid::AbstractField3D)
 
         rsphere = rspherefact * (1e-1)^sig_figs
-        nphi1 = nphi/2
-        ntheta1 = ntheta/2
+        nphi1 = nphi ÷ 2
+        ntheta1 = ntheta ÷ 2
 
         warning = 0
         warningmessage = ""
