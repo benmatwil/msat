@@ -392,7 +392,7 @@ module MakeCut
         
                     pordered, exit_status = sortpoints(points, spines, disttol)
                     if exit_status
-                        exit
+                        break
                     else
                         write(hcs_ring_cut_file, Int32(0), Int32(size(pordered, 1)), pordered)
                         nlines += one(Int32)
