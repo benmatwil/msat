@@ -18,19 +18,26 @@ else:
 # turn of warnings while vtk/mayavi compatibility is fixed -- still works (error from older vtk)
 vtk.vtkObject.GlobalWarningDisplayOff()
 
-sign_names = {-2:'Sink', -1:'Neg', 0:'Zero', 1:'Pos', 2:'Source'}
+sign_names = {-2: 'Sink',
+              -1: 'Neg',
+              0: 'Zero',
+              1: 'Pos',
+              2: 'Source'}
+
 
 def sphr2cart(rs, ts, ps):
     # convert (r, theta, phi) to (x, y, z)
     return rs*np.sin(ts)*np.cos(ps), rs*np.sin(ts)*np.sin(ps), rs*np.cos(ts)
 
+
 def cyl2cart(Rs, ps, zs):
     # convert (R, phi, z) to (x, y, z)
     return Rs*np.cos(ps), Rs*np.sin(ps), zs
 
+
 class Model3D:
 
-    def __init__(self, filename, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0,0,0), nskip=20,
+    def __init__(self, filename, addlist, null_list=None, box=True, fieldlines=None, linecolor=(0, 0, 0), nskip=20,
                  nullrad=1, nfanlines=40, nring=None, coordsystem='cartesian', no_nulls=False,
                  sun=True, axes=False, outdir=None, periodicity='', only_nf=False):
         """
@@ -96,12 +103,16 @@ class Model3D:
         self.add_structures(*addlist, nullrad=nullrad, nfanlines=nfanlines, nring=nring)
 
         if self.coordsystem == 'spherical':
-            if sun: self.add_sun()
+            if sun:
+                self.add_sun()
             box = False
-        if box: self.add_box()
-        if axes: self.add_axes()
+        if box:
+            self.add_box()
+        if axes:
+            self.add_axes()
 
-        if fieldlines is not None: self.add_fieldlines(fieldlines, col=linecolor)
+        if fieldlines is not None:
+            self.add_fieldlines(fieldlines, col=linecolor)
 
     def set_null_list(self, lst):
         if lst is None:
@@ -135,13 +146,13 @@ class Model3D:
             nlines: number of fieldlines to plot
             nring: sets the ring to trace fieldlines from. Set as an integer for ring number or float in [0, 1] as fraction of all rings.
         """
-        
+
         cols = {-2: (218/255, 112/255, 214/255),
                 -1: (0.5, 0.5, 1),
-                 0: (0.5, 1, 0.5),
-                 1: (1, 0.5, 0.5),
-                 2: (1.0, 178/255, 102/255)}
-        
+                0: (0.5, 1, 0.5),
+                1: (1, 0.5, 0.5),
+                2: (1.0, 178/255, 102/255)}
+
         nulls = self.nulldata[self.nulllist-1]
 
         if draw == 'rings':
@@ -152,7 +163,7 @@ class Model3D:
             for isign in np.unique(nulls.sign):
                 # new very efficient routine for plotting many lines
                 # two lists, one for positive and the other for negative nulls
-                x, y, z, s, ptcons = ( [] for _ in range(5) )
+                x, y, z, s, ptcons = ([] for _ in range(5))
                 index = 0
                 for inull in nulls.number[nulls.sign == isign]-1:
                     print('Null {:5d}'.format(inull+1))
@@ -172,10 +183,13 @@ class Model3D:
                             # use distances between consectutive points to detect extra breaks for periodicity
                             dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
                             # use break data to plot the individual lines in each ring as the break apart
-                            brks = np.unique(np.r_[-1, np.where(breaks[inull][iring] == 1)[0], np.where(dists > 0.9*self.periodic_dist)[0], ring.shape[0]-1])
+                            brks = np.unique(np.r_[-1, np.where(breaks[inull][iring] == 1)[0],
+                                                   np.where(dists > 0.9*self.periodic_dist)[0],
+                                                   ring.shape[0]-1])
                         else:
                             # use break data to plot the individual lines in each ring as the break apart
-                            brks = np.unique(np.r_[-1, np.where(breaks[inull][iring] == 1)[0], ring.shape[0]-1])
+                            brks = np.unique(np.r_[-1, np.where(breaks[inull][iring] == 1)[0],
+                                                   ring.shape[0]-1])
                         for ib0, ib1 in zip(brks[:-1], brks[1:]):
                             # add the right indicies based on the breaks
                             ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1),
@@ -183,20 +197,28 @@ class Model3D:
                         index += ring.shape[0]
                 # and plot...
                 if len(x) > 0:
-                    src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s), figure=self.figure)
+                    src = ml.pipeline.scalar_scatter(np.hstack(x),
+                                                     np.hstack(y),
+                                                     np.hstack(z),
+                                                     np.hstack(s),
+                                                     figure=self.figure)
                     src.mlab_source.dataset.lines = np.vstack(ptcons)
                     src.update()
-                    
+
                     lines = ml.pipeline.stripper(src, figure=self.figure)
-                    ml.pipeline.surface(lines, color=cols[isign], line_width=1, name=sign_names[isign]+'SeparatrixRings', figure=self.figure)
-            
+                    ml.pipeline.surface(lines,
+                                        color=cols[isign],
+                                        line_width=1,
+                                        name=sign_names[isign] + 'SeparatrixRings',
+                                        figure=self.figure)
+
         elif draw == 'fieldlines':
             print('Adding separatrix surface field lines')
 
             rings = rd.rings(self.filename, nskip=self.nskip, null_list=self.nulllist)
 
             for isign in np.unique(nulls.sign):
-                x, y, z, s, ptcons = ( [] for _ in range(5) )
+                x, y, z, s, ptcons = ([] for _ in range(5))
                 index = 0
                 for inull in nulls.number[nulls.sign == isign]-1:
                     print('Null {}'.format(inull+1))
@@ -224,7 +246,10 @@ class Model3D:
                         epsilon = 1e-5
 
                         # calculate the fieldline
-                        line = fl.fieldline3d(startpt, self.bgrid, self.xx, self.yy, self.zz, h, hmin, hmax, epsilon, coordsystem=self.coordsystem, periodicity=self.periodicity)
+                        line = fl.fieldline3d(startpt,
+                                              self.bgrid, self.xx, self.yy, self.zz,
+                                              h, hmin, hmax, epsilon,
+                                              coordsystem=self.coordsystem, periodicity=self.periodicity)
 
                         # cut off the fieldline at the point closest to the null - only want the fan, not the spine
                         dists = np.sqrt((line[:, 0] - self.nulldata[inull].pos[0])**2 +
@@ -237,7 +262,7 @@ class Model3D:
                             line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
                         elif self.coordsystem == 'cylindrical':
                             line[:, 0], line[:, 1], line[:, 2] = cyl2cart(line[:, 0], line[:, 1], line[:, 2])
-                        
+
                         x.append(line[:, 0])
                         y.append(line[:, 1])
                         z.append(line[:, 2])
@@ -248,20 +273,29 @@ class Model3D:
                                                      np.arange(index+1, index+length)]).T)
                         else:
                             dists = np.r_[np.sum(np.diff(line, axis=0)**2, axis=1), 0]
-                            brks = np.unique(np.r_[-1, np.where(dists > 0.9*self.periodic_dist)[0], dists.shape[0]-1])
+                            brks = np.unique(np.r_[-1, np.where(dists > 0.9*self.periodic_dist)[0],
+                                                   dists.shape[0]-1])
                             for ib0, ib1 in zip(brks[:-1], brks[1:]):
                                 ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1),
                                                          np.arange(index+ib0+2, index+ib1+1)]).T)
                         index += length
-            
+
                 # add points to model
                 if len(x) > 0:
-                    src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s), figure=self.figure)
+                    src = ml.pipeline.scalar_scatter(np.hstack(x),
+                                                     np.hstack(y),
+                                                     np.hstack(z),
+                                                     np.hstack(s),
+                                                     figure=self.figure)
                     src.mlab_source.dataset.lines = np.vstack(ptcons)
                     src.update()
-                    
+
                     lines = ml.pipeline.stripper(src, figure=self.figure)
-                    ml.pipeline.surface(lines, color=cols[isign], line_width=1, name=sign_names[isign]+'SeparatrixFieldlines', figure=self.figure)
+                    ml.pipeline.surface(lines,
+                                        color=cols[isign],
+                                        line_width=1,
+                                        name=sign_names[isign]+'SeparatrixFieldlines',
+                                        figure=self.figure)
         else:
             print("Set draw to be either 'rings' or 'fieldlines'")
 
@@ -271,10 +305,10 @@ class Model3D:
             nlines: number of fieldlines to plot
             nring: sets the ring to trace fieldlines from. Set as an integer for ring number or float in [0, 1] as fraction of all rings.
         """
-        
-        x, y, z, s, ptcons = ( [] for _ in range(5) )
+
+        x, y, z, s, ptcons = ([] for _ in range(5))
         index = 0
-        
+
         if draw == 'rings':
             print('Adding heliospheric current sheet curtain surface rings')
 
@@ -292,22 +326,31 @@ class Model3D:
                     z.append(ring[:, 2])
                     s.append(np.zeros_like(ring[:, 0]))
                     # use break data to plot the individual lines in each ring as the break apart
-                    brks = np.unique(np.r_[[-1], np.where(breaks[inull][iring] == 1)[0], [ring.shape[0]-1]])
+                    brks = np.unique(np.r_[[-1], np.where(breaks[inull][iring] == 1)[0],
+                                           [ring.shape[0]-1]])
                     for ib0, ib1 in zip(brks[:-1], brks[1:]):
                         # add the right indicies based on the breaks
                         ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1),
                                                  np.arange(index+ib0+2, index+ib1+1)]).T)
                     index += ring.shape[0]
-            
+
             # add points to model
             if len(x) > 0:
-                src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s), figure=self.figure)
+                src = ml.pipeline.scalar_scatter(np.hstack(x),
+                                                 np.hstack(y),
+                                                 np.hstack(z),
+                                                 np.hstack(s),
+                                                 figure=self.figure)
                 src.mlab_source.dataset.lines = np.vstack(ptcons)
                 src.update()
-                
+
                 lines = ml.pipeline.stripper(src, figure=self.figure)
-                ml.pipeline.surface(lines, color=(0, 1, 0), line_width=1, name='HCSRings', figure=self.figure)
-            
+                ml.pipeline.surface(lines,
+                                    color=(0, 1, 0),
+                                    line_width=1,
+                                    name='HCSRings',
+                                    figure=self.figure)
+
         elif draw == 'fieldlines':
             print('Adding heliospheric current sheet curtain surface field lines')
 
@@ -335,7 +378,7 @@ class Model3D:
                                               coordsystem=self.coordsystem)
                         imax = np.argmax(line[:, 0])
                         line = line[:imax+1, :] if idir == 1 else line[imax:, :]
-                            
+
                         line[:, 0], line[:, 1], line[:, 2] = sphr2cart(line[:, 0], line[:, 1], line[:, 2])
 
                         x.append(line[:, 0])
@@ -346,22 +389,38 @@ class Model3D:
                         ptcons.append(np.vstack([np.arange(index, index+length-1),
                                                  np.arange(index+1, index+length)]).T)
                         index += length
-                
+
             if len(x) > 0:
-                src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s), figure=self.figure)
+                src = ml.pipeline.scalar_scatter(np.hstack(x),
+                                                 np.hstack(y),
+                                                 np.hstack(z),
+                                                 np.hstack(s),
+                                                 figure=self.figure)
                 src.mlab_source.dataset.lines = np.vstack(ptcons)
                 src.update()
-                
+
                 lines = ml.pipeline.stripper(src, figure=self.figure)
-                ml.pipeline.surface(lines, color=(0, 1, 0), line_width=1, name='HCSFieldlines', figure=self.figure)
-                        
+                ml.pipeline.surface(lines,
+                                    color=(0, 1, 0),
+                                    line_width=1,
+                                    name='HCSFieldlines',
+                                    figure=self.figure)
+
         else:
             print("Set draw to be either 'rings' or 'fieldlines'")
 
         for inull in range(0, len(rings), 2):
             if draw == 'fieldlines':
-                rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2] = sphr2cart(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2])
-            ml.plot3d(rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2], color=(0, 1, 0), line_width=6, tube_radius=None, name='HCSBase', figure=self.figure)
+                rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2] = sphr2cart(
+                    rings[inull][0][:, 0], rings[inull][0][:, 1], rings[inull][0][:, 2])
+            ml.plot3d(rings[inull][0][:, 0],
+                      rings[inull][0][:, 1],
+                      rings[inull][0][:, 2],
+                      color=(0, 1, 0),
+                      line_width=6,
+                      tube_radius=None,
+                      name='HCSBase',
+                      figure=self.figure)
 
     def add_fieldlines(self, startpts, col=(0, 0, 0), lw=2):
         """
@@ -369,7 +428,7 @@ class Model3D:
         """
         print('Adding field lines')
 
-        x, y, z, s, ptcons = ( [] for _ in range(5) )
+        x, y, z, s, ptcons = ([] for _ in range(5))
         index = 0
 
         for i, startpt in enumerate(startpts, start=1):
@@ -399,23 +458,33 @@ class Model3D:
             length = len(line[:, 0])
             s.append(np.zeros(length))
             if self.coordsystem == 'spherical' or self.coordsystem == 'cylindical' or not self.periodic_check:
-                ptcons.append(np.vstack([np.arange(index, index+length-1), np.arange(index+1, index+length)]).T)
+                ptcons.append(np.vstack([np.arange(index, index+length-1),
+                                         np.arange(index+1, index+length)]).T)
             else:
                 dists = np.r_[np.sum(np.diff(line, axis=0)**2, axis=1), 0]
-                brks = np.unique(np.r_[-1, np.where(dists > 0.9*self.periodic_dist)[0], dists.shape[0]-1])
+                brks = np.unique(np.r_[-1, np.where(dists > 0.9*self.periodic_dist)[0],
+                                       dists.shape[0]-1])
                 for ib0, ib1 in zip(brks[:-1], brks[1:]):
                     ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1),
                                              np.arange(index+ib0+2, index+ib1+1)]).T)
             index += length
-        
+
         # add points to model
         if len(x) > 0:
-            src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s), figure=self.figure)
+            src = ml.pipeline.scalar_scatter(np.hstack(x),
+                                             np.hstack(y),
+                                             np.hstack(z),
+                                             np.hstack(s),
+                                             figure=self.figure)
             src.mlab_source.dataset.lines = np.vstack(ptcons)
             src.update()
-            
+
             lines = ml.pipeline.stripper(src, figure=self.figure)
-            ml.pipeline.surface(lines, color=col, line_width=lw, name='Fieldlines', figure=self.figure)
+            ml.pipeline.surface(lines,
+                                color=col,
+                                line_width=lw,
+                                name='Fieldlines',
+                                figure=self.figure)
 
     def add_spines(self):
         """
@@ -423,7 +492,11 @@ class Model3D:
         """
         print('Adding spines')
 
-        cols = {-2:(0.5, 0, 0.5), -1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0), 2:(1, 165/255, 0)}
+        cols = {-2: (0.5, 0, 0.5),
+                -1: (0, 0, 1),
+                0: (0, 1, 0),
+                1: (1, 0, 0),
+                2: (1, 165/255, 0)}
 
         spines = rd.spines(self.filename, null_list=self.nulllist)
 
@@ -432,7 +505,7 @@ class Model3D:
         # very similar to ring algorithm without breaks
         for isign in np.unique(nulls.sign):
             # set up lists like rings
-            x, y, z, s, ptcons = ( [] for _ in range(5) )
+            x, y, z, s, ptcons = ([] for _ in range(5))
             index = 0
             for inull in nulls.number[nulls.sign == isign]:
                 print('Null {:5d}'.format(inull))
@@ -451,19 +524,29 @@ class Model3D:
                                                  np.arange(index+1, index+spine.shape[0])]).T)
                     else:
                         dists = np.r_[np.sum(np.diff(spine, axis=0)**2, axis=1), 0]
-                        brks = np.unique(np.r_[-1, np.where(dists > 0.9*self.periodic_dist)[0], dists.shape[0]-1])
+                        brks = np.unique(np.r_[-1, np.where(dists > 0.9*self.periodic_dist)[0],
+                                               dists.shape[0]-1])
                         for ib0, ib1 in zip(brks[:-1], brks[1:]):
-                            ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1), np.arange(index+ib0+2, index+ib1+1)]).T)
+                            ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1),
+                                                     np.arange(index+ib0+2, index+ib1+1)]).T)
                     index += spine.shape[0]
             # and plot...
             if len(x) > 0:
-                src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s), figure=self.figure)
+                src = ml.pipeline.scalar_scatter(np.hstack(x),
+                                                 np.hstack(y),
+                                                 np.hstack(z),
+                                                 np.hstack(s),
+                                                 figure=self.figure)
                 src.mlab_source.dataset.lines = np.vstack(ptcons)
                 src.update()
-                
+
                 lines = ml.pipeline.stripper(src, figure=self.figure)
-                ml.pipeline.surface(lines, color=cols[isign], line_width=4, name=sign_names[isign]+'Spines', figure=self.figure)
-        
+                ml.pipeline.surface(lines,
+                                    color=cols[isign],
+                                    line_width=4,
+                                    name=sign_names[isign]+'Spines',
+                                    figure=self.figure)
+
     def add_separators(self, hcs=False, colour=None, nskip=1):
         """
         Add separators to 3D plot
@@ -475,14 +558,14 @@ class Model3D:
         seps, conn = rd.separators(self.filename, null_list=self.nulllist, hcs=hcs)
 
         # simpler version of spines and rings - no need for positive and negative
-        x, y, z, s, ptcons = ( [] for _ in range(5) )
+        x, y, z, s, ptcons = ([] for _ in range(5))
         index = 0
 
         if hcs:
-            linecol = (1.0, 0.6470588235294118, 0.0) # orange
+            linecol = (1.0, 0.6470588235294118, 0.0)  # orange
         else:
-            linecol = (1, 1, 0) # yellow
-        
+            linecol = (1, 1, 0)  # yellow
+
         if colour is not None:
             linecol = colour
 
@@ -496,7 +579,8 @@ class Model3D:
             sys.stdout.write("\033[F")
             for con, sep in zip(conn[inull], seps[inull]):
                 if con in self.nulllist:
-                    if nskip > 1: sep = sep[::nskip, :]
+                    if nskip > 1:
+                        sep = sep[::nskip, :]
                     if self.coordsystem == 'spherical':
                         sep[:, 0], sep[:, 1], sep[:, 2] = sphr2cart(sep[:, 0], sep[:, 1], sep[:, 2])
                     elif self.coordsystem == 'cylindical':
@@ -506,21 +590,32 @@ class Model3D:
                     z.append(sep[:, 2])
                     s.append(np.zeros_like(sep[:, 0]))
                     if self.coordsystem == 'spherical' or self.coordsystem == 'cylindical' or not self.periodic_check:
-                        ptcons.append(np.vstack([np.arange(index, index+sep.shape[0]-1), np.arange(index+1, index+sep.shape[0])]).T)
+                        ptcons.append(np.vstack([np.arange(index, index+sep.shape[0]-1),
+                                                 np.arange(index+1, index+sep.shape[0])]).T)
                     else:
                         dists = np.r_[np.sum(np.diff(sep, axis=0)**2, axis=1), [0]]
-                        brks = np.unique(np.r_[[-1], np.where(dists > 0.9*self.periodic_dist)[0], dists.shape[0]-1])
+                        brks = np.unique(np.r_[[-1], np.where(dists > 0.9*self.periodic_dist)[0],
+                                               dists.shape[0]-1])
                         for ib0, ib1 in zip(brks[:-1], brks[1:]):
-                            ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1), np.arange(index+ib0+2, index+ib1+1)]).T)
+                            ptcons.append(np.vstack([np.arange(index+ib0+1, index+ib1),
+                                                     np.arange(index+ib0+2, index+ib1+1)]).T)
                     index += sep.shape[0]
-        
+
         if len(x) > 0:
-            src = ml.pipeline.scalar_scatter(np.hstack(x), np.hstack(y), np.hstack(z), np.hstack(s), figure=self.figure)
+            src = ml.pipeline.scalar_scatter(np.hstack(x),
+                                             np.hstack(y),
+                                             np.hstack(z),
+                                             np.hstack(s),
+                                             figure=self.figure)
             src.mlab_source.dataset.lines = np.vstack(ptcons)
             src.update()
-            
+
             lines = ml.pipeline.stripper(src, figure=self.figure)
-            ml.pipeline.surface(lines, color=linecol, line_width=6, name='Separators', figure=self.figure)
+            ml.pipeline.surface(lines,
+                                color=linecol,
+                                line_width=6,
+                                name='Separators',
+                                figure=self.figure)
 
     def add_nulls(self, size=1, no_sf=False):
         """
@@ -528,9 +623,15 @@ class Model3D:
         """
         print("Adding nulls")
 
-        cols = {-2:(0.5, 0, 0.5), -1:(0, 0, 1), 0:(0, 1, 0), 1:(1, 0, 0), 2:(1, 165/255, 0)}
+        cols = {-2: (0.5, 0, 0.5),
+                -1: (0, 0, 1),
+                0: (0, 1, 0),
+                1: (1, 0, 0),
+                2: (1, 165/255, 0)}
 
-        boxsize = min([self.xx[-1] - self.xx[0], self.yy[-1] - self.yy[0], self.zz[-1] - self.zz[0]])/40
+        boxsize = min([self.xx[-1] - self.xx[0],
+                       self.yy[-1] - self.yy[0],
+                       self.zz[-1] - self.zz[0]])/40
 
         # find a nice size for the radius of the null points
         r = max([boxsize, self.ds])*size
@@ -542,13 +643,27 @@ class Model3D:
             pos = nulldata1.pos
             if self.coordsystem == 'spherical':
                 pos[:, 0], pos[:, 1], pos[:, 2] = sphr2cart(pos[:, 0], pos[:, 1], pos[:, 2])
-            ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[0], scale_factor=r, resolution=32, name=sign_names[0]+'Nulls', figure=self.figure)
+            ml.points3d(pos[:, 0],
+                        pos[:, 1],
+                        pos[:, 2],
+                        color=cols[0],
+                        scale_factor=r,
+                        resolution=32,
+                        name=sign_names[0]+'Nulls',
+                        figure=self.figure)
         else:
             for sign in np.unique(nulldata1.sign):
                 pos = nulldata1.pos[nulldata1.sign == sign]
                 if self.coordsystem == 'spherical':
                     pos[:, 0], pos[:, 1], pos[:, 2] = sphr2cart(pos[:, 0], pos[:, 1], pos[:, 2])
-                ml.points3d(pos[:, 0], pos[:, 1], pos[:, 2], color=cols[sign], scale_factor=r, resolution=32, name=sign_names[sign]+'Nulls', figure=self.figure)
+                ml.points3d(pos[:, 0],
+                            pos[:, 1],
+                            pos[:, 2],
+                            color=cols[sign],
+                            scale_factor=r,
+                            resolution=32,
+                            name=sign_names[sign]+'Nulls',
+                            figure=self.figure)
 
         # r = max([boxsize, ds])
         # r = r*size
@@ -577,30 +692,40 @@ class Model3D:
                 if 'Nulls' in obj.name:
                     obj.remove()
                     count_remove -= 1
-        
+
         self.add_nulls(size)
 
     def add_box(self):
         print("Adding box")
         # create line with all corners to be normalised
         line = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 1],
-                        [1, 0, 0], [1, 1, 0], [1, 1, 1],
-                        [1, 1, 0], [0, 1, 0], [0, 1, 1],
-                        [0, 1, 0], [0, 0, 0], [0, 0, 1],
-                        [1, 0, 1], [1, 1, 1], [0, 1, 1],
-                        [0, 0, 1]], dtype=np.float64)
+                         [1, 0, 0], [1, 1, 0], [1, 1, 1],
+                         [1, 1, 0], [0, 1, 0], [0, 1, 1],
+                         [0, 1, 0], [0, 0, 0], [0, 0, 1],
+                         [1, 0, 1], [1, 1, 1], [0, 1, 1],
+                         [0, 0, 1]], dtype=np.float64)
 
         # rescale line to form box around the proper coordinate system
         line[:, 0] = line[:, 0]*(self.xx[-1] - self.xx[0]) + self.xx[0]
         line[:, 1] = line[:, 1]*(self.yy[-1] - self.yy[0]) + self.yy[0]
         line[:, 2] = line[:, 2]*(self.zz[-1] - self.zz[0]) + self.zz[0]
 
-        ml.plot3d(line[:, 0], line[:, 1], line[:, 2], color=(0, 0, 0), tube_radius=None, line_width=1, name='Box', figure=self.figure)
+        ml.plot3d(line[:, 0],
+                  line[:, 1],
+                  line[:, 2],
+                  color=(0, 0, 0),
+                  tube_radius=None,
+                  line_width=1,
+                  name='Box',
+                  figure=self.figure)
 
         # ml.outline(extent=[*xx[[0, -1]], *yy[[0, -1]], *zz[[0, -1]]], color=(0,0,0))
-        
+
     def add_axes(self):
-        ml.axes(extent=[*self.xx[[0, -1]], *self.yy[[0, -1]], *self.zz[[0, -1]]], figure=self.figure)
+        ml.axes(extent=[*self.xx[[0, -1]],
+                        *self.yy[[0, -1]],
+                        *self.zz[[0, -1]]],
+                figure=self.figure)
 
     def add_base(self, coord, pos, vmin=-10, vmax=10):
         """
@@ -615,19 +740,22 @@ class Model3D:
             ipos = -1
         elif pos == 'bottom':
             ipos = 0
-        
+
         if coord == "x":
             y, z = np.meshgrid(self.yy, self.zz, indexing='ij')
             x = np.ones_like(y)*self.xx[ipos]
-            ml.mesh(x, y, z, scalars=-self.bgrid[ipos, :, :, 0], colormap='Greys', vmin=vmin, vmax=vmax, figure=self.figure)
+            ml.mesh(x, y, z, scalars=-self.bgrid[ipos, :, :, 0],
+                    colormap='Greys', vmin=vmin, vmax=vmax, figure=self.figure)
         elif coord == "y":
             x, z = np.meshgrid(self.xx, self.zz, indexing='ij')
             y = np.ones_like(x)*self.yy[ipos]
-            ml.mesh(x, y, z, scalars=-self.bgrid[:, ipos, :, 1], colormap='Greys', vmin=vmin, vmax=vmax, figure=self.figure)
+            ml.mesh(x, y, z, scalars=-self.bgrid[:, ipos, :, 1],
+                    colormap='Greys', vmin=vmin, vmax=vmax, figure=self.figure)
         elif coord == "z":
             x, y = np.meshgrid(self.xx, self.yy, indexing='ij')
             z = np.ones_like(y)*self.zz[ipos]
-            ml.mesh(x, y, z, scalars=-self.bgrid[:, :, ipos, 2], colormap='Greys', vmin=vmin, vmax=vmax, figure=self.figure)
+            ml.mesh(x, y, z, scalars=-self.bgrid[:, :, ipos, 2],
+                    colormap='Greys', vmin=vmin, vmax=vmax, figure=self.figure)
 
     def add_sun(self, absbrmax=10):
         # make theta, phi grids of bgrid coords and create the coords of sphere
@@ -637,10 +765,12 @@ class Model3D:
         z = self.xx[0] * np.cos(theta)
 
         # -bgrid because otherwise want reversed colourtable
-        ml.mesh(x, y, z, scalars=-self.bgrid[0, :, :, 0],  colormap='Greys', vmin=-absbrmax, vmax=absbrmax, name='Solar surface', figure=self.figure)
+        ml.mesh(x, y, z, scalars=-self.bgrid[0, :, :, 0],
+                colormap='Greys', vmin=-absbrmax, vmax=absbrmax, name='Solar surface', figure=self.figure)
 
         # make z-axis
-        ml.plot3d([0, 0], [0, 0], [-self.xx.max(), self.xx.max()], color=(0, 0, 0), tube_radius=None, line_width=4, name='Z-axis', figure=self.figure)
+        ml.plot3d([0, 0], [0, 0], [-self.xx.max(), self.xx.max()],
+                  color=(0, 0, 0), tube_radius=None, line_width=4, name='Z-axis', figure=self.figure)
 
     def save(self):
         ml.savefig('figures/' + rd.prefix(self.filename) + '-model3d.png', figure=self.figure)
@@ -667,10 +797,12 @@ class Model3D:
                 ringlist = []
                 trianglelist = []
                 ptnums = [0]
-                for lst in breaks[inull]: ptnums.append(ptnums[-1] + len(lst))
+                for lst in breaks[inull]:
+                    ptnums.append(ptnums[-1] + len(lst))
                 ptnums = ptnums[:-1]
                 # print(ptnums)
-                for ring in rings[inull]: ringlist.extend(ring.tolist())
+                for ring in rings[inull]:
+                    ringlist.extend(ring.tolist())
                 ringlist = np.array(ringlist)
                 print('Null {}'.format(inull+1))
                 rings1 = rings[inull][::-1]
@@ -680,27 +812,42 @@ class Model3D:
                 for iring, ring in enumerate(rings1[:-1]):
                     dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
                     breaks1[iring][dists > acc] = 1
-                    brks = np.r_[[-1], np.where(breaks1[iring] == 1)[0], [breaks1[iring].shape[0]-1]] + 1
+                    brks = np.r_[[-1], np.where(breaks1[iring] == 1)[0],
+                                 [breaks1[iring].shape[0]-1]] + 1
                     for ipt, pt in enumerate(ring):
                         if ipt not in brks-1 and ipt != brks[-1]:
                             if assocs1[iring][ipt] != assocs1[iring][ipt+1]:
-                                tri1 = [ptnums[iring] + ipt, ptnums[iring+1] + assocs1[iring][ipt] - 1, ptnums[iring+1] + assocs1[iring][ipt]]
+                                tri1 = [ptnums[iring] + ipt,
+                                        ptnums[iring+1] + assocs1[iring][ipt] - 1,
+                                        ptnums[iring+1] + assocs1[iring][ipt]]
                                 trianglelist.append(tri1)
-                            tri2 = [ptnums[iring] + ipt, ptnums[iring+1] + assocs1[iring][ipt], ptnums[iring] + ipt + 1]
+                            tri2 = [ptnums[iring] + ipt,
+                                    ptnums[iring+1] + assocs1[iring][ipt],
+                                    ptnums[iring] + ipt + 1]
                             trianglelist.append(tri2)
                 # return trianglelist, ringlist, ptnums
-                ml.triangular_mesh(ringlist[:,0], ringlist[:,1], ringlist[:,2], trianglelist, color=cols[self.nulldata[inull].sign], tube_radius=None, opacity=0.5, mask_points=2, figure=self.figure)
-            
+                ml.triangular_mesh(ringlist[:, 0],
+                                   ringlist[:, 1],
+                                   ringlist[:, 2],
+                                   trianglelist,
+                                   color=cols[self.nulldata[inull].sign],
+                                   tube_radius=None,
+                                   opacity=0.5,
+                                   mask_points=2,
+                                   figure=self.figure)
+
         if False:
-            nskp = 20 #nskipglob
+            nskp = 20  # nskipglob
             for inull in self.nulllist-1:
                 ringlist = []
                 trianglelist = []
                 ptnums = [0]
-                for lst in breaks[inull][::-nskp]: ptnums.append(ptnums[-1] + len(lst))
+                for lst in breaks[inull][::-nskp]:
+                    ptnums.append(ptnums[-1] + len(lst))
                 ptnums = ptnums[:-1]
                 # print(ptnums)
-                for ring in rings[inull][::-nskp]: ringlist.extend(ring.tolist())
+                for ring in rings[inull][::-nskp]:
+                    ringlist.extend(ring.tolist())
                 ringlist = np.array(ringlist)
                 print('Null {}'.format(inull+1))
                 rings1 = rings[inull][::-nskp]
@@ -708,20 +855,31 @@ class Model3D:
                 assocs1 = assocs[inull][::-1]
                 # ptnums = ptnums[::-1]
                 for iring, ring in enumerate(rings1[:-1]):
-                    if iring/nskp - iring//nskp > 0: 
+                    if iring/nskp - iring//nskp > 0:
                         dists = np.r_[np.sum(np.diff(ring, axis=0)**2, axis=1), [0]]
                         breaks1[iring][dists > acc] = 1
-                        brks = np.r_[[-1], np.where(breaks1[iring] == 1)[0], [breaks1[iring].shape[0]-1]] + 1
+                        brks = np.r_[[-1], np.where(breaks1[iring] == 1)[0],
+                                     [breaks1[iring].shape[0]-1]] + 1
                         newass = assocs1[iring*nskp]
                         for iskp in range(nskp):
                             newass = assocs1[iring*nskp+iskp+1][newass-1]
                         for ipt, pt in enumerate(ring):
                             if ipt not in brks-1 and ipt != brks[-1]:
                                 if newass[ipt] != newass[ipt+1]:
-                                    tri1 = [ptnums[iring] + ipt, ptnums[iring+1] + newass[ipt] - 1, ptnums[iring+1] + newass[ipt]]
+                                    tri1 = [ptnums[iring] + ipt,
+                                            ptnums[iring+1] + newass[ipt] - 1,
+                                            ptnums[iring+1] + newass[ipt]]
                                     trianglelist.append(tri1)
-                                tri2 = [ptnums[iring] + ipt, ptnums[iring+1] + newass[ipt], ptnums[iring] + ipt + 1]
+                                tri2 = [ptnums[iring] + ipt,
+                                        ptnums[iring + 1] + newass[ipt],
+                                        ptnums[iring] + ipt + 1]
                                 trianglelist.append(tri2)
                 # return trianglelist, ringlist, ptnums
-                ml.triangular_mesh(ringlist[:,0], ringlist[:,1], ringlist[:,2], trianglelist, color=cols[self.nulldata[inull].sign], tube_radius=None, opacity=1, figure=self.figure)
-
+                ml.triangular_mesh(ringlist[:, 0],
+                                   ringlist[:, 1],
+                                   ringlist[:, 2],
+                                   trianglelist,
+                                   color=cols[self.nulldata[inull].sign],
+                                   tube_radius=None,
+                                   opacity=1,
+                                   figure=self.figure)
