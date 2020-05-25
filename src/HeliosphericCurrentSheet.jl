@@ -36,7 +36,7 @@ module HeliosphericCurrentSheets
         hcs_components = get_hcs_lines(bgrid, 10)
         ncomps = size(hcs_components, 1)
 
-        write(ringinfo_file, Int32(ringsmax+1), Int32(nskip), Int32(sizeof(bytesize)), stepsize, Int32(ncomps)*2)
+        write(ringinfo_file, Int32(ringsmax+1), Int32(nskip), Int32(sizeof(bytesize)), stepsize, Int32(ncomps*2))
         write(separator_file, Int32(0))
 
         @info "There are $ncomps components of the hcs"
