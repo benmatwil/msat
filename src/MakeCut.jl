@@ -8,28 +8,21 @@ module MakeCut
     using ..Common
     using ..Read
 
-    struct FieldGrid
-        x::Vector{Float64}
-        y::Vector{Float64}
-        z::Vector{Float64}
-    end
-
     function get_ints(n::Integer)
         return Vector{Int32}(undef, n)
     end
 
-    function MC(filename::AbstractString, plane_norm::Vector3D, plane_const::Float64; do_all_ssf=true, do_hcs=true)
-        nnulls, _, _ = Read.read_nulls(filename)
-        
-        # read in only the grid coordinates - no need to magnetic field values here
-        fieldfile = open(filename, "r")
-        nx, ny, nz = read!(fieldfile, get_ints(3))
-        seek(fieldfile, 3 * 4 + 3 * nx * ny * nz * 8)
-        grid = FieldGrid(read!(fieldfile, Vector{Float64}(undef, nx)),
-                         read!(fieldfile, Vector{Float64}(undef, ny)),
-                         read!(fieldfile, Vector{Float64}(undef, nz)))
-        close(fieldfile)
+    function MC(bgrid::AbstractField3D, plane_a::Real, plane_b::Real, plane_c::Real, plane_const::Float64; do_all_ssf=true, do_hcs=true)
+        MC(bgrid, Float64[plane_a, plane_b, plane_c], plane_const; do_all_ssf=do_all_ssf, do_hcs=do_hcs)
+    end
 
+    function MC(bgrid::AbstractField3D, plane_norm::Vector{Float64}, plane_const::Float64; do_all_ssf=true, do_hcs=true)
+        MC(bgrid, Vector3D(plane_norm), plane_const; do_all_ssf=do_all_ssf, do_hcs=do_hcs)
+    end
+
+    function MC(bgrid::AbstractField3D, plane_norm::Vector3D, plane_const::Float64; do_all_ssf=true, do_hcs=true)
+        nnulls, _, _ = Read.read_nulls(bgrid.filename)
+        
         # work out how often to print for progress update
         if nnulls < 10
             iprint = 1
@@ -38,7 +31,7 @@ module MakeCut
             iprint = (nnulls ÷ (10^iorder) + 1) * 10^(iorder-1)
         end
 
-        prefix = joinpath(default_output, Read.prefix(filename))
+        prefix = joinpath(default_output, Read.prefix(bgrid.filename))
         plane_nums = [plane_norm..., plane_const]
         file_plane = format(join([i >= 0 ? raw"{:08.4f}" : raw"{:09.4f}" for i in plane_nums], "_"), plane_nums...)
 
@@ -47,7 +40,7 @@ module MakeCut
         hstep = read(info_file, Float64)
         close(info_file)
 
-        ds = max(maximum(diff(grid.x)), maximum(diff(grid.y)), maximum(diff(grid.z))) * 2 * hstep
+        ds = max(maximum(diff(bgrid.x)), maximum(diff(bgrid.y)), maximum(diff(bgrid.z))) * 2 * hstep
         disttol = ds/10
 
         @show ds, disttol, hstep
