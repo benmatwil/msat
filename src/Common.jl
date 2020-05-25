@@ -103,34 +103,34 @@ module Common
 		# it will go out and be removed soon
 		if outedge(r, field)
 			if T == CartesianField3D
-				if xp <= field.xmin
+				if xp < field.xmin
 					xp = field.xmin
-					nx = ceil(Int, xp)
+					nx = Int(field.xmin)
 				elseif xp >= field.xmax
 					xp = field.xmax
-					nx = ceil(Int, xp) - 1
+					nx = Int(field.xmax) - 1
 				end
-				if yp <= field.ymin
+				if yp < field.ymin
 					yp = field.ymin
-					ny = ceil(Int, yp)
+					ny = Int(field.ymin)
 				elseif yp >= field.ymax
 					yp = field.ymax
-					ny = ceil(Int, yp) - 1
+					ny = Int(field.ymax) - 1
 				end
-				if zp <= field.zmin
+				if zp < field.zmin
 					zp = field.zmin
-					nz = ceil(Int, zp)
+					nz = Int(field.zmin)
 				elseif zp >= field.zmax
 					zp = field.zmax
-					nz = ceil(Int, zp) - 1
+					nz = Int(field.zmax) - 1
 				end
 			elseif T == SphericalField3D
-				if xp <= field.xmin
+				if xp < field.xmin
 					xp = field.xmin
-					nx = ceil(Int, xp)
+					nx = Int(field.xmin)
 				elseif xp >= field.xmax
 					xp = field.xmax
-					nx = ceil(Int, xp) - 1
+					nx = Int(field.xmax) - 1
 				end
 			end
 		end
@@ -276,7 +276,7 @@ module Common
 		if adjust_cartesian_periodicity
 			rmut = MVector(r)
 			if periodic_x
-				if r[1] <= field.xmin
+				if r[1] < field.xmin
 					rmut[1] += field.xmax - field.xmin
 				end
 				if r[1] >= field.xmax
@@ -284,7 +284,7 @@ module Common
 				end
 			end
 			if periodic_y
-				if r[2] <= field.ymin
+				if r[2] < field.ymin
 					rmut[2] += field.ymax - field.ymin
 				end
 				if r[2] >= field.ymax
@@ -292,7 +292,7 @@ module Common
 				end
 			end
 			if periodic_z
-				if r[3] <= field.zmin
+				if r[3] < field.zmin
 					rmut[3] += field.zmax - field.zmin
 				end
 				if r[3] >= field.zmax
@@ -348,11 +348,11 @@ module Common
 					rmut[3] += (field.zmin - field.zmax)/2
 				end
 			end
-			if (r[3] <= field.zmin)
+			if r[3] < field.zmin
 				rmut[3] += field.zmax - field.zmin
 			end
-			if (r[3] >= field.zmax)
-				rmut[3] += (field.zmin - field.zmax)
+			if r[3] >= field.zmax
+				rmut[3] += field.zmin - field.zmax
 			end
 			return SVector(rmut)
 		end
