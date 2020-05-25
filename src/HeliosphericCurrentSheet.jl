@@ -36,13 +36,15 @@ module HeliosphericCurrentSheets
         hcs_components = get_hcs_lines(bgrid, 10)
         ncomps = size(hcs_components, 1)
 
-        write(ringinfo_file, Int32(ringsmax+1), Int32(nskip), Int32(sizeof(bytesize)), stepsize, Int32(ncomps))
+        write(ringinfo_file, Int32(ringsmax+1), Int32(nskip), Int32(sizeof(bytesize)), stepsize, Int32(ncomps)*2)
         write(separator_file, Int32(0))
 
         @info "There are $ncomps components of the hcs"
 
         tempfilename = outfile_init * "-hcs-rings.temp"
-        uptonullconn = 0
+        uptonullconn = 4
+        write(connectivity_file, zero(Int32))
+        nseps_final = 0
 
         for ihcs in 1:ncomps
             @info "Component $ihcs of the HCS"
@@ -62,7 +64,7 @@ module HeliosphericCurrentSheets
                 breaks = zeros(Int32, nlines)
                 nseps = 0
                 nperring = OffsetVector(zeros(Int32, ringsmax+1), 0:ringsmax)
-                nperring[0] = nstart
+                nperring[0] = nlines
                 slowdown = 1.0
                 terror = 0
                 exit_condition = false
@@ -92,7 +94,7 @@ module HeliosphericCurrentSheets
                         # r = line1[iline]
                         h = h0
 
-                        r = Trace.trace_line(r, signs[inull], h, bgrid)
+                        r = Trace.trace_line(r, dir, h, bgrid)
 
                         line2[iline] = line2[iline] + (r - line1[iline])
                         line1[iline] = r
@@ -136,7 +138,7 @@ module HeliosphericCurrentSheets
 
                     Ring.add_points!(line1, line2, breaks, associations, nearnull, maxdist)
 
-                    line1 = Common.edgecheck.(point, Ref(bgrid))
+                    line1 = Common.edgecheck.(line1, Ref(bgrid))
 
                     if size(line1, 1) > pointsmax
                         println("Reached maximum number of points")
@@ -180,24 +182,23 @@ module HeliosphericCurrentSheets
                 # trace separators and write to file
                 println("Tracing spines and any separators and dealing with rings")
                 seek(connectivity_file, uptonullconn)
-                write(connectivity_file, Int32(nseps))
                 if nseps > 0
                     for isep in 1:nseps
-                        nullnum1, nullnum2, ringnum, linenum = read!(connectivity_file, Vector{Int32}(undef, 4)) 
-                        rsep = Vector{Common.Vector3D}(undef, ringnum + 3)
+                        nullnum1, nullnum2, ringnum, linenum = read!(connectivity_file, Vector{Int32}(undef, 4))
+                        rsep = Vector{Common.Vector3D}(undef, ringnum + 2)
                         for iring in ringnum:-1:0
                             ia, ip = Common.file_position(iring, nperring, linenum)
                             seek(tempfile, ia)
                             linenum = read(tempfile, Int32)
                             seek(tempfile, ip)
-                            rsep[iring+2] = read(tempfile, Common.Vector3D)
+                            rsep[iring+1] = read(tempfile, Common.Vector3D)
                         end
-                        rsep[1] = rnullsreal[nullnum1]
-                        rsep[ringnum+3] = rnullsreal[nullnum2]
-                        write(separator_file, Int32(ringnum+3), rsep)
+                        rsep[ringnum+2] = rnullsreal[nullnum2]
+                        write(separator_file, Int32(ringnum+2), rsep)
                     end
                 end
-                uptonullconn = uptonullconn + nseps*16 + 4
+                uptonullconn = uptonullconn + nseps * 16
+                nseps_final += nseps
 
                 # write the associations to file corrected for nskip != 1
                 if assoc_output
@@ -232,8 +233,10 @@ module HeliosphericCurrentSheets
 
         close(ringinfo_file)
         close(ring_file)
-        close(assoc_file)
+        if assoc_output close(assoc_file) end
         close(break_file)
+        seekstart(connectivity_file)
+        write(connectivity_file, Int32(nseps_final))
         close(connectivity_file)
         close(separator_file)
 
@@ -243,13 +246,10 @@ module HeliosphericCurrentSheets
     function get_hcs_lines(field::Common.SphericalField3D, nsplit::Integer)
 
         # number of theta and phi required
-        nnt = nsplit * (size(field.y, 1) - 1) + 1
-        nnp = nsplit * (size(field.z, 1) - 1) + 1
-
-        tgrid = 0:1/nsplit:size(field.y, 1)
-        pgrid = 0:1/nsplit:size(field.z, 1)
+        tgrid = collect(1:1/nsplit:size(field.y, 1))
+        pgrid = collect(1:1/nsplit:size(field.z, 1))[1:end-1] .+ 0.5/nsplit
         tgrid[1] = tgrid[1] + 1e-6
-        tgrid[end] = tgrid[nnt] - 1e-6
+        tgrid[end] = tgrid[end] - 1e-6
 
         points = Vector{Common.Vector3D}(undef, 0)
 
@@ -258,24 +258,23 @@ module HeliosphericCurrentSheets
         
         for theta in tgrid
             brs = [Common.trilinear(SA[rr, theta, phi], field)[1] for phi in pgrid]
-            idiffs = findall(diff(brs) .< 0)
-            rps = brs[idiffs]/(brs[idiffs] - brs[idiffs+1])*(pgrid[idiffs+1] - pgrid[idiffs]) + pgrid[idiffs]
-            append!(points, [SA[rr1, theta, rps] for rp in rps])
+            idiffs = findall(brs[1:end-1] .* brs[2:end] .< 0)
+            rps = @. brs[idiffs] / (brs[idiffs] - brs[idiffs .+ 1]) * (pgrid[idiffs .+ 1] - pgrid[idiffs]) + pgrid[idiffs]
+            append!(points, [SA[rr1, theta, rp] for rp in rps])
         end
 
         for phi in pgrid
             brs = [Common.trilinear(SA[rr, theta, phi], field)[1] for theta in tgrid]
-            idiffs = findall(diff(brs) .< 0)
-            rts = brs[idiffs]/(brs[idiffs] - brs[idiffs+1])*(tgrid[idiffs+1] - tgrid[idiffs]) + tgrid[idiffs]
+            idiffs = findall(brs[1:end-1] .* brs[2:end] .< 0)
+            rts = @. brs[idiffs] / (brs[idiffs] - brs[idiffs .+ 1]) * (tgrid[idiffs .+ 1] - tgrid[idiffs]) + tgrid[idiffs]
             append!(points, [SA[rr1, rt, phi] for rt in rts])
         end
 
         # sort points
         ds = 0.05 # need to think about this
-        # allocate(pordered(3, 0))
         pordered = Vector{Vector{Common.Vector3D}}(undef, 0)
       
-        while (size(points, 2) > 0)
+        while (size(points, 1) > 0)
             ind_line = [points[1]]
             deleteat!(points, 1)
             for dir in (1, 2)
