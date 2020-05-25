@@ -290,7 +290,7 @@ def add_hcs(draw='rings', nlines=100):
             lines = ml.pipeline.stripper(src)
             ml.pipeline.surface(lines, color=(0, 1, 0), line_width=1, name='HCSRings')
         
-    if draw == 'fieldlines':
+    elif draw == 'fieldlines':
         print('Adding heliospheric current sheet curtain surface field lines')
 
         rings = rd.rings(filename, nskip=nskipglob, hcs=True)
