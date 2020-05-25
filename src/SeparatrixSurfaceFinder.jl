@@ -258,7 +258,7 @@ module SeparatrixSurfaceFinder
 
         close(ringinfo_file)
         close(ring_file)
-        close(assoc_file)
+        if assoc_output close(assoc_file) end
         close(break_file)
         close(connectivity_file)
         close(separator_file)
