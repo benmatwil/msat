@@ -135,20 +135,6 @@ module Common
 			end
 		end
 
-        # if it's not ssf
-		# if (xp >= xmax) then
-        #     xp = xmax
-        #     nx = nint(xp)-1
-		# endif
-		# if (yp >= ymax) then
-        #     yp = ymax
-        #     ny = nint(yp)-1
-		# endif
-		# if (zp >= zmax) then
-        #     zp = zmax
-        #     nz = nint(zp)-1
-		# endif
-
 		x = xp - nx
 		y = yp - ny
 		z = zp - nz
