@@ -735,28 +735,35 @@ class Model3D:
         coord: 'x', 'y' or 'z'
         pos: 'top' or 'bottom'
         """
-        if self.coordsystem != 'cartesian':
-            print('Note: Designed for cartesian coordinates')
 
         if pos == 'top':
             ipos = -1
         elif pos == 'bottom':
             ipos = 0
+        else:
+            raise ValueError("Only 'top' and 'bottom' are options")
+
+        colon = slice(None, None, None)
 
         if coord == "x":
             y, z = np.meshgrid(self.yy, self.zz, indexing='ij')
             x = np.ones_like(y)*self.xx[ipos]
-            ml.mesh(x, y, z, scalars=-self.bgrid[ipos, :, :, 0],
-                    colormap='Greys', vmin=vmin, vmax=vmax, figure=self.figure)
+            indices = (ipos, colon, colon, 0)
         elif coord == "y":
             x, z = np.meshgrid(self.xx, self.zz, indexing='ij')
             y = np.ones_like(x)*self.yy[ipos]
-            ml.mesh(x, y, z, scalars=-self.bgrid[:, ipos, :, 1],
-                    colormap='Greys', vmin=vmin, vmax=vmax, figure=self.figure)
+            indices = (colon, ipos, colon, 1)
         elif coord == "z":
             x, y = np.meshgrid(self.xx, self.yy, indexing='ij')
             z = np.ones_like(y)*self.zz[ipos]
-            ml.mesh(x, y, z, scalars=-self.bgrid[:, :, ipos, 2],
+            indices = (colon, colon, ipos, 2)
+        
+        if self.coordsystem == 'spherical':
+            x, y, z = sphr2cart(x, y, z)
+        elif self.coordsystem == 'cylindrical':
+            x, y, z = cyl2cart(x, y, z)
+        
+        ml.mesh(x, y, z, scalars=-self.bgrid[indices],
                     colormap='Greys', vmin=vmin, vmax=vmax, figure=self.figure)
 
     def add_sun(self, absbrmax=10):
