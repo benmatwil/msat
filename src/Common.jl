@@ -5,7 +5,7 @@ module Common
 	using ..Params
 
 	export Vector3D
-	export AbstractField3D, CartesianField3D, SphericalField3D
+	export AbstractField3D, CartesianField3D, SphericalField3D, CylindricalField3D
 	# common functions, subroutine and variables for all programs MSAT
 
     const Vector3D = SVector{3, Float64}
@@ -41,6 +41,21 @@ module Common
         zmax::Float64
     end
 	SphericalField3D(filename, field, x, y, z) = SphericalField3D(filename, field, x, y, z, 1, size(x, 1), 1, size(y, 1), 1, size(z, 1))
+
+	struct CylindricalField3D <: AbstractField3D
+		filename::String
+		field::Array{Float64, 4}
+        x::Vector{Float64}
+        y::Vector{Float64}
+        z::Vector{Float64}
+        xmin::Float64
+        xmax::Float64
+        ymin::Float64
+        ymax::Float64
+        zmin::Float64
+        zmax::Float64
+    end
+	CylindricalField3D(filename, field, x, y, z) = CylindricalField3D(filename, field, x, y, z, 1, size(x, 1), 1, size(y, 1), 1, size(z, 1))
 
 	# function filenames()
 	# 	# sets the filenames as required for reading from and writing to
