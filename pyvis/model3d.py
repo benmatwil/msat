@@ -1,10 +1,12 @@
-from __future__ import print_function, division
+import math
+import sys
+
 import numpy as np
 import mayavi.mlab as ml
+import vtk
+
 from . import read as rd
 from . import fieldline3d as fl
-import sys
-import vtk
 
 try:
     __IPYTHON__
@@ -229,12 +231,12 @@ class Model3D:
                         # choose ring a fifth of the way through
                         ring = rings[inull][len(rings[inull])//5]
                     else:
-                        if type(nring) is int:
+                        if isinstance(nring, int):
                             # choose specific ring
                             ring = rings[inull][nring]
-                        elif type(nring) is float:
+                        elif isinstance(nring, float):
                             # choose ring as a fraction of one of total
-                            ring = rings[inull][np.floor(nring*len(rings[inull])).astype(np.int)]
+                            ring = rings[inull][math.floor(nring*len(rings[inull]))]
 
                     nskip = len(ring[:, 0])//nlines
 
