@@ -447,5 +447,55 @@ module Common
 		return a, p
 
 	end
+
+	function get_rnullsalt(rnulls::Vector{Vector3D}, bgrid::SphericalField3D)
+
+        rnullsalt = copy(rnulls)
+
+        # check whether null is at the lower phi boundary
+        inulls = getindex.(rnullsalt, 3) .< bgrid.zmin + 1
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 3) .- 1, 3)
+        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls], bgrid)
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 3) .+ 1, 3)
+
+        # check whether null is at the upper phi boundary
+        inulls = getindex.(rnullsalt, 3) .> bgrid.zmax - 1
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 3) .+ 1, 3)
+        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls], bgrid)
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 3) .- 1, 3)
+
+        # check whether null is at the lower theta boundary
+        inulls = getindex.(rnullsalt, 2) .< bgrid.ymin + 1
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 2) .- 1, 2)
+        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls], bgrid)
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 2) .- 1, 2)
+
+        # check whether null is at the upper theta boundary
+        inulls = getindex.(rnullsalt, 2) .> bgrid.ymax - 1
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 2) .+ 1, 2)
+        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls])
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 2) .+ 1, 2)
+
+        return rnullsalt
+
+    end
+
+    function get_rnullsalt(rnulls::Vector{Vector3D}, bgrid::CylindricalField3D)
+        
+        # check whether null is at the lower phi boundary
+        inulls = getindex.(rnullsalt, 2) .< bgrid.ymin + 1
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 2) .- 1, 2)
+        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls], bgrid)
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 2) .+ 1, 2)
+
+        # check whether null is at the upper phi boundary
+        inulls = getindex.(rnullsalt, 2) .> bgrid.ymax - 1
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 2) .+ 1, 2)
+        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls], bgrid)
+        rnullsalt[inulls] .= setindex.(rnullsalt, getindex.(rnullsalt[inulls], 2) .- 1, 2)
+
+        return rnullsalt
+
+    end
 	
 end

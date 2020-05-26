@@ -16,7 +16,7 @@ module SeparatrixSurfaceFinder
         nnulls, rnulls, rnullsreal = Read.read_nulls(bgrid.filename)
         nnulls, signs, spines, fans = Read.read_nulldata(bgrid.filename)
 
-        rnullsalt = copy(rnulls)
+        rnullsalt = Common.get_rnullsalt(rnulls)
 
         outfile_init = joinpath(default_output, Read.prefix(bgrid.filename))
 
