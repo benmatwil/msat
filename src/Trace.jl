@@ -57,7 +57,7 @@ module Trace
         # minimum physical distance corresponding to fraction of gridcell (h)
         dr = getdr(r0, field)
         mindist = minimum(dr)*h
-        
+
         # vector containing the grid's h for each direction
         # (so h for each direction is the same physical length, equal to mindist)
         hvec = mindist ./ dr
@@ -65,49 +65,49 @@ module Trace
         # get rk values k1--k6
         rtest = r0
         k1 = hvec .* Common.normalise(Common.trilinear(rtest, field))
-        rtest = r0 + k21*k1
+        rtest = r0 .+ k21.*k1
         k2 = hvec .* Common.normalise(Common.trilinear(rtest, field))
-        rtest = r0 + k31*k1 + k32*k2
+        rtest = r0 .+ k31.*k1 .+ k32.*k2
         k3 = hvec .* Common.normalise(Common.trilinear(rtest, field))
-        rtest = r0 + k41*k1 + k42*k2 + k43*k3
+        rtest = 1.0 .* r0 .+ k41.*k1 .+ k42.*k2 .+ k43.*k3
         k4 = hvec .* Common.normalise(Common.trilinear(rtest, field))
-        rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
+        rtest = 1.0 .* r0 .+ k51.*k1 .+ k52.*k2 .+  k53.*k3 .+ k54.*k4
         k5 = hvec .* Common.normalise(Common.trilinear(rtest, field))
-        rtest = r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5
+        rtest = 1.0 .* r0 .+ k61.*k1 .+ k62.*k2 .+ k63.*k3 .+ k64.*k4 .+ k65.*k5
         k6 = hvec .* Common.normalise(Common.trilinear(rtest, field))
 
         # get 4th order (y) and 5th order (z) estimates
-        y = y1*k1 + y3*k3 + y4*k4 + y5*k5
-        z = z1*k1 + z3*k3 + z4*k4 + z5*k5 + z6*k6
+        y = y1.*k1 .+ y3.*k3 .+ y4.*k4 .+ y5.*k5
+        z = z1.*k1 .+ z3.*k3 .+ z4.*k4 .+ z5.*k5 .+ z6.*k6
 
         # calculate optimum step length (s = hoptimum/h)
-        s = (tol ./ Common.modulus(z - y) ./ 2) .^ 0.25
-        
-        if (abs(s*h) < stepmin) 
+        s = (tol / Common.modulus(z .- y) / 2) ^ 0.25
+
+        if abs(s*h) < stepmin
             s = stepmin/abs(h)
         end
-        if (s > 1)
+        if s > 1
             s = 1.0
         end
 
-        hvec = s*hvec
+        hvec = s * hvec
 
         rtest = r0
         k1 = hvec .* Common.normalise(Common.trilinear(rtest, field))
-        rtest = r0 + k21*k1
+        rtest = r0 .+ k21.*k1
         k2 = hvec .* Common.normalise(Common.trilinear(rtest, field))
-        rtest = r0 + k31*k1 + k32*k2
+        rtest = r0 .+ k31.*k1 .+ k32.*k2
         k3 = hvec .* Common.normalise(Common.trilinear(rtest, field))
-        rtest = r0 + k41*k1 + k42*k2 + k43*k3
+        rtest = 1.0 .* r0 .+ k41.*k1 .+ k42.*k2 .+ k43.*k3
         k4 = hvec .* Common.normalise(Common.trilinear(rtest, field))
-        rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
+        rtest = 1.0 .* r0 .+ k51.*k1 .+ k52.*k2 .+ k53.*k3 .+ k54.*k4
         k5 = hvec .* Common.normalise(Common.trilinear(rtest, field))
 
-        r = r0 + y1*k1 + y3*k3 + y4*k4 + y5*k5
+        rout = 1.0.*r0 .+ y1.*k1 .+ y3.*k3 .+ y4.*k4 .+ y5.*k5
 
         h = h*s
 
-        return r, h
+        return rout, h
 
     end
 
@@ -123,7 +123,7 @@ module Trace
         ix = floor(Int, rcheck[1])
         iy = floor(Int, rcheck[2])
         iz = floor(Int, rcheck[3])
-        
+
         dx = field.x[ix+1] - field.x[ix]
         dy = field.y[iy+1] - field.y[iy]
         dz = field.z[iz+1] - field.z[iz]
