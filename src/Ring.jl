@@ -178,8 +178,8 @@ module Ring
                         nr = nlines
                     else
                         # select all points not in this longest chain to be tested for change in side of the fan
-                        n1 = (endgap + 1 - nextra - 1) % nlines + 1
-                        n2 = (nlines + endgap - gapsize + nextra - 1) % nlines + 1
+                        n1 = mod(endgap + 1 - nextra - 1, nlines) + 1
+                        n2 = mod(nlines + endgap - gapsize + nextra - 1, nlines) + 1
                     end
             
                     if n1 <= n2
