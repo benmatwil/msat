@@ -11,11 +11,11 @@ module Trace
     const k42 = -7200/2197
     const k43 = 7296/2197
     const k51 = 439/216
-    const k52 = -8
+    const k52 = -8.0
     const k53 = 3680/513
     const k54 = -845/4104
     const k61 = -8/27
-    const k62 = 2
+    const k62 = 2.0
     const k63 = -3544/2565
     const k64 = 1859/4104
     const k65 = -11/40
