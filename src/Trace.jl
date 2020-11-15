@@ -51,9 +51,6 @@ module Trace
     # runge-kutta fehlberg integrator. Calculates a 4th order estimate (y) and a
     # fifth order estimate (z) and calculates the difference between them. From this it
     # determines the optimal step length with which to integrate the function by.
-        # real(np) :: hvec(3), mindist, s
-        # real(np), dimension(3) :: k1, k2, k3, k4, k5, k6
-        # real(np), dimension(3) :: r, r0, rtest, y, z, dr
         
         r0 = copy(r)
         
