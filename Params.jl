@@ -51,7 +51,7 @@ module Params
     # number of consectutive rings which are the same size which stop ssf
     const samemax = 1000
     # step size h after 50 iterations (otherwise 5 times smaller)
-    const stepsize = 0.25
+    const stepsize = 0.1
     # tolerance of rkf45 scheme
     const tol = 1e-6
     # minimum step length
