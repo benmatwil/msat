@@ -247,7 +247,7 @@ module Common
 	function modulus(a::Vector3D)
 		# calculates the magnitude a vector a
 
-		return sqrt(sum(a .^ 2))
+		return sqrt(sum(a .* a))
 
 	end
 
