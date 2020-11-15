@@ -57,6 +57,21 @@ module Common
     end
 	CylindricalField3D(filename, field, x, y, z) = CylindricalField3D(filename, field, x, y, z, 1, size(x, 1), 1, size(y, 1), 1, size(z, 1))
 
+	# struct SphercialField3D{X, Y, Z} <: AbstractField3D where {X, Y, Z}
+	# 	filename::String
+	# 	field::SArray{Tuple{X, Y, Z, 3}, Float64}
+	# 	x::SVector{X, Float64}
+	# 	y::SVector{Y, Float64}
+	# 	z::SVector{Z, Float64}
+	# 	xmin::Float64
+	# 	xmax::Float64
+	# 	ymin::Float64
+	# 	ymax::Float64
+	# 	zmin::Float64
+	# 	zmax::Float64
+	# end
+	# SphericalField3D(filename, field, x, y, z) = SphericalField3D(filename, field, x, y, z, 1, size(x, 1), 1, size(y, 1), 1, size(z, 1))
+
 	# function filenames()
 	# 	# sets the filenames as required for reading from and writing to
 
@@ -85,11 +100,11 @@ module Common
 	# 	enddo
 	# 	endif
 	# 	if (ic == 0) stop 'No input file provided'
-		
+
 	# 	fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
 	# 	//trim(outname)//'/' &
 	# 	//trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
-		
+
 	# end
 
 	function print_params()
@@ -215,7 +230,7 @@ module Common
 		return Vector3D([a[2] * b[3] - a[3] * b[2],
 						 a[3] * b[1] - a[1] * b[3],
 						 a[1] * b[2] - a[2] * b[1]])
-        
+
 	end
 
 	# ********************************************************************************
@@ -231,7 +246,7 @@ module Common
 
 	function modulus(a::Vector3D)
 		# calculates the magnitude a vector a
-		
+
 		return sqrt(sum(a .^ 2))
 
 	end
@@ -240,7 +255,7 @@ module Common
 
 	function dist(a::Vector3D, b::Vector3D)
 		# calculates the distance between two points in grid units
-		
+
 		return sqrt(sum((b .- a) .^ 2))
 
 	end
@@ -279,13 +294,13 @@ module Common
 		end
 
         return out_cond
-		
+
 	end
 
 	# ********************************************************************************
 
 	function edgecheck(r::Vector3D, field::CartesianField3D)
-		# determines if the point r is outwith the computational box across a 
+		# determines if the point r is outwith the computational box across a
 		# periodic boundary and moves it if necessary
 
 		if adjust_cartesian_periodicity
@@ -320,7 +335,7 @@ module Common
 	end
 
 	function edgecheck(r::Vector3D, field::SphericalField3D)
-		# determines if the point r is outwith the computational box across a 
+		# determines if the point r is outwith the computational box across a
 		# periodic boundary and moves it if necessary
 
 		if adjust_spherical_periodicity
@@ -371,7 +386,7 @@ module Common
 			end
 			return SVector(rmut)
 		end
-			
+
 	end
 
 	# ********************************************************************************
@@ -381,7 +396,7 @@ module Common
 
 		theta = acos(fan[3])
         phi = atan(fan[2], fan[1])
-		
+
 		dtheta = 2*pi/nlines
 
 		startpoints = Vector{Vector{Float64}}(undef, 0)
@@ -408,11 +423,11 @@ module Common
 		roty[1, 1] = cos(-theta)
 		roty[1, 2] = 0
 		roty[1, 3] = -sin(-theta)
-		
+
 		roty[2, 1] = 0
 		roty[2, 2] = 1
 		roty[2, 3] = 0
-		
+
 		roty[3, 1] = sin(-theta)
 		roty[3, 2] = 0
 		roty[3, 3] = cos(-theta)
