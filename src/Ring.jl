@@ -200,6 +200,8 @@ module Ring
                             count = count + 1
                         end
             
+                        r[index] = pt
+
                         if signs[inull] * sign == -1
                             # check which side of the null the points end out on
                             if Common.dot(spines[inull], r[index] - rnulls[inull]) > 0
