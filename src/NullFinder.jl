@@ -1,6 +1,5 @@
 module NullFinder
 
-    using StaticArrays
     using ..Params
     using ..Common
     using ..Read

@@ -1,7 +1,6 @@
 module HeliosphericCurrentSheets
 
     using OffsetArrays
-    using StaticArrays
 
     using ..Params
     import ..Common

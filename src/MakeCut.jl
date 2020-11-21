@@ -1,6 +1,5 @@
 module MakeCut
 
-    using StaticArrays
     using OffsetArrays
     using Formatting
 

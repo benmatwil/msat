@@ -1,6 +1,7 @@
 module Common
 
-	using StaticArrays
+	import Base.+, Base.-, Base.*, Base./
+
 	using OffsetArrays
 	using ..Params
 
@@ -8,13 +9,71 @@ module Common
 	export AbstractField3D, CartesianField3D, SphericalField3D, CylindricalField3D
 	# common functions, subroutine and variables for all programs MSAT
 
-    const Vector3D = SVector{3, Float64}
+	struct Vector3D{T<:Number}
+		x::T
+		y::T
+		z::T
+	end
+	Vector3D(r) = Vector3D(r...)
+
+	+(a::Vector3D, b::Vector3D) = Vector3D(a.x + b.x,
+										   a.y + b.y,
+										   a.z + b.z)
+
+	-(a::Vector3D, b::Vector3D) = Vector3D(a.x - b.x,
+										   a.y - b.y,
+										   a.z - b.z)
+
+	*(a::Number, b::Vector3D) = Vector3D(a * b.x,
+										 a * b.y,
+										 a * b.z)
+	*(a::Vector3D, b::Number) = b * a
+	
+	/(a::Vector3D, b::Number) = Vector3D(a.x / b,
+										 a.y / b,
+										 a.z / b)
+	/(a::Number, b::Vector3D) = Vector3D(a / b.x,
+										 a / b.y,
+										 a / b.z)
+
+	*(a::Vector3D, b::Vector3D) = Vector3D(a.x * b.x,
+										   a.y * b.y,
+										   a.z * b.z)
+
+	×(a::Vector3D, b::Vector3D) = Vector3D(a.y * b.z - a.z * b.y,
+										   a.z * b.x - a.x * b.z,
+										   a.x * b.y - a.y * b.x)
+
+	function dot(a::Vector3D, b::Vector3D)
+
+		return a.x * b.x + a.y * b.y + a.z * b.z
+
+	end
+
+	modulus(a::Vector3D) = sqrt(dot(a, a))
+	normalise(a::Vector3D) = a / modulus(a)
+	
+	function dist(a::Vector3D, b::Vector3D)
+		# calculates the distance between two points in grid units
+
+		diff = (b - a)
+		return sqrt(diff.x ^ 2 + diff.y ^ 2 + diff.z ^ 2)
+	
+	end
+	
+	Base.minimum(a::Vector3D{T}) where T = min(a.x, a.y, a.z)
+
+	Base.zero(::Type{Vector3D{T}}) where T = Vector3D(zero(T), zero(T), zero(T))
+
+	Base.read(io::IO, ::Type{Vector3D{T}}) where T = Vector3D{T}(read(io, T),read(io, T),read(io, T))
+	Base.write(io::IO, v::Vector3D{T}) where T = write(io, v.x) + write(io, v.y) + write(io, v.z)
 
 	abstract type AbstractField3D end
+	Base.show(io::IO, a::AbstractField3D) = print(io, "$(typeof(a))($(a.filename))")
 
     struct CartesianField3D <: AbstractField3D
 		filename::String
-		field::Array{Float64, 4}
+		field::Array{Vector3D{Float64}, 3}
         x::Vector{Float64}
         y::Vector{Float64}
         z::Vector{Float64}
@@ -29,7 +88,7 @@ module Common
 
 	struct SphericalField3D <: AbstractField3D
 		filename::String
-		field::Array{Float64, 4}
+		field::Array{Vector3D{Float64}, 3}
         x::Vector{Float64}
         y::Vector{Float64}
         z::Vector{Float64}
@@ -44,7 +103,7 @@ module Common
 
 	struct CylindricalField3D <: AbstractField3D
 		filename::String
-		field::Array{Float64, 4}
+		field::Array{Vector3D{Float64}, 3}
         x::Vector{Float64}
         y::Vector{Float64}
         z::Vector{Float64}
@@ -56,56 +115,6 @@ module Common
         zmax::Float64
     end
 	CylindricalField3D(filename, field, x, y, z) = CylindricalField3D(filename, field, x, y, z, 1, size(x, 1), 1, size(y, 1), 1, size(z, 1))
-
-	# struct SphercialField3D{X, Y, Z} <: AbstractField3D where {X, Y, Z}
-	# 	filename::String
-	# 	field::SArray{Tuple{X, Y, Z, 3}, Float64}
-	# 	x::SVector{X, Float64}
-	# 	y::SVector{Y, Float64}
-	# 	z::SVector{Z, Float64}
-	# 	xmin::Float64
-	# 	xmax::Float64
-	# 	ymin::Float64
-	# 	ymax::Float64
-	# 	zmin::Float64
-	# 	zmax::Float64
-	# end
-	# SphericalField3D(filename, field, x, y, z) = SphericalField3D(filename, field, x, y, z, 1, size(x, 1), 1, size(y, 1), 1, size(z, 1))
-
-	# function filenames()
-	# 	# sets the filenames as required for reading from and writing to
-
-	# 	character(100) :: arg
-	# 	character(:), allocatable :: outname
-	# 	integer(int32) :: iarg, ic
-
-	# 	ic = 0
-	# 	outname = default_output
-
-	# 	if (command_argument_count() > 0) then
-	# 	do iarg = 1, command_argument_count()
-	# 		call get_command_argument(iarg,arg)
-	# 		if (trim(arg) == '-i') then
-	# 		call get_command_argument(iarg+1,arg)
-	# 		filein = trim(arg)
-	# 		ic = 1
-	# 		elseif (trim(arg) == '-o') then
-	# 		call get_command_argument(iarg+1,arg)
-	# 		deallocate(outname)
-	# 		outname = trim(arg)
-	# 		elseif (trim(arg) == '--params') then
-	# 		call print_params
-	# 		stop
-	# 		endif
-	# 	enddo
-	# 	endif
-	# 	if (ic == 0) stop 'No input file provided'
-
-	# 	fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
-	# 	//trim(outname)//'/' &
-	# 	//trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
-
-	# end
 
 	function print_params()
 		# allows the user to find out what parameters have been set in Params.jl when executable was compiled
@@ -119,11 +128,7 @@ module Common
 	function trilinear(r::Vector3D, field::T) where T<:AbstractField3D
 		# find the value of vector field at r using the trilinear method
 
-		r = edgecheck(r, field)
-
-		xp = r[1]
-		yp = r[2]
-		zp = r[3]
+		xp, yp, zp = edgecheck(r.x, r.y, r.z, field)
 
 		nx = floor(Int, xp)
 		ny = floor(Int, yp)
@@ -131,7 +136,7 @@ module Common
 
 		# if point goes out of an edge which is not periodic, set point to be at boundary to trilinear
 		# it will go out and be removed soon
-		if outedge(r, field)
+		if outedge(xp, yp, zp, field)
 			if T == CartesianField3D
 				if xp < field.xmin
 					xp = field.xmin
@@ -169,11 +174,32 @@ module Common
 		y = yp - ny
 		z = zp - nz
 
-        cube = SArray{Tuple{2, 2, 2, 3}, Float64}(field.field[nx:nx+1, ny:ny+1, nz:nz+1, :])
-        square = (1 - z)*cube[:, :, 1, :] + z*cube[:, :, 2, :]
-        line = (1 - y)*square[:, 1, :] + y*square[:, 2, :]
-        return (1 - x)*line[1, :] + x*line[2, :]
+        return tri(field, nx, ny, nz, x, y, z)
 
+	end
+
+	function tri(field, ix, iy, iz, x, y, z)
+		
+		b000 = field.field[ix, iy, iz]
+		b100 = field.field[ix+1, iy, iz]
+		b010 = field.field[ix, iy+1, iz]
+		b110 = field.field[ix+1, iy+1, iz]
+		b001 = field.field[ix, iy, iz+1]
+		b101 = field.field[ix+1, iy, iz+1]
+		b011 = field.field[ix, iy+1, iz+1]
+		b111 = field.field[ix+1, iy+1, iz+1]
+
+		a = b000
+		b = b100 - b000
+		c = b010 - b000
+		d = b110 - b100 - b010 + b000
+		e = b001 - b000
+		f = b101 - b100 - b001 + b000
+		g = b011 - b010 - b001 + b000
+		h = b111 - b110 - b101 - b011 + b100 + b010 + b001 - b000        
+
+		return a + b*x + c*y + d*x*y + e*z + f*x*z + g*y*z + h*x*y*z
+	
 	end
 
 	function trilinear_nf(r::Vector3D, field::T) where T<:AbstractField3D
@@ -215,178 +241,131 @@ module Common
 
 	# ********************************************************************************
 
-	function dot(a::Vector3D, b::Vector3D)
-		# dot product between a and b
+	outedge(r::Vector3D, field::T) where T<:AbstractField3D = outedge(r.x, r.y, r.z, field)
 
-		return sum(a .* b)
-
-	end
-
-	# ********************************************************************************
-
-	function cross(a::Vector3D, b::Vector3D)
-		# cross product between a and b
-
-		return Vector3D([a[2] * b[3] - a[3] * b[2],
-						 a[3] * b[1] - a[1] * b[3],
-						 a[1] * b[2] - a[2] * b[1]])
-
-	end
-
-	# ********************************************************************************
-
-	function normalise(a::Vector3D)
-		# finds the unit vector of a
-
-		return a / modulus(a)
-
-	end
-
-	# ********************************************************************************
-
-	function modulus(a::Vector3D)
-		# calculates the magnitude a vector a
-
-		return sqrt(sum(a .* a))
-
-	end
-
-	# ********************************************************************************
-
-	function dist(a::Vector3D, b::Vector3D)
-		# calculates the distance between two points in grid units
-
-		return sqrt(sum((b .- a) .^ 2))
-
-	end
-
-	# ********************************************************************************
-
-	function outedge(r::Vector3D, field::T) where T<:AbstractField3D
+	function outedge(rx, ry, rz, field::CartesianField3D)
 		# determines if the point r is outwith the computation box across a non periodic
 		# boundary and flags true or false
-
-		if T == CartesianField3D
-			if adjust_cartesian_periodicity
-				out_cond = false
-				if ! periodic_x
-					out_cond = out_cond | (r[1] >= field.xmax) | (r[1] <= field.xmin)
-				end
-				if ! periodic_y
-					out_cond = out_cond | (r[2] >= field.ymax) | (r[2] <= field.ymin)
-				end
-				if ! periodic_z
-					out_cond = out_cond | (r[3] >= field.zmax) | (r[3] <= field.zmin)
-				end
-			else
-				out_cond = (r[1] >= field.xmax) | (r[1] <= field.xmin) | (r[2] >= field.ymax) | (r[2] <= field.ymin) | (r[3] >= field.zmax) | (r[3] <= field.zmin)
+		if adjust_cartesian_periodicity
+			out_cond = false
+			if ! periodic_x
+				out_cond = out_cond | (rx >= field.xmax) | (rx <= field.xmin)
 			end
-		elseif T == SphericalField3D
-			out_cond = (r[1] >= field.xmax) | (r[1] <= field.xmin)
-			if adjust_spherical_periodicity
-				if ! periodic_theta
-					out_cond = outedge | (r[2] >= field.ymax) | (r[2] <= field.ymin)
-				end
-				if ! periodic_phi
-					out_cond = outedge | (r[3] >= field.zmax) | (r[3] <= field.zmin)
-				end
+			if ! periodic_y
+				out_cond = out_cond | (ry >= field.ymax) | (ry <= field.ymin)
+			end
+			if ! periodic_z
+				out_cond = out_cond | (rz >= field.zmax) | (rz <= field.zmin)
+			end
+		else
+			out_cond = (rx >= field.xmax) | (rx <= field.xmin) | (ry >= field.ymax) | (ry <= field.ymin) | (rz >= field.zmax) | (rz <= field.zmin)
+		end
+		return out_cond
+	end
+
+
+	function outedge(rx, ry, rz, field::SphericalField3D)
+		out_cond = (rx >= field.xmax) | (rx <= field.xmin)
+		if adjust_spherical_periodicity
+			if ! periodic_theta
+				out_cond = outedge | (ry >= field.ymax) | (ry <= field.ymin)
+			end
+			if ! periodic_phi
+				out_cond = outedge | (rz >= field.zmax) | (rz <= field.zmin)
 			end
 		end
-
-        return out_cond
-
+		return out_cond
 	end
 
 	# ********************************************************************************
 
-	function edgecheck(r::Vector3D, field::CartesianField3D)
+	function edgecheck(rx, ry, rz, field::CartesianField3D)
 		# determines if the point r is outwith the computational box across a
 		# periodic boundary and moves it if necessary
 
 		if adjust_cartesian_periodicity
-			rmut = MVector(r)
 			if periodic_x
-				if r[1] < field.xmin
-					rmut[1] += field.xmax - field.xmin
+				if rx < field.xmin
+					rx += field.xmax - field.xmin
 				end
-				if r[1] >= field.xmax
-					rmut[1] += field.xmin - field.xmax
+				if rx >= field.xmax
+					rx += field.xmin - field.xmax
 				end
 			end
 			if periodic_y
-				if r[2] < field.ymin
-					rmut[2] += field.ymax - field.ymin
+				if ry < field.ymin
+					ry += field.ymax - field.ymin
 				end
-				if r[2] >= field.ymax
-					rmut[2] += field.ymin - field.ymax
+				if ry >= field.ymax
+					ry += field.ymin - field.ymax
 				end
 			end
 			if periodic_z
-				if r[3] < field.zmin
-					rmut[3] += field.zmax - field.zmin
+				if rz < field.zmin
+					rz += field.zmax - field.zmin
 				end
-				if r[3] >= field.zmax
-					rmut[3] += field.zmin - field.zmax
+				if rz >= field.zmax
+					rz += field.zmin - field.zmax
 				end
 			end
-			return SVector(rmut)
 		end
-		return r
+		return rx, ry, rz
 	end
 
-	function edgecheck(r::Vector3D, field::SphericalField3D)
+	edgecheck(r::Vector3D, field::AbstractField3D) = Vector3D(edgecheck(r.x, r.y, r.z, field)...)
+
+	function edgecheck(rx, ry, rz, field::SphericalField3D)
 		# determines if the point r is outwith the computational box across a
 		# periodic boundary and moves it if necessary
 
 		if adjust_spherical_periodicity
 			if periodic_theta
-				if (r[2] < field.ymin) | (r[2] > field.ymax)
-					if r[2] < field.ymin
-						r[2] = 2*field.ymin - r[2]
+				if (ry < field.ymin) | (ry > field.ymax)
+					if ry < field.ymin
+						ry = 2*field.ymin - ry
 					end
-					if r[2] > field.ymax
-						r[2] = 2*field.ymax - r[2]
+					if ry > field.ymax
+						ry = 2*field.ymax - ry
 					end
-					if r[3] < (field.zmax + field.zmin)/2
-						r[3] = r[3] + (field.zmax - field.zmin)/2
+					if rz < (field.zmax + field.zmin)/2
+						rz = rz + (field.zmax - field.zmin)/2
 					else
-						r[3] = r[3] - (field.zmax - field.zmin)/2
+						rz = rz - (field.zmax - field.zmin)/2
 					end
 				end
 			end
 			if periodic_phi
-				if r[3] <= field.zmin
-					r[3] = r[3] + (field.zmax - field.zmin)
+				if rz <= field.zmin
+					rz = rz + (field.zmax - field.zmin)
 				end
-				if r[3] >= field.zmax
-					r[3] = r[3] - (field.zmax - field.zmin)
+				if rz >= field.zmax
+					rz = rz - (field.zmax - field.zmin)
 				end
 			end
 			return r # this section needs sorting
 		else
-			rmut = MVector(r)
-			if (r[2] < field.ymin) | (r[2] > field.ymax)
-				if r[2] < field.ymin
-					rmut[2] = 2*field.ymin - r[2]
+			if (ry < field.ymin) | (ry > field.ymax)
+				if ry < field.ymin
+					ry = 2*field.ymin - ry
 				end
-				if r[2] > field.ymax
-					rmut[2] = 2*field.ymax - r[2]
+				if ry > field.ymax
+					ry = 2*field.ymax - ry
 				end
-				if r[3] < (field.zmax + field.zmin)/2
-					rmut[3] += (field.zmax - field.zmin)/2
+				if rz < (field.zmax + field.zmin)/2
+					rz += (field.zmax - field.zmin)/2
 				else
-					rmut[3] += (field.zmin - field.zmax)/2
+					rz += (field.zmin - field.zmax)/2
 				end
 			end
-			if r[3] < field.zmin
-				rmut[3] += field.zmax - field.zmin
+			if rz < field.zmin
+				rz += field.zmax - field.zmin
 			end
-			if r[3] >= field.zmax
-				rmut[3] += field.zmin - field.zmax
+			if rz >= field.zmax
+				rz += field.zmin - field.zmax
 			end
-			return SVector(rmut)
 		end
 
+		return rx, ry, rz
 	end
 
 	# ********************************************************************************
@@ -394,17 +373,17 @@ module Common
 	function get_startpoints(fan::Vector3D, nlines::Integer)
 		# from the theta, phi coordinates of a fan vector, produces ring of points in the fanplane
 
-		theta = acos(fan[3])
-        phi = atan(fan[2], fan[1])
+		theta = acos(fan.z)
+        phi = atan(fan.y, fan.x)
 
 		dtheta = 2*pi/nlines
 
-		startpoints = Vector{Vector{Float64}}(undef, 0)
+		startpoints = Vector{Vector3D{Float64}}(undef, 0)
 
 		# generate nlines start points in ring around equator
 		for i in 1:nlines
 			r = Float64[cos(i*dtheta), sin(i*dtheta), 0]
-			r = rotate(r, theta, phi)
+			r = Vector3D(rotate(r, theta, phi)...)
 			push!(startpoints, r * start_dist)
 		end
 
@@ -453,11 +432,13 @@ module Common
 	function gtr(pt::Vector3D, field::AbstractField3D)
 		# converts a list of grid points to real coordinates
 
-		ig = floor.(Int, pt)
+		igx = floor(Int, pt.x)
+		igy = floor(Int, pt.y)
+		igz = floor(Int, pt.z)
 
-		return Vector3D([field.x[ig[1]] + (pt[1] - ig[1])*(field.x[ig[1] + 1] - field.x[ig[1]]),
-						 field.y[ig[2]] + (pt[2] - ig[2])*(field.y[ig[2] + 1] - field.y[ig[2]]),
-						 field.z[ig[3]] + (pt[3] - ig[3])*(field.z[ig[3] + 1] - field.z[ig[3]])])
+		return Vector3D(field.x[igx] + (pt.x - igx)*(field.x[igx + 1] - field.x[igx]),
+						field.y[igy] + (pt.y - igy)*(field.y[igy + 1] - field.y[igy]),
+						field.z[igz] + (pt.z - igz)*(field.z[igz + 1] - field.z[igz]))
 
 	end
 
@@ -478,52 +459,80 @@ module Common
 
 	end
 
-	function get_rnullsalt(rnulls::Vector{Vector3D}, bgrid::SphericalField3D)
+	function get_rnullsalt(rnulls::Vector{Vector3D{Float64}}, bgrid::SphericalField3D)
 
-        rnullsalt = copy(rnulls)
+		rnullsalt = copy(rnulls)
+		
+		for (inull, rnull) in enumerate(rnullsalt)
 
-        # check whether null is at the lower phi boundary
-        inulls = getindex.(rnullsalt, 3) .< bgrid.zmin + 1
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 3) .- 1, 3)
-        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls], Ref(bgrid))
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 3) .+ 1, 3)
+			rx = rnull.x
+			ry = rnull.y
+			rz = rnull.z
 
-        # check whether null is at the upper phi boundary
-        inulls = getindex.(rnullsalt, 3) .> bgrid.zmax - 1
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 3) .+ 1, 3)
-        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls], Ref(bgrid))
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 3) .- 1, 3)
+			# check whether null is at the lower phi boundary
+			if rz < bgrid.zmin + 1
+				rz = rz - 1
+				rx, ry, rz = edgecheck(rx, ry, rz, bgrid)
+				rz = rz + 1
+			end
 
-        # check whether null is at the lower theta boundary
-        inulls = getindex.(rnullsalt, 2) .< bgrid.ymin + 1
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 2) .- 1, 2)
-        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls], Ref(bgrid))
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 2) .- 1, 2)
+			# check whether null is at the upper phi boundary
+			if rz > bgrid.zmax - 1
+				rz = rz + 1
+				rx, ry, rz = edgecheck(rx, ry, rz, bgrid)
+				rz = rz - 1
+			end
 
-        # check whether null is at the upper theta boundary
-        inulls = getindex.(rnullsalt, 2) .> bgrid.ymax - 1
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 2) .+ 1, 2)
-        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls], Ref(bgrid))
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 2) .+ 1, 2)
+			# check whether null is at the lower theta boundary
+			if ry < bgrid.ymin + 1
+				ry = ry - 1
+				rx, ry, rz = edgecheck(rx, ry, rz, bgrid)
+				ry = ry - 1
+			end
+
+			# check whether null is at the upper theta boundary
+			if ry > bgrid.ymax - 1
+				ry = ry + 1
+				rx, ry, rz = edgecheck(rx, ry, rz, bgrid)
+				ry = ry + 1
+			end
+
+			rnullsalt[inull] = Vector3D(rx, ry, rz)
+
+		end
 
         return rnullsalt
 
     end
 
-    function get_rnullsalt(rnulls::Vector{Vector3D}, bgrid::CylindricalField3D)
+	function get_rnullsalt(rnulls::Vector{Vector3D}, bgrid::CylindricalField3D)
+		
+		rnullsalt = copy(rnulls)
+		
+		for (inull, rnull) in enumerate(rnullalt)
+
+			rx = rnull.x
+			ry = rnull.y
+			rz = rnull.z
+
+			# check whether null is at the lower phi boundary
+			if ry < bgrid.ymin + 1
+				ry = ry - 1
+				rx, ry, rz = edgecheck(rx, ry, rz, bgrid)
+				ry = ry + 1
+			end
+
+			# check whether null is at the upper phi boundary
+			if ry < bgrid.ymin + 1
+				ry = ry + 1
+				rx, ry, rz = edgecheck(rx, ry, rz, bgrid)
+				ry = ry - 1
+			end
+
+			rnullsalt[inull] = Vector3D(rx, ry, rz)
+
+		end
         
-        # check whether null is at the lower phi boundary
-        inulls = getindex.(rnullsalt, 2) .< bgrid.ymin + 1
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 2) .- 1, 2)
-        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls], Ref(bgrid))
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 2) .+ 1, 2)
-
-        # check whether null is at the upper phi boundary
-        inulls = getindex.(rnullsalt, 2) .> bgrid.ymax - 1
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 2) .+ 1, 2)
-        rnullsalt[inulls] .= edgecheck.(rnullsalt[inulls], Ref(bgrid))
-        rnullsalt[inulls] .= setindex.(rnullsalt[inulls], getindex.(rnullsalt[inulls], 2) .- 1, 2)
-
         return rnullsalt
 
     end

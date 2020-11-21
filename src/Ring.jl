@@ -1,17 +1,15 @@
 module Ring
 
-    using StaticArrays
-
     using ..Params
     using ..Common
     using ..Trace
 
-    function add_points!(line1::Vector{Vector3D},
-                         line2::Vector{Vector3D},
+    function add_points!(line1::Vector{Vector3D{T}},
+                         line2::Vector{Vector3D{T}},
                          breaks::Vector{Int32},
                          associations::Vector{Int32},
                          nearnull::Vector{Int32},
-                         maxdist::Float64)
+                         maxdist::Float64) where T
 
         nlines = size(line1, 1)
         add1 = zero(line1)
@@ -38,7 +36,7 @@ module Ring
 
         # add in reverse to make indexing simple
         for iline in nlines:-1:1
-            if add1[iline][1] > 1e-1
+            if add1[iline].x > 1e-1
                 iadd = iline + 1
                 insert!(line1, iadd, add1[iline])
                 insert!(line2, iadd, add2[iline])
@@ -55,12 +53,12 @@ module Ring
 
     end
     
-    function remove_points(line1::Vector{Vector3D},
-                           line2::Vector{Vector3D},
+    function remove_points(line1::Vector{Vector3D{T}},
+                           line2::Vector{Vector3D{T}},
                            breaks::Vector{Int32},
                            associations::Vector{Int32},
                            endpoints::Vector{Int32},
-                           mindist::Float64)
+                           mindist::Float64) where T
     
         nlines = size(line1, 1)
         remove = zeros(Int32, nlines)
@@ -113,18 +111,18 @@ module Ring
 
     end
 
-    function sep_detect!(line1::Vector{Vector3D},
-                         rnulls::Vector{Vector3D},
-                         rnullsalt::Vector{Vector3D},
+    function sep_detect!(line1::Vector{Vector3D{T}},
+                         rnulls::Vector{Vector3D{T}},
+                         rnullsalt::Vector{Vector3D{T}},
                          signs::Vector{Int32},
-                         spines::Vector{Vector3D},
+                         spines::Vector{Vector3D{T}},
                          breaks::Vector{Int32},
                          nullnum::Integer,
                          nring::Integer,
                          sign::Integer,
                          nulldist::AbstractFloat,
                          field::AbstractField3D,
-                         connectivity_file::IOStream)
+                         connectivity_file::IOStream) where T
 
         nlines = size(line1, 1)
         maxcount = 1000

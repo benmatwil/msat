@@ -199,11 +199,12 @@ module SeparatrixSurfaceFinder
                         seek(tempfile, ia)
                         linenum = read(tempfile, Int32)
                         seek(tempfile, ip)
-                        rsep[iring+2] = read(tempfile, Common.Vector3D)
+                        rsep[iring+2] = read(tempfile, Common.Vector3D{Float64})
                     end
                     rsep[1] = rnullsreal[nullnum1]
                     rsep[ringnum+3] = rnullsreal[nullnum2]
-                    write(separator_file, Int32(ringnum+3), rsep)
+                    write(separator_file, Int32(ringnum+3))
+                    write.(Ref(separator_file), rsep)
                 end
             end
             uptonullconn = uptonullconn + nseps*16 + 4

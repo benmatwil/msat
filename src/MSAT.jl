@@ -23,7 +23,6 @@ module MSAT
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    using StaticArrays
 
     # field = MSAT.Common.read_field("data/bmag0037.dat")
     # middle = MSAT.Common.Vector3D([10, 20, 30])

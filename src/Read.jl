@@ -1,7 +1,5 @@
 module Read
 
-    using StaticArrays
-
     using ..Params
     using ..Common
 
@@ -14,7 +12,8 @@ module Read
     function read_field(filename::String, coordinate_system::String)
         fieldfile = open(filename, "r")
 		nx, ny, nz = read!(fieldfile, Array{Int32}(undef, 3))
-		bgrid = read!(fieldfile, Array{Float64, 4}(undef, nx, ny, nz, 3))
+        bgrid_read = read!(fieldfile, Array{Float64, 4}(undef, nx, ny, nz, 3))
+        bgrid = [Vector3D(bgrid_read[ix, iy, iz, :]...) for ix in 1:nx, iy in 1:ny, iz in 1:nz]
 		x = read!(fieldfile, Array{Float64, 1}(undef, nx))
 		y = read!(fieldfile, Array{Float64, 1}(undef, ny))
 		z = read!(fieldfile, Array{Float64, 1}(undef, nz))
@@ -31,8 +30,8 @@ module Read
     function read_nulls(filename::AbstractString)
         nullfile = open(joinpath(default_output, prefix(filename) * "-nullpos.dat"), "r")
 		nnulls, = read!(nullfile, Array{Int32}(undef, 1))
-        gridpos = convert_point_list(read!(nullfile, Array{Float64, 2}(undef, 3, nnulls)))
-        pos = convert_point_list(read!(nullfile, Array{Float64, 2}(undef, 3, nnulls)))
+        gridpos = read!(nullfile, Vector{Vector3D{Float64}}(undef, nnulls))
+        pos = read!(nullfile, Vector{Vector3D{Float64}}(undef, nnulls))
         close(nullfile)
         return nnulls, gridpos, pos
     end
@@ -41,20 +40,11 @@ module Read
         nullfile = open(joinpath(default_output, prefix(filename) * "-nulldata.dat"), "r")
 		nnulls, = read!(nullfile, Array{Int32}(undef, 1))
 		signs = read!(nullfile, Array{Int32, 1}(undef, nnulls))
-        spines = convert_point_list(read!(nullfile, Array{Float64, 2}(undef, 3, nnulls)))
-        fans = convert_point_list(read!(nullfile, Array{Float64, 2}(undef, 3, nnulls)))
-		warning = read!(nullfile, Array{Int32, 1}(undef, nnulls))
+        spines = read!(nullfile, Vector{Vector3D{Float64}}(undef, nnulls))
+        fans = read!(nullfile, Vector{Vector3D{Float64}}(undef, nnulls))
+		warning = read!(nullfile, Vector{Int32}(undef, nnulls))
         close(nullfile)
         return nnulls, signs, spines, fans, warning
     end
-
-    function convert_point_list(list::Array{Float64, 2})
-        output = Vector{Common.Vector3D}(undef, 0)
-        for index in 1:size(list, 2)
-            push!(output, Common.Vector3D(list[:, index]))
-        end
-        return output
-    end
-
 
 end
