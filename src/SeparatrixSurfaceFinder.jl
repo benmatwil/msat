@@ -53,6 +53,7 @@ module SeparatrixSurfaceFinder
             nlines = size(line1, 1)
 
             breaks = zeros(Int32, nlines)
+            associations = zeros(Int32, nlines)
             nseps = 0
             nperring = OffsetVector(zeros(Int32, ringsmax+1), 0:ringsmax)
             nperring[0] = nstart
@@ -91,9 +92,8 @@ module SeparatrixSurfaceFinder
                 line2 .= line2 .+ (r .- line1)
                 line1 .= r
 
-                # don't need defining above and then thingy here
+                associations .= 1:length(line1)
                 endpoints = Common.outedge.(line1, Ref(bgrid))
-                associations = Int32.(1:length(line1))
 
                 if iring < 50
                     maxdist = 0.1*h0*slowdown
