@@ -73,9 +73,7 @@ module SeparatrixSurfaceFinder
             nrings = 0
 
             for iring in 1:ringsmax
-                if iring % 20 == 0
-                    println("Ring number: $(iring) with length $(size(line1, 1))")
-                end
+                
                 if abs(signs[inull]) != 1
                     println("Source/Sink -- skipping")
                     nrings = 1
@@ -91,23 +89,14 @@ module SeparatrixSurfaceFinder
                     h0 = stepsize/slowdown
                 end
 
-                for (iline, r) in enumerate(line1)
-                    # r = line1[iline]
-                    h = h0
+                r = Trace.trace_line.(line1, signs[inull], h0, Ref(bgrid))
 
-                    r = Trace.trace_line(r, signs[inull], h, bgrid)
+                line2 .= line2 .+ (r .- line1)
+                line1 .= r
 
-                    line2[iline] = line2[iline] + (r - line1[iline])
-                    line1[iline] = r
-
-                    if Common.outedge(r, bgrid)
-                        endpoints[iline] = 1
-                    else
-                        endpoints[iline] = 0
-                    end
-
-                    associations[iline] = iline
-                end
+                # don't need defining above and then thingy here
+                endpoints .= Common.outedge.(line1, Ref(bgrid))
+                associations .= 1:length(associations)
 
                 if iring < 50
                     maxdist = 0.1*h0*slowdown
