@@ -57,7 +57,7 @@ module Ring
                            line2::Vector{Vector3D{T}},
                            breaks::Vector{Int32},
                            associations::Vector{Int32},
-                           endpoints::Vector{Int32},
+                           endpoints::BitVector,
                            mindist::Float64) where T
     
         nlines = size(line1, 1)
@@ -65,17 +65,17 @@ module Ring
     
         break1 = breaks[1]
         for iline in 2:nlines
-            if (endpoints[iline] == 1) | (breaks[iline] == 2) # remove points that have left the simulation or stuck
+            if (endpoints[iline]) | (breaks[iline] == 2) # remove points that have left the simulation or stuck
                 if breaks[iline] == 2
-                    endpoints[iline] = 1
+                    endpoints[iline] = true
                 end
                 remove[iline] = 1
                 breaks[iline-1] = 1
             end
         end
-        if (endpoints[1] == 1) | (break1 == 2) # remove points that have left the simulation or stuck
+        if (endpoints[1]) | (break1 == 2) # remove points that have left the simulation or stuck
             if breaks[1] == 2
-                endpoints[1] = 1
+                endpoints[1] = true
             end
             remove[1] = 1
             breaks[nlines] = 1

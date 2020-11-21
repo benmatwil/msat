@@ -80,9 +80,6 @@ module SeparatrixSurfaceFinder
                     break
                 end
 
-                endpoints = zeros(Int32, size(line1, 1))
-                associations = zeros(Int32, size(line1, 1))
-
                 if iring < 50
                     h0 = stepsize/slowdown/5
                 else
@@ -95,8 +92,8 @@ module SeparatrixSurfaceFinder
                 line1 .= r
 
                 # don't need defining above and then thingy here
-                endpoints .= Common.outedge.(line1, Ref(bgrid))
-                associations .= 1:length(associations)
+                endpoints = Common.outedge.(line1, Ref(bgrid))
+                associations = Int32.(1:length(line1))
 
                 if iring < 50
                     maxdist = 0.1*h0*slowdown
