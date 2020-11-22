@@ -66,11 +66,11 @@ module Trace
         k2 = hvec * Common.normalise(Common.trilinear(rtest, field))
         rtest = r0 + k31*k1 + k32*k2
         k3 = hvec * Common.normalise(Common.trilinear(rtest, field))
-        rtest = 1.0 * r0 + k41*k1 + k42*k2 + k43*k3
+        rtest = r0 + k41*k1 + k42*k2 + k43*k3
         k4 = hvec * Common.normalise(Common.trilinear(rtest, field))
-        rtest = 1.0 * r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
+        rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
         k5 = hvec * Common.normalise(Common.trilinear(rtest, field))
-        rtest = 1.0 * r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5
+        rtest = r0 + k61*k1 + k62*k2 + k63*k3 + k64*k4 + k65*k5
         k6 = hvec * Common.normalise(Common.trilinear(rtest, field))
 
         # get 4th order (y) and 5th order (z) estimates
@@ -95,12 +95,12 @@ module Trace
         k2 = hvec * Common.normalise(Common.trilinear(rtest, field))
         rtest = r0 + k31*k1 + k32*k2
         k3 = hvec * Common.normalise(Common.trilinear(rtest, field))
-        rtest = 1.0 * r0 + k41*k1 + k42*k2 + k43*k3
+        rtest = r0 + k41*k1 + k42*k2 + k43*k3
         k4 = hvec * Common.normalise(Common.trilinear(rtest, field))
-        rtest = 1.0 * r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
+        rtest = r0 + k51*k1 + k52*k2 + k53*k3 + k54*k4
         k5 = hvec * Common.normalise(Common.trilinear(rtest, field))
 
-        rout = 1.0*r0 + y1*k1 + y3*k3 + y4*k4 + y5*k5
+        rout = r0 + y1*k1 + y3*k3 + y4*k4 + y5*k5
 
         h = h*s
 
