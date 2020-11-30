@@ -67,6 +67,7 @@ module Common
 
 	Base.read(io::IO, ::Type{Vector3D{T}}) where T = Vector3D{T}(read(io, T),read(io, T),read(io, T))
 	Base.write(io::IO, v::Vector3D{T}) where T = write(io, v.x) + write(io, v.y) + write(io, v.z)
+	Base.show(io::IO, a::Vector3D) = print(io, "Vector3D[$(a.x), $(a.y), $(a.z)]")
 
 	abstract type AbstractField3D end
 	Base.show(io::IO, a::AbstractField3D) = print(io, "$(typeof(a))($(a.filename))")
