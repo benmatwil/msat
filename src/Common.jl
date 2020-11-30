@@ -207,9 +207,9 @@ module Common
 	function trilinear_nf(r::Vector3D, field::T) where T<:AbstractField3D
 		# find the value of vector field at r using the trilinear method
 
-		xp = r[1]
-		yp = r[2]
-		zp = r[3]
+		xp = r.x
+		yp = r.y
+		zp = r.z
 
 		nx = floor(Int, xp)
 		ny = floor(Int, yp)
@@ -234,10 +234,7 @@ module Common
 
 		# println("$nx, $ny, $nz, $xp, $yp, $zp")
 
-        cube = SArray{Tuple{2, 2, 2, 3}, Float64}(field.field[nx:nx+1, ny:ny+1, nz:nz+1, :])
-        square = (1 - z)*cube[:, :, 1, :] + z*cube[:, :, 2, :]
-        line = (1 - y)*square[:, 1, :] + y*square[:, 2, :]
-        return (1 - x)*line[1, :] + x*line[2, :]
+		return tri(field, nx, ny, nz, x, y, z)
 
 	end
 
