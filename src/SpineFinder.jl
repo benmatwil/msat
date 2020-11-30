@@ -10,8 +10,8 @@ module SpineFinder
         nnulls, rnulls, rnullsreal = Read.read_nulls(bgrid.filename)
 
         signs = zeros(Int32, nnulls)
-        spines = zeros(Common.Vector3D, nnulls)
-        fans = zeros(Common.Vector3D, nnulls)
+        spines = zeros(Common.Vector3D{Float64}, nnulls)
+        fans = zeros(Common.Vector3D{Float64}, nnulls)
         warnings = zeros(Int32, nnulls)
 
         for inull in 1:nnulls
@@ -58,12 +58,12 @@ module SpineFinder
         sign_0 = sign_source_sink(rnull, bgrid)
 
         if abs(sign_0) == 2
-            spine = zero(Vector3D)
-            spine = zero(Vector3D)
+            spine = zero(Vector3D{Float64})
+            spine = zero(Vector3D{Float64})
             sign = sign_0
         else
-            rconvergefw = Vector{Vector3D}(undef, nphi*ntheta)
-            rconvergebw = Vector{Vector3D}(undef, nphi*ntheta)
+            rconvergefw = Vector{Vector3D{Float64}}(undef, nphi*ntheta)
+            rconvergebw = Vector{Vector3D{Float64}}(undef, nphi*ntheta)
 
             # set up theta and phi for sphere around null
             dphi = 2*pi/nphi
@@ -73,37 +73,35 @@ module SpineFinder
             mincount = 500
             it_dist = dist_mult*rsphere
             accconv = 1e-9*rsphere
+
+            flagfw = 0
+            flagbw = 0
       
-            angle = 0
+            angle = 0.0
             while true
-                global flagfw, flagbw
-                flagfw = 0
-                flagbw = 0
                 # Working on a sphere of size rsphere
                 # loop over each point to find converged point
                 for itheta in 1:ntheta, iphi in 1:nphi
                     count = 0
                     rfw = sphere2cart(rsphere, (itheta-0.5)*dtheta + angle, (iphi-1)*dphi + angle)
-                    rbw = copy(rfw)
-                    rfw1 = copy(rfw)
-                    rbw1 = copy(rbw)
+                    rbw = rfw
+                    rfw1 = rfw
+                    rbw1 = rbw
+                    oldfw, oldbw = zero(Vector3D{Float64}), zero(Vector3D{Float64})
                     for count in 1:maxiter
-                        global oldbw, oldfw
                         oldfw, rfw = it_conv(rfw, rnull, bgrid, it_dist, 1)
                         oldbw, rbw = it_conv(rbw, rnull, bgrid, it_dist, -1)
-                        # println(itheta, " ", iphi, " ", count, " ", Common.normalise(rfw))
-                        # println(itheta, " ", iphi, " ", count, " ", Common.normalise(rbw))
-                        if ((Common.modulus(rfw - oldfw) < accconv) | (Common.modulus(rbw - oldbw) < accconv)) & (count >= mincount)
+                        if ((modulus(rfw - oldfw) < accconv) | (modulus(rbw - oldbw) < accconv)) & (count >= mincount)
                             break
                         end
                     end
-                    if (Common.modulus(rfw1 - rfw) < minmove) | (Common.modulus(rbw1 - rbw) < minmove) & (angle < dphi)
+                    if (Comn.modulus(rfw1 - rfw) < minmove) | (modulus(rbw1 - rbw) < minmove) & (angle < dphi)
                         angle = angle + dphi/6
                         @debug "Adjusting the initial points and starting again"
                         @goto end_main
                     end
-                    convfw = Common.modulus(rfw - oldfw) < accconv
-                    convbw = Common.modulus(rbw - oldbw) < accconv
+                    convfw = modulus(rfw - oldfw) < accconv
+                    convbw = modulus(rbw - oldbw) < accconv
                     if (convfw & !convbw)
                         flagfw += 1
                     end
@@ -111,8 +109,8 @@ module SpineFinder
                         flagbw += 1
                     end
                     iconv = iphi + (itheta-1)*nphi
-                    rconvergefw[iconv] = Common.normalise(rfw)
-                    rconvergebw[iconv] = Common.normalise(rbw)
+                    rconvergefw[iconv] = normalise(rfw)
+                    rconvergebw[iconv] = normalise(rbw)
                 end
                 @debug "-----------------------------------------------------------------------------"
                 break
@@ -130,8 +128,8 @@ module SpineFinder
             if (flagfw == 0) & (flagbw == 0)
                 # probably high current - no points converged
                 @debug "High current, spine not converging to single point"
-                dotprodsfw = abs.(Common.dot.(Ref(rconvergefw[1]), rconvergefw))
-                dotprodsbw = abs.(Common.dot.(Ref(rconvergebw[1]), rconvergebw))
+                dotprodsfw = abs.(dot.(Ref(rconvergefw[1]), rconvergefw))
+                dotprodsbw = abs.(dot.(Ref(rconvergebw[1]), rconvergebw))
         
                 if minimum(dotprodsfw) < minimum(dotprodsbw) # spine should be bigger, fan should have a 0
                     sign = 1
@@ -154,13 +152,13 @@ module SpineFinder
         
                 maxvec = rfan[1]
         
-                dotprods = abs.(Common.dot.(Ref(maxvec), rfan))
+                dotprods = abs.(dot.(Ref(maxvec), rfan))
         
                 minvec = rfan[argmin(dotprods)]
         
-                fan = normalise(cross(maxvec, minvec))
+                fan = normalise(maxvec × minvec)
 
-                spine = normalise(sum(rspine[Common.dot.(Ref(fan), rspine) .> 0]))
+                spine = normalise(sum(rspine[dot.(Ref(fan), rspine) .> 0]))
       
             else
       
@@ -178,8 +176,8 @@ module SpineFinder
                     flagfan = flagfw
                 else
                     # equal flags - attempt to use eigenvalues...
-                    dotprodsfw = abs.(Common.dot.(rconvergefw, Common.trilinear.(rconvergefw .* rsphere .+ Ref(rnull), Ref(bgrid))))
-                    dotprodsbw = abs.(Common.dot.(rconvergebw, Common.trilinear.(rconvergebw .* rsphere .+ Ref(rnull), Ref(bgrid))))
+                    dotprodsfw = abs.(dot.(rconvergefw, trilinear.(rconvergefw .* rsphere .+ Ref(rnull), Ref(bgrid))))
+                    dotprodsbw = abs.(dot.(rconvergebw, trilinear.(rconvergebw .* rsphere .+ Ref(rnull), Ref(bgrid))))
 
                     if maximum(dotprodsfw) > maximum(dotprodsbw)
                         sign = -1
@@ -204,8 +202,8 @@ module SpineFinder
                 nfan = size(rfan, 1)
                 
                 if (nspine == 2) & (nfan == 2)
-                    eigen_spine = Common.dot(rspine[1], Common.trilinear(rspine[1]*rsphere + rnull, bgrid))
-                    eigen_fan = Common.dot(rfan[1], Common.trilinear(rfan[1]*rsphere + rnull, bgrid))
+                    eigen_spine = dot(rspine[1], trilinear(rspine[1]*rsphere + rnull, bgrid))
+                    eigen_fan = dot(rfan[1], trilinear(rfan[1]*rsphere + rnull, bgrid))
                     if abs(eigen_fan) > abs(eigen_spine)
                         rspine, rfan = rfan, rspine
                         sign = -1*sign
@@ -259,32 +257,32 @@ module SpineFinder
                     @debug "Converging minvec"
                     converge_minvec = true
         
-                    rmin = Vector{Vector3D}(undef, nphi1*ntheta1)
+                    rmin = Vector{Vector3D{Float64}}(undef, nphi1*ntheta1)
         
                     dphi = 2*pi/nphi1
                     dtheta = pi/ntheta1
         
                     for itheta in 1:ntheta1, iphi in 1:nphi1
                         rnew = sphere2cart(rsphere, (itheta-0.5)*dtheta + angle, (iphi-1)*dphi + angle)
-                        bnew = Common.trilinear(rnew+rnull, bgrid)
+                        bnew = trilinear(rnew+rnull, bgrid)
                         for count in 1:maxiter/10
                             rold, rnew = it_conv(rnew, rnull, bgrid, maxvec, it_dist, sign)
-                            if (Common.modulus(rnew - rold) < accconv) & (count >= mincount)
+                            if (modulus(rnew - rold) < accconv) & (count >= mincount)
                                 break
                             end
                         end
-                        rmin[iphi+(itheta-1)*nphi1] = Common.normalise(rnew)
+                        rmin[iphi+(itheta-1)*nphi1] = normalise(rnew)
                     end
                     rmin, densepos = remove_duplicates!(rmin, acc)
                     minvec = rmin[argmax(densepos)]
                     
-                    if abs(Common.dot(minvec, maxvec)) > 0.9
+                    if abs(dot(minvec, maxvec)) > 0.9
                         sign = -1*sign
                         @debug "Min-/max-vec close... switching sign"
                         rspine, rfan = rfan, rspine
                         spine, maxvec = maxvec, spine
                         
-                        rmin = Vector{Vector3D}(undef, nphi1*ntheta1)
+                        rmin = Vector{Vector3D{Float64}}(undef, nphi1*ntheta1)
             
                         dphi = 2*pi/nphi1
                         dtheta = pi/ntheta1
@@ -308,11 +306,12 @@ module SpineFinder
       
             end
       
-            fan = Common.normalise(Common.cross(maxvec, minvec))      
+            @show maxvec, minvec
+            fan = normalise(maxvec × minvec)
 
         end
 
-        tilt = abs(90 - rad2deg(acos(Common.dot(fan, spine))))
+        tilt = abs(90 - rad2deg(acos(dot(fan, spine))))
         println(spine)
 
         if abs(sign) == 2
@@ -353,10 +352,14 @@ module SpineFinder
     end
 
     function sphere2cart(r::Float64, theta::Float64, phi::Float64)
-        return r * Vector3D([sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)])
+        return r * Vector3D(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta))
     end
 
-    function it_conv(rold::Vector3D, rnull::Vector3D, bgrid::AbstractField3D, it_dist::Float64, dir::Integer)
+    function it_conv(rold::Vector3D{Float64},
+                     rnull::Vector3D{Float64},
+                     bgrid::AbstractField3D,
+                     it_dist::Float64,
+                     dir::Integer)
         
         bvec = Common.trilinear(rold + rnull, bgrid)
         rnew = rold + dir * it_dist * Common.normalise(bvec)
@@ -366,18 +369,23 @@ module SpineFinder
         
     end
 
-    function it_conv(rold::Vector3D, rnull::Vector3D, bgrid::AbstractField3D, maxvec::Vector3D, it_dist::Float64, dir::Integer)
+    function it_conv(rold::Vector3D{Float64},
+                     rnull::Vector3D{Float64},
+                     bgrid::AbstractField3D,
+                     maxvec::Vector3D{Float64},
+                     it_dist::Float64,
+                     dir::Integer)
         
-        bvec = Common.trilinear(rold + rnull, bgrid)
-        bvec = bvec - Common.dot(bvec, Common.normalise(maxvec))*Common.normalise(maxvec)
-        rnew = rold + dir * it_dist * Common.normalise(bvec)
-        rnew = rsphere * Common.normalise(rnew)
+        bvec = trilinear(rold + rnull, bgrid)
+        bvec = bvec - dot(bvec, normalise(maxvec))*normalise(maxvec)
+        rnew = rold + dir * it_dist * normalise(bvec)
+        rnew = rsphere * normalise(rnew)
 
         return rold, rnew
         
     end
 
-    function remove_duplicates!(vecarray::Vector{Vector3D}, accur::Float64)
+    function remove_duplicates!(vecarray::Vector{Vector3D{Float64}}, accur::Float64)
         
         n = size(vecarray, 1)
         i = 1
@@ -388,7 +396,7 @@ module SpineFinder
             j = i + 1
             nclosei = 0
             while j < n + 1
-                if (Common.modulus(vecarray[i] - vecarray[j]) < accur)
+                if (modulus(vecarray[i] - vecarray[j]) < accur)
                     deleteat!(vecarray, j)
                     n = size(vecarray, 1)
                     nclosei += 1
@@ -404,14 +412,9 @@ module SpineFinder
 
     end
 
-    function sign_source_sink(rnull::Vector3D, bgrid)
+    function sign_source_sink(rnull::Vector3D{Float64}, bgrid)
         # put a ball of points around null and trace field lines to check for source/sink
     
-        # logical :: zero_null
-        # integer :: sign_source_sink
-        # integer :: iphi, itheta, isink, isink_bw, isink_fw, itrace, dir
-        # real(np), dimension(3) :: rtrace, rstart, rnull
-
         rsphere = rspherefact * (1e-1)^sig_figs
     
         isink = 0
