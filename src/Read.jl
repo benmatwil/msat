@@ -27,6 +27,8 @@ module Read
         end
     end
 
+    Common.SphericalField3D(filename::AbstractString) = read_field(filename, "Spherical")
+
     function read_nulls(filename::AbstractString)
         nullfile = open(joinpath(default_output, prefix(filename) * "-nullpos.dat"), "r")
 		nnulls, = read!(nullfile, Array{Int32}(undef, 1))
