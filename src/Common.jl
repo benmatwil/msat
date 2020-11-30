@@ -7,6 +7,10 @@ module Common
 
 	export Vector3D
 	export AbstractField3D, CartesianField3D, SphericalField3D, CylindricalField3D
+	export ×
+	export normalise, modulus, dot
+	export trilinear
+	
 	# common functions, subroutine and variables for all programs MSAT
 
 	struct Vector3D{T<:Number}
@@ -44,12 +48,9 @@ module Common
 										   a.z * b.x - a.x * b.z,
 										   a.x * b.y - a.y * b.x)
 
-	function dot(a::Vector3D, b::Vector3D)
-
-		return a.x * b.x + a.y * b.y + a.z * b.z
-
-	end
-
+	Base.sum(a::Vector3D) = a.x + a.y + a.z
+	dot(a::Vector3D, b::Vector3D) = a.x * b.x + a.y * b.y + a.z * b.z
+	
 	modulus(a::Vector3D) = sqrt(dot(a, a))
 	normalise(a::Vector3D) = a / modulus(a)
 	
