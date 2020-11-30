@@ -1,54 +1,61 @@
 module NullFinder
 
+    using StaticArrays
+
     using ..Params
     using ..Common
     using ..Read
+    
+    const Square = SArray{Tuple{2, 2}, Float64, 2, 4}
+    const Cube = SArray{Tuple{2, 2, 2}, Float64, 3, 8}
+    const VecCube = SArray{Tuple{2, 2, 2}, Common.Vector3D{Float64}, 3, 8}
 
     function NF(bgrid::AbstractField3D; boundary_nulls::Bool=false, gridpoint_nulls::Bool=true)
 
-        nx, ny, nz, ndims = size(bgrid.field)
+        nx, ny, nz = size(bgrid.field)
 
-        magb = sqrt.(sum(bgrid.field .^ 2, dims=4))
+        bx, by, bz = (getproperty.(bgrid.field, prop) for prop in (:x, :y, :z))
+        magb = sqrt.(bx .^ 2 .+ by .^ 2 .+ bz .^ 2)
 
         candidates = falses((nx-1, ny-1, nz-1))
         for iz in 1:nz-1, iy in 1:ny-1, ix in 1:nx-1
-            cube = bgrid.field[ix:ix+1, iy:iy+1, iz:iz+1, :]
-            if allsame(cube[:, :, :, 1]) continue end
-            if allsame(cube[:, :, :, 2]) continue end
-            if allsame(cube[:, :, :, 3]) continue end
-            if sum(magb[ix:ix+1, iy:iy+1, iz:iz+1]) < 8*zero_value continue end
-            candidates[ix, iy, iz] = true
+            index = (ix:ix+1, iy:iy+1, iz:iz+1)
+            if !allsame(bx[index...]) && !allsame(by[index...]) && !allsame(bz[index...]) && (sum(magb[index...]) > 8*zero_value)
+                candidates[ix, iy, iz] = true
+            end
         end
 
         println("Number of candidate cells: $(count(candidates))")
 
-        subcube = Array{Float64, 4}(undef, 11, 11, 11, 3)
+        subcube = Array{Vector3D{Float64}, 3}(undef, 11, 11, 11)
 
         nullpts = Vector{Vector3D}(undef, 0)
 
         for iz in 1:nz-1, iy in 1:ny-1, ix in 1:nx-1
             if candidates[ix, iy, iz]
-                rnull = Vector3D([ix, iy, iz])
+                rnull = Vector3D(ix, iy, iz)
                 for isig in 1:sig_figs
                     ds = 10.0^(-isig)
                     for izsub in 1:11, iysub in 1:11, ixsub in 1:11
 
-                        rtri = rnull + [ixsub-1, iysub-1, izsub-1]*ds
-                        subcube[ixsub, iysub, izsub, :] = Common.trilinear_nf(rtri, bgrid)
+                        rtri = rnull + Vector3D(ixsub-1, iysub-1, izsub-1)*ds
+                        subcube[ixsub, iysub, izsub] = Common.trilinear_nf(rtri, bgrid)
 
                     end
                     for izsub in 1:10, iysub in 1:10, ixsub in 1:10
                         global itest
 
-                        cube = subcube[ixsub:ixsub+1, iysub:iysub+1, izsub:izsub+1, :]
-                        for i in 1:ndims
-                            if allsame(cube[:, :, :, i]) continue end
-                        end
-                        itest = bilin_test(cube)
+                        cube = VecCube(subcube[ixsub:ixsub+1, iysub:iysub+1, izsub:izsub+1])
+                        itest = 0
+                        if all(.!allsame.(getproperty.(cube, sym) for sym in (:x, :y, :z)))
+                            
+                            itest = bilin_test(cube)
 
-                        if itest == 1
-                            rnull = rnull + [ixsub-1, iysub-1, izsub-1]*ds
-                            @goto end_outer
+                            if itest == 1
+                                rnull = rnull + Vector3D(ixsub-1, iysub-1, izsub-1)*ds
+                                # break
+                                @goto end_outer
+                            end
                         end
                     end
                     @label end_outer
@@ -61,6 +68,7 @@ module NullFinder
                             println("|B| at point: $(sqrt(sum(Common.trilinear_nf(rnull, bgrid).^2)))")
                             println("")
                         end
+                        # break
                         @goto end_sigloop
                     end
 
@@ -69,25 +77,25 @@ module NullFinder
 
                 if itest == 1
                     ds = 10.0^(-sig_figs)
-                    cube = Array{Float64, 4}(undef, 2, 2, 2, 3)
+                    cube = Array{Vector3D, 3}(undef, 2, 2, 2)
                     for izsub in 1:2, iysub in 1:2, ixsub in 1:2
                         # find all field values of subgrid
-                        rtri = rnull + [ixsub-1, iysub-1, izsub-1]*ds
-                        cube[ixsub, iysub, izsub, :] = Common.trilinear_nf(rtri, bgrid)
+                        rtri = rnull + Vector3D(ixsub-1, iysub-1, izsub-1)*ds
+                        cube[ixsub, iysub, izsub] = Common.trilinear_nf(rtri, bgrid)
                     end
         
-                    mincube = Tuple(argmin(dropdims(sum(cube .^ 2, dims=4), dims=4)))
+                    mincube = Tuple(argmin(sum.(cube .* cube)))
         
-                    rnull = rnull .+ (mincube .- 1) .* ds
+                    rnull = rnull + Vector3D((mincube .- 1)...) * ds
         
                     bound_dist = rspherefact * 10.0^(-sig_figs)
                     
                     if boundary_nulls
                         push!(nullpts, rnull)
                     else
-                        if ((rnull[1] > 1 + bound_dist) & (rnull[1] < nx - bound_dist) &
-                            (rnull[2] > 1 + bound_dist) & (rnull[2] < ny - bound_dist) &
-                            (rnull[3] > 1 + bound_dist) & (rnull[3] < nz - bound_dist))
+                        if ((rnull.x > 1 + bound_dist) & (rnull.x < nx - bound_dist) &
+                            (rnull.y > 1 + bound_dist) & (rnull.y < ny - bound_dist) &
+                            (rnull.z > 1 + bound_dist) & (rnull.z < nz - bound_dist))
                             push!(nullpts, rnull)
                         else
                             @debug "Null on the boundary: $(Int.([ix, iy, iz])), Removing..."
@@ -150,17 +158,13 @@ module NullFinder
         println("Writing null positions to $(outfname)")
         nullfile = open(outfname, "w")
             write(nullfile, Int32(size(nullpts, 1)))
-            write(nullfile, nullpts)
-            write(nullfile, Common.gtr.(nullpts, Ref(bgrid)))
+            write.(Ref(nullfile), nullpts)
+            write.(Ref(nullfile), Common.gtr.(nullpts, Ref(bgrid)))
         close(nullfile)
-
-        # print final run time
-        # call system_clock(tstop, count_rate)
-        # print*, 'Time taken:', dble(tstop - tstart)/dble(count_rate), "(", dble(tstop - tstart)/dble(count_rate)/60, "minutes)"
 
     end
         
-    function allsame(cube::Array{Float64, 3})
+    function allsame(cube::Union{Array{Float64, 3}, Cube})
         return all(cube .> zero_value) | all(cube .< -zero_value)
     end
 
@@ -176,9 +180,7 @@ module NullFinder
                                        (:, 1, :),
                                        (:, 2, :),
                                        (:, :, 2))) # not constant type
-            facex = cube[index..., 1]
-            facey = cube[index..., 2]
-            facez = cube[index..., 3]
+            facex, facey, facez = (getproperty.(cube[index...], sym) for sym in (:x, :y, :z))
 
             cross, sign = face_solve(facex, facey, facez)
             test[num, 1] = cross
@@ -381,7 +383,7 @@ module NullFinder
 
     end
 
-    function bilinear_cell(x::Float64, y::Float64, square::Array{Float64, 2})
+    function bilinear_cell(x::Float64, y::Float64, square::Square)
         # interpolate the value of a function at (x, y) from the 4 corner values
         line = (1 - x)*square[1, :] + x*square[2, :]
         return line[1]*(1 - y) + line[2]*y
