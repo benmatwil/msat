@@ -28,6 +28,7 @@ module Read
     end
 
     Common.SphericalField3D(filename::AbstractString) = read_field(filename, "Spherical")
+    Common.CartesianField3D(filename::AbstractString) = read_field(filename, "Cartesian")
 
     function read_nulls(filename::AbstractString)
         nullfile = open(joinpath(default_output, prefix(filename) * "-nullpos.dat"), "r")

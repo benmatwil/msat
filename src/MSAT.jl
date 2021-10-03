@@ -14,7 +14,7 @@ module MSAT
     include("MakeCut.jl")
 
     function test()
-        field = Common.read_field("data/bmag0037.dat")
+        field = Read.CartesianField3D("data/bmag0037.dat")
         middle = Common.Vector3D([10, 20, 30])
         starts = [middle + [cos(i), sin(i), 0] for i in (0:99)/100*2*pi]
         return [Trace.trace_line(start, 1, stepsize, field) for start in starts]
@@ -29,7 +29,8 @@ if abspath(PROGRAM_FILE) == @__FILE__
     # starts = [middle + [cos(i), sin(i), 0] for i in (0:99)/100*2*pi]
     # pts = [MSAT.Trace.trace_line(start, 1, MSAT.stepsize, field) for start in starts]
     datafile = "data\\bmag0037-jl.dat"
-    bgrid = MSAT.Read.read_field(datafile, "Cartesian")
+    bgrid = MSAT.Common.CartesianField3D(datafile)
+    bgrid = MSAT.Common.SphericalField3D("data\\field_20100601_0081_fft-jlv3d.dat")
 
     # MSAT.NullFinder.NF(datafile)
     # MSAT.SpineFinder.SF(datafile)
