@@ -3,6 +3,8 @@ import glob
 import sys
 import os.path
 
+# if system has enough memory - could read in all at once and then split
+
 files = sorted(glob.glob('data/*.dat'))
 
 outdir = 'output'
