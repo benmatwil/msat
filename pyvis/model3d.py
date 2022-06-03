@@ -892,3 +892,11 @@ class Model3D:
                                    tube_radius=None,
                                    opacity=1,
                                    figure=self.figure)
+
+if __name__ == "__main__":
+    m3d = Model3D(
+        "data/field_20100601_0081_fft.dat",
+        ["separators", "nulls", "hcs_sep", "hcs_flines", "sepsurf_rings", "spines"],
+        coordsystem="spherical"
+    )
+    fig = ml.figure()
