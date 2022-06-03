@@ -79,7 +79,7 @@ class PlotCut:
         diff = levels[-1] - levels[0]
         cb.set_ticks(np.linspace(0, 1.0, 5)*diff + levels[0])
         cb.set_label('Radial Field Strength (G)')
-        plt.tight_layout()
+        self.figure.tight_layout()
         if title:
             self.ax.set_title('Cut: ' + self.datafile + ' r = ' + rstr)
 
@@ -168,11 +168,13 @@ class PlotCut:
         """
         br, _, _, rads, thetas, phis = rd.field(self.datafile)
         levels = np.linspace(-10, 10, 101)
-        plt.contourf(phis, thetas, br[0, :, :], levels, cmap=plt.cm.RdBu_r, extend='both', vmax=10, vmin=-10, zorder=-10)
-        cb = plt.colorbar(fraction=0.05, pad=0.025)
+        # plt.contourf(phis, thetas, br[0, :, :], levels, cmap=plt.cm.RdBu_r, extend='both', vmax=10, vmin=-10, zorder=-10)
+        self.ax.contourf(phis, thetas, br[0, :, :], levels, cmap=plt.cm.RdBu_r, extend='both', vmax=10, vmin=-10, zorder=-10)
+        # cb = plt.colorbar(fraction=0.05, pad=0.025)
+        cb = self.figure.colorbar(fraction=0.05, pad=0.025)
         cb.set_ticks([-10, -5, 0, 5, 10])
         cb.set_label('Magnetic Field Strength (G)')
-        plt.tight_layout()
+        self.figure.tight_layout()
 
     def get_colours(self):
         """
