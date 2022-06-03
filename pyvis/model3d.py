@@ -121,7 +121,7 @@ class Model3D:
             self.nulllist = self.nulldata.number
         else:
             if max(lst) > self.nulldata.number.max() or min(lst) < 1:
-                print('Invalid list')
+                raise ValueError("Invalid list of nulls given")
             self.nulllist = np.array(lst)
 
     def add_structures(self, *args, **kwargs):
@@ -299,7 +299,7 @@ class Model3D:
                                         name=sign_names[isign]+'SeparatrixFieldlines',
                                         figure=self.figure)
         else:
-            print("Set draw to be either 'rings' or 'fieldlines'")
+            raise ValueError("Set draw to be either 'rings' or 'fieldlines'")
 
     def add_hcs(self, draw='rings', nlines=100):
         """
@@ -409,7 +409,7 @@ class Model3D:
                                     figure=self.figure)
 
         else:
-            print("Set draw to be either 'rings' or 'fieldlines'")
+            raise ValueError("Set draw to be either 'rings' or 'fieldlines'")
 
         for inull in range(0, len(rings), 2):
             if draw == 'fieldlines':
@@ -741,7 +741,7 @@ class Model3D:
         elif pos == 'bottom':
             ipos = 0
         else:
-            raise ValueError("Only 'top' and 'bottom' are options")
+            raise ValueError("Only 'top' and 'bottom' are options for pos argument")
 
         colon = slice(None, None, None)
 
