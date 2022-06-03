@@ -3,6 +3,8 @@ import glob
 import sys
 import os.path
 
+# if system has enough memory - could read in all at once and then split
+
 files = sorted(glob.glob('data/*.dat'))
 
 outdir = 'output'
@@ -45,19 +47,23 @@ def field(filename, grid=False):
 def nulls(filename, simple=False):
     # create datatypes depending on simple or not
     if simple:
-        dtype = [('number', np.int32),
+        dtype = [
+            ('number', np.int32),
             ('pos', np.float64, 3),
-            ('gridpos', np.float64, 3)]
+            ('gridpos', np.float64, 3)
+        ]
     else:
-        dtype = [('number',np.int32),
+        dtype = [
+            ('number',np.int32),
             ('pos', np.float64, 3),
             ('gridpos', np.float64, 3),
             ('sign', np.int32),
             ('spine', np.float64, 3),
             ('fan', np.float64, 3),
-            ('warning', np.int32)]
+            ('warning', np.int32)
+        ]
 
-    with open(outdir+'/'+prefix(filename)+'-nullpos.dat', 'rb') as nullfile:
+    with open(f"{outdir}/{prefix(filename)}-nullpos.dat", 'rb') as nullfile:
         # get three data sets from the null finder file
         nnulls, = np.fromfile(nullfile, dtype=np.int32, count=1)
         # create record array
@@ -69,7 +75,7 @@ def nulls(filename, simple=False):
 
     if not simple:
         # if you want the sign finder data too...
-        with open(outdir+'/'+prefix(filename)+'-nulldata.dat', 'rb') as nullfile:
+        with open(f"{outdir}/{prefix(filename)}-nulldata.dat", 'rb') as nullfile:
             nnulls, = np.fromfile(nullfile, dtype=np.int32, count=1)
             nulls.sign = np.fromfile(nullfile, dtype=np.int32, count=nnulls)
             nulls.spine = np.fromfile(nullfile, dtype=np.float64, count=3*nnulls).reshape(nnulls, 3)
@@ -84,13 +90,13 @@ def separators(filename, null_list=None, lines=True, connectivity=True, hcs=Fals
 
     if not hcs:
         # filenames for the nulls
-        connectivityfile = outdir+'/'+prefix(filename)+'-connectivity.dat'
-        separatorsfile = outdir+'/'+prefix(filename)+'-separators.dat'
+        connectivityfile = f"{outdir}/{prefix(filename)}-connectivity.dat"
+        separatorsfile = f"{outdir}/{prefix(filename)}-separators.dat"
         allnulls_list = nulldata.number
     else:
         # filenames for the hcs
-        connectivityfile = outdir+'/'+prefix(filename)+'-hcs-connectivity.dat'
-        separatorsfile = outdir+'/'+prefix(filename)+'-hcs-separators.dat'
+        connectivityfile = f"{outdir}/{prefix(filename)}-hcs-connectivity.dat"
+        separatorsfile = f"{outdir}/{prefix(filename)}-hcs-separators.dat"
         allnulls_list = [1] # need to fix this
     
     # if none set, read in data for all nulls
@@ -139,7 +145,7 @@ def spines(filename, null_list=None):
 
     spinelist = []
 
-    with open(outdir+'/'+prefix(filename)+'-spines.dat', 'rb') as spinefile:
+    with open(f"{outdir}/{prefix(filename)}-spines.dat", 'rb') as spinefile:
         for inull in nulldata.number:
             spinelisti = []
             for _ in range(2): # spine in each direction
@@ -157,7 +163,7 @@ def ringinfo(filename):
     
     nulldata = nulls(filename, simple=True)
     
-    with open(outdir+'/'+prefix(filename)+'-ringinfo.dat', 'rb') as ringinfo:
+    with open(f"{outdir}/{prefix(filename)}-ringinfo.dat", 'rb') as ringinfo:
         ringsmax, writeskip, bytesize = np.fromfile(ringinfo, dtype=np.int32, count=3)
         stepsize, = np.fromfile(ringinfo, dtype=np.float64, count=1)
         ringsmax1 = np.ceil(ringsmax/writeskip).astype(np.int)
@@ -177,16 +183,18 @@ def rings(filename, breaks=False, assocs=False, nskip=1, null_list=None, hcs=Fal
     breaklist = []
     if assocs: assoclist = []
 
+    fprefix = f"{outdir}/{prefix(filename)}"
+
     if hcs:
-        assocs_filename = outdir+'/'+prefix(filename)+'-hcs-assocs.dat'
-        info_filename = outdir+'/'+prefix(filename)+'-hcs-ringinfo.dat'
-        ring_filename = outdir+'/'+prefix(filename)+'-hcs-rings.dat'
-        break_filename = outdir+'/'+prefix(filename)+'-hcs-breaks.dat'
+        assocs_filename = f"{fprefix}-hcs-assocs.dat"
+        info_filename = f"{fprefix}-hcs-ringinfo.dat"
+        ring_filename = f"{fprefix}-hcs-rings.dat"
+        break_filename = f"{fprefix}-hcs-breaks.dat"
     else:
-        assocs_filename = outdir+'/'+prefix(filename)+'-assocs.dat'
-        info_filename = outdir+'/'+prefix(filename)+'-ringinfo.dat'
-        ring_filename = outdir+'/'+prefix(filename)+'-rings.dat'
-        break_filename = outdir+'/'+prefix(filename)+'-breaks.dat'
+        assocs_filename = f"{fprefix}-assocs.dat"
+        info_filename = f"{fprefix}-ringinfo.dat"
+        ring_filename = f"{fprefix}-rings.dat"
+        break_filename = f"{fprefix}-breaks.dat"
     
     assoc_exist = os.path.isfile(assocs_filename)
     if assocs and not assoc_exist: print('Not reading in associations: file does not exist')
@@ -294,7 +302,7 @@ def cut_sepsurf(filename, normal, d):
     filename_plane = get_cut_filename_plane(normal, d)
     null_nums = []
     sepsurfs = []
-    with open(outdir+'/'+prefix(filename)+'-rings-cut_'+'{}.dat'.format(filename_plane), 'rb') as ringfile:
+    with open(f"{outdir}/{prefix(filename)}-rings-cut_{filename_plane}.dat", 'rb') as ringfile:
         nlines, = np.fromfile(ringfile, dtype=np.int32, count=1)
         for _ in range(nlines):
             inull, = np.fromfile(ringfile, dtype=np.int32, count=1)
@@ -309,7 +317,7 @@ def cut_separators(filename, normal, d, hcs=False):
     null_nums = []
     sep_pts = []
     if hcs:
-        with open(outdir+'/'+prefix(filename)+'-hcs-separators-cut_'+'{}.dat'.format(filename_plane), 'rb') as sepfile:
+        with open(f"{outdir}/{prefix(filename)}-hcs-separators-cut_{filename_plane}.dat", 'rb') as sepfile:
             npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
             for _ in range(npts):
                 end, = np.fromfile(sepfile, dtype=np.int32, count=1)
@@ -317,7 +325,7 @@ def cut_separators(filename, normal, d, hcs=False):
                 sep = np.fromfile(sepfile, dtype=np.float64, count=3)
                 sep_pts.append(sep)
     else:
-        with open(outdir+'/'+prefix(filename)+'-separators-cut_'+'{}.dat'.format(filename_plane), 'rb') as sepfile:
+        with open(f"{outdir}/{prefix(filename)}-separators-cut_{filename_plane}.dat", 'rb') as sepfile:
             npts, = np.fromfile(sepfile, dtype=np.int32, count=1)
             for _ in range(npts):
                 _, end = np.fromfile(sepfile, dtype=np.int32, count=2)
@@ -330,7 +338,7 @@ def cut_spines(filename, normal, d):
     filename_plane = get_cut_filename_plane(normal, d)
     null_nums = []
     spine_pts = []
-    with open(outdir+'/'+prefix(filename)+'-spines-cut_'+'{}.dat'.format(filename_plane), 'rb') as spinefile:
+    with open(f"{outdir}/{prefix(filename)}-spines-cut_{filename_plane}.dat", 'rb') as spinefile:
         npts, = np.fromfile(spinefile, dtype=np.int32, count=1)
         for _ in range(npts):
             inull, = np.fromfile(spinefile, dtype=np.int32, count=1)
@@ -342,7 +350,7 @@ def cut_spines(filename, normal, d):
 def cut_hcs(filename, normal, d):
     filename_plane = get_cut_filename_plane(normal, d)
     lines = []
-    with open(outdir+'/'+prefix(filename)+'-hcs-cut_{}.dat'.format(filename_plane), 'rb') as hcsfile:
+    with open(f"{outdir}/{prefix(filename)}-hcs-cut_{filename_plane}.dat", 'rb') as hcsfile:
         nlines, = np.fromfile(hcsfile, dtype=np.int32, count=1)
         for _ in range(0, nlines):
             _ = np.fromfile(hcsfile, dtype=np.int32, count=1)
