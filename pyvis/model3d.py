@@ -20,11 +20,13 @@ else:
 # turn of warnings while vtk/mayavi compatibility is fixed -- still works (error from older vtk)
 vtk.vtkObject.GlobalWarningDisplayOff()
 
-sign_names = {-2: 'Sink',
-              -1: 'Neg',
-              0: 'Zero',
-              1: 'Pos',
-              2: 'Source'}
+sign_names = {
+    -2: 'Sink',
+    -1: 'Neg',
+    0: 'Zero',
+    1: 'Pos',
+    2: 'Source'
+}
 
 
 def sphr2cart(rs, ts, ps):
@@ -149,11 +151,13 @@ class Model3D:
             nring: sets the ring to trace fieldlines from. Set as an integer for ring number or float in [0, 1] as fraction of all rings.
         """
 
-        cols = {-2: (218/255, 112/255, 214/255),
-                -1: (0.5, 0.5, 1),
-                0: (0.5, 1, 0.5),
-                1: (1, 0.5, 0.5),
-                2: (1.0, 178/255, 102/255)}
+        cols = {
+            -2: (218/255, 112/255, 214/255),
+            -1: (0.5, 0.5, 1),
+            0: (0.5, 1, 0.5),
+            1: (1, 0.5, 0.5),
+            2: (1.0, 178/255, 102/255)
+        }
 
         nulls = self.nulldata[self.nulllist-1]
 
@@ -625,11 +629,13 @@ class Model3D:
         """
         print("Adding nulls")
 
-        cols = {-2: (0.5, 0, 0.5),
-                -1: (0, 0, 1),
-                0: (0, 1, 0),
-                1: (1, 0, 0),
-                2: (1, 165/255, 0)}
+        cols = {
+            -2: (0.5, 0, 0.5),
+            -1: (0, 0, 1),
+            0: (0, 1, 0),
+            1: (1, 0, 0),
+            2: (1, 165/255, 0)
+        }
 
         boxsize = min([self.xx[-1] - self.xx[0],
                        self.yy[-1] - self.yy[0],
@@ -763,8 +769,14 @@ class Model3D:
         elif self.coordsystem == 'cylindrical':
             x, y, z = cyl2cart(x, y, z)
         
-        ml.mesh(x, y, z, scalars=-self.bgrid[indices],
-                    colormap='Greys', vmin=vmin, vmax=vmax, figure=self.figure)
+        ml.mesh(
+            x, y, z,
+            scalars=-self.bgrid[indices],
+            colormap='Greys',
+            vmin=vmin,
+            vmax=vmax,
+            figure=self.figure
+        )
 
     def add_sun(self, absbrmax=10):
         # make theta, phi grids of bgrid coords and create the coords of sphere
@@ -789,9 +801,11 @@ class Model3D:
 
         rings, breaks, assocs = rd.rings(self.filename, breaks=True, assocs=True)
 
-        cols = {-1: (0.5, 0.5, 1),
-                0: (0.5, 1, 0.5),
-                1: (1, 0.5, 0.5)}
+        cols = {
+            -1: (0.5, 0.5, 1),
+            0: (0.5, 1, 0.5),
+            1: (1, 0.5, 0.5)
+        }
 
         acc = 6
 
