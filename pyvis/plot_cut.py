@@ -81,6 +81,7 @@ class PlotCut:
         cb.set_label('Radial Field Strength (G)')
         self.figure.tight_layout()
         if title:
+            rstr = str(d)
             self.ax.set_title('Cut: ' + self.datafile + ' r = ' + rstr)
 
         if newcolours:
