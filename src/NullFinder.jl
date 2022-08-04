@@ -20,7 +20,7 @@ module NullFinder
         candidates = falses((nx-1, ny-1, nz-1))
         for iz in 1:nz-1, iy in 1:ny-1, ix in 1:nx-1
             index = (ix:ix+1, iy:iy+1, iz:iz+1)
-            if !allsame(bx[index...]) && !allsame(by[index...]) && !allsame(bz[index...]) && (sum(magb[index...]) > 8*zero_value)
+            @views if !allsame(bx[index...]) && !allsame(by[index...]) && !allsame(bz[index...]) && (sum(magb[index...]) > 8*zero_value)
                 candidates[ix, iy, iz] = true
             end
         end
@@ -163,9 +163,9 @@ module NullFinder
         close(nullfile)
 
     end
-        
-    function allsame(cube::Union{Array{Float64, 3}, Cube})
-        return all(cube .> zero_value) | all(cube .< -zero_value)
+
+    function allsame(cube)
+        return all(>(zero_value), cube) | all(<(-zero_value), cube)
     end
 
     function bilin_test(cube)
@@ -231,10 +231,10 @@ module NullFinder
         sign, cross = 0, 0
         nsol = 0
 
-        same_sign = ((count(facex .> zero_value) == 4 ) | (count(facex .< -zero_value) == 4) |
-                     (count(facey .> zero_value) == 4 ) | (count(facey .< -zero_value) == 4))
+        same_sign = ((count(>(zero_value), facex) == 4 ) | (count(<(-zero_value), facex) == 4) |
+                     (count(>(zero_value), facey) == 4 ) | (count(<(-zero_value), facey) == 4))
 
-        not_zero = sum(abs.(facex) + abs.(facey) + abs.(facez)) > 12*zero_value
+        not_zero = sum(abs.(facex) .+ abs.(facey) .+ abs.(facez)) > 12*zero_value
 
         if !same_sign & not_zero
             a1 = facex[1, 1]
