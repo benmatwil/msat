@@ -15,7 +15,7 @@ module SpineFinder
         warnings = zeros(Int32, nnulls)
 
         for inull in 1:nnulls
-            println("Evaluating null point $inull of $nnulls")
+            println("Null point $inull of $nnulls")
             @debug "Null position: $(rnulls[inull])"
             @debug "B at null $(Common.trilinear(rnulls[inull], bgrid))"
             @debug "-----------------------------------------------------------------------------"
@@ -116,7 +116,7 @@ module SpineFinder
                 break
                 @label end_main
             end
-            println("-"^50)
+            # println("-"^50)
       
             @debug "Number of points which stop convergence"
             @debug "    forwards:  $flagfw"
@@ -306,13 +306,13 @@ module SpineFinder
       
             end
       
-            @show maxvec, minvec
+            # @show maxvec, minvec
             fan = normalise(maxvec × minvec)
 
         end
 
         tilt = abs(90 - rad2deg(acos(dot(fan, spine))))
-        println(spine)
+        # println(spine)
 
         if abs(sign) == 2
             warningmessage = "NULL LIKELY A SOURCE OR SINK"
@@ -345,7 +345,7 @@ module SpineFinder
         """
 
         println("Sign: $sign    Warning: $warning     Tilt: $tilt")
-        println("-" ^ 25)
+        println("-" ^ 50)
 
         return sign, spine, fan, warning
 
