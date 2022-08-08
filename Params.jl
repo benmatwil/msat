@@ -12,7 +12,7 @@ module Params
     # set to zero to use the environment variable OMP_NUM_THREADS
     const nproc = 4
     # The default directory name to output data to
-    const default_output = "output"
+    const default_output = "outputjl"
 
     # Null Finder Parameters
     # ----------------------
