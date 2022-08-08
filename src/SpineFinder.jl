@@ -95,7 +95,7 @@ module SpineFinder
                             break
                         end
                     end
-                    if (Comn.modulus(rfw1 - rfw) < minmove) | (modulus(rbw1 - rbw) < minmove) & (angle < dphi)
+                    if (modulus(rfw1 - rfw) < minmove) | (modulus(rbw1 - rbw) < minmove) & (angle < dphi)
                         angle = angle + dphi/6
                         @debug "Adjusting the initial points and starting again"
                         @goto end_main
