@@ -1,6 +1,6 @@
 module Common
 
-    import Base.+, Base.-, Base.*, Base./
+    import Base.+, Base.-, Base.*, Base./, Base.size
 
     using OffsetArrays
     using ..Params
@@ -117,6 +117,34 @@ module Common
         zmax::Float64
     end
     CylindricalField3D(filename, field, x, y, z) = CylindricalField3D(filename, field, x, y, z, 1, size(x, 1), 1, size(y, 1), 1, size(z, 1))
+
+    Base.size(field::AbstractField3D) = size(field.field)
+
+    function fieldcomponents(field::AbstractField3D)
+        bx = similar(field.field, Float64)
+        by = similar(field.field, Float64)
+        bz = similar(field.field, Float64)
+
+        for ind in eachindex(field.field)
+            vec = field.field[ind]
+
+            bx[ind] = vec.x
+            by[ind] = vec.y
+            bz[ind] = vec.z
+        end
+
+        return bx, by, bz
+    end
+
+    function magnitude(field::AbstractField3D)
+        mag = similar(field.field, Float64)
+
+        for ind in eachindex(field.field)
+            mag[ind] = modulus(field.field[ind])
+        end
+
+        return mag
+    end
 
     function print_params()
         # allows the user to find out what parameters have been set in Params.jl when executable was compiled

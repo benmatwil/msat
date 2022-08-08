@@ -6,16 +6,19 @@ module NullFinder
     using ..Common
     using ..Read
     
+    # sort out necessary static arrays
     const Square = SArray{Tuple{2, 2}, Float64, 2, 4}
+    const MSquare = MArray{Tuple{2, 2}, Float64, 2, 4}
     const Cube = SArray{Tuple{2, 2, 2}, Float64, 3, 8}
+    const MCube = MArray{Tuple{2, 2, 2}, Float64, 3, 8}
     const VecCube = SArray{Tuple{2, 2, 2}, Common.Vector3D{Float64}, 3, 8}
 
     function NF(bgrid::AbstractField3D; boundary_nulls::Bool=false, gridpoint_nulls::Bool=true)
 
-        nx, ny, nz = size(bgrid.field)
+        nx, ny, nz = Common.size(bgrid)
 
-        bx, by, bz = (getproperty.(bgrid.field, prop) for prop in (:x, :y, :z))
-        magb = sqrt.(bx .^ 2 .+ by .^ 2 .+ bz .^ 2)
+        bx, by, bz = Common.fieldcomponents(bgrid)
+        magb = Common.magnitude(bgrid)
 
         candidates = falses((nx-1, ny-1, nz-1))
         for iz in 1:nz-1, iy in 1:ny-1, ix in 1:nx-1
@@ -27,9 +30,15 @@ module NullFinder
 
         println("Number of candidate cells: $(count(candidates))")
 
-        subcube = Array{Vector3D{Float64}, 3}(undef, 11, 11, 11)
+        subcubex = Array{Float64, 3}(undef, 11, 11, 11)
+        subcubey = Array{Float64, 3}(undef, 11, 11, 11)
+        subcubez = Array{Float64, 3}(undef, 11, 11, 11)
 
-        nullpts = Vector{Vector3D}(undef, 0)
+        gridcubex = MArray{Tuple{2, 2, 2}, Float64, 3, 8}(undef)
+        gridcubey = MArray{Tuple{2, 2, 2}, Float64, 3, 8}(undef)
+        gridcubez = MArray{Tuple{2, 2, 2}, Float64, 3, 8}(undef)
+
+        nullpts = Vector{Vector3D{Float64}}(undef, 0)
 
         for iz in 1:nz-1, iy in 1:ny-1, ix in 1:nx-1
             if candidates[ix, iy, iz]
@@ -39,17 +48,25 @@ module NullFinder
                     for izsub in 1:11, iysub in 1:11, ixsub in 1:11
 
                         rtri = rnull + Vector3D(ixsub-1, iysub-1, izsub-1)*ds
-                        subcube[ixsub, iysub, izsub] = Common.trilinear_nf(rtri, bgrid)
+                        vec = Common.trilinear_nf(rtri, bgrid)
+                        subcubex[ixsub, iysub, izsub] = vec.x
+                        subcubey[ixsub, iysub, izsub] = vec.y
+                        subcubez[ixsub, iysub, izsub] = vec.z
 
                     end
                     for izsub in 1:10, iysub in 1:10, ixsub in 1:10
                         global itest
 
-                        cube = VecCube(subcube[ixsub:ixsub+1, iysub:iysub+1, izsub:izsub+1])
+                        # cube = VecCube(subcube[ixsub:ixsub+1, iysub:iysub+1, izsub:izsub+1])
+                        for indz in 0:1, indy in 0:1, indx in 0:1
+                            gridcubex[indx+1, indy+1, indz+1] = subcubex[ixsub+indx, iysub+indy, izsub+indz]
+                            gridcubey[indx+1, indy+1, indz+1] = subcubey[ixsub+indx, iysub+indy, izsub+indz]
+                            gridcubez[indx+1, indy+1, indz+1] = subcubez[ixsub+indx, iysub+indy, izsub+indz]
+                        end
                         itest = 0
-                        if all(.!allsame.(getproperty.(cube, sym) for sym in (:x, :y, :z)))
+                        if all(!allsame, (gridcubex, gridcubey, gridcubez))
                             
-                            itest = bilin_test(cube)
+                            itest = bilin_test(gridcubex, gridcubey, gridcubez)
 
                             if itest == 1
                                 rnull = rnull + Vector3D(ixsub-1, iysub-1, izsub-1)*ds
@@ -168,7 +185,7 @@ module NullFinder
         return all(>(zero_value), cube) | all(<(-zero_value), cube)
     end
 
-    function bilin_test(cube)
+    function bilin_test(cubex, cubey, cubez)
         
         test = zeros(Int32, 6, 6)
         edge = 0
@@ -180,7 +197,7 @@ module NullFinder
                                        (:, 1, :),
                                        (:, 2, :),
                                        (:, :, 2))) # not constant type
-            facex, facey, facez = (getproperty.(cube[index...], sym) for sym in (:x, :y, :z))
+            facex, facey, facez = cubex[index...], cubey[index...], cubez[index...]
 
             cross, sign = face_solve(facex, facey, facez)
             test[num, 1] = cross
@@ -383,7 +400,7 @@ module NullFinder
 
     end
 
-    function bilinear_cell(x::Float64, y::Float64, square::Square)
+    function bilinear_cell(x::Float64, y::Float64, square::MSquare)
         # interpolate the value of a function at (x, y) from the 4 corner values
         line = (1 - x)*square[1, :] + x*square[2, :]
         return line[1]*(1 - y) + line[2]*y
