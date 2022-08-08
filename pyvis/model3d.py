@@ -144,6 +144,15 @@ class Model3D:
         if 'hcs_sep' in args:
             self.add_separators(hcs=True)
 
+    def show(self):
+        """
+        Need something like this
+        """
+        # self.figure.show()
+        # need to figure appropriate method for this
+        pass
+
+
     def add_sepsurf(self, draw='rings', nlines=50, nring=None):
         """
         Adds separatrix surfaces to 3D plot, either 'rings' or 'flines'.
